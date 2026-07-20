@@ -2,25 +2,98 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
-}
+  --surface: #f7f8fa;
+  --surface-raised: #ffffff;
+  --border: #e4e7eb;
+  --foreground: #14181f;
+  --foreground-muted: #5b6472;
+  --foreground-faint: #8992a0;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Brand accent — used only for chrome/links/CTAs, never to imply
+     direction or sentiment (compliance: symmetric color use). */
+  --accent: #2f5ce0;
+  --accent-foreground: #ffffff;
+
+  /* Reserved EXCLUSIVELY for signed numeric deltas of things that already
+     happened (price/score change). Never used for aggregate mood, verdict
+     visuals, or anything forward-looking. Equal visual weight both ways. */
+  --up: #0f7a4a;
+  --up-bg: #e6f4ec;
+  --down: #b3261e;
+  --down-bg: #fbeae9;
+  --neutral: #5b6472;
+  --neutral-bg: #eef0f3;
+
+  --amber: #9a6b00;
+  --amber-bg: #fbf1d9;
+
+  --focus-ring: #2f5ce0;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0b0d12;
+    --surface: #12151c;
+    --surface-raised: #171b23;
+    --border: #262b35;
+    --foreground: #e7e9ee;
+    --foreground-muted: #9aa3b2;
+    --foreground-faint: #6b7280;
+
+    --accent: #6c8fff;
+    --accent-foreground: #0b0d12;
+
+    --up: #34c281;
+    --up-bg: #0f2a1e;
+    --down: #f27069;
+    --down-bg: #341313;
+    --neutral: #9aa3b2;
+    --neutral-bg: #1c212b;
+
+    --amber: #e0b23e;
+    --amber-bg: #2c2409;
+
+    --focus-ring: #6c8fff;
   }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-faint: var(--foreground-faint);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-up: var(--up);
+  --color-up-bg: var(--up-bg);
+  --color-down: var(--down);
+  --color-down-bg: var(--down-bg);
+  --color-neutral: var(--neutral);
+  --color-neutral-bg: var(--neutral-bg);
+  --color-amber: var(--amber);
+  --color-amber-bg: var(--amber-bg);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  border-color: var(--border);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
