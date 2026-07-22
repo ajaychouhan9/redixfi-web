@@ -41,9 +41,9 @@ Open http://localhost:3000.
   `/signals/{symbol}` isn't B8-masked; `GET /intraday/watchlist-states`
   doesn't exist yet).
 - `src/lib/auth/` — Firebase client auth (phone OTP) → exchanged for the
-  API's own JWT via `POST /auth/firebase-login`. Falls back to a "dev
-  test user" button when `NEXT_PUBLIC_FIREBASE_*` isn't set, matching
-  the API's own `DEV_AUTH=true` sandbox convention.
+  API's own JWT via `POST /auth/firebase-login`. Requires
+  `NEXT_PUBLIC_FIREBASE_*` to be set; there is no dev/test-user bypass —
+  the API always requires a real Firebase ID token.
 - `src/lib/compliance/` + `scripts/check-compliance.mjs` — the
   forbidden-words/tense CI sweep, wired into `npm run build`. Scans
   `src/app` and `src/components` for the master-context word list;

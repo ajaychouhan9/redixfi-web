@@ -1,8 +1,7 @@
 "use client";
 
 // Client-side write calls (auth required, so these can't run as cached
-// Server Component fetches). All verified live against the DEV_AUTH=true
-// sandbox — response envelopes match the GET endpoints exactly.
+// Server Component fetches). Response envelopes match the GET endpoints exactly.
 
 import { apiGet, apiGetPaged, apiMutate } from "./client";
 import type {

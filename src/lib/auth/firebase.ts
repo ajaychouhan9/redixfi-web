@@ -8,7 +8,7 @@ const config = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-/** True once real Firebase project keys are provisioned (empty in this sandbox — API runs with DEV_AUTH=true instead). */
+/** True once real Firebase project keys (NEXT_PUBLIC_FIREBASE_*) are provisioned in the environment. */
 export const firebaseConfigured = Boolean(config.apiKey && config.projectId && config.appId);
 
 let app: FirebaseApp | null = null;
