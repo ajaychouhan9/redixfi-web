@@ -6,6 +6,13 @@ import { getFirebaseAuth } from "@/lib/auth/firebase";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { Card } from "@/components/ui/Card";
 
+/** Firebase requires E.164 (+<country code><number>); assume India for bare 10-digit input. */
+function toE164(raw: string): string {
+  const trimmed = raw.trim();
+  if (trimmed.startsWith("+")) return trimmed;
+  return `+91${trimmed.replace(/\D/g, "")}`;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { loginWithFirebaseToken } = useAuth();
@@ -23,7 +30,7 @@ export default function LoginPage() {
       const { RecaptchaVerifier, signInWithPhoneNumber } = await import("firebase/auth");
       const auth = getFirebaseAuth();
       const verifier = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
-      const result = await signInWithPhoneNumber(auth, phone, verifier);
+      const result = await signInWithPhoneNumber(auth, toE164(phone), verifier);
       setConfirmation(result);
       setStage("otp");
     } catch (e) {
@@ -76,7 +83,7 @@ export default function LoginPage() {
         ) : (
           <div className="space-y-3">
             <label className="block text-sm">
-              <span className="mb-1 block text-foreground-muted">Enter the code sent to {phone}</span>
+              <span className="mb-1 block text-foreground-muted">Enter the code sent to {toE164(phone)}</span>
               <input
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
