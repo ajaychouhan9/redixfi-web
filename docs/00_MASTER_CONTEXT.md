@@ -300,29 +300,6 @@ DEVIATIONS: LLM transport for both B9 and B12 reuses measured\_signals\_builder.
 
 OPEN: live-VM verification explicitly out of scope this session (code not yet deployed) — not attempted, not claimed · daily\_brief\_builder.py has no scheduler entry (see B12 above) · news\_events.matched\_symbols backfill status unchanged from Task 04's finding (still unverified live; B9's event\_risk filter and B12's flagged-news gathering are both written correctly against the schema and will start reflecting real matches once the backfill runs, same as alert\_worker's triggers 2/3) · Ask-RedixFi chat (v1.5) intentionally not touched.
 
-## COMPLETION NOTE — Task 07 (2026-07-20)
-
-Built in a fresh `C:\redixfi-web` (repo empty except `docs/` at session start; Next.js 16.2.10 / React 19.2 / Turbopack scaffolded from scratch, then read `node_modules/next/dist/docs/` first since this Next version postdates this session's training data and warns of breaking changes — async `params`/`searchParams`, fetch uncached-by-default, Cache Components opt-in, `middleware`→`proxy` rename, etc.). Before writing any screen, pulled the live OpenAPI schema (`docs/openapi-reference.json`, from `GET /api/v1/openapi.json`) and live-sampled every GET endpoint plus the write endpoints (using the API's own `DEV_AUTH=true` sandbox login) rather than coding against the screen spec's endpoint sketch as-is — several real deviations were found this way (below). API base URL confirmed as `https://api.redixfi.com/api/v1` — bare paths (as several doc snippets imply) 404; only `/api/v1/*` and `/healthz` resolve.
-
-FILES: `src/lib/api/{client,types,endpoints,mutations}.ts` (typed fetch layer, built from live-sampled responses, not assumed schemas) · `src/lib/auth/{firebase,jwt,AuthContext}.tsx` (Firebase phone-OTP client + JWT exchange via `POST /auth/firebase-login`, dev-user fallback when Firebase keys are unset) · `src/lib/compliance/forbidden-words.ts` + `scripts/check-compliance.mjs` (CI sweep, wired into `npm run build`) · `src/data/{metric-explainers,canned-screens,sectors}.ts` · `src/components/{ui,layout,app}/**` (~40 components) · `src/app/(app)/**` (Home, Signals list/detail/movers, Intraday, Research search/detail, News, Pricing, Account × 4, More × 3, Login) · `src/app/(seo)/**` (`/stocks/{symbol}`, `/market-brief`, `/market-brief/{date}`, `/screens`, `/screens/{slug}`) · `src/app/{sitemap,robots}.ts` · `README.md` (rewritten) · `.env.example`.
-
-COLLECTIONS: none — this repo only reads/writes the live API, no direct DB access.
-
-LIVE-API DEVIATIONS FOUND (from the screen spec's endpoint sketch, verified by sampling, not assumed): API root is `/api/v1`, not bare paths · `/signals` sort field is `volume_ratio`, not `volume_ratio_5d` (error message revealed the exact allowed set: `composite_score, delivery_pct, delta_1d, market_cap, name, sector_rank, volume_ratio`) · the `sector` field actually returned by `/signals` uses an inconsistent 11-value taxonomy (`BANKNIFTY`, `NIFTY`, `NIFTYINFRA`, `NIFTYIT`, etc. — verified against all 751 rows) that does NOT match `/intraday/sectors`' cleanly-spaced names (`NIFTY INFRA`) — `src/data/sectors.ts` filter options are built from the former, documented as a known inconsistency rather than "fixed" · `/charts/{symbol}` only accepts `interval=1d` or `interval=15m` — no `1w`/`1mo`/`1y` resampling exists server-side, so the spec's "[1D 1W 1M 1Y chart]" selector is implemented as 15m-for-1D plus client-side slices (5/22/269 sessions) of the same daily series, not four separate API calls · `POST /signals/smart-screen` response shape is `{query, refused, message, parsed_filters, results, result_count}` — not the `{refused, refusal_reason, filters, results}` shape a literal reading of the spec would suggest · `/signals/{symbol}` direct-detail is confirmed NOT B8-masked (matches Task 04's flagged scope gap) — full data regardless of tier/lock state, verified against a `locked:true` list-row symbol · `POST /billing/order` body is `{plan}` only, no `promo_code` field despite the master-context pricing decision record — no promo-code UI was built against a route that doesn't exist · `GET /research/{symbol}` is unmetered for anonymous callers but 429s authenticated free users past 3/day (`{"detail":"free-tier daily limit reached (3/day)"}`) — confirmed by exhausting the dev sandbox account live · `DEV_AUTH=true` maps every `firebase_token` string to the SAME fixed dev user (`+919999999999`), not one user per string — useful for testing persistence, surprising the first time.
-
-AUTH: real Firebase phone-OTP wired (`RecaptchaVerifier` + `signInWithPhoneNumber`), gated behind `NEXT_PUBLIC_FIREBASE_*` being set (blank in this sandbox, same posture as the API's own `DEV_AUTH` convention) — falls back to a labeled "Continue as test user (dev)" button that calls the same `firebase-login` endpoint with a literal string, which is how every live auth flow in this session was actually exercised end to end (login → `/me` → watchlist add/remove → alert prefs → inbox → smart-screen → research 429).
-
-SEO LAYER: `/stocks/{symbol}` (all ~751, `revalidate=300`, no `generateStaticParams` — on-demand ISR rather than a 750-page build step) intentionally renders only the spec's limited subset (price, 52wk bar, delivery sparkline, last 3 news) even though the underlying anonymous API call actually returns the full payload (verified) — the restriction is a deliberate funnel choice, not an API limitation · 5 canned `/screens/{slug}` pages, each a real `/signals` sort/filter param combo, capped at 10 rows server-side query (`size=10`) · `/market-brief/{date}` only resolves when `date` matches `GET /brief/latest`'s date — there is no by-date history endpoint in the live API, so the archive honestly says so for any other date rather than fabricating one · `sitemap.ts` pulls the live symbol list (4× paginated `/signals` calls, `size=200`) — verified output has 766 `<loc>` entries.
-
-TESTING: no automated test suite (frontend, no pytest/mongomock equivalent used) — verified instead by: `npx tsc --noEmit` clean throughout · `npm run build` (production Turbopack build) clean, all 24 routes compiled, static/dynamic split as expected · `node scripts/check-compliance.mjs` passing (0 errors, negation-guarded warnings only) · every route curled against the running dev server for a 200 + grep-verified real content in the SSR HTML (Market Pulse numbers, AI Daily Brief text, sitemap URL count, etc.) · every API call the app makes was first verified live via curl against the real deployed API (`https://api.redixfi.com`) before being coded against, including the authenticated write paths via the `DEV_AUTH` sandbox login. No headless-browser/visual QA was available in this environment — client-side interactivity (toggles, filters, checkout modal) was verified by code review and SSR-output inspection only, not by driving a real browser; flagged as a gap, not claimed as tested.
-
-OPEN (known gaps, not fixed here because the backing API doesn't support them yet):
-- `GET /intraday/watchlist-states` (screen spec's per-watchlist behavior-state feed) 404s live — Task 04's `classify_behavior` only feeds `alert_worker`'s internal cache, never became a read endpoint. The Intraday screen's Watchlist tab says this plainly and shows the user's watchlist symbols instead of fabricating states.
-- No by-date brief archive endpoint — `/market-brief/{date}` degrades honestly (see above) instead of only ever showing "today."
-- Billing 503s in this sandbox (`RAZORPAY_KEY_ID/SECRET` unset per Task 04's still-open item) — the full order→Razorpay Checkout.js→verify flow is wired and will work once they're filled in; UI shows "checkout isn't live in this environment yet" rather than a raw error.
-- No `promo_codes` validation endpoint exists — not built against a route that isn't there.
-- Web push not implemented (no VAPID/service-worker setup in this session) — only the in-app inbox, which is what the API actually serves; `POST /me/push-token` is wired in `mutations.ts` but unused by any UI yet.
-- Nothing committed to git — working tree only, per instruction not to commit without being asked.
 
 ## Deploy status: api/ live on VM (2026-07-19)
 - Code deployed via scp initially, then git repo synced properly
@@ -422,20 +399,108 @@ OPEN (known gaps, not fixed here because the backing API doesn't support them ye
   specifies list-level masking) — scope gap, not fixed in Task 04.
 - 28 updates available on VM (3 security) — run apt upgrade when
   convenient.
-- GET /intraday/watchlist-states — screen spec's per-watchlist
-  behavior-state feed has no read endpoint (confirmed 404 live during
-  Task 07); redixfi-web's Intraday Watchlist tab currently shows watchlist
-  symbols only, no behavior states, and says so.
-- Brief-by-date history endpoint — only GET /brief/latest exists; no way
-  to fetch a past day's daily_brief doc. Needed for redixfi-web's
-  /market-brief/{date} archive (currently only resolves "today").
-- promo_codes validation endpoint — still not built despite the pricing
-  decision record above; POST /billing/order only accepts {plan}, no
-  promo_code field. No promo-code UI exists in redixfi-web yet as a
-  result.
-- redixfi-web (Task 07) built 2026-07-20 — Next.js 16 app live at
-  C:\redixfi-web, dev-verified against the real API (DEV_AUTH sandbox
-  login used for all authenticated paths). Not deployed to Vercel yet,
-  nothing committed to git. Full completion note above; known gaps are
-  the three items just above this one plus billing (503, keys unset)
-  and web push (not implemented, in-app inbox only).
+
+## COMPLETION NOTE — Task 07 web (2026-07-20)
+
+REPO: C:\redixfi-web (Next.js, separate from backend repo)
+STATUS: Working end-to-end against live API (https://api.redixfi.com).
+Dev server confirmed at localhost:3000. NOT yet committed to git or
+deployed to Vercel — commit + Vercel deploy is the immediate next step.
+
+WHAT IS LIVE:
+- Full app shell: sidebar + persistent MarketRibbon (5-section structure
+  matching mobile spec)
+- Home, Signal Dashboard (list + AI smart screener + stock detail +
+  movers), Intraday Live (state-machine: pre/live/post-market), Research
+  Pro (search + company page with candle/volume/delivery chart), News,
+  Pricing/checkout (Razorpay wired), Account (profile/watchlist/alerts/
+  inbox), More (disclaimer/data sources)
+- Web-exclusive pieces: data-grid + column picker + multi-filter + CSV
+  export (paid only), founding-counter checkout, richer charts
+- SEO layer: /stocks/{symbol} SSR+ISR (~751 pages), /market-brief/{date}
+  archive, 5 canned /screens/* pages, dynamic sitemap.xml (766 URLs),
+  robots.txt
+- Forbidden-words/tense compliance sweep wired into `npm run build`
+  (currently passing)
+- Education system: tap-to-learn explainers, analyst checklist, conflict
+  surfacing — per analysis-enablement spec
+
+GAPS FOUND (real API behavior, documented in README Known Gaps):
+- Live API root is /api/v1 not bare paths (minor — all calls adjusted)
+- GET /intraday/watchlist-states does NOT exist — tab shows honest
+  "not available" instead of fake data (needs Task 04 extension)
+- /market-brief archive has latest endpoint only, no by-date history
+  (needs API addition for the full archive page)
+- Billing 503s until Razorpay keys provisioned (flow fully wired,
+  waiting on keys)
+- Promo-code endpoint does NOT exist despite the master-context decision
+  record — no UI built against it (needs Task 04 billing module addition
+  before UI can be built)
+
+IMMEDIATE NEXT STEPS (in order):
+1. git commit + push to GitHub remote (redixfi-web repo)
+2. Connect to Vercel (import from GitHub, set NEXT_PUBLIC_API_URL=
+   https://api.redixfi.com, deploy)
+3. Add custom domain redixfi.com to Vercel (Namecheap: @ A record →
+   Vercel's IP, or CNAME → cname.vercel-dns.com per Vercel's instructions)
+4. Wire the two pending gaps as small follow-up tasks:
+   - /intraday/watchlist-states endpoint (Task 04 API extension)
+   - Promo-code endpoint (Task 04 billing addition)
+   - /market-brief/{date} by-date endpoint (Task 03 API addition)
+5. Task 06 (mobile) — same pattern, C:\redixfi-mobile
+
+PENDING ITEMS STILL OPEN (carry forward):
+- alert_worker.py: no scheduler entry
+- daily_brief_builder.py: no scheduler entry (08:10/16:15)
+- news_events.matched_symbols backfill: NOT RUN
+- DEV_AUTH=true → needs Firebase service account for real users
+- Razorpay real keys
+- mongomock missing from api/requirements.txt
+
+## ROADMAP v2 (2026-07-21) — agreed priority order, root-first
+Supersedes the original 01-07 sequence (those are DONE except 06).
+Current sequence:
+1. **Task 11 — OPS COMPLETION SPRINT** (do FIRST): activate everything
+   built-but-dead — alert_worker wiring, daily_brief scheduling,
+   matched_symbols backfill, DEV_AUTH=false + real Firebase, Razorpay
+   test keys + start KYB, cancel_subscription datetime fix, B8 paywall
+   bypass on /signals/{symbol} detail (revenue leak), promo plan-name
+   web fix, apt upgrade. This is demo-vs-business work.
+2. **Task 10 — Evening freshness + refinements**: measured_signals moves
+   07:50 → 16:30 with same-day candle (Dhan-or-synthesized from 15m,
+   source-marked); component-level change breakdown data (merged);
+   industry-based sector rank (fixes meaningless "#25 of 49 in NIFTY");
+   movers name join; pledge null render; watchlist-states wiring;
+   honest free-tier fallback copy.
+3. **Task 09 — Fundamentals derived layer** (REWRITTEN vs real payload):
+   fundamentals_derived builder + market_cap/industry backfill + peer
+   endpoint + question-framed UI panels. ⚠️ MUST strip analystView/
+   recosBar/overallRating at ingest (third-party buy/sell = directional
+   content pre-RA) with tests.
+4. **Task 12 — Education Layer v2**: ALL content pre-authored + versioned
+   (explainers + how_calculated + curated FAQ trees + FICTIONAL-only
+   examples), fetch-only serving (zero live LLM at serve time), insight
+   chips, change-breakdown render, summary-card engine (no action-urging
+   wording), CAUSAL-QUESTION RULE (descriptive always; cause only when a
+   matched news event exists that day).
+5. **Task 13 — Screener v2 compare-in-chat** (after 09): symmetric
+   measured+derived tables for 2-5 symbols, code-computed
+   "biggest differences" block, refusal still fires on verdict asks but
+   table still served.
+6. **Task 06 — Mobile** (after 10-12 so it inherits the fixed product;
+   Play review lead time absorbs the wait).
+Explicitly deferred: Ask-AI full chat (v1.5 — FAQ trees cover most,
+usage data will shape it), midday score recompute (as-of-close labeling
++ live Intraday tab handle market hours), market-brief archive polish,
+RedixFi Signals scores, all post-RA items (doc 08).
+
+## Design decisions locked with Roadmap v2
+- Education = pre-authored content in versioned store (repo JSON +
+  Mongo), scripts fetch-only. No live LLM in any education serve path.
+- Teaching examples: FICTIONAL stocks only, never real names (aging +
+  compliance). The user's own viewed stock's live values in explainer
+  current_state lines are the only "live example" (data display).
+- "More data" reframed: not dozens of signals — answers to questions a
+  person asks, collapsible, each with explainer. Depth on demand.
+- Comparison results: symmetric facts, user's typed order, no aggregate
+  ranking, verdict asks refused while facts still served.
