@@ -324,11 +324,13 @@ export interface PledgeHistoryPoint {
   pledged_pct: number;
   risk_level: string;
   source: string;
-  pledge_change: number;
-  pledge_trend: string;
-  prev_pledged_pct: number;
-  risk_signal: string;
-  trend_updated_at: string;
+  // Absent/null when there's no prior-quarter record to compare against
+  // (confirmed live: some pledge_history docs omit these entirely).
+  pledge_change?: number | null;
+  pledge_trend?: string | null;
+  prev_pledged_pct?: number | null;
+  risk_signal?: string | null;
+  trend_updated_at?: string | null;
 }
 
 export interface OptionsPcrPoint {
@@ -417,9 +419,9 @@ export interface BillingPlan {
 
 export interface BillingOrder {
   order_id: string;
-  amount: number;
+  amount_paise: number;
   currency: string;
-  key_id?: string;
+  razorpay_key_id?: string;
   [key: string]: unknown;
 }
 
