@@ -19,6 +19,10 @@ export function PlanCard({ plan, highlighted, features }: { plan: BillingPlan; h
   const [success, setSuccess] = useState(false);
 
   async function subscribe() {
+    if (!RAZORPAY_KEY) {
+      setError("Payments are not configured.");
+      return;
+    }
     if (!user) {
       router.push("/login");
       return;
@@ -33,8 +37,8 @@ export function PlanCard({ plan, highlighted, features }: { plan: BillingPlan; h
       }
       const order = await createBillingOrder(token, plan.plan);
       openRazorpayCheckout({
-        key: order.key_id ?? RAZORPAY_KEY ?? "",
-        amount: order.amount,
+        key: order.razorpay_key_id ?? RAZORPAY_KEY ?? "",
+        amount: order.amount_paise,
         currency: order.currency,
         order_id: order.order_id,
         name: "RedixFi",
