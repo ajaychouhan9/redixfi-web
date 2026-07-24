@@ -17,6 +17,8 @@ import type {
   DailyBrief,
   NewsItem,
   BillingPlan,
+  EducationContent,
+  SectorSummary,
 } from "./types";
 
 // ---------- market ----------
@@ -139,3 +141,10 @@ export const getLatestBrief = (opts?: FetchOpts) => apiGetOptional<DailyBrief>("
 // ---------- billing (public) ----------
 
 export const getBillingPlans = (opts?: FetchOpts) => apiGet<BillingPlan[]>("/billing/plans", opts);
+
+// ---------- education (Task 12) — public, fetch-only, zero live LLM calls --
+
+export const getEducation = (metric: string, opts?: FetchOpts) =>
+  apiGetOptional<EducationContent>(`/education/${encodeURIComponent(metric)}`, opts);
+
+export const getSectorSummary = (opts?: FetchOpts) => apiGet<SectorSummary>("/summary/sectors", opts);

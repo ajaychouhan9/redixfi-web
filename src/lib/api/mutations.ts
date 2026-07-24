@@ -12,6 +12,7 @@ import type {
   InboxAlert,
   BillingOrder,
   SmartScreenResult,
+  WatchlistSummary,
 } from "./types";
 
 // ---------- auth ----------
@@ -126,5 +127,30 @@ export async function cancelBilling(token: string) {
 
 export async function smartScreen(token: string | null, query: string): Promise<SmartScreenResult> {
   const env = await apiMutate<SmartScreenResult>("/signals/smart-screen", "POST", { query }, token ? { token } : undefined);
+  return env.data;
+}
+
+// ---------- education (Task 12) ----------
+
+export type EngagementType = "explainer_open" | "chip_tap" | "faq_open" | "faq_suggest_tap";
+
+/** Fire-and-forget instrumentation — the usage data that will shape Ask-AI
+ * v1.5. Auth is optional (matches the API's get_auth_context default);
+ * callers should not await this on the critical path of opening a panel. */
+export async function logEducationEngagement(
+  token: string | null,
+  body: { type: EngagementType; metric: string; question_id?: string; symbol?: string }
+): Promise<void> {
+  try {
+    await apiMutate<{ logged: boolean }>("/education/engagement", "POST", body, token ? { token } : undefined);
+  } catch {
+    // Engagement logging must never block or break the UI it's attached to.
+  }
+}
+
+// GET /summary/watchlist requires auth (a watchlist is per-user) — lives
+// here alongside the other token-gated calls rather than in endpoints.ts.
+export async function getWatchlistSummary(token: string): Promise<WatchlistSummary> {
+  const env = await apiGet<WatchlistSummary>("/summary/watchlist", { token });
   return env.data;
 }

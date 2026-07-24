@@ -7,7 +7,7 @@ import { Chip } from "@/components/ui/Chip";
 import { Sparkline } from "@/components/ui/Sparkline";
 import { getResearchPeers } from "@/lib/api/endpoints";
 import { formatShortDate } from "@/lib/format";
-import type { FundamentalsBlock, PeerRow } from "@/lib/api/types";
+import type { FundamentalsBlock, FundamentalsShareholding, PeerRow } from "@/lib/api/types";
 
 // Factual, symmetric labels only — no "good"/"bad" framing (compliance
 // symmetry rule). A flag being present is a measured fact about the
@@ -93,10 +93,15 @@ export function FundamentalsPanels({ symbol, fundamentals }: { symbol: string; f
                 value={
                   <ExplainTerm
                     metricKey="revenue_growth"
+                    symbol={symbol}
                     ctx={{
-                      quarterEnd: quarterly.latest_quarter_end ?? "",
-                      pct: fmtPct(quarterly.revenue_yoy_pct),
-                      accel: quarterly.revenue_accel_quarters >= 2 ? `${quarterly.revenue_accel_quarters}th` : "",
+                      symbol,
+                      revenue_yoy_pct: fmtPct(quarterly.revenue_yoy_pct),
+                      revenue_direction: (quarterly.revenue_yoy_pct ?? 0) >= 0 ? "up" : "down",
+                      revenue_streak_phrase:
+                        quarterly.revenue_accel_quarters >= 2
+                          ? `, the ${quarterly.revenue_accel_quarters}th straight quarter of accelerating growth`
+                          : "",
                     }}
                   >
                     {fmtPct(quarterly.revenue_yoy_pct)}
@@ -109,7 +114,13 @@ export function FundamentalsPanels({ symbol, fundamentals }: { symbol: string; f
                 value={
                   <ExplainTerm
                     metricKey="operating_margin"
-                    ctx={{ pct: fmtPct(quarterly.opm_pct), vsAvg: quarterly.opm_vs_8q_avg ?? "in line with" }}
+                    symbol={symbol}
+                    ctx={{
+                      symbol,
+                      opm_pct: fmtPct(quarterly.opm_pct),
+                      opm_vs_avg: quarterly.opm_vs_8q_avg ?? "in line with",
+                      opm_bps_change: quarterly.opm_yoy_bps_change ?? 0,
+                    }}
                   >
                     {quarterly.opm_pct !== null ? `${quarterly.opm_pct.toFixed(1)}%` : "—"}
                     {quarterly.opm_vs_8q_avg && (
@@ -141,8 +152,9 @@ export function FundamentalsPanels({ symbol, fundamentals }: { symbol: string; f
               label="P/E (TTM)"
               value={
                 <ExplainTerm
-                  metricKey="pe_vs_sector"
-                  ctx={{ pe: fmtNum(valuation.pe_ttm, 1), sectorPe: fmtNum(valuation.sector_pe, 1), rel: valuation.pe_vs_sector ?? "in line with" }}
+                  metricKey="pe_ttm"
+                  symbol={symbol}
+                  ctx={{ symbol, pe_ttm: fmtNum(valuation.pe_ttm, 1), sector_pe: fmtNum(valuation.sector_pe, 1) }}
                 >
                   {fmtNum(valuation.pe_ttm, 1)}
                 </ExplainTerm>
@@ -211,23 +223,26 @@ export function FundamentalsPanels({ symbol, fundamentals }: { symbol: string; f
               pct={shareholding.promoter_pct}
               changeQoq={shareholding.promoter_change_qoq}
               streak={shareholding.promoter_streak}
-              date={shareholding.latest_date}
-              explainerKey="promoter_holding"
+              symbol={symbol}
+              shareholding={shareholding}
+              showExplainer
             />
             <OwnerRow
               label="FII"
               pct={shareholding.fii_pct}
               changeQoq={shareholding.fii_change_qoq}
               streak={shareholding.fii_streak}
-              date={shareholding.latest_date}
-              explainerKey="fii_holding"
+              symbol={symbol}
+              shareholding={shareholding}
+              showExplainer
             />
             <OwnerRow
               label="MF"
               pct={shareholding.mf_pct}
               changeQoq={shareholding.mf_change_qoq}
               streak={shareholding.mf_streak}
-              date={shareholding.latest_date}
+              symbol={symbol}
+              shareholding={shareholding}
             />
           </div>
         )}
@@ -240,7 +255,7 @@ export function FundamentalsPanels({ symbol, fundamentals }: { symbol: string; f
             label="Results"
             value={
               events.next_results_date ? (
-                <ExplainTerm metricKey="next_results_date" ctx={{ date: formatShortDate(events.next_results_date) }}>
+                <ExplainTerm metricKey="next_results_date" symbol={symbol} ctx={{ symbol, next_results_date: formatShortDate(events.next_results_date) }}>
                   Last reported {formatShortDate(events.next_results_date)}
                 </ExplainTerm>
               ) : (
@@ -284,7 +299,11 @@ export function FundamentalsPanels({ symbol, fundamentals }: { symbol: string; f
       {/* ---- How volatile is it? ---- */}
       <Collapsible question="How volatile is it?">
         <div className="text-sm">
-          <ExplainTerm metricKey="volatility_risk" ctx={{ category: identity.risk_category ?? "unclassified", stddev: fmtNum(identity.volatility_stddev, 2) }}>
+          <ExplainTerm
+            metricKey="risk_category"
+            symbol={symbol}
+            ctx={{ symbol, risk_category: identity.risk_category ?? "unclassified", volatility_stddev: fmtNum(identity.volatility_stddev, 2) }}
+          >
             <span className="font-medium">{identity.risk_category ?? "Not classified"}</span>
             {identity.volatility_stddev !== null && <span className="ml-1 text-foreground-faint">(std. dev. {fmtNum(identity.volatility_stddev, 2)})</span>}
           </ExplainTerm>
@@ -370,15 +389,17 @@ function OwnerRow({
   pct,
   changeQoq,
   streak,
-  date,
-  explainerKey,
+  symbol,
+  shareholding,
+  showExplainer,
 }: {
   label: string;
   pct: number | null;
   changeQoq: number | null;
   streak: string | null;
-  date: string | null;
-  explainerKey?: string;
+  symbol: string;
+  shareholding: FundamentalsShareholding;
+  showExplainer?: boolean;
 }) {
   const valueSpan = (
     <>
@@ -402,10 +423,27 @@ function OwnerRow({
     <div>
       <p className="text-xs font-medium text-foreground-faint">{label}</p>
       <p className="mt-0.5 text-sm">
-        {!explainerKey || pct === null ? (
+        {!showExplainer || pct === null ? (
           valueSpan
         ) : (
-          <ExplainTerm metricKey={explainerKey} ctx={{ pct: pct.toFixed(2), date: date ?? "", change: changeQoq?.toFixed(2) ?? "0", streak: streak ?? "stable" }}>
+          // One shared explainer covers promoter/FII/MF together (matches
+          // metric_explainers.json's "shareholding_change" content, which
+          // discusses all three holder categories in one entry) — MF's row
+          // above doesn't pass showExplainer, so it just shows the plain
+          // figure rather than re-showing the same popup a third time.
+          <ExplainTerm
+            metricKey="shareholding_change"
+            symbol={symbol}
+            ctx={{
+              symbol,
+              promoter_pct: shareholding.promoter_pct ?? "",
+              fii_pct: shareholding.fii_pct ?? "",
+              mf_pct: shareholding.mf_pct ?? "",
+              promoter_change_qoq: shareholding.promoter_change_qoq ?? "",
+              fii_change_qoq: shareholding.fii_change_qoq ?? "",
+              mf_change_qoq: shareholding.mf_change_qoq ?? "",
+            }}
+          >
             {valueSpan}
           </ExplainTerm>
         )}

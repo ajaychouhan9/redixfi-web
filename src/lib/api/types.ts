@@ -147,6 +147,39 @@ export interface NewsItem {
   url: string;
 }
 
+// ---------- education (Task 12) ----------
+
+export interface ComponentChange {
+  signal: string;
+  direction: "up" | "down" | "flat" | string;
+  note: string;
+}
+
+export interface ChangeCause {
+  headline: string;
+  category: string;
+  severity: string;
+  scope: string | null;
+}
+
+// The causal-question rule's shape: `descriptive` is always present;
+// `cause` is populated ONLY when a real classified news event matched this
+// stock on this exact date — otherwise it's null and `note` carries the
+// honest "several explanations are possible" line. Never both null+null.
+export interface ChangeExplanation {
+  descriptive: string;
+  cause: ChangeCause | null;
+  cause_available: boolean;
+  note: string | null;
+}
+
+export interface InsightChip {
+  type: "computed_fact" | "entry_point";
+  metric: string;
+  text: string;
+  faq_id?: string;
+}
+
 export interface SignalDetail {
   symbol: string;
   company_name: string;
@@ -169,6 +202,55 @@ export interface SignalDetail {
   narrative_model: string;
   change_log: ChangeLogEntry[];
   news: NewsItem[];
+  component_changes: ComponentChange[];
+  change_explanation: ChangeExplanation;
+  insight_chips: InsightChip[];
+  locked?: boolean;
+}
+
+export interface EducationFaqNode {
+  id: string;
+  q: string;
+  a: string;
+  suggests: string[];
+}
+
+export interface EducationDeeper {
+  what: string;
+  why_traders_watch: string;
+  how_calculated: string;
+  historical_pattern: string | null;
+  current_state: string | null;
+}
+
+export interface EducationContent {
+  metric: string;
+  label: string;
+  short: string;
+  deeper: EducationDeeper;
+  faq: EducationFaqNode[];
+  example: string | null;
+  version: string;
+  reviewed_date: string;
+}
+
+export interface WatchlistSummary {
+  summary: string;
+  strengthened: string[];
+  weakened: string[];
+  unchanged: string[];
+  unscored: string[];
+}
+
+export interface SectorSummaryRow {
+  sector: string;
+  avg_delta: number;
+  count: number;
+}
+
+export interface SectorSummary {
+  summary: string;
+  ranked: SectorSummaryRow[];
 }
 
 export interface SignalConflict {

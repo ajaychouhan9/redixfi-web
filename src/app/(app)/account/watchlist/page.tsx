@@ -5,19 +5,22 @@ import Link from "next/link";
 import { AccountTabs } from "@/components/app/account/AccountTabs";
 import { RequireAuth } from "@/components/app/account/RequireAuth";
 import { Card } from "@/components/ui/Card";
+import { WatchlistSummaryCard } from "@/components/app/education/SummaryCard";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { getWatchlist, removeFromWatchlist } from "@/lib/api/mutations";
-import type { WatchlistResponse } from "@/lib/api/types";
+import { getWatchlist, removeFromWatchlist, getWatchlistSummary } from "@/lib/api/mutations";
+import type { WatchlistResponse, WatchlistSummary } from "@/lib/api/types";
 
 function WatchlistManager() {
   const { getToken } = useAuth();
   const [wl, setWl] = useState<WatchlistResponse | null>(null);
+  const [summary, setSummary] = useState<WatchlistSummary | null>(null);
 
   useEffect(() => {
     (async () => {
       const token = await getToken();
       if (!token) return;
       setWl(await getWatchlist(token));
+      getWatchlistSummary(token).then(setSummary).catch(() => setSummary(null));
     })();
   }, [getToken]);
 
@@ -31,7 +34,9 @@ function WatchlistManager() {
   if (!wl) return <p className="text-sm text-foreground-muted">Loading…</p>;
 
   return (
-    <Card title={`Watchlist (${wl.symbols.length}/${wl.limit})`}>
+    <div className="space-y-4">
+      {summary && <WatchlistSummaryCard data={summary} />}
+      <Card title={`Watchlist (${wl.symbols.length}/${wl.limit})`}>
       {wl.symbols.length === 0 ? (
         <p className="text-sm text-foreground-muted">
           No stocks yet.{" "}
@@ -54,7 +59,8 @@ function WatchlistManager() {
           ))}
         </ul>
       )}
-    </Card>
+      </Card>
+    </div>
   );
 }
 
