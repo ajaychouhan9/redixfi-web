@@ -9,6 +9,7 @@ import type {
   IntradaySectors,
   IntradayScan,
   IntradayRecap,
+  WatchlistBehaviorRow,
   ResearchSearchRow,
   ResearchDetail,
   ChartData,
@@ -91,6 +92,10 @@ export const getIntradayScan = (params: IntradayScanParams = {}, opts?: FetchOpt
 
 export const getIntradayRecap = (date?: string, opts?: FetchOpts) =>
   apiGetOptional<IntradayRecap>("/intraday/recap", { ...opts, params: { date } });
+
+// Auth required (free + paid) — caller must pass a token via opts.
+export const getWatchlistStates = (opts?: FetchOpts) =>
+  apiGet<WatchlistBehaviorRow[]>("/intraday/watchlist-states", opts);
 
 // ---------- research ----------
 

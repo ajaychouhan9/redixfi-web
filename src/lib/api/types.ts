@@ -7,6 +7,11 @@ export interface ApiMeta {
   generated_at: string;
   data_fresh: boolean;
   ra_mode: boolean;
+  // Task 10 A3 — evening-cadence freshness specifically for measured_signals
+  // (measured_signals now runs 16:30, after close, not 07:50 before open).
+  // Separate from data_fresh, which stays the general feed watchdog signal.
+  signals_data_fresh?: boolean;
+  signals_as_of?: string | null;
 }
 
 export interface ApiEnvelope<T> {
@@ -145,6 +150,12 @@ export interface SignalDetail {
   symbol: string;
   company_name: string;
   sector: string;
+  // Ranking peer-group name for signals.sector_rank/sector_count — an
+  // INDUSTRY classification, distinct from `sector` (a broad index
+  // grouping like "NIFTY ENERGY"). Null when no industry classification
+  // is on file yet for this stock (Task 09 backfill pending); rank/count
+  // are null in lockstep in that case.
+  industry: string | null;
   isin: string;
   date: string;
   composite_score: number;
@@ -264,10 +275,19 @@ export interface IntradayRecap {
   created_at: string;
 }
 
+// Matches the live GET /intraday/watchlist-states response (verified
+// against alert_worker.classify_behavior(), which the route reuses
+// unchanged) — NOT the screen spec's approximation. classify_behavior()
+// only ever returns "sustaining" | "fading" | null (-> "no_data" here);
+// "reversed" is prose in the screen spec, not a value this route
+// produces — never render it as a possible state.
 export interface WatchlistBehaviorRow {
   symbol: string;
-  behavior_state: "sustaining" | "fading" | "reversed" | string;
-  since_time: string;
+  company_name: string | null;
+  state: "sustaining" | "fading" | "no_data" | string;
+  since_time: string | null;
+  last_price: number | null;
+  day_pct: number | null;
 }
 
 // ---------- research ----------

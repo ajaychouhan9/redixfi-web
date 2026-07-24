@@ -18,31 +18,45 @@ export function AnalystChecklist({ detail }: { detail: SignalDetail }) {
   const rows: ChecklistRow[] = [
     {
       label: "Trend",
-      answer: states.has("TREND_UP_10D")
-        ? `Price rose ${s.trend_10d_pct}% over the last 10 sessions.`
-        : states.has("TREND_DOWN_10D")
-          ? `Price fell ${Math.abs(s.trend_10d_pct)}% over the last 10 sessions.`
-          : `Price was little changed over the last 10 sessions (${s.trend_10d_pct}%).`,
+      answer:
+        s.trend_10d_pct === null
+          ? "Not enough price history to measure a 10-session trend yet."
+          : states.has("TREND_UP_10D")
+            ? `Price rose ${s.trend_10d_pct}% over the last 10 sessions.`
+            : states.has("TREND_DOWN_10D")
+              ? `Price fell ${Math.abs(s.trend_10d_pct)}% over the last 10 sessions.`
+              : `Price was little changed over the last 10 sessions (${s.trend_10d_pct}%).`,
     },
     {
       label: "Volume confirmation",
-      answer: states.has("VOLUME_ELEVATED")
-        ? `Volume ran ${s.volume_ratio_5d}x the 5-day average — elevated participation.`
-        : states.has("VOLUME_MUTED")
-          ? `Volume ran ${s.volume_ratio_5d}x the 5-day average — muted participation.`
-          : `Volume was near its 5-day average (${s.volume_ratio_5d}x).`,
+      answer:
+        s.volume_ratio_5d === null
+          ? "Not enough volume history to measure participation yet."
+          : states.has("VOLUME_ELEVATED")
+            ? `Volume ran ${s.volume_ratio_5d}x the 5-day average — elevated participation.`
+            : states.has("VOLUME_MUTED")
+              ? `Volume ran ${s.volume_ratio_5d}x the 5-day average — muted participation.`
+              : `Volume was near its 5-day average (${s.volume_ratio_5d}x).`,
     },
     {
       label: "Delivery quality",
-      answer: states.has("DELIVERY_UP")
-        ? `Delivery rose to ${s.delivery_pct}% vs a ${s.delivery_avg20}% 20-day average.`
-        : states.has("DELIVERY_DOWN")
-          ? `Delivery fell to ${s.delivery_pct}% vs a ${s.delivery_avg20}% 20-day average.`
-          : `Delivery held near its average (${s.delivery_pct}% vs ${s.delivery_avg20}%).`,
+      answer:
+        s.delivery_pct === null || s.delivery_avg20 === null
+          ? "Delivery data not available for this stock."
+          : states.has("DELIVERY_UP")
+            ? `Delivery rose to ${s.delivery_pct}% vs a ${s.delivery_avg20}% 20-day average.`
+            : states.has("DELIVERY_DOWN")
+              ? `Delivery fell to ${s.delivery_pct}% vs a ${s.delivery_avg20}% 20-day average.`
+              : `Delivery held near its average (${s.delivery_pct}% vs ${s.delivery_avg20}%).`,
     },
     {
       label: "Sector standing",
-      answer: `Ranks #${s.sector_rank} of ${s.sector_count} stocks measured in ${detail.sector} today.`,
+      answer:
+        s.sector_rank === null || s.sector_count === null
+          ? detail.industry
+            ? `Fewer than 5 measured peers in ${detail.industry} — not enough to rank.`
+            : "No industry classification on file yet for this stock — not enough to rank."
+          : `Ranks #${s.sector_rank} of ${s.sector_count} stocks measured in ${detail.industry} today.`,
     },
     {
       label: "Event risk",

@@ -11,6 +11,7 @@ const POLL_MS = 60_000;
 export function MarketRibbon() {
   const [overview, setOverview] = useState<MarketOverview | null>(null);
   const [fresh, setFresh] = useState(true);
+  const [signalsAsOf, setSignalsAsOf] = useState<string | null>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
@@ -21,6 +22,7 @@ export function MarketRibbon() {
         if (!cancelled) {
           setOverview(env.data);
           setFresh(env.meta.data_fresh);
+          setSignalsAsOf(env.meta.signals_as_of ?? null);
           setError(false);
         }
       } catch {
@@ -68,6 +70,11 @@ export function MarketRibbon() {
         </span>
       )}
       <span className="ml-auto flex items-center gap-3">
+        {/* Task 10 A3: signals_as_of tells the user which session's
+            composite scores they're looking at (e.g. "Scores as of 21 Jul
+            close") — measured_signals now runs post-close (16:30), so
+            "today" vs "yesterday" is no longer obvious from the clock alone. */}
+        {signalsAsOf && <span className="text-foreground-faint">{signalsAsOf}</span>}
         <FreshnessDot fresh={fresh} />
       </span>
     </div>

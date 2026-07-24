@@ -90,24 +90,42 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
       <Card title="What the data shows">
         <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <DataRow label="Trend (10d)">
-            <ExplainTerm metricKey="trend_10d" ctx={{ symbol: detail.symbol, pct: s.trend_10d_pct, dmaSessions: s.above_dma20_sessions }}>
-              {s.trend_10d_pct}% · above 20-DMA {s.above_dma20_sessions} session(s)
-            </ExplainTerm>
+            {s.trend_10d_pct === null ? (
+              <span className="text-foreground-faint">Not available</span>
+            ) : (
+              <ExplainTerm metricKey="trend_10d" ctx={{ symbol: detail.symbol, pct: s.trend_10d_pct, dmaSessions: s.above_dma20_sessions }}>
+                {s.trend_10d_pct}% · above 20-DMA {s.above_dma20_sessions} session(s)
+              </ExplainTerm>
+            )}
           </DataRow>
           <DataRow label="Sector standing">
-            <ExplainTerm metricKey="sector_rank" ctx={{ symbol: detail.symbol, rank: s.sector_rank, count: s.sector_count, sector: detail.sector }}>
-              #{s.sector_rank} of {s.sector_count} in {detail.sector}
-            </ExplainTerm>
+            {s.sector_rank === null || s.sector_count === null ? (
+              <span className="text-foreground-faint">
+                {detail.industry ? "Not enough peers to rank" : "No industry classification on file yet"}
+              </span>
+            ) : (
+              <ExplainTerm metricKey="sector_rank" ctx={{ symbol: detail.symbol, rank: s.sector_rank, count: s.sector_count, sector: detail.industry ?? "" }}>
+                #{s.sector_rank} of {s.sector_count} in {detail.industry}
+              </ExplainTerm>
+            )}
           </DataRow>
           <DataRow label="Delivery">
-            <ExplainTerm metricKey="delivery_pct" ctx={{ symbol: detail.symbol, pct: s.delivery_pct, avg: s.delivery_avg20 }}>
-              {s.delivery_pct}% vs {s.delivery_avg20}% avg
-            </ExplainTerm>
+            {s.delivery_pct === null || s.delivery_avg20 === null ? (
+              <span className="text-foreground-faint">Not available</span>
+            ) : (
+              <ExplainTerm metricKey="delivery_pct" ctx={{ symbol: detail.symbol, pct: s.delivery_pct, avg: s.delivery_avg20 }}>
+                {s.delivery_pct}% vs {s.delivery_avg20}% avg
+              </ExplainTerm>
+            )}
           </DataRow>
           <DataRow label="FII flow (5d)">
-            <ExplainTerm metricKey="fii_flow" ctx={{ direction: "buy", days: s.fii_net_buy_days_5 }}> {/* compliance-ignore: fii_net_buy_days_5 is literally a "net buying days" counter */}
-              net buy {s.fii_net_buy_days_5}/5 days
-            </ExplainTerm>
+            {s.fii_net_buy_days_5 === null ? (
+              <span className="text-foreground-faint">Not available</span>
+            ) : (
+              <ExplainTerm metricKey="fii_flow" ctx={{ direction: "buy", days: s.fii_net_buy_days_5 }}> {/* compliance-ignore: fii_net_buy_days_5 is literally a "net buying days" counter */}
+                net buy {s.fii_net_buy_days_5}/5 days
+              </ExplainTerm>
+            )}
           </DataRow>
           <DataRow label="PCR">
             {s.pcr_available ? (
@@ -119,14 +137,26 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
             )}
           </DataRow>
           <DataRow label="RSI (14)">
-            <ExplainTerm metricKey="rsi" ctx={{ rsi: s.rsi_14, zone: s.rsi_14 >= 70 ? "overbought" : s.rsi_14 <= 30 ? "oversold" : "neutral" }}>
-              {s.rsi_14}
-            </ExplainTerm>
+            {s.rsi_14 === null ? (
+              <span className="text-foreground-faint">Not available</span>
+            ) : (
+              <ExplainTerm metricKey="rsi" ctx={{ rsi: s.rsi_14, zone: s.rsi_14 >= 70 ? "overbought" : s.rsi_14 <= 30 ? "oversold" : "neutral" }}>
+                {s.rsi_14}
+              </ExplainTerm>
+            )}
           </DataRow>
           <DataRow label="Promoter pledge">
-            <ExplainTerm metricKey="pledge" ctx={{ pct: s.pledge_pct, trend: s.pledge_trend }}>
-              {s.pledge_pct}% · {s.pledge_trend}
-            </ExplainTerm>
+            {/* B3 fix: pledge_pct/pledge_trend are both null when a stock
+                has no promoter_pledge_history docs at all (common — not
+                every company has one) — this used to render the bare
+                template ("% ·") with nothing on either side of it. */}
+            {s.pledge_pct === null ? (
+              <span className="text-foreground-faint">Not available</span>
+            ) : (
+              <ExplainTerm metricKey="pledge" ctx={{ pct: s.pledge_pct, trend: s.pledge_trend }}>
+                {s.pledge_pct}%{s.pledge_trend && <> · {s.pledge_trend.toLowerCase()}</>}
+              </ExplainTerm>
+            )}
           </DataRow>
           <DataRow label="Insider activity (30d)">
             <ExplainTerm metricKey="insider" ctx={{ value: s.insider_net_30d }}>

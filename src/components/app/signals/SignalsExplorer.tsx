@@ -255,7 +255,11 @@ export function SignalsExplorer() {
 
       {!user?.tier || user.tier === "free" ? (
         <div className="mt-3 rounded-lg border border-accent/30 bg-accent/5 px-4 py-3 text-sm">
-          Locked rows show 🔒 in place of scores.{" "}
+          {/* B5: was silent on WHICH 20 stay unlocked, which read as an
+              implied "top by market cap" selection — no market_cap field
+              exists anywhere in this data yet, so the real rule (a fixed
+              A–Z sample) is stated plainly instead. */}
+          Locked rows show 🔒 in place of scores — a fixed sample of 20 stocks (A–Z) stays visible on the free tier.{" "}
           <a href="/pricing" className="font-medium text-accent">
             Unlock all 750 measured scores
           </a>
