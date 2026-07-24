@@ -5,6 +5,7 @@ import type { SignalRow } from "@/lib/api/types";
 
 export interface VisibleColumns {
   sector: boolean;
+  marketCap: boolean;
   delivery: boolean;
   chips: boolean;
   eventRisk: boolean;
@@ -21,6 +22,11 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
         <div className="max-w-[16rem] truncate text-xs text-foreground-faint">{row.company_name}</div>
       </td>
       {columns.sector && <td className="px-3 py-2 text-xs text-foreground-muted">{row.sector}</td>}
+      {columns.marketCap && (
+        <td className="px-3 py-2 text-xs tabular-nums text-foreground-muted">
+          {row.market_cap === null ? "—" : `₹${row.market_cap.toLocaleString("en-IN", { maximumFractionDigits: 0 })} Cr`}
+        </td>
+      )}
       <td className="px-3 py-2 tabular-nums">
         {locked || row.composite_score === null ? (
           <LockedCell />

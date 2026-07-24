@@ -64,6 +64,7 @@ export interface SignalRow {
   symbol: string;
   company_name: string;
   sector: string;
+  market_cap: number | null;
   has_score: boolean;
   date: string | null;
   composite_score: number | null;
@@ -384,6 +385,157 @@ export interface ResearchSignalSummary {
   narrative: string | null;
 }
 
+// ---------- fundamentals (Task 09) ----------
+// Derived-only shapes — the API never serves fundamentals_raw directly,
+// and neither of these types has any analyst-rating field: there isn't
+// one to strip client-side, because fundamentals_derived_builder.py never
+// writes analystView/recosBar/stockAnalyst/overallRating/averageRating
+// into fundamentals_derived in the first place (see that builder's
+// compliance boundary docstring).
+
+export interface FundamentalsQuarterlyPoint {
+  quarter_end: string;
+  revenue: number | null;
+  pat: number | null;
+  opm_pct: number | null;
+  eps: number | null;
+}
+
+export interface FundamentalsQuarterly {
+  latest_quarter_end: string | null;
+  revenue: number | null;
+  revenue_yoy_pct: number | null;
+  revenue_qoq_pct: number | null;
+  revenue_accel_quarters: number;
+  pat: number | null;
+  pat_yoy_pct: number | null;
+  opm_pct: number | null;
+  opm_yoy_bps_change: number | null;
+  opm_vs_8q_avg: "above" | "below" | "inline" | null;
+  eps: number | null;
+  eps_trend: "improving" | "declining" | "stable" | null;
+  series_8q: FundamentalsQuarterlyPoint[];
+}
+
+export interface FundamentalsAnnualPoint {
+  fiscal_year: string | null;
+  revenue: number | null;
+  pat: number | null;
+  opm_pct: number | null;
+  eps: number | null;
+}
+
+export interface FundamentalsAnnual {
+  series_5y: FundamentalsAnnualPoint[];
+  revenue_cagr_3y_pct: number | null;
+  pat_cagr_3y_pct: number | null;
+}
+
+export interface FundamentalsBalance {
+  debt_to_equity: number | null;
+  book_value_per_share: number | null;
+  current_ratio: number | null;
+  shares_outstanding: number | null;
+}
+
+export interface FundamentalsCashflow {
+  ocf_latest: number | null;
+  capex_latest: number | null;
+  fcf_latest: number | null;
+  fcf_positive_years_5: number;
+}
+
+export interface FundamentalsValuation {
+  pe_ttm: number | null;
+  pb: number | null;
+  sector_pe: number | null;
+  pe_vs_sector: "above" | "below" | "inline" | null;
+  dividend_yield_pct: number | null;
+}
+
+export interface FundamentalsShareholdingSeriesPoint {
+  date: string;
+  promoter: number | null;
+  fii: number | null;
+  mf: number | null;
+  other: number | null;
+}
+
+export interface FundamentalsShareholding {
+  latest_date: string | null;
+  promoter_pct: number | null;
+  promoter_change_qoq: number | null;
+  promoter_streak: string | null;
+  fii_pct: number | null;
+  fii_change_qoq: number | null;
+  fii_streak: string | null;
+  mf_pct: number | null;
+  mf_change_qoq: number | null;
+  mf_streak: string | null;
+  series_4q: FundamentalsShareholdingSeriesPoint[];
+}
+
+export interface FundamentalsIdentity {
+  industry: string | null;
+  isin: string | null;
+  market_cap: number | null;
+  risk_category: string | null;
+  volatility_stddev: number | null;
+}
+
+export interface FundamentalsDividend {
+  record_date: string | null;
+  value: number | null;
+  percentage: number | null;
+}
+
+export interface FundamentalsCorporateActionNote {
+  record_date: string | null;
+  remarks: string | null;
+}
+
+export interface FundamentalsEvents {
+  next_results_date: string | null;
+  recent_dividends: FundamentalsDividend[];
+  recent_bonus: FundamentalsCorporateActionNote[];
+  recent_splits: FundamentalsCorporateActionNote[];
+}
+
+export interface FundamentalsBlock {
+  symbol: string;
+  as_of: string;
+  identity: FundamentalsIdentity;
+  quarterly: FundamentalsQuarterly;
+  annual: FundamentalsAnnual;
+  balance: FundamentalsBalance;
+  cashflow: FundamentalsCashflow;
+  valuation: FundamentalsValuation;
+  shareholding: FundamentalsShareholding;
+  events: FundamentalsEvents;
+  flags: string[];
+  coverage: { has_quarterly: boolean; has_peers: boolean; has_shareholding: boolean; parse_warnings: string[] };
+}
+
+export interface PeerRow {
+  company_name: string | null;
+  pe: number | null;
+  pb: number | null;
+  market_cap: number | null;
+  net_margin_ttm: number | null;
+  roe_ttm: number | null;
+  debt_to_equity: number | null;
+  dividend_yield: number | null;
+  percent_change: number | null;
+  yhigh: number | null;
+  ylow: number | null;
+}
+
+export interface PeersResponse {
+  symbol: string;
+  self: { pe: number | null; pb: number | null; market_cap: number | null; sector_pe: number | null } | null;
+  peers: PeerRow[];
+}
+
 export interface ResearchDetail {
   symbol: string;
   company_name: string;
@@ -398,6 +550,7 @@ export interface ResearchDetail {
   corporate_events: GenericRecord[];
   news: NewsItem[];
   signal_summary: ResearchSignalSummary;
+  fundamentals: FundamentalsBlock | null;
 }
 
 // ---------- charts ----------

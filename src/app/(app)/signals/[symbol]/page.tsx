@@ -40,6 +40,7 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
   ]);
   const candles = chartR.status === "fulfilled" ? chartR.value.data.candles : [];
   const delivery30d = deliveryR.status === "fulfilled" ? deliveryR.value.data.delivery_30d : undefined;
+  const fundamentals = deliveryR.status === "fulfilled" ? deliveryR.value.data.fundamentals : undefined;
 
   const s = detail.signals;
 
@@ -171,7 +172,7 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
         </dl>
       </Card>
 
-      <AnalystChecklist detail={detail} />
+      <AnalystChecklist detail={detail} fundamentals={fundamentals} />
 
       <Card title="Signal Change Log">
         {detail.change_log.length === 0 ? (

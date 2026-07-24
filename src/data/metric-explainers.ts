@@ -169,6 +169,87 @@ const EXPLAINERS: MetricExplainer[] = [
       patternNote: "Describes the pre-open indication only — it says nothing about how the session will close.",
     },
   },
+  // ---- Task 09: fundamentals derived layer ----
+  {
+    key: "revenue_growth",
+    term: "Revenue growth (YoY)",
+    summary: (c) => `Revenue for the quarter ended ${c.quarterEnd} was ${c.pct}% versus the same quarter a year earlier${c.accel ? `, the ${c.accel} straight quarter of accelerating growth` : ""}.`,
+    deeper: {
+      whatItMeasures: "The percentage change in reported revenue versus the same quarter one year earlier (YoY), from the company's own filed financial statements.",
+      whyTradersWatch: "A run of quarters where the YoY growth rate itself keeps rising has historically been read as accelerating momentum; a run where it keeps falling has historically been read as decelerating momentum.",
+      patternNote: "Describes quarters that have already been reported — it says nothing about the quarter still in progress.",
+    },
+  },
+  {
+    key: "operating_margin",
+    term: "Operating margin",
+    summary: (c) => `Operating margin was ${c.pct}% this quarter, ${c.vsAvg} its own 8-quarter average.`,
+    deeper: {
+      whatItMeasures: "Operating income as a percentage of revenue for the quarter, compared with the same company's own trailing 8-quarter average — not a comparison to any other company.",
+      whyTradersWatch: "A margin running above its own average has historically been read as improving operating efficiency; below has historically been read as margin pressure.",
+      patternNote: "A single-quarter measurement against the company's own history, not a forecast of next quarter's margin.",
+    },
+  },
+  {
+    key: "pe_vs_sector",
+    term: "P/E vs sector",
+    summary: (c) => `This stock's trailing P/E of ${c.pe} sits ${c.rel} the sector average P/E of ${c.sectorPe}.`,
+    deeper: {
+      whatItMeasures: "Trailing-twelve-month price-to-earnings ratio for this stock versus the average P/E of its listed sector peers.",
+      whyTradersWatch: "Traders use relative P/E as one input into how a stock is priced against its peer group — it is one fact among several, not a verdict on whether the price is fair.",
+      patternNote: "A snapshot comparison of two measured numbers today — a higher or lower P/E than peers has historically meant different things for different companies, and is not itself a signal of direction.",
+    },
+  },
+  {
+    key: "promoter_holding",
+    term: "Promoter holding",
+    summary: (c) => `Promoters held ${c.pct}% as of ${c.date}, a change of ${c.change} percentage points from the previous quarter (${c.streak}).`,
+    deeper: {
+      whatItMeasures: "The percentage of total shares held by the company's promoter group, as filed each quarter, plus the quarter-over-quarter change and the current streak of same-direction moves.",
+      whyTradersWatch: "A sustained multi-quarter rise in promoter holding has historically been read differently from a single-quarter blip in either direction; the same applies symmetrically to a sustained fall.",
+      patternNote: "A filed shareholding fact as of the stated date — not an indicator of what promoters will do next quarter.",
+    },
+  },
+  {
+    key: "fii_holding",
+    term: "FII holding",
+    summary: (c) => `FIIs held ${c.pct}% as of ${c.date}, a change of ${c.change} percentage points from the previous quarter (${c.streak}).`,
+    deeper: {
+      whatItMeasures: "The percentage of total shares held by Foreign Institutional Investors, as filed each quarter, plus the quarter-over-quarter change and current streak.",
+      whyTradersWatch: "A multi-quarter streak in either direction has historically been read as a stronger signal than one quarter's move alone.",
+      patternNote: "A filed shareholding fact as of the stated date — not a prediction of future FII activity.",
+    },
+  },
+  {
+    key: "debt_to_equity",
+    term: "Debt-to-equity",
+    summary: (c) => `Total debt stood at ${c.ratio}x total equity as of the latest filed balance sheet.`,
+    deeper: {
+      whatItMeasures: "Total debt divided by total shareholder equity from the company's most recent filed balance sheet.",
+      whyTradersWatch: "Higher leverage has historically been read as higher financial risk in a downturn; lower leverage as more balance-sheet headroom — traders weigh this alongside the business's cash flow, not in isolation.",
+      patternNote: "A single filed balance-sheet snapshot — not a comment on how the company will manage its debt going forward.",
+    },
+  },
+  {
+    key: "volatility_risk",
+    term: "Volatility / risk category",
+    summary: (c) => `This stock is classified as "${c.category}" risk, with a measured price-volatility (std. dev.) of ${c.stddev}.`,
+    deeper: {
+      whatItMeasures: "A standard-deviation-based volatility measure of historical price movement, bucketed into a risk category.",
+      whyTradersWatch: "Higher historical volatility has meant wider price swings in both directions — traders size positions differently for high- vs low-volatility names.",
+      patternNote: "Describes how much this stock's price has moved historically — not which direction it will move next.",
+    },
+  },
+  {
+    key: "next_results_date",
+    term: "Results date",
+    summary: (c) => `The company's board last announced quarterly results on ${c.date}.`,
+    deeper: {
+      whatItMeasures: "The most recent board-meeting date on file for quarterly results, from filed corporate-action data.",
+      whyTradersWatch: "Traders track results dates to know when a company's next filed numbers are due to update every other metric on this page.",
+      patternNote: "A calendar fact from filed corporate-action records, not a comment on what the results will show.",
+    },
+  },
 ];
 
 const EXPLAINER_MAP = new Map(EXPLAINERS.map((e) => [e.key, e]));

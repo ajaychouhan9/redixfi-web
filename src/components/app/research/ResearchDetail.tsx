@@ -14,6 +14,7 @@ import { GenericRecordTable } from "@/components/ui/GenericRecordTable";
 import { NewsList } from "@/components/app/NewsList";
 import { CandleChart } from "@/components/app/CandleChart";
 import { RecordView } from "@/components/app/RecordView";
+import { FundamentalsPanels } from "@/components/app/research/FundamentalsPanels";
 import { formatShortDate } from "@/lib/format";
 
 // The live API only serves interval=1d or interval=15m (verified — 1w/1mo/1y
@@ -147,6 +148,10 @@ export function ResearchDetail({ symbol }: { symbol: string }) {
         >
           <CandleChart candles={visibleCandles} />
         </Card>
+      </ErrorBoundary>
+
+      <ErrorBoundary>
+        <FundamentalsPanels symbol={data.symbol} fundamentals={data.fundamentals} />
       </ErrorBoundary>
 
       <Card title="Smart money">

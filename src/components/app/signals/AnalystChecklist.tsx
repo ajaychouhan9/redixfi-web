@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/Card";
-import type { SignalDetail } from "@/lib/api/types";
+import type { FundamentalsBlock, SignalDetail } from "@/lib/api/types";
 
 interface ChecklistRow {
   label: string;
@@ -11,7 +11,7 @@ interface ChecklistRow {
  * No aggregate verdict row, no summary arrow — each row stands alone
  * (spec Part 3, "analysis enablement" core product identity).
  */
-export function AnalystChecklist({ detail }: { detail: SignalDetail }) {
+export function AnalystChecklist({ detail, fundamentals }: { detail: SignalDetail; fundamentals?: FundamentalsBlock | null }) {
   const s = detail.signals;
   const states = new Set(detail.signal_states);
 
@@ -65,6 +65,32 @@ export function AnalystChecklist({ detail }: { detail: SignalDetail }) {
         : "No AI-classified news event matched this stock in the last 5 days.",
     },
   ];
+
+  // Task 09: 2 fundamental rows, same factual/equal-weight framing as the
+  // rows above — negatives (decelerating growth, above-sector P/E) stated
+  // just as plainly as their opposite reading, no verdict either way.
+  if (fundamentals?.coverage.has_quarterly) {
+    const q = fundamentals.quarterly;
+    rows.push({
+      label: "Growth trend",
+      answer:
+        q.revenue_yoy_pct === null
+          ? "Not enough filed quarters to measure a growth trend yet."
+          : q.revenue_accel_quarters >= 2
+            ? `Revenue grew ${q.revenue_yoy_pct}% YoY last quarter — the ${q.revenue_accel_quarters}th straight quarter of accelerating YoY growth.`
+            : `Revenue grew ${q.revenue_yoy_pct}% YoY last quarter (no multi-quarter acceleration streak on file).`,
+    });
+  }
+  if (fundamentals) {
+    const v = fundamentals.valuation;
+    rows.push({
+      label: "Valuation vs peers",
+      answer:
+        v.pe_ttm === null || v.sector_pe === null
+          ? "P/E or sector P/E not available for this stock yet."
+          : `Trailing P/E of ${v.pe_ttm} sits ${v.pe_vs_sector ?? "in line with"} the sector average of ${v.sector_pe}.`,
+    });
+  }
 
   return (
     <Card title="Analyst checklist">

@@ -12,6 +12,7 @@ import type {
   WatchlistBehaviorRow,
   ResearchSearchRow,
   ResearchDetail,
+  PeersResponse,
   ChartData,
   DailyBrief,
   NewsItem,
@@ -104,6 +105,9 @@ export const searchResearch = (q: string, limit = 10, opts?: FetchOpts) =>
 
 export const getResearch = (symbol: string, opts?: FetchOpts) =>
   apiGet<ResearchDetail>(`/research/${encodeURIComponent(symbol)}`, opts);
+
+export const getResearchPeers = (symbol: string, opts?: FetchOpts) =>
+  apiGet<PeersResponse>(`/research/${encodeURIComponent(symbol)}/peers`, opts);
 
 // ---------- news ----------
 

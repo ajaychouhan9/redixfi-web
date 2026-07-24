@@ -9,7 +9,7 @@ import { smartScreen } from "@/lib/api/mutations";
 import { useAuth } from "@/lib/auth/AuthContext";
 import type { SmartScreenResult } from "@/lib/api/types";
 
-const COLUMNS: VisibleColumns = { sector: true, delivery: true, chips: true, eventRisk: false };
+const COLUMNS: VisibleColumns = { sector: true, marketCap: false, delivery: true, chips: true, eventRisk: false };
 
 function filterChips(result: SmartScreenResult) {
   const f = result.parsed_filters;

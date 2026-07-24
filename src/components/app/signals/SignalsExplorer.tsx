@@ -11,6 +11,10 @@ import { getWatchlist } from "@/lib/api/mutations";
 
 const SORT_OPTIONS = [
   { value: "name", label: "Name (A–Z)" },
+  // Task 09: genuinely market-cap-ordered now (symbols_master.market_cap,
+  // backfilled from fundamentals_raw) — rows without a market_cap yet sort
+  // last regardless of direction.
+  { value: "market_cap", label: "Market cap" },
   { value: "composite_score", label: "Composite score" },
   { value: "delta_1d", label: "Score change" },
   { value: "delivery_pct", label: "Delivery %" },
@@ -33,7 +37,7 @@ export function SignalsExplorer() {
   const [sort, setSort] = useState<string>("name");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [page, setPage] = useState(1);
-  const [columns, setColumns] = useState<VisibleColumns>({ sector: true, delivery: true, chips: true, eventRisk: true });
+  const [columns, setColumns] = useState<VisibleColumns>({ sector: true, marketCap: false, delivery: true, chips: true, eventRisk: true });
   const [columnPickerOpen, setColumnPickerOpen] = useState(false);
 
   const [rows, setRows] = useState<SignalRow[]>([]);
@@ -196,7 +200,7 @@ export function SignalsExplorer() {
                       checked={columns[k]}
                       onChange={(e) => setColumns((c) => ({ ...c, [k]: e.target.checked }))}
                     />
-                    {k === "eventRisk" ? "Event risk" : k}
+                    {k === "eventRisk" ? "Event risk" : k === "marketCap" ? "Market cap" : k}
                   </label>
                 ))}
               </div>
@@ -219,6 +223,7 @@ export function SignalsExplorer() {
             <tr>
               <th className="px-3 py-2">Symbol</th>
               {columns.sector && <th className="px-3 py-2">Sector</th>}
+              {columns.marketCap && <th className="px-3 py-2">Market cap</th>}
               <th className="px-3 py-2">Score</th>
               <th className="px-3 py-2">Change</th>
               {columns.delivery && <th className="px-3 py-2">Delivery</th>}
@@ -256,9 +261,12 @@ export function SignalsExplorer() {
       {!user?.tier || user.tier === "free" ? (
         <div className="mt-3 rounded-lg border border-accent/30 bg-accent/5 px-4 py-3 text-sm">
           {/* B5: was silent on WHICH 20 stay unlocked, which read as an
-              implied "top by market cap" selection — no market_cap field
-              exists anywhere in this data yet, so the real rule (a fixed
-              A–Z sample) is stated plainly instead. */}
+              implied "top by market cap" selection — the free-tier unlock
+              set is a fixed A–Z sample regardless of sort (Task 04's
+              free_tier_unlocked_symbols, name-asc so it can't be gamed by
+              re-sorting), so the real rule is stated plainly instead. Task 09
+              added a genuine symbols_master.market_cap field/sort, but it
+              does not change which symbols are unlocked. */}
           Locked rows show 🔒 in place of scores — a fixed sample of 20 stocks (A–Z) stays visible on the free tier.{" "}
           <a href="/pricing" className="font-medium text-accent">
             Unlock all 750 measured scores
