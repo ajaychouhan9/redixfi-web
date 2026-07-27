@@ -272,13 +272,57 @@ export interface SmartScreenFilters {
   watchlist_only: boolean | null;
 }
 
+// ---------- Task 13: compare intent ----------
+
+export interface CompareCompany {
+  symbol: string;
+  company_name: string | null;
+  sector: string | null;
+  has_score: boolean;
+  has_fundamentals: boolean;
+  locked: boolean;
+}
+
+export interface CompareRow {
+  key: string;
+  label: string;
+  layer: "measured" | "derived";
+  metric_key: string;
+  // Keyed by symbol, in the same order as CompareResult.symbols. Every
+  // value is already a formatted display string — "Not available" for
+  // anything missing/masked, never a raw null the UI has to reformat.
+  values: Record<string, string>;
+}
+
+export interface CompareUnresolved {
+  input: string;
+  suggestions: string[];
+}
+
+export interface CompareBiggestDifference {
+  key: string;
+  label: string;
+  text: string;
+  values: Record<string, string>;
+}
+
+export interface CompareResult {
+  symbols: string[];
+  companies: Record<string, CompareCompany>;
+  unresolved: CompareUnresolved[];
+  rows: CompareRow[];
+  biggest_differences: CompareBiggestDifference[];
+}
+
 export interface SmartScreenResult {
   query: string;
+  intent: "screen" | "compare";
   refused: boolean;
   message: string | null;
-  parsed_filters: SmartScreenFilters;
+  parsed_filters: SmartScreenFilters | null;
   results: SignalRow[];
   result_count: number;
+  compare: CompareResult | null;
 }
 
 // ---------- intraday ----------

@@ -678,125 +678,251 @@ divergence, just keep this file (and its packaged distribution) current
 after every session. Commit it too, but don't block work on reconciling
 old git history against it.
 
+Roadmap resumes at: **Task 12 — Education Layer v2.**
+
 ## Completion note — Task 12 (2026-07-24)
-DONE. 518 total offline checks passing (470 backend across 7 suites incl.
-new scripts/smoke_test_task12.py's 48 + frontend build/TypeScript/compliance
-sweep clean, 0 errors).
+DONE. 518 offline checks (470 backend/7 suites + frontend clean).
+Content: metric_explainers.json v1.0→v2.0 — all 33 metrics got
+how_calculated + FAQ tree (103 nodes) + fictional example (18/33; rest
+correctly null, not forced). Zero real company names, zero dangling
+FAQ refs (validated).
+Backend: education_content.py (Mongo-first/JSON-fallback), insight_chips.py,
+causal.py (causal-question rule: cause only on exact symbol+date news
+match), summary_cards.py (PURE TEMPLATES for both scopes — stronger
+than spec required "can use LLM"; zero-network proven by patching
+urllib.request.urlopen to raise on any call). New education.py router
+(4 endpoints). signals.py renders component_changes/change_explanation/
+insight_chips.
+Frontend: metric-explainers.ts deleted (dead code). New FaqPanel/
+InsightChips/WhyDidThisChange/SummaryCard components wired in.
+BUGS FOUND+FIXED live: (1) signal detail page 500-crashed on any
+free-tier locked:true symbol — never handled that response shape,
+fixed with standard upgrade-CTA pattern; (2) ~11 metricKey/ctx
+mismatches (e.g. "rsi"→"rsi_14", "pe_vs_sector"→"pe_ttm") that would
+have silently 404'd against the new fetch-only endpoint.
+OPEN: content loader has no deploy-step wiring yet (JSON fallback works
+regardless) · founder review pass on 231 content pieces NOT done ·
+full live E2E verification needs backend deployed first.
 
-CONTENT: api/docs/metric_explainers.json extended in place (v1.0→v2.0,
-NOT a new file — "extend/adapt" as instructed) — all 33 existing metrics
-(not ~30; the file already covered more than the task doc estimated) got
-`how_calculated`, a 2-6 node FAQ tree with `suggests` follow-up chips
-(103 nodes total, several deliberately cross-metric e.g.
-composite_score→conflict, delivery_pct→volume_ratio), and a fictional
-worked example (18 of 33 — metrics like market_state/india_vix/risk_off_tone/
-active_universe/behavior_state have no natural narrative example and were
-left null rather than forcing one). Authored via a one-time scratch script
-(not committed) that read the existing file and merged additions, so
-existing short/deeper text was preserved verbatim, not rewritten.
+## ⚠️ STANDING DEPLOYMENT GAP (carry forward, resolve before next session)
+Tasks 09, 10, and 12 were all built/tested locally (mongomock + tunneled
+prod-Mongo reads) but the VM git-pull conflict on
+firebase-service-account.json (flagged during Task 11) may still be
+BLOCKING deployment. Also found live: dhan_candles_sector.py has been
+failing 100% on the VM (all 18 sectors, identical DH-905 error) — root
+cause identified: payload missing "interval":"D" field, carries
+intraday-only fields (expiryCode/oi) that don't belong on this
+historical-candle endpoint. Fix given, not yet confirmed deployed.
+BEFORE Task 13: (1) resolve the VM git-pull conflict, (2) git pull,
+(3) restart both redixfi + redixfi-api services, (4) fix + verify
+dhan_candles_sector.py on the VM, (5) confirm Task 10's scheduler
+changes (measured_signals→16:30 etc.) actually took effect on the VM
+(grep the live scheduler.py, don't assume from local commits).
 
-VALIDATION: a real no-real-company-name sweep (21-name blocklist covering
-RELIANCE/TCS/INFY/HDFC/... ) run against every `example` field — 0 matches
-— plus a full FAQ `suggests` referential-integrity check (every id resolves
-somewhere) — both re-run as part of smoke_test_task12.py, not just at
-authoring time.
+Roadmap resumes at: **Task 13 — Screener v2 compare-in-chat** (AFTER
+the deployment gap above is closed).
 
-BACKEND (api/): core/education_content.py (Mongo-first, JSON-fallback
-reader — GET /education/{metric} works even before the loader has run),
-core/insight_chips.py (computed-fact + entry-point chips, code-only),
-core/causal.py (THE CAUSAL-QUESTION RULE — descriptive always, cause only
-when a category != "none" news_events doc matches symbol+exact date,
-otherwise the honest "several explanations are usually possible" line
-verbatim), core/summary_cards.py (watchlist_summary/sector_summary +
-assert_no_action_language guard). New router app/routers/education.py:
-GET /education, GET /education/{metric}, POST /education/engagement,
-GET /summary/watchlist (auth), GET /summary/sectors (public) — registered
-in main.py. scripts/load_education_content.py (new, one-time/deploy-time
-loader, repo JSON → education_content collection in pipeline DB `redixfi`,
-upsert-safe). routers/signals.py's /signals/{symbol} now also returns
-component_changes (Task 10's data, rendered here for the first time),
-change_explanation, and insight_chips.
+## DECISION — Task ordering after external review (2026-07-24)
+Received a detailed external product review (bugs + roadmap suggestions
+for redixfi.com). Reviewed and largely AGREED WITH — see notes below.
+FOUNDER DECISION: do not interrupt current work. Queue is:
+  1. Task 13 (screener compare) — IN PROGRESS/NEXT, finish first
+  2. Task 14 (P0 bugs + SEO fix) — NEW, high urgency, do right after 13
+  3. Task 15 (published track record + inspectable signal history) —
+     NEW, the review's own top price-justification item
+  4. Task 16 (personalized holdings brief + portfolio analytics +
+     anomaly detection) — NEW, "Tier 2" from the review — NOTE: mostly
+     REPACKAGING existing infra (B4 alerts + B12 brief + measured_signals
+     + fundamentals_derived pointed at a user's own holdings instead of
+     the market), not ground-up new scope — cheaper than it looks
+  5. Remaining review items (WhatsApp/Telegram delivery — BLOCKED on the
+     still-missing marketing-opt-in checkbox at signup, NL alert builder,
+     CSV/API formalization, backtestable screens) — later, unscheduled
 
-DEVIATION (flagged, not silent): summary cards are PURE CODE TEMPLATES,
-never LLM, for BOTH scopes — task doc says watchlist/sector "CAN use the
-nightly LLM pass" (optional, not required). Reasoning: a watchlist summary
-is inherently per-user (no fixed set a nightly job could pre-generate),
-so computing the sentence structure in code from already-computed
-measured_signals values needs no model call at all and unconditionally
-satisfies "zero live LLM calls in any serve path" rather than depending on
-OPENAI_API_KEY happening to be unset — same category of choice Task 01's
-compute_component_changes already made for the adjacent component-changes
-feature. Also avoids a new scheduler entry/collection for sector summaries
-that are just as correct computed on request from data the evening builder
-already wrote.
+## Review notes (condensed, for the future task-doc-writing sessions)
+- #1-4 P0 bugs: duplicate insider rows (missing year in date display),
+  unreadable number formatting (paisa decimals on crore figures),
+  Research pages NOT actually SSR'd despite Task 07's spec requiring it
+  (generic homepage meta on all 750 pages — kills SEO + link previews,
+  HIGHEST LEVERAGE FIX, do first within Task 14), raw "0" states reading
+  as broken product (check daily_brief_builder scheduling is actually
+  live — flagged unstable across several sessions already).
+- #6 news relevance: Research page news panel showing macro headlines
+  instead of stock-specific — undercuts the core "reads market for you"
+  claim directly.
+- #7 methodology transparency: score is currently a black box — ties
+  directly into Task 15 (track record IS the transparency fix).
+- #19 founding counter: pull from public view until traction genuinely
+  supports it; don't remove the mechanic, just don't show a thin number.
+- #20 free-tier depth-metering (vs fixed A-Z sample): good idea, real
+  B8 rework, own scoped task later — not a quick tweak.
+- #22/23 (track record + signal history): reads directly off EXISTING
+  attribution_reports/accuracy_snapshot — presentation + compliant
+  framing is the new work, not new measurement.
+- Tier 2 items (#24-26): personalized brief = B4+B12 pointed at
+  watchlist scope instead of market scope (mostly repackaging).
+  Portfolio analytics = the "guards your portfolio" holder-persona
+  promise made real, using existing measured_signals+fundamentals_derived
+  aggregated per-portfolio. Anomaly detection = z-score over existing
+  daily data, full-universe/disclosed-criteria discipline (same pattern
+  as Intraday's Active Universe) required, not a curated "watch these."
+- Tier 3: WhatsApp/Telegram alerts BLOCKED on marketing opt-in checkbox
+  (flagged as a build item back at the pricing-decision stage, still not
+  built) — sequence that first. Sector/peer-relative context is LARGELY
+  ALREADY DONE via Task 09/10/13 — verify before treating as new scope.
+- Price verdict agreed with: today's bundle undersold by bugs/hierarchy,
+  not by weak underlying value — fixing P0s + shipping track record is
+  "under-presented → correctly presented," not a repricing exercise.
 
-ZERO-LLM VERIFICATION: smoke_test_task12.py doesn't just delete
-OPENAI_API_KEY — it patches urllib.request.urlopen (the exact transport
-every LLM call site in this codebase uses) to raise if invoked at all
-during the whole test run, so "no live LLM call" is proven by construction,
-not inferred from an unset env var.
+## ✅ DEPLOYMENT GAP CLOSED (2026-07-27, verified live)
+All 7 verification checks passed on the real VM/production API:
+scheduler shows correct 16:00/16:30/16:45 jobs deployed · fundamentals_derived
+(1 doc) + market_cap/industry backfill (1/751, matches expectation) live
+in Mongo · /api/v1/education/pcr returns real content · smart-screener
+correctly parses queries · dhan_candles_sector.py has "interval":"D" fix
+confirmed at line 149 · signals_as_of freshness labeling working
+end-to-end ("Scores as of 27 Jul close"). Tasks 09, 10, 12 are ALL
+genuinely live in production, not just committed. Task 13 cleared to
+proceed on real foundations.
 
-BUG FOUND (pre-existing, not introduced here, fixed while verifying this
-session's own changes in a live browser check): redixfi-web's
-signals/[symbol]/page.tsx never handled the API's `locked: true` response
-shape for free-tier users on a paywalled symbol (GET /signals/{symbol}
-returns only {symbol, company_name, sector, locked} in that case, per
-Task 04's B8 paywall) — the page crashed with a 500
-(`detail.signal_states.map` on undefined) for any locked symbol. Confirmed
-live against api.redixfi.com/api/v1/signals/RELIANCE (locked:true for this
-session). Fixed with a locked-state early return (same "Upgrade for..."
-CTA pattern ResearchDetail.tsx already uses for its 429 case).
+## Completion note — Task 13 (2026-07-27)
 
-FRONTEND (redixfi-web/): src/data/metric-explainers.ts DELETED (dead code —
-ExplainTerm.tsx now fetches GET /education/{metric} instead of a static
-map; ~25 templates → 33, richer, versioned, server-authoritative).
-New: lib/education/{interpolate,useEducationContent}.ts,
-components/app/education/{FaqPanel,InsightChips,SummaryCard}.tsx,
-components/app/signals/WhyDidThisChange.tsx. ExplainTerm.tsx rewritten
-(API-backed, adds how_calculated + fictional example + "Common questions"
-entry into FaqPanel, engagement logging via the new endpoint replacing the
-old console.debug-only stand-in). Wired: signal detail page (insight
-chips under the score header, "Why did this change?" card, all 11
-ExplainTerm metricKey/ctx pairs on the page corrected — several were
-already wrong against the CANONICAL metric_explainers.json keys before this
-session, e.g. "rsi"→"rsi_14", "pledge"→"promoter_pledge",
-"trend_10d"→"trend_10d_pct" — these would have 404'd against the new
-fetch-only endpoint even though they silently "worked" against the old
-static map because that map used its own different, undocumented key set).
-FundamentalsPanels.tsx (Task 09) had the same class of drift —
-"pe_vs_sector"/"volatility_risk"/"promoter_holding"/"fii_holding" don't
-exist in metric_explainers.json at all — repointed to the real keys
-(pe_ttm, risk_category, shareholding_change shared across all three
-owner rows) rather than inventing 4 new content pieces to match the old
-UI's naming. Signals Dashboard page gets a sector-standing summary card
-(server-fetched); watchlist page gets a watchlist summary card
-(client-fetched, auth-gated).
+DONE. 505 backend offline checks across 8 suites (smoke_test.py 305 ·
+smoke_test_task04.py 42 · smoke_test_task05.py 28 · smoke_test_task11.py 14 ·
+smoke_test_task12.py 48 · smoke_test_gaps.py 26 · smoke_test_billing_receipt.py
+7 · smoke_test_task13.py 35 NEW) / frontend clean (tsc --noEmit 0 errors,
+lint 0 NEW errors, compliance sweep 0 errors, production build + static
+generation succeed).
 
-LIVE CHECK (local only, backend not yet deployed): `npm run dev` +
-curl against several routes — confirmed no crash on / and /signals
-(sector summary gracefully absent — expected, live API doesn't have Task
-12 fields yet), confirmed the newly-fixed locked-symbol page and an
-unlocked symbol (AARTIIND) both 200, confirmed ExplainTerm popovers render
-(9 "relative inline-block" instances on one stock page) even against the
-pre-Task-12 live API shape. Full end-to-end verification (chips lighting
-up, FAQ cross-links, causal-rule cause/no-cause both appearing) needs the
-backend deployed first — same "explicitly out of scope this session" stance
-Task 09 documented for live-VM checks. Both signal_detail's new fields
-(component_changes/change_explanation/insight_chips) and Fundamentals-
-Panels' fixed ExplainTerm calls are defensively guarded (`?? []`,
-conditional rendering) against the current pre-deploy API shape so nothing
-crashes in the deploy-order gap either way.
+FILES (api): app/core/compare.py (new — symbol resolution via exact ticker
+→ exact company name → unique substring → difflib nearest-match
+suggestions; 17-row symmetric table builder [8 measured + 9 derived];
+code-computed biggest-differences ranking) · app/core/screener.py (patched
+— LLM schema extended with intent/compare_symbols, _validate_parsed
+branches by intent, run_smart_screen split into _run_screen/_run_compare,
+layer-2 guard now intent-aware) · app/core/config.py (patched —
+SMART_SCREEN_DAILY_LIMIT=25) · app/routers/signals.py (patched — fair-use
+cap enforcement before the LLM call) · scripts/smoke_test_task13.py (new,
+35 checks).
 
-OPEN: education_content loader (scripts/load_education_content.py) has no
-deploy-step wiring yet — GET /education/{metric} works without it (JSON
-fallback) but latency/staleness is better once it's run once per content
-revision; not a scheduler job, an operator step, like
-provision_mongo_users.py · founder review pass on the 231 authored content
-pieces (explainer/how_calculated/faq/example × 33) not done this session,
-per the task doc's own "Claude drafts all; founder reviews in one pass"
-plan · matched_symbols data-quality issue (still open since Task 10) means
-the causal rule will find real causes less often than it should live,
-though the rule itself is correct and tested against both branches.
+FILES (web, C:\redixfi-web): src/lib/api/types.ts (patched —
+CompareResult/CompareRow/CompareCompany/CompareUnresolved/
+CompareBiggestDifference types; SmartScreenResult gains intent/compare) ·
+src/lib/comparison-queue.ts (new) · src/lib/compare-explainer.ts (new) ·
+src/components/app/signals/CompareResultCard.tsx (new) ·
+src/components/app/signals/AddToComparisonChip.tsx (new) ·
+src/components/app/signals/SmartScreenerBox.tsx (patched — compare queue
+tray + compare rendering branch) · src/components/app/research/
+ResearchDetail.tsx (patched — chip wired into the stock-detail header).
 
-Roadmap resumes at: **Task 13 — Screener v2 compare-in-chat** (or founder
-review of Task 12 content first, per the standing authoring-scope note).
+BEHAVIOR: POST /signals/smart-screen gains intent classification
+(screen|compare) in the SAME LLM call — compare_symbols (2-5 raw strings)
+resolved against symbols_master by real lookup, never trusted directly
+(ambiguous substrings or unmatched text come back as unresolved with
+nearest-match suggestions, never guessed silently). 17-row symmetric table
+(8 measured: composite_score/delta_1d/trend_10d_pct/delivery_pct/
+volume_ratio_5d/sector_rank/pcr/event_risk + 9 derived: pe_ttm/roe/
+revenue_yoy_pct/margin_trend/debt_to_equity/promoter_change_qoq/
+fii_change_qoq/market_cap/next_results_date), column order = symbols in
+the order the user typed, every cell "Not available" when missing —
+verified null-safe against a symbol with ZERO pipeline data at all.
+"Biggest differences" computed in CODE (compare.py::_row_divergence —
+normalized spread/scale per row, ranked, top 3-5, ties broken by fixed
+row-definition order) — never LLM-invented; hand-verified against the
+test fixture's real numbers.
+
+GUARDS: two-layer refusal (unchanged Layer 1 LLM + Layer 2 raw-query
+regex) now intent-aware — for "compare", a refusal (verdict/best/buy
+language) keeps compare_symbols intact and the table renders alongside
+the refusal line (task doc: "refuse the verdict, serve the facts"); for
+"screen", refusal still wipes filters as before (Task 05, unchanged).
+Two-layer bypass re-tested for compare specifically (broken-LLM-always-
+permits + forward-intent query → layer 2 still refuses, table still
+renders) — same "force the failure condition" discipline as every prior
+task's guard tests.
+
+B8 MASKING: compare rows apply the SAME free-tier masking as GET /signals
+for the MEASURED layer only (locked symbols outside the fixed unlocked-N
+render "Not available" + companies[sym].locked=true) — the derived/
+fundamentals layer is NOT tier-masked, matching /research's existing
+unmetered-by-tier convention. Deliberate consistency decision, not
+specified either way by the task doc — flagged as such.
+
+FAIR-USE CAP: found (not assumed) that Task 04/05's own decision record
+("~25 queries/day, add to metering config") was NEVER actually wired into
+any route — smart-screen had zero daily cap before this session, only the
+existing 20/minute slowapi rate limit. Implemented now:
+SMART_SCREEN_DAILY_LIMIT=25, ONE shared counter (field smart_screen_calls)
+across both screen and compare intents, enforced at the router level
+before the LLM call either path would make. Deliberately metered for
+EVERY AUTHENTICATED caller regardless of tier (free AND paid) — this is
+OpenAI cost control, not a paywall, so it intentionally does NOT follow
+B8's free-tier-only convention; anonymous stays unmetered (no user_id to
+key a counter on, same as /research). Flagged as a deliberate deviation
+from B8's usual shape, not an oversight.
+
+KNOWN GAP: the ROE row is always "Not available" — no self-ROE source
+field exists anywhere in this data model (docs/09_TASK_FUNDAMENTALS.md's
+own "Key ratios" field map for the subject company never included one;
+returnOnAverageEquityTrailing12Month only exists per-PEER inside
+peerCompanyList[], not for the symbol itself). Row kept for the task
+doc's field list + table symmetry rather than silently dropped; renders
+honestly null rather than fabricated. A future task would need to add a
+self-ROE source to fundamentals_derived_builder.py before this can
+populate.
+
+UI: chat-style comparison result card renders under the screener bar
+(same SmartScreenerBox users already trust) — refusal banner and table
+are SIBLINGS, not gated on each other. Every metric label wraps the
+existing Task 12 ExplainTerm tap-to-learn component; all 17 rows map onto
+EXISTING metric_explainers.json keys — zero new education content needed.
+Live-value injection into each explainer's short text uses only the
+row's own single formatted display value (interpolate() drops any other
+placeholder silently, e.g. delivery_avg20/sector_count/promoter_pct-as-
+a-level) — a deliberate simplification, not a bug; deeper content
+(what/why/how_calculated/FAQ) is unaffected either way. "Add to
+comparison" chip on stock detail pages (localStorage queue, 2-5 cap, no
+separate API — "Compare now" just fires the existing chat query "Compare
+X, Y, Z" through the same code path a typed query would use).
+
+TESTING: scripts/smoke_test_task13.py (new, 35 checks) — symmetric table
+structure, column-order-preserves-typed-order, null-safety for a
+zero-data symbol (except identity-level market_cap, which correctly
+still renders from symbols_master), company-name resolution (not just
+tickers), unknown-symbol honest suggestions, refusal+table-still-served,
+malformed 1-symbol compare handled gracefully, biggest-differences
+ranking hand-verified against real fixture numbers (incl. a boolean row
+surfacing correctly), two-layer guard bypass test specific to compare,
+B8 masking parity, screen-intent regression check, smart_screen_log
+intent="compare" logging, fair-use cap shared-counter enforcement
+(3rd/4th-call boundary) + anonymous-stays-unmetered. All 6 pre-existing
+suites plus smoke_test_billing_receipt.py re-run unchanged — 505 total
+offline checks passing. smoke_test_live_razorpay.py deliberately NOT run
+this session (Razorpay is frozen per founder decision; Task 13 never
+touches billing code).
+
+FRONTEND TESTING: tsc --noEmit clean · npm run lint — 12 pre-existing
+errors/1 warning in 4 files this session never touched (SignalsExplorer.
+tsx, ExplainTerm.tsx, AuthContext.tsx, useEducationContent.ts) — confirmed
+via `git stash` that the exact same 13 problems exist on the unmodified
+baseline, so this is not a regression; zero new lint errors in any Task
+13 file · npm run build — compliance sweep passed (0 errors, same 6
+pre-existing disclaimer-language warnings), production build + static
+generation succeeded. Dev server smoke-checked: /signals renders the
+updated screener copy with no crash; /stocks/RELIANCE renders with no
+crash. Live interactive verification (typing a compare query and watching
+the table populate against a real backend) is OUT OF SCOPE this session
+— same posture as every prior task's completion note: this code is not
+yet deployed to the VM, and NEXT_PUBLIC_API_URL points at the LIVE
+production API (which doesn't have Task 13's compare intent yet). Not
+attempted, not claimed.
+
+OPEN: symbols_master has no text index — compare's symbol resolution
+reuses the existing regex-substring approach (/research/search's own
+precedent) rather than adding one · ambiguous substring resolution (2+
+real matches) surfaces the real candidates as suggestions rather than
+picking one, by design · live-VM verification explicitly out of scope
+this session (code not yet deployed) — not attempted, not claimed, same
+posture as Tasks 05/09/12.
+
+Roadmap resumes at: **Task 14 — P0 bugs + SEO fix.**

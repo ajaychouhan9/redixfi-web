@@ -15,6 +15,7 @@ import { NewsList } from "@/components/app/NewsList";
 import { CandleChart } from "@/components/app/CandleChart";
 import { RecordView } from "@/components/app/RecordView";
 import { FundamentalsPanels } from "@/components/app/research/FundamentalsPanels";
+import { AddToComparisonChip } from "@/components/app/signals/AddToComparisonChip";
 import { formatShortDate } from "@/lib/format";
 
 // The live API only serves interval=1d or interval=15m (verified — 1w/1mo/1y
@@ -111,9 +112,12 @@ export function ResearchDetail({ symbol }: { symbol: string }) {
       <RecordView symbol={data.symbol} companyName={data.company_name} />
 
       <div>
-        <p className="text-sm text-foreground-muted">
-          {data.symbol} · {data.sector}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm text-foreground-muted">
+            {data.symbol} · {data.sector}
+          </p>
+          <AddToComparisonChip symbol={data.symbol} companyName={data.company_name} />
+        </div>
         <div className="mt-1 flex flex-wrap items-baseline gap-3">
           <span className="text-2xl font-semibold">₹{data.price.last_price.toLocaleString("en-IN")}</span>
           <DeltaValue value={data.price.day_change_pct} kind="pct" />

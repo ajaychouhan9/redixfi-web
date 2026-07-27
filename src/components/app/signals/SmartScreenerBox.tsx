@@ -1,18 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { AiLabel } from "@/components/ui/AiLabel";
 import { Chip } from "@/components/ui/Chip";
 import { SignalTableRow, type VisibleColumns } from "./SignalTableRow";
+import { CompareResultCard } from "./CompareResultCard";
 import { smartScreen } from "@/lib/api/mutations";
 import { useAuth } from "@/lib/auth/AuthContext";
+import {
+  type ComparisonQueueEntry,
+  clearComparisonQueue,
+  getComparisonQueue,
+  onComparisonQueueChange,
+  removeFromComparisonQueue,
+} from "@/lib/comparison-queue";
 import type { SmartScreenResult } from "@/lib/api/types";
 
 const COLUMNS: VisibleColumns = { sector: true, marketCap: false, delivery: true, chips: true, eventRisk: false };
 
 function filterChips(result: SmartScreenResult) {
   const f = result.parsed_filters;
+  if (!f) return [];
   const chips: string[] = [];
   if (f.sector) chips.push(`Sector: ${f.sector}`);
   if (f.score_min !== null) chips.push(`Score ≥ ${f.score_min}`);
@@ -33,17 +42,35 @@ export function SmartScreenerBox() {
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<SmartScreenResult | null>(null);
   const [busy, setBusy] = useState(false);
+  const [queue, setQueue] = useState<ComparisonQueueEntry[]>([]);
 
-  async function run() {
-    if (!query.trim()) return;
+  useEffect(() => {
+    const sync = () => setQueue(getComparisonQueue());
+    sync();
+    return onComparisonQueueChange(sync);
+  }, []);
+
+  async function runQuery(q: string) {
+    if (!q.trim()) return;
     setBusy(true);
     try {
       const token = await getToken();
-      const r = await smartScreen(token, query.trim());
+      const r = await smartScreen(token, q.trim());
       setResult(r);
     } finally {
       setBusy(false);
     }
+  }
+
+  function run() {
+    return runQuery(query);
+  }
+
+  function compareQueued() {
+    const q = `Compare ${queue.map((e) => e.symbol).join(", ")}`;
+    setQuery(q);
+    clearComparisonQueue();
+    void runQuery(q);
   }
 
   return (
@@ -57,14 +84,46 @@ export function SmartScreenerBox() {
     >
       <p className="mb-2 text-xs text-foreground-muted">
         Describe what to filter by — e.g. &ldquo;energy stocks with rising delivery, above VWAP, no negative news this
-        week&rdquo;. The AI only translates your query into filters; you author it.
+        week&rdquo; — or ask to compare stocks, e.g. &ldquo;Compare TCS, INFY and WIPRO&rdquo;. The AI only translates
+        your query into filters or a comparison; you author it.
       </p>
+
+      {queue.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-border bg-surface p-2">
+          <span className="text-xs text-foreground-faint">Comparing:</span>
+          {queue.map((e) => (
+            <Chip key={e.symbol} tone="accent">
+              {e.symbol}
+              <button
+                type="button"
+                onClick={() => removeFromComparisonQueue(e.symbol)}
+                className="ml-1 text-foreground-faint hover:text-foreground"
+                aria-label={`Remove ${e.symbol} from comparison`}
+              >
+                ×
+              </button>
+            </Chip>
+          ))}
+          <button
+            type="button"
+            onClick={compareQueued}
+            disabled={queue.length < 2 || busy}
+            className="ml-auto rounded-lg bg-accent px-3 py-1 text-xs font-medium text-accent-foreground disabled:opacity-50"
+          >
+            Compare now
+          </button>
+          <button type="button" onClick={clearComparisonQueue} className="text-xs text-foreground-faint hover:text-foreground">
+            Clear
+          </button>
+        </div>
+      )}
+
       <div className="flex gap-2">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && run()}
-          placeholder="Describe what to filter by…"
+          placeholder="Describe what to filter by, or ask to compare stocks…"
           className="flex-1 rounded-lg border border-border bg-transparent px-3 py-2 text-sm"
         />
         <button
@@ -80,7 +139,15 @@ export function SmartScreenerBox() {
         <p className="mt-3 rounded-lg bg-amber-bg px-3 py-2 text-sm text-amber">{result.message}</p>
       )}
 
-      {result && !result.refused && (
+      {/* Compare intent: the table renders even when refused=true — "refuse
+          the verdict, serve the facts" (task doc). Screen intent below keeps
+          the original behavior of hiding results on refusal. */}
+      {result?.intent === "compare" && result.compare && <CompareResultCard compare={result.compare} />}
+      {result?.intent === "compare" && !result.compare && !result.refused && (
+        <p className="mt-3 text-sm text-foreground-muted">{result.message}</p>
+      )}
+
+      {result && result.intent === "screen" && !result.refused && (
         <div className="mt-3">
           <p className="mb-2 text-xs text-foreground-muted">Here&apos;s how I read your query:</p>
           <div className="mb-3 flex flex-wrap gap-1.5">
