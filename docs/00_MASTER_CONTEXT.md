@@ -785,144 +785,239 @@ end-to-end ("Scores as of 27 Jul close"). Tasks 09, 10, 12 are ALL
 genuinely live in production, not just committed. Task 13 cleared to
 proceed on real foundations.
 
-## Completion note — Task 13 (2026-07-27)
+## Task 13 — CONFIRMED LIVE + comparison tray UX fix deployed (2026-07-29)
+Live-verified in browser: compare via "+Compare with" tray (persists
+across Research page navigation, 2-5 symbol limit enforced with clean
+"Comparison is full" message) AND via direct NL query
+("compare X,Y,Z...") both work. Fuzzy-match unknown-symbol suggestions
+confirmed working ("Couldn't find HCL — did you mean GHCL, HCLTECH?").
+Biggest-differences block + null-safe "Not available" rendering (most
+fields, since fundamentals_derived is still ~1/751) all correct.
 
-DONE. 505 backend offline checks across 8 suites (smoke_test.py 305 ·
-smoke_test_task04.py 42 · smoke_test_task05.py 28 · smoke_test_task11.py 14 ·
-smoke_test_task12.py 48 · smoke_test_gaps.py 26 · smoke_test_billing_receipt.py
-7 · smoke_test_task13.py 35 NEW) / frontend clean (tsc --noEmit 0 errors,
-lint 0 NEW errors, compliance sweep 0 errors, production build + static
-generation succeed).
+FOUNDER DECISION: comparison-flow UI is functional and acceptable as-is
+for now. Further UI polish (result display, styling refinement) is
+PARKED — do not spend more session time on it. Priority is finishing
+remaining functional/backend work first; UI enhancement pass happens at
+the end, once the full feature set is complete.
 
-FILES (api): app/core/compare.py (new — symbol resolution via exact ticker
-→ exact company name → unique substring → difflib nearest-match
-suggestions; 17-row symmetric table builder [8 measured + 9 derived];
-code-computed biggest-differences ranking) · app/core/screener.py (patched
-— LLM schema extended with intent/compare_symbols, _validate_parsed
-branches by intent, run_smart_screen split into _run_screen/_run_compare,
-layer-2 guard now intent-aware) · app/core/config.py (patched —
-SMART_SCREEN_DAILY_LIMIT=25) · app/routers/signals.py (patched — fair-use
-cap enforcement before the LLM call) · scripts/smoke_test_task13.py (new,
-35 checks).
+Roadmap resumes at: Task 14 (P0 bugs + SEO — note: initial SEO/SSR
+concern from the external review was already independently verified
+FIXED via direct page fetch, so Task 14 should focus on the remaining
+items: duplicate insider rows, number formatting, news relevance,
+founding-counter visibility, methodology transparency) — OR Task 15
+(track record) per founder's live priority call at execution time.
 
-FILES (web, C:\redixfi-web): src/lib/api/types.ts (patched —
-CompareResult/CompareRow/CompareCompany/CompareUnresolved/
-CompareBiggestDifference types; SmartScreenResult gains intent/compare) ·
-src/lib/comparison-queue.ts (new) · src/lib/compare-explainer.ts (new) ·
-src/components/app/signals/CompareResultCard.tsx (new) ·
-src/components/app/signals/AddToComparisonChip.tsx (new) ·
-src/components/app/signals/SmartScreenerBox.tsx (patched — compare queue
-tray + compare rendering branch) · src/components/app/research/
-ResearchDetail.tsx (patched — chip wired into the stock-detail header).
+## Roadmap v3 (2026-07-29) — confirmed via direct evidence, not guesses
+Task 13 (compare) DONE + confirmed live. Next queue:
+1. **Task 14 — Research page SSR fix** (NEW doc written): confirmed via
+   direct fetch that /research/{symbol} has generic homepage meta +
+   never resolves past "Loading..." server-side, while /signals/{symbol}
+   (same codebase) works perfectly with full SSR. This is the highest-
+   leverage, evidence-CONFIRMED bug — 750 pages currently invisible to
+   search + broken social-share previews. Likely a copy-adapt job from
+   the working Signals pattern in the same repo.
+2. **Task 15 — Published track record**: reads off existing
+   attribution_reports/accuracy_snapshot. The actual price-justification
+   move (per external review + founder's competitive-moat reasoning
+   re: Screener/Trendlyne/free-AI-tools threat).
+3. **Task 16 — Tier 2 (personalized holdings brief, portfolio
+   analytics, anomaly detection)**: founder's stated competitive answer
+   to (a) Screener/Trendlyne's cheaper breadth-without-synthesis and
+   (b) free AI tools' lack of persistence/portfolio-memory. Mostly
+   repackages existing B4+B12+measured_signals at a new scope.
+4. THEN parked items batched together: ₹249/mo repricing (see pricing
+   decision below), founding-counter visibility, comparison-tray UI
+   polish, remaining minor P0s (duplicate insider rows, number
+   formatting, news relevance, methodology transparency page).
 
-BEHAVIOR: POST /signals/smart-screen gains intent classification
-(screen|compare) in the SAME LLM call — compare_symbols (2-5 raw strings)
-resolved against symbols_master by real lookup, never trusted directly
-(ambiguous substrings or unmatched text come back as unresolved with
-nearest-match suggestions, never guessed silently). 17-row symmetric table
-(8 measured: composite_score/delta_1d/trend_10d_pct/delivery_pct/
-volume_ratio_5d/sector_rank/pcr/event_risk + 9 derived: pe_ttm/roe/
-revenue_yoy_pct/margin_trend/debt_to_equity/promoter_change_qoq/
-fii_change_qoq/market_cap/next_results_date), column order = symbols in
-the order the user typed, every cell "Not available" when missing —
-verified null-safe against a symbol with ZERO pipeline data at all.
-"Biggest differences" computed in CODE (compare.py::_row_divergence —
-normalized spread/scale per row, ranked, top 3-5, ties broken by fixed
-row-definition order) — never LLM-invented; hand-verified against the
-test fixture's real numbers.
+## Decision — pricing repricing NOT YET DEPLOYED (confirmed via fetch)
+Direct fetch of /pricing on 2026-07-29 confirms it STILL shows ₹499/mo
+and "199 of 200 founding spots left" publicly. The ₹249/mo pre-RA-price
+decision (discussed after competitor pricing research: Trendlyne GuruQ
+₹310/mo, Screener Premium ₹4,999/yr) was a chat DECISION only — never
+implemented. Queued as part of item 4 above, not urgent enough to
+interrupt 14/15/16, but do not forget it exists.
 
-GUARDS: two-layer refusal (unchanged Layer 1 LLM + Layer 2 raw-query
-regex) now intent-aware — for "compare", a refusal (verdict/best/buy
-language) keeps compare_symbols intact and the table renders alongside
-the refusal line (task doc: "refuse the verdict, serve the facts"); for
-"screen", refusal still wipes filters as before (Task 05, unchanged).
-Two-layer bypass re-tested for compare specifically (broken-LLM-always-
-permits + forward-intent query → layer 2 still refuses, table still
-renders) — same "force the failure condition" discipline as every prior
-task's guard tests.
+## Verified-working evidence log (direct fetch, 2026-07-29)
+Confirmed genuinely correct via direct page fetch (not assumed):
+/  (home), /signals (list), /signals/{symbol} (detail — EVERY Task 09/
+10/12 feature rendering correctly: tension callouts using proper past-
+tense pattern-literacy phrasing, why-did-this-change breakdown with
+honest causal-rule disclaimer, analyst checklist with honest "not
+enough to rank" fallback), /signals/movers (real company names,
+confirms B1 bug genuinely fixed), /pricing (meta correct, price content
+stale). Confirmed BROKEN: /research/{symbol} (generic meta, stuck
+Loading, no SSR). Confirmed MINOR gap: /intraday (correct meta, client-
+loading body — lower priority, time-of-day-dependent data).
 
-B8 MASKING: compare rows apply the SAME free-tier masking as GET /signals
-for the MEASURED layer only (locked symbols outside the fixed unlocked-N
-render "Not available" + companies[sym].locked=true) — the derived/
-fundamentals layer is NOT tier-masked, matching /research's existing
-unmetered-by-tier convention. Deliberate consistency decision, not
-specified either way by the task doc — flagged as such.
+## Completion note — Task 14 (2026-07-29)
+DONE. research/[symbol]/page.tsx rewritten as real server component +
+generateMetadata + ISR (revalidate=900). ResearchDetail.tsx now pure
+presentational; ResearchChart.tsx extracted as client leaf;
+FundamentalsPanels.tsx takes peers as prop. Secondary item done:
+/intraday seeds session/sector/recap server-side, only "live" tabs stay
+client-polled. Verified via direct fetch of 5 real symbols — unique
+meta + full content, zero "Loading...", RELIANCE shows all 5
+fundamentals panels, other 4 show honest fallback. /research search
+page unaffected. Build/typecheck/lint/compliance sweep all pass.
 
-FAIR-USE CAP: found (not assumed) that Task 04/05's own decision record
-("~25 queries/day, add to metering config") was NEVER actually wired into
-any route — smart-screen had zero daily cap before this session, only the
-existing 20/minute slowapi rate limit. Implemented now:
-SMART_SCREEN_DAILY_LIMIT=25, ONE shared counter (field smart_screen_calls)
-across both screen and compare intents, enforced at the router level
-before the LLM call either path would make. Deliberately metered for
-EVERY AUTHENTICATED caller regardless of tier (free AND paid) — this is
-OpenAI cost control, not a paywall, so it intentionally does NOT follow
-B8's free-tier-only convention; anonymous stays unmetered (no user_id to
-key a counter on, same as /research). Flagged as a deliberate deviation
-from B8's usual shape, not an oversight.
+## DECISION — free-tier research metering is now unenforceable on
+## Research pages, and that's ACCEPTED, not a bug (2026-07-29)
+SSR+ISR caching (required for SEO — the whole point of Task 14) makes
+the per-visitor "3 free research views/day" counter a no-op on
+/research/{symbol}. FOUNDER DECISION: accept this — free, unmetered
+Research access becomes an ACQUISITION FEATURE (SEO traffic lands on
+genuinely useful pages) rather than a revenue leak, converting into
+signups for the properly-gated metered features (unlimited Signals,
+alerts, Smart Screener, compare). Do not attempt to re-introduce
+per-visitor metering on this route — it would require re-splitting
+public-shell/gated-deep-panel architecture and reintroduce the loading-
+flicker problem just fixed. Closed decision, do not revisit without a
+clear reason.
 
-KNOWN GAP: the ROE row is always "Not available" — no self-ROE source
-field exists anywhere in this data model (docs/09_TASK_FUNDAMENTALS.md's
-own "Key ratios" field map for the subject company never included one;
-returnOnAverageEquityTrailing12Month only exists per-PEER inside
-peerCompanyList[], not for the symbol itself). Row kept for the task
-doc's field list + table symmetry rather than silently dropped; renders
-honestly null rather than fabricated. A future task would need to add a
-self-ROE source to fundamentals_derived_builder.py before this can
-populate.
+## DECISION — master context drift, permanent fix (2026-07-29)
+This file has now drifted between disk/git/repos THREE times across
+different sessions, wasting real time each time. PERMANENT RULE:
+00_MASTER_CONTEXT.md's canonical copy lives in ONE place — the backend
+repo (C:\Redixfi\api\docs\00_MASTER_CONTEXT.md) — since that is where
+it was first established. Every session in ANY repo (redixfi-web,
+redixfi-mobile when it exists) must be given a FRESH COPY at session
+start (paste/attach the current version from this chat's package), and
+must NOT independently maintain or edit its own repo-local copy as
+source of truth. Whoever finishes a session pastes the completion note
+back to THIS chat for the master file to be updated centrally — the
+per-repo docs/ copies are disposable, re-copied fresh each time, never
+themselves edited-and-trusted going forward.
 
-UI: chat-style comparison result card renders under the screener bar
-(same SmartScreenerBox users already trust) — refusal banner and table
-are SIBLINGS, not gated on each other. Every metric label wraps the
-existing Task 12 ExplainTerm tap-to-learn component; all 17 rows map onto
-EXISTING metric_explainers.json keys — zero new education content needed.
-Live-value injection into each explainer's short text uses only the
-row's own single formatted display value (interpolate() drops any other
-placeholder silently, e.g. delivery_avg20/sector_count/promoter_pct-as-
-a-level) — a deliberate simplification, not a bug; deeper content
-(what/why/how_calculated/FAQ) is unaffected either way. "Add to
-comparison" chip on stock detail pages (localStorage queue, 2-5 cap, no
-separate API — "Compare now" just fires the existing chat query "Compare
-X, Y, Z" through the same code path a typed query would use).
+## Completion note — Task 15 (2026-07-30)
 
-TESTING: scripts/smoke_test_task13.py (new, 35 checks) — symmetric table
-structure, column-order-preserves-typed-order, null-safety for a
-zero-data symbol (except identity-level market_cap, which correctly
-still renders from symbols_master), company-name resolution (not just
-tickers), unknown-symbol honest suggestions, refusal+table-still-served,
-malformed 1-symbol compare handled gracefully, biggest-differences
-ranking hand-verified against real fixture numbers (incl. a boolean row
-surfacing correctly), two-layer guard bypass test specific to compare,
-B8 masking parity, screen-intent regression check, smart_screen_log
-intent="compare" logging, fair-use cap shared-counter enforcement
-(3rd/4th-call boundary) + anonymous-stays-unmetered. All 6 pre-existing
-suites plus smoke_test_billing_receipt.py re-run unchanged — 505 total
-offline checks passing. smoke_test_live_razorpay.py deliberately NOT run
-this session (Razorpay is frozen per founder decision; Task 13 never
-touches billing code).
+DONE. Backend: 531 offline checks across 9 suites (the existing 505 +
+smoke_test_task15.py's 26, all re-run, zero regressions) + a dedicated
+compliance gate (test_track_record_compliance.py, STATIC+LIVE+self-test
+pattern). Frontend: tsc clean, lint back to the established 13-problem
+baseline (0 new issues, confirmed by literally introducing then fixing
+one unused-var warning mid-session), compliance sweep 0 errors/0 NEW
+warnings, production build clean (`/track-record` fully static + ISR
+6h, `/track-record/[symbol]` dynamic).
 
-FRONTEND TESTING: tsc --noEmit clean · npm run lint — 12 pre-existing
-errors/1 warning in 4 files this session never touched (SignalsExplorer.
-tsx, ExplainTerm.tsx, AuthContext.tsx, useEducationContent.ts) — confirmed
-via `git stash` that the exact same 13 problems exist on the unmodified
-baseline, so this is not a regression; zero new lint errors in any Task
-13 file · npm run build — compliance sweep passed (0 errors, same 6
-pre-existing disclaimer-language warnings), production build + static
-generation succeeded. Dev server smoke-checked: /signals renders the
-updated screener copy with no crash; /stocks/RELIANCE renders with no
-crash. Live interactive verification (typing a compare query and watching
-the table populate against a real backend) is OUT OF SCOPE this session
-— same posture as every prior task's completion note: this code is not
-yet deployed to the VM, and NEXT_PUBLIC_API_URL points at the LIVE
-production API (which doesn't have Task 13's compare intent yet). Not
-attempted, not claimed.
+⚠️ COMPLIANCE FINDING (re-confirm-before-writing-copy, exactly as the
+task doc's own guardrail asked for): the task doc's top-level "Data
+sources" list named `attribution_reports` and `accuracy_snapshot`
+alongside `measured_signals`/`signal_change_log`. Read both source
+scripts BEFORE writing any code — prediction_engine/accuracy_checker.py
+and prediction_engine/signal_attribution.py are BOTH entirely about the
+INTERNAL 7-day DIRECTIONAL prediction engine's own UP/DOWN hit rate,
+built from `predictions_snapshot` (already in ra_mode.FORBIDDEN_
+COLLECTIONS) — confidence bands, ML-mode tuning, internal recommendation
+strings like "reduce its adjustment weight in the runner." Publishing
+anything derived from either — even reframed as "past measurement" —
+would reveal and effectively market a directional-prediction capability
+this product isn't SEBI-registered to offer pre-RA. NEITHER collection
+is read anywhere in this task's code. Built ONLY from measured_signals
+(composite score) + historical_candles (price, for relative-to-sector
+forward returns) + symbols_master (sector/company identity), exactly
+matching what the task doc's OWN "Deliverables" section (as opposed to
+its data-sources list) actually described. Flagged prominently, not
+silently substituted — see track_record_builder.py's own compliance-
+boundary docstring for the full writeup. This is the single most
+consequential decision in this session.
 
-OPEN: symbols_master has no text index — compare's symbol resolution
-reuses the existing regex-substring approach (/research/search's own
-precedent) rather than adding one · ambiguous substring resolution (2+
-real matches) surfaces the real candidates as suggestions rather than
-picking one, by design · live-VM verification explicitly out of scope
-this session (code not yet deployed) — not attempted, not claimed, same
-posture as Tasks 05/09/12.
+FILES (api): data-pipeline/track_record_builder.py (new) —
+score-band forward-return study (5 bands, N/pct/avg-relative-return per
+band, low_sample flag below n=10, never hidden) + per-symbol threshold-
+crossing detection (50/70, observed-vs-pending) + a SectorMedianCache
+memoizing (sector,date)->median return so the whole thing is O(symbols)
+not O(symbols²) · data-pipeline/test_track_record_compliance.py (new) ·
+app/routers/track_record.py (new, 2 public routes) · app/main.py
+(patched: router registration) · prediction_engine/scheduler.py
+(patched: Sunday 20:30 job, no same-day DEPENDS — this builder needs A
+recent symbols_master, not necessarily today's) · scripts/
+smoke_test_task15.py (new, 26 checks).
 
-Roadmap resumes at: **Task 14 — P0 bugs + SEO fix.**
+COLLECTIONS (new, in the pipeline `redixfi` DB): track_record_snapshot
+(INSERT-ONLY — one doc per publish date, task doc's own "never overwrite
+silently" instruction taken literally) · signal_crossing_history
+(upserted per symbol+threshold+side+date — completing a promised
+"pending"->"observed" transition is the task doc's OWN bullet 2
+requirement, not a silent revision of a published fact).
+
+DESIGN DECISIONS (flagged, not silently made): sector grouping for the
+median-return benchmark uses symbols_master's CURRENT sector_index
+(NSE sub-index membership essentially never changes) rather than a
+point-in-time join, for a simpler O(symbols) cache · window fixed at 20
+sessions per the task doc's own "start with 20," not made configurable
+beyond a CLI --window flag · a bucket/crossing's own price-return values
+are single historical facts (not sampled percentages) so they carry
+their own date, not a separate N= — the N=+date-range guardrail is
+enforced on every AGGREGATE percentage (the bucket table), which is
+where a misleadingly-precise-looking ratio would actually originate.
+
+REALITY CHECK (found, not assumed): measured_signals has only existed
+since Task 01 (2026-07-18) — roughly 2 weeks / ~8-9 trading sessions as
+of this task. A 20-session forward-return study needs 20 COMPLETE
+sessions after each observation, so the real, live site-wide bucket
+study almost certainly has ZERO complete observations right now — this
+is EXPECTED and CORRECT, not a bug, and the builder/page both render it
+as an honest "not enough history yet" state (with earliest/latest
+measured-date context) rather than a fabricated or blank-looking result.
+Confirmed the builder handles this gracefully via a deliberately-small
+synthetic fixture in both smoke_test_task15.py and the compliance test
+(large enough to produce ONE real bucket + ONE real observed crossing +
+ONE real pending crossing, so every code path — including the non-empty
+one — is genuinely exercised, not just the trivial empty case).
+
+FRONTEND: app/(app)/track-record/page.tsx (new — site-wide bucket table,
+methodology section built from the REAL 8-component composite-score
+weights read out of measured_signals_builder.py — Trend 20/Sector
+15/Delivery 15/Volume 10/RSI 10/PCR 10/Pledge 10/FII 10 — each wrapped
+in the existing Task 12 ExplainTerm, zero new education content needed;
+prominent disclaimer using the task doc's own exact wording) ·
+app/(app)/track-record/[symbol]/page.tsx (new — crossings with a hard
+observed/pending split, "pending" NEVER shows a placeholder implying an
+outcome; full un-cutoff signal_change_log in a scrollable card) ·
+lib/api/types.ts + endpoints.ts (patched) · signals/[symbol]/page.tsx
+(patched: "See full signal history →" link-through, task doc bullet 3).
+
+COMPLIANCE TESTING (explicitly run, per this task's own instruction —
+not assumed): (1) data-pipeline/test_track_record_compliance.py — STATIC
+(scans every generated string field off a synthetic fixture producing
+real non-empty output), LIVE (best-effort, gracefully skipped — this
+sandbox has never had live Mongo connectivity, same as every prior
+task), and a SELF-TEST that deliberately poisons a copy of the output
+with "likely"/"buy" and confirms the scanner actually catches it (not
+vacuous) — all passing. (2) Frontend: `npm run build`'s compliance sweep
+(scripts/check-compliance.mjs) run against the real new page files —
+0 errors, 0 NEW warnings (same 6 pre-existing disclaimer-language
+warnings as every prior session). Both validators run specifically
+against these two new pages, not just "the whole repo passed" — confirmed
+by literally diffing the lint/compliance output before and after adding
+the pages.
+
+VERIFICATION: built + ran `next start` locally against the REAL
+production API. `/track-record` (no route param, so Next fully static-
+generated it — confirmed in the build's own route table, `○` not `ƒ`)
+renders the honest "not published yet" state correctly against the live
+API's plain 404. `/track-record/{symbol}` correctly 404s too — verified
+directly against the raw API (`curl https://api.redixfi.com/api/v1/
+track-record/TCS` → `{"detail":"Not Found"}`, FastAPI's generic
+route-not-registered response, NOT my code's "unknown symbol" message)
+that this is because the route isn't deployed yet, not a bug in the new
+page. Full live E2E (an actually-populated bucket table) needs BOTH
+deployment AND several more weeks of measured_signals history to
+accumulate a single complete 20-session observation — neither attempted
+nor claimed, same posture as every prior task's live-verification
+caveat.
+
+OPEN: legal review flag from the task doc itself — an actual lawyer pass
+on the final copy is recommended before public launch, this was NOT
+done (out of scope for a coding session) · once deployed, the Sunday
+20:30 job needs its first live run confirmed the same way every other
+scheduler entry has been (grep the live scheduler.py, don't assume) ·
+symbols_master's current-sector-index simplification for the benchmark
+group should be revisited if NSE ever does restructure a sub-index
+(flagged, not expected to matter in practice).
+
+Roadmap resumes at: **Task 16 — Tier 2 (personalized holdings brief,
+portfolio analytics, anomaly detection)** per Roadmap v3, unless the
+founder prioritizes the parked items (₹249/mo repricing, founding-
+counter visibility, remaining P0s) first.

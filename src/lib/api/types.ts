@@ -772,3 +772,69 @@ export interface InboxAlert {
   created_at: string;
   [key: string]: unknown;
 }
+
+// ---------- track record (Task 15) ----------
+// Every published percentage on this page MUST render alongside its own
+// `n` and the snapshot's `date_range` — never standalone (task doc's own
+// non-negotiable compliance guardrail). null fields are the HONEST "not
+// enough history yet" state, not a fetch failure — render "Not available",
+// never a fabricated 0%.
+
+export interface TrackRecordDateRange {
+  from: string;
+  to: string;
+}
+
+export interface TrackRecordBucket {
+  band: string;
+  score_min: number;
+  score_max: number;
+  n: number;
+  pct_beat_sector_median: number | null;
+  avg_relative_return_pct: number | null;
+  low_sample: boolean;
+}
+
+export interface TrackRecordSnapshot {
+  publish_date: string;
+  published_at: string;
+  builder_version: string;
+  window_sessions: number;
+  buckets: TrackRecordBucket[];
+  total_observations: number;
+  date_range: TrackRecordDateRange | null;
+  // Covers ALL scored dates, including ones too recent for a complete
+  // forward outcome — lets the UI explain an empty/thin study honestly.
+  earliest_measured_date: string | null;
+  latest_measured_date: string | null;
+}
+
+export interface SignalCrossing {
+  symbol: string;
+  threshold: number;
+  crossing_side: "above" | "below";
+  crossing_date: string;
+  sector_index: string | null;
+  window_sessions: number;
+  outcome_status: "observed" | "pending";
+  relative_return_pct: number | null;
+  beat_sector_median: boolean | null;
+}
+
+export interface SignalChangeLogEntry {
+  symbol: string;
+  date: string;
+  delta: number;
+  changed_signal: string;
+  note: string;
+  state: string | null;
+  flip: "appeared" | "cleared" | null;
+}
+
+export interface TrackRecordSymbolHistory {
+  symbol: string;
+  company_name: string | null;
+  sector_index: string | null;
+  crossings: SignalCrossing[];
+  change_log: SignalChangeLogEntry[];
+}

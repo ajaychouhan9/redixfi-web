@@ -1,10 +1,5 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { apiGet, ApiError } from "@/lib/api/client";
-import { useAuth } from "@/lib/auth/AuthContext";
-import type { ResearchDetail as ResearchDetailType, Candle } from "@/lib/api/types";
+import type { ResearchDetail as ResearchDetailType, Candle, PeerRow } from "@/lib/api/types";
 import { Card } from "@/components/ui/Card";
 import { AiLabel } from "@/components/ui/AiLabel";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
@@ -12,99 +7,35 @@ import { DeltaValue } from "@/components/ui/DeltaValue";
 import { Sparkline } from "@/components/ui/Sparkline";
 import { GenericRecordTable } from "@/components/ui/GenericRecordTable";
 import { NewsList } from "@/components/app/NewsList";
-import { CandleChart } from "@/components/app/CandleChart";
 import { RecordView } from "@/components/app/RecordView";
 import { FundamentalsPanels } from "@/components/app/research/FundamentalsPanels";
+import { ResearchChart } from "@/components/app/research/ResearchChart";
 import { AddToComparisonChip } from "@/components/app/signals/AddToComparisonChip";
 import { formatShortDate } from "@/lib/format";
 
-// The live API only serves interval=1d or interval=15m (verified — 1w/1mo/1y
-// all 422). "1D" therefore means today's 15m intraday candles; W/M/Y are
-// client-side slices of the same ~269-session daily series (no from/to
-// round-trip needed since the API already returns that much by default).
-const INTERVALS = ["1D", "1W", "1M", "1Y"] as const;
-const DAILY_SLICE: Record<Exclude<(typeof INTERVALS)[number], "1D">, number> = {
-  "1W": 5,
-  "1M": 22,
-  "1Y": 269,
-};
-
-export function ResearchDetail({ symbol }: { symbol: string }) {
-  const { getToken } = useAuth();
-  const [data, setData] = useState<ResearchDetailType | null>(null);
-  const [error, setError] = useState<{ status: number; message: string } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [range, setRange] = useState<(typeof INTERVALS)[number]>("1M");
-  const [dailyCandles, setDailyCandles] = useState<Candle[]>([]);
-  const [intradayCandles, setIntradayCandles] = useState<Candle[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = await getToken();
-        const env = await apiGet<ResearchDetailType>(`/research/${encodeURIComponent(symbol)}`, token ? { token } : undefined);
-        if (!cancelled) setData(env.data);
-      } catch (e) {
-        if (!cancelled) {
-          if (e instanceof ApiError) setError({ status: e.status, message: e.message });
-          else setError({ status: 0, message: "Something went wrong." });
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [symbol, getToken]);
-
-  useEffect(() => {
-    if (!data) return;
-    let cancelled = false;
-    apiGet<{ candles: Candle[] }>(`/charts/${encodeURIComponent(symbol)}`, { params: { interval: "1d" } })
-      .then((env) => !cancelled && setDailyCandles(env.data.candles))
-      .catch(() => !cancelled && setDailyCandles([]));
-    return () => {
-      cancelled = true;
-    };
-  }, [symbol, data]);
-
-  useEffect(() => {
-    if (range !== "1D" || !data) return;
-    let cancelled = false;
-    apiGet<{ candles: Candle[] }>(`/charts/${encodeURIComponent(symbol)}`, { params: { interval: "15m" } })
-      .then((env) => !cancelled && setIntradayCandles(env.data.candles))
-      .catch(() => !cancelled && setIntradayCandles([]));
-    return () => {
-      cancelled = true;
-    };
-  }, [symbol, range, data]);
-
-  const visibleCandles = range === "1D" ? intradayCandles : dailyCandles.slice(-DAILY_SLICE[range]);
-
-  if (loading) return <p className="text-sm text-foreground-muted">Loading…</p>;
-
-  if (error?.status === 429) {
-    return (
-      <Card>
-        <p className="text-sm">You&apos;ve used your free-tier research lookups for today.</p>
-        <Link href="/pricing" className="mt-2 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
-          Upgrade for unlimited research
-        </Link>
-      </Card>
-    );
-  }
-  if (error?.status === 404) {
-    return <p className="text-sm text-foreground-muted">No research data found for {symbol}.</p>;
-  }
-  if (error) {
-    return <p className="text-sm text-down">{error.message}</p>;
-  }
-  if (!data) return null;
-
+/**
+ * Task 14 — pure presentational component: every prop here is already
+ * resolved server-side by app/(app)/research/[symbol]/page.tsx (SSR +
+ * ISR, same pattern as the working app/(app)/signals/[symbol]/page.tsx
+ * reference implementation), so this renders directly into the initial
+ * HTML response instead of a client-fetched "Loading…" placeholder.
+ * The only remaining client-side pieces are genuinely interactive leaves
+ * (ResearchChart's range toggle + on-demand intraday fetch,
+ * AddToComparisonChip, FundamentalsPanels' Collapsible sections) — none
+ * of them gate the INITIAL content the way the old data-fetching version
+ * of this component did.
+ */
+export function ResearchDetail({
+  data,
+  dailyCandles,
+  peers,
+  peersError,
+}: {
+  data: ResearchDetailType;
+  dailyCandles: Candle[];
+  peers: PeerRow[] | null;
+  peersError: boolean;
+}) {
   const positionPct = Math.max(0, Math.min(100, data.price.week52_position_pct));
 
   return (
@@ -134,28 +65,11 @@ export function ResearchDetail({ symbol }: { symbol: string }) {
       </div>
 
       <ErrorBoundary>
-        <Card
-          title="Chart"
-          action={
-            <div className="flex gap-1 text-xs">
-              {INTERVALS.map((i) => (
-                <button
-                  key={i}
-                  onClick={() => setRange(i)}
-                  className={`rounded px-2 py-1 ${range === i ? "bg-accent text-accent-foreground" : "text-foreground-muted"}`}
-                >
-                  {i}
-                </button>
-              ))}
-            </div>
-          }
-        >
-          <CandleChart candles={visibleCandles} />
-        </Card>
+        <ResearchChart symbol={data.symbol} dailyCandles={dailyCandles} />
       </ErrorBoundary>
 
       <ErrorBoundary>
-        <FundamentalsPanels symbol={data.symbol} fundamentals={data.fundamentals} />
+        <FundamentalsPanels symbol={data.symbol} fundamentals={data.fundamentals} peers={peers} peersError={peersError} />
       </ErrorBoundary>
 
       <Card title="Smart money">

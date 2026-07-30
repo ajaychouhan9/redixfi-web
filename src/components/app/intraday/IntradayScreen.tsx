@@ -14,12 +14,28 @@ import { PostmarketRecap } from "./PostmarketRecap";
 const POLL_MS = 60_000;
 type LiveTab = "scanner" | "events" | "watchlist";
 
-export function IntradayScreen() {
-  const [session, setSession] = useState<IntradaySession | null>(null);
-  const [sectors, setSectors] = useState<IntradaySectors | null>(null);
-  const [recap, setRecap] = useState<IntradayRecap | null>(null);
+/**
+ * Task 14 (secondary item) — session/sectors/recap are now seeded from
+ * app/(app)/intraday/page.tsx's server-side fetch (the pre/post-market
+ * states are knowable at request time, per the task doc's own scoping)
+ * instead of starting from null and showing "Loading intraday session…"
+ * in the initial server response. Client-side polling still runs
+ * afterward — session state genuinely can change mid-visit (premarket ->
+ * live) and the "live" tabs are inherently real-time.
+ */
+export function IntradayScreen({
+  initialSession,
+  initialSectors,
+  initialRecap,
+}: {
+  initialSession: IntradaySession | null;
+  initialSectors: IntradaySectors | null;
+  initialRecap: IntradayRecap | null;
+}) {
+  const [session, setSession] = useState<IntradaySession | null>(initialSession);
+  const [sectors, setSectors] = useState<IntradaySectors | null>(initialSectors);
+  const [recap, setRecap] = useState<IntradayRecap | null>(initialRecap);
   const [tab, setTab] = useState<LiveTab>("scanner");
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -36,21 +52,22 @@ export function IntradayScreen() {
           const recapData = await getIntradayRecap();
           if (!cancelled) setRecap(recapData);
         }
-      } finally {
-        if (!cancelled) setLoading(false);
+      } catch {
+        // Keep showing the last-known (server-provided or previously
+        // polled) session rather than blanking the page on a transient hiccup.
       }
     }
-    load();
+    // The server already provided the first snapshot when it succeeded —
+    // only fall back to an immediate client fetch if it didn't, so the
+    // common case doesn't do a redundant duplicate request on mount.
+    if (!initialSession) load();
     const id = setInterval(load, POLL_MS);
     return () => {
       cancelled = true;
       clearInterval(id);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  if (loading && !session) {
-    return <p className="text-sm text-foreground-muted">Loading intraday session…</p>;
-  }
 
   if (!session) {
     return <p className="text-sm text-foreground-muted">Intraday data unavailable right now.</p>;

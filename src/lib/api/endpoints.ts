@@ -19,6 +19,8 @@ import type {
   BillingPlan,
   EducationContent,
   SectorSummary,
+  TrackRecordSnapshot,
+  TrackRecordSymbolHistory,
 } from "./types";
 
 // ---------- market ----------
@@ -148,3 +150,10 @@ export const getEducation = (metric: string, opts?: FetchOpts) =>
   apiGetOptional<EducationContent>(`/education/${encodeURIComponent(metric)}`, opts);
 
 export const getSectorSummary = (opts?: FetchOpts) => apiGet<SectorSummary>("/summary/sectors", opts);
+
+// ---------- track record (Task 15) — public, no auth ----------
+
+export const getTrackRecord = (opts?: FetchOpts) => apiGet<TrackRecordSnapshot>("/track-record", opts);
+
+export const getTrackRecordSymbol = (symbol: string, opts?: FetchOpts) =>
+  apiGet<TrackRecordSymbolHistory>(`/track-record/${encodeURIComponent(symbol)}`, opts);

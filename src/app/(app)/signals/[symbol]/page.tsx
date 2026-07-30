@@ -224,6 +224,12 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
             ))}
           </ul>
         )}
+        {/* Task 15 — this card only shows the last 30 days (see /research/{symbol}
+            for the API's own cutoff); the full history + measured track record
+            for threshold crossings lives on its own page. */}
+        <Link href={`/track-record/${detail.symbol}`} className="mt-3 inline-block text-sm font-medium text-accent">
+          See full signal history →
+        </Link>
       </Card>
 
       <Card title="Chart (3M daily)">

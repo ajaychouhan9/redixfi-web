@@ -1,11 +1,7 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { ExplainTerm } from "@/components/ui/ExplainTerm";
 import { Chip } from "@/components/ui/Chip";
 import { Sparkline } from "@/components/ui/Sparkline";
-import { getResearchPeers } from "@/lib/api/endpoints";
 import { formatShortDate } from "@/lib/format";
 import type { FundamentalsBlock, FundamentalsShareholding, PeerRow } from "@/lib/api/types";
 
@@ -42,22 +38,25 @@ function fmtCr(v: number | null): string {
  * bottom. Every metric here comes from fundamentals_derived — the API
  * never serves fundamentals_raw, so there is nothing analyst-rating-shaped
  * to accidentally render (see FundamentalsBlock's type docstring).
+ *
+ * Task 14: peers is now resolved server-side (app/(app)/research/[symbol]/
+ * page.tsx) and passed in as a prop, same as `fundamentals` already was —
+ * this component no longer fetches anything itself, so it renders directly
+ * into the initial SSR response instead of a client "Loading peer
+ * comparison…" flash. Collapsible (a client leaf) still provides the
+ * open/close interactivity per section.
  */
-export function FundamentalsPanels({ symbol, fundamentals }: { symbol: string; fundamentals: FundamentalsBlock | null }) {
-  const [peers, setPeers] = useState<PeerRow[] | null>(null);
-  const [peersError, setPeersError] = useState(false);
-
-  useEffect(() => {
-    if (!fundamentals?.coverage.has_peers) return;
-    let cancelled = false;
-    getResearchPeers(symbol)
-      .then((env) => !cancelled && setPeers(env.data.peers))
-      .catch(() => !cancelled && setPeersError(true));
-    return () => {
-      cancelled = true;
-    };
-  }, [symbol, fundamentals?.coverage.has_peers]);
-
+export function FundamentalsPanels({
+  symbol,
+  fundamentals,
+  peers,
+  peersError,
+}: {
+  symbol: string;
+  fundamentals: FundamentalsBlock | null;
+  peers: PeerRow[] | null;
+  peersError: boolean;
+}) {
   if (!fundamentals) {
     return (
       <div className="rounded-xl border border-border bg-surface-raised p-4 text-sm text-foreground-muted">
@@ -163,13 +162,14 @@ export function FundamentalsPanels({ symbol, fundamentals }: { symbol: string; f
             <Stat label="Sector P/E" value={fmtNum(valuation.sector_pe, 1)} />
             <Stat label="Dividend yield" value={fmtPct(valuation.dividend_yield_pct)} />
           </div>
-          {/* Facts side by side, user's own reading — never "cheaper = better". */}
-          {peersError ? (
+          {/* Facts side by side, user's own reading — never "cheaper = better".
+              peers is resolved server-side before this ever renders, so
+              null here means a genuine fetch failure (same bucket as
+              peersError), not a transient loading state. */}
+          {peersError || peers === null ? (
             <p className="text-sm text-foreground-muted">Peer comparison not available right now.</p>
           ) : !coverage.has_peers ? (
             <p className="text-sm text-foreground-muted">No peer comparison data on file for {symbol}.</p>
-          ) : peers === null ? (
-            <p className="text-sm text-foreground-muted">Loading peer comparison…</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[560px] text-sm">
