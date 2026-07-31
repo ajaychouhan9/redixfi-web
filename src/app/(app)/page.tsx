@@ -23,9 +23,12 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
+      {/* Founder decision: AI Daily Brief is the strongest differentiator —
+          moved to the top, above Market Pulse, so it's the first thing
+          users see. */}
+      <AiDailyBriefCard brief={brief} />
       <MarketPulseCard overview={overview} />
       <TopSignalChangesCard movers={movers} />
-      <AiDailyBriefCard brief={brief} />
       <EventRiskCard newsToday={overview?.news_today ?? null} items={news} />
       <IntradayNowCard session={session} />
       <ContinueResearchCard />

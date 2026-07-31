@@ -698,11 +698,21 @@ export interface ChartData {
 
 // ---------- brief ----------
 
+// Field names verified directly against data-pipeline/daily_brief_builder.py's
+// own written doc shape (Bug 1 fix: this type previously declared a
+// `brief_text` field that never existed on the real document — the API
+// call succeeded and returned real data, but every reader of this type
+// silently rendered `undefined`, showing as a blank AI Daily Brief card
+// rather than an error). `stat_of_the_day` is NOT a separate field either —
+// the builder appends it directly into `body` before saving.
 export interface DailyBrief {
   date: string;
   period: "morning" | "close" | string;
-  brief_text: string;
-  stat_of_the_day?: string;
+  title: string;
+  body: string;
+  model: string;
+  builder_version: string;
+  created_at: string;
   [key: string]: unknown;
 }
 

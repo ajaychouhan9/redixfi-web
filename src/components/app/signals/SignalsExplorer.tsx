@@ -75,23 +75,32 @@ export function SignalsExplorer() {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    apiGetPaged<SignalRow>("/signals", { params })
-      .then((env) => {
-        if (cancelled) return;
-        let data = env.data;
-        if (watchlistOnly) {
-          const set = new Set(watchlistSymbols ?? []);
-          data = data.filter((r) => set.has(r.symbol));
-        }
-        setRows(data);
-        setTotal(env.page_info.total);
-      })
-      .catch((e) => !cancelled && setError(e instanceof Error ? e.message : "Failed to load signals."))
-      .finally(() => !cancelled && setLoading(false));
+    // Bug fix: this fetch never sent the caller's auth token, so B8's
+    // per-tier masking always saw an anonymous/free request here — a
+    // logged-in paid user's Signal Dashboard list showed the same masked
+    // composite_score/locked rows a free visitor would. getToken()
+    // resolves to null when logged out, matching the previous (correct)
+    // anonymous behavior for that case.
+    (async () => {
+      const token = await getToken();
+      apiGetPaged<SignalRow>("/signals", { params, token })
+        .then((env) => {
+          if (cancelled) return;
+          let data = env.data;
+          if (watchlistOnly) {
+            const set = new Set(watchlistSymbols ?? []);
+            data = data.filter((r) => set.has(r.symbol));
+          }
+          setRows(data);
+          setTotal(env.page_info.total);
+        })
+        .catch((e) => !cancelled && setError(e instanceof Error ? e.message : "Failed to load signals."))
+        .finally(() => !cancelled && setLoading(false));
+    })();
     return () => {
       cancelled = true;
     };
-  }, [params, watchlistOnly, watchlistSymbols]);
+  }, [params, watchlistOnly, watchlistSymbols, getToken]);
 
   useEffect(() => setPage(1), [q, sector, scoreMin, scoreMax, eventRiskOnly, watchlistOnly, sort, order]);
 

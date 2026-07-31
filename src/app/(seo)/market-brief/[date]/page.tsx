@@ -27,7 +27,7 @@ export default async function MarketBriefDatePage({ params }: { params: Promise<
           <div className="mb-2">
             <AiLabel />
           </div>
-          <p className="text-sm leading-relaxed">{brief.brief_text}</p>
+          <p className="text-sm leading-relaxed">{brief.body}</p>
         </div>
       ) : (
         <div>

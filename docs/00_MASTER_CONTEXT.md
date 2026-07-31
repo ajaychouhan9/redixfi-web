@@ -889,135 +889,178 @@ back to THIS chat for the master file to be updated centrally — the
 per-repo docs/ copies are disposable, re-copied fresh each time, never
 themselves edited-and-trusted going forward.
 
-## Completion note — Task 15 (2026-07-30)
-
-DONE. Backend: 531 offline checks across 9 suites (the existing 505 +
-smoke_test_task15.py's 26, all re-run, zero regressions) + a dedicated
-compliance gate (test_track_record_compliance.py, STATIC+LIVE+self-test
-pattern). Frontend: tsc clean, lint back to the established 13-problem
-baseline (0 new issues, confirmed by literally introducing then fixing
-one unused-var warning mid-session), compliance sweep 0 errors/0 NEW
-warnings, production build clean (`/track-record` fully static + ISR
-6h, `/track-record/[symbol]` dynamic).
-
-⚠️ COMPLIANCE FINDING (re-confirm-before-writing-copy, exactly as the
-task doc's own guardrail asked for): the task doc's top-level "Data
-sources" list named `attribution_reports` and `accuracy_snapshot`
-alongside `measured_signals`/`signal_change_log`. Read both source
-scripts BEFORE writing any code — prediction_engine/accuracy_checker.py
-and prediction_engine/signal_attribution.py are BOTH entirely about the
-INTERNAL 7-day DIRECTIONAL prediction engine's own UP/DOWN hit rate,
-built from `predictions_snapshot` (already in ra_mode.FORBIDDEN_
-COLLECTIONS) — confidence bands, ML-mode tuning, internal recommendation
-strings like "reduce its adjustment weight in the runner." Publishing
-anything derived from either — even reframed as "past measurement" —
-would reveal and effectively market a directional-prediction capability
-this product isn't SEBI-registered to offer pre-RA. NEITHER collection
-is read anywhere in this task's code. Built ONLY from measured_signals
-(composite score) + historical_candles (price, for relative-to-sector
-forward returns) + symbols_master (sector/company identity), exactly
-matching what the task doc's OWN "Deliverables" section (as opposed to
-its data-sources list) actually described. Flagged prominently, not
-silently substituted — see track_record_builder.py's own compliance-
-boundary docstring for the full writeup. This is the single most
-consequential decision in this session.
-
-FILES (api): data-pipeline/track_record_builder.py (new) —
-score-band forward-return study (5 bands, N/pct/avg-relative-return per
-band, low_sample flag below n=10, never hidden) + per-symbol threshold-
-crossing detection (50/70, observed-vs-pending) + a SectorMedianCache
-memoizing (sector,date)->median return so the whole thing is O(symbols)
-not O(symbols²) · data-pipeline/test_track_record_compliance.py (new) ·
-app/routers/track_record.py (new, 2 public routes) · app/main.py
-(patched: router registration) · prediction_engine/scheduler.py
-(patched: Sunday 20:30 job, no same-day DEPENDS — this builder needs A
-recent symbols_master, not necessarily today's) · scripts/
-smoke_test_task15.py (new, 26 checks).
-
-COLLECTIONS (new, in the pipeline `redixfi` DB): track_record_snapshot
-(INSERT-ONLY — one doc per publish date, task doc's own "never overwrite
-silently" instruction taken literally) · signal_crossing_history
-(upserted per symbol+threshold+side+date — completing a promised
-"pending"->"observed" transition is the task doc's OWN bullet 2
-requirement, not a silent revision of a published fact).
-
-DESIGN DECISIONS (flagged, not silently made): sector grouping for the
-median-return benchmark uses symbols_master's CURRENT sector_index
-(NSE sub-index membership essentially never changes) rather than a
-point-in-time join, for a simpler O(symbols) cache · window fixed at 20
-sessions per the task doc's own "start with 20," not made configurable
-beyond a CLI --window flag · a bucket/crossing's own price-return values
-are single historical facts (not sampled percentages) so they carry
-their own date, not a separate N= — the N=+date-range guardrail is
-enforced on every AGGREGATE percentage (the bucket table), which is
-where a misleadingly-precise-looking ratio would actually originate.
-
-REALITY CHECK (found, not assumed): measured_signals has only existed
-since Task 01 (2026-07-18) — roughly 2 weeks / ~8-9 trading sessions as
-of this task. A 20-session forward-return study needs 20 COMPLETE
-sessions after each observation, so the real, live site-wide bucket
-study almost certainly has ZERO complete observations right now — this
-is EXPECTED and CORRECT, not a bug, and the builder/page both render it
-as an honest "not enough history yet" state (with earliest/latest
-measured-date context) rather than a fabricated or blank-looking result.
-Confirmed the builder handles this gracefully via a deliberately-small
-synthetic fixture in both smoke_test_task15.py and the compliance test
-(large enough to produce ONE real bucket + ONE real observed crossing +
-ONE real pending crossing, so every code path — including the non-empty
-one — is genuinely exercised, not just the trivial empty case).
-
-FRONTEND: app/(app)/track-record/page.tsx (new — site-wide bucket table,
-methodology section built from the REAL 8-component composite-score
-weights read out of measured_signals_builder.py — Trend 20/Sector
-15/Delivery 15/Volume 10/RSI 10/PCR 10/Pledge 10/FII 10 — each wrapped
-in the existing Task 12 ExplainTerm, zero new education content needed;
-prominent disclaimer using the task doc's own exact wording) ·
-app/(app)/track-record/[symbol]/page.tsx (new — crossings with a hard
-observed/pending split, "pending" NEVER shows a placeholder implying an
-outcome; full un-cutoff signal_change_log in a scrollable card) ·
-lib/api/types.ts + endpoints.ts (patched) · signals/[symbol]/page.tsx
-(patched: "See full signal history →" link-through, task doc bullet 3).
-
-COMPLIANCE TESTING (explicitly run, per this task's own instruction —
-not assumed): (1) data-pipeline/test_track_record_compliance.py — STATIC
-(scans every generated string field off a synthetic fixture producing
-real non-empty output), LIVE (best-effort, gracefully skipped — this
-sandbox has never had live Mongo connectivity, same as every prior
-task), and a SELF-TEST that deliberately poisons a copy of the output
-with "likely"/"buy" and confirms the scanner actually catches it (not
-vacuous) — all passing. (2) Frontend: `npm run build`'s compliance sweep
-(scripts/check-compliance.mjs) run against the real new page files —
-0 errors, 0 NEW warnings (same 6 pre-existing disclaimer-language
-warnings as every prior session). Both validators run specifically
-against these two new pages, not just "the whole repo passed" — confirmed
-by literally diffing the lint/compliance output before and after adding
-the pages.
-
-VERIFICATION: built + ran `next start` locally against the REAL
-production API. `/track-record` (no route param, so Next fully static-
-generated it — confirmed in the build's own route table, `○` not `ƒ`)
-renders the honest "not published yet" state correctly against the live
-API's plain 404. `/track-record/{symbol}` correctly 404s too — verified
-directly against the raw API (`curl https://api.redixfi.com/api/v1/
-track-record/TCS` → `{"detail":"Not Found"}`, FastAPI's generic
-route-not-registered response, NOT my code's "unknown symbol" message)
-that this is because the route isn't deployed yet, not a bug in the new
-page. Full live E2E (an actually-populated bucket table) needs BOTH
-deployment AND several more weeks of measured_signals history to
-accumulate a single complete 20-session observation — neither attempted
-nor claimed, same posture as every prior task's live-verification
-caveat.
-
-OPEN: legal review flag from the task doc itself — an actual lawyer pass
-on the final copy is recommended before public launch, this was NOT
-done (out of scope for a coding session) · once deployed, the Sunday
-20:30 job needs its first live run confirmed the same way every other
-scheduler entry has been (grep the live scheduler.py, don't assume) ·
-symbols_master's current-sector-index simplification for the benchmark
-group should be revisited if NSE ever does restructure a sub-index
-(flagged, not expected to matter in practice).
+## Completion note — Task 15 (2026-07-29) — IMPORTANT FINDING
+DONE, 531 checks (505+26 new), 0 regressions.
+⚠️ CRITICAL CATCH: the task doc's own "Data sources" list was WRONG —
+named attribution_reports/accuracy_snapshot, but both are built from
+predictions_snapshot (already FORBIDDEN, internal 7-day directional
+engine's UP/DOWN hit rate + confidence bands). Publishing anything
+derived from either would have revealed/marketed an unregistered
+directional-prediction capability on the site's most compliance-
+sensitive page. Session caught this by reading the source scripts
+before writing code (exactly what the doc's "re-confirm" instruction
+was for) and built ONLY from measured_signals + historical_candles +
+symbols_master instead — matches the task doc's actual Deliverables
+section, the Data Sources list itself was the error. LESSON for future
+task docs: "data sources" lists must be verified against actual source
+code, not trusted as written, especially near ra_mode.FORBIDDEN_*.
+Built: track_record_builder.py (5-band forward-return study, N= +
+date range on every %, low_sample flag never hidden, hard observed/
+pending split on crossings — no placeholder implying a future result).
+2 new collections (track_record_snapshot insert-only versioned,
+signal_crossing_history). GET /track-record + /track-record/{symbol}.
+Scheduled Sundays 20:30. Dedicated compliance test (poisoned with real
+"likely"/"buy" strings to prove non-vacuous, same pattern as
+fundamentals compliance test). /track-record page: SSR, ISR 6h.
+REALITY: measured_signals only exists since 2026-07-18 — the 20-session
+study has ~zero complete observations right now. Honest "not enough
+history yet" state built and tested (synthetic fixture exercises the
+non-empty path too) — this is EXPECTED, not a bug, will fill in
+naturally as data accumulates.
+ALSO FOUND: Task 14's frontend changes were sitting uncommitted from
+last session — committed separately, ahead of Task 15's commit.
+OPEN: routes not yet deployed to production (404 confirmed as
+"not deployed" not "broken" — checked raw FastAPI response).
+STANDING RECOMMENDATION: get an actual lawyer review of /track-record's
+final copy before public launch — flagged in the task doc itself as
+the most legally sensitive page in the product; automated compliance
+sweep is necessary but not sufficient here.
 
 Roadmap resumes at: **Task 16 — Tier 2 (personalized holdings brief,
-portfolio analytics, anomaly detection)** per Roadmap v3, unless the
-founder prioritizes the parked items (₹249/mo repricing, founding-
-counter visibility, remaining P0s) first.
+portfolio analytics, anomaly detection).**
+
+## Completion note — 3-bug fix session (2026-07-31)
+
+DONE, all 3 confirmed bugs fixed + verified, plus the stale scheduler
+comment. 537 backend offline checks (531 existing + 6 new in
+smoke_test_bugfixes.py) + 2 dedicated Python regression tests
+(test_fundamentals_fetcher_tz_fix.py, re-ran test_track_record_
+compliance.py) all passing, zero regressions. Frontend: tsc clean, lint
+13 problems (was 12 — see Bug 2 note below, not a new category), build
+clean (compliance sweep 0 errors, same 6 pre-existing warnings).
+
+BUG 1 — AI Daily Brief blank on Home. ROOT CAUSE: `DailyBrief` TS type
+declared a `brief_text` field that never existed on the real API
+response — verified directly against data-pipeline/daily_brief_
+builder.py's own written doc shape: `{date, period, title, body, model,
+builder_version, created_at}`, no `brief_text`, no separate
+`stat_of_the_day` (already merged into `body` before save). The fetch
+succeeded every time (backend was correctly returning complete data,
+exactly as reported) — every reader just read `undefined` off the
+wrong field name, rendering an invisible blank paragraph rather than an
+error or the "no brief yet" fallback (since `brief` itself was
+truthy). FOUND THE SAME BUG IN 2 MORE PLACES while fixing (same root
+cause, not separately reported): /market-brief and /market-brief/
+[date] (the SEO archive pages) had the identical `brief.brief_text`
+read — fixed all 3 render sites + the type. Also moved AiDailyBriefCard
+to the top of Home, above MarketPulseCard (founder decision, literal
+JSX reorder). LIVE-VERIFIED against the real production API: raw HTML
+now shows real generated text ("The NIFTY 500 closed little changed,
+with 431 of 734 tracked stocks advancing...") in the correct top
+position; the "No brief generated yet today" fallback correctly does
+NOT appear.
+
+BUG 2 — paid users seeing the free-tier paywall on /signals/{symbol}.
+Could NOT query redixfi_app.users directly (no live Mongo path from
+this sandbox — confirmed via connection attempt against both MONGO_URI
+and MONGO_URI_APP, both refused). Traced the masking logic instead:
+core/auth.py's get_auth_context() and routers/signals.py's
+signal_detail() B8 check are BOTH correct — live per-request DB tier
+lookup, plain string comparison, no caching. Added the regression test
+the task asked for anyway (scripts/smoke_test_bugfixes.py — same route,
+same symbol, free-token vs paid-token vs founding-token, all 6 checks
+pass) — this ALSO serves as hard evidence the backend isn't the
+culprit. REAL ROOT CAUSE, found by tracing the actual frontend call
+path: app/(app)/signals/[symbol]/page.tsx is a Server Component and
+NEVER sent the caller's auth token to GET /signals/{symbol} — Server
+Components can't read localStorage (where AuthContext keeps the JWT;
+this codebase has no cookie-based session anywhere), so the SSR fetch
+was ALWAYS anonymous, meaning EVERY visitor — including real paying
+subscribers — got the free-tier `locked` response for any symbol
+outside the fixed unlocked-N. FOUND THE SAME BUG in
+SignalsExplorer.tsx's /signals LIST fetch too (client component, had
+`useAuth`/`getToken` imported and used elsewhere in the same file, just
+never wired into the main list fetch) — fixed both.
+FIX: SignalsExplorer.tsx — trivial, wire getToken() into the existing
+fetch. Signal detail page — extracted the full unlocked-view markup
+into a new presentational SignalDetailView.tsx (same split Task 14 used
+for Research), and added SignalUnlockGate.tsx (client component): the
+server page still renders anonymously by default (correct for SEO/
+crawlers/logged-out visitors, the majority case — deliberately NOT
+retrofitting cookie-based SSR auth, which would be a much bigger,
+riskier architecture change affecting every server-rendered page in the
+app, out of scope for a bug-fix session); the gate only fires an extra
+client-side re-fetch WITH the real token when someone is actually
+logged in AND the anonymous SSR render came back locked — zero extra
+work for anonymous visitors or already-unlocked symbols. LIVE-VERIFIED
+anonymous behavior unchanged (RELIANCE still correctly locked, 360ONE
+still correctly unlocked with full content) — the paid-correction path
+itself couldn't be exercised with a real authenticated browser session
+from this sandbox, but rests on the same already-proven getSignalDetail
+call + the backend regression test above.
+LINT NOTE: SignalUnlockGate.tsx's early-return setState call trips the
+same non-build-blocking `react-hooks/set-state-in-effect` rule already
+present in 12 other places across this codebase (never fixed anywhere
+else, not wired into next build's lint gate) — left consistent with
+existing convention rather than restructuring a correct component to
+chase a stylistic rule enforced nowhere else in the app. 13 vs the
+previous 12-error lint baseline; not a new category of issue.
+
+BUG 3 — fundamentals_fetcher.py crashing every run since Task 09.
+ROOT CAUSE CONFIRMED exactly as reported: pymongo's DEFAULT decode
+returns Mongo-stored datetimes as timezone-NAIVE even when written
+tz-AWARE (`fetched_at: dt.datetime.now(timezone.utc)`) — pick_targets()
+then compared that naive `ts` against a freshly-computed AWARE `cutoff`,
+raising the exact reported TypeError on every run. FIX: applied
+tz_aware=True via CodecOptions scoped to THIS FILE's own
+fundamentals_raw collection access (`_fundamentals_collection()`
+helper using `.with_options()`) rather than globally in config/db.py —
+that shared module is used by every other pipeline script
+(measured_signals_builder.py, daily_brief_builder.py, accuracy_
+checker.py, signal_attribution.py, track_record_builder.py, etc.) and
+an unaudited global tz_aware flip risked breaking datetime comparisons
+in scripts this session never touched. Confirmed mongomock faithfully
+reproduces the real naive/aware distinction (checked directly before
+writing the fix) — data-pipeline/test_fundamentals_fetcher_tz_fix.py
+is a genuine regression test: it first REPRODUCES the exact TypeError
+using the old read pattern (proving the test isn't vacuous), then
+proves pick_targets() runs clean and correctly orders never-fetched
+before stale, excludes fresh, using the ACTUAL fixed module (imported
+directly, not reimplemented) — 9/9 passing.
+⚠️ OPEN, NOT CLOSED YET per the task's own acceptance bar: "run the
+fetcher manually and confirm fundamentals_raw count increases beyond 1"
+could NOT be done from this sandbox — confirmed no live Mongo path via
+direct connection attempts against both MONGO_URI and MONGO_URI_APP
+(both refused at 127.0.0.1:27017, the SSH-tunnel-only address). An
+operator with VM access must run:
+    cd /home/ubuntu/redixfi-backend && python3 data-pipeline/fundamentals_fetcher.py
+and confirm `db.fundamentals_raw.count_documents({})` > 1 afterward —
+until that's done live, this bug is code-fixed and test-proven but NOT
+yet operationally closed.
+
+ALSO: scheduler.py's stale "16:15" comment near the alert_worker window
+(now correctly reads "16:45 — see Task 10 A4's move off the original
+16:15 TEMPORARY slot") — comment-only, exactly as instructed. NOTED but
+NOT fixed (out of the literal "comment only" scope, flagging for a
+future session): the alert_worker window itself still reads
+`(h==16 and m<=30)`, which may not actually extend far enough to catch
+a 16:45 daily_brief_close write until the following day's window opens
+— worth a operator check, not assumed to be a problem, not fixed here.
+
+FILES (backend, C:\redixfi): data-pipeline/fundamentals_fetcher.py
+(patched) · data-pipeline/test_fundamentals_fetcher_tz_fix.py (new) ·
+prediction_engine/scheduler.py (patched: comment only) ·
+api/scripts/smoke_test_bugfixes.py (new).
+FILES (frontend, C:\redixfi-web): src/lib/api/types.ts (patched:
+DailyBrief) · src/components/app/AiDailyBriefCard.tsx (patched) ·
+src/app/(seo)/market-brief/page.tsx (patched) · src/app/(seo)/
+market-brief/[date]/page.tsx (patched) · src/app/(app)/page.tsx
+(patched: card reorder) · src/components/app/signals/
+SignalsExplorer.tsx (patched: token wiring) · src/app/(app)/signals/
+[symbol]/page.tsx (rewritten) · src/components/app/signals/
+SignalDetailView.tsx (new) · src/components/app/signals/
+SignalUnlockGate.tsx (new).
+
+Roadmap resumes at: **Task 16 — Tier 2** (unchanged) — the fundamentals_
+fetcher live-run confirmation above should happen opportunistically
+before or alongside it, not block it.

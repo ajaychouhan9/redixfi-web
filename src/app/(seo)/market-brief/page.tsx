@@ -24,7 +24,7 @@ export default async function MarketBriefIndexPage() {
             </Link>
             <AiLabel />
           </div>
-          <p className="text-sm leading-relaxed">{brief.brief_text}</p>
+          <p className="text-sm leading-relaxed">{brief.body}</p>
         </div>
       ) : (
         <p className="text-sm text-foreground-muted">No brief has been generated yet — check back after market open.</p>
