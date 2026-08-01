@@ -77,6 +77,9 @@ export interface SignalRow {
   volume_ratio_5d: number | null;
   signal_states: string[];
   event_risk: boolean | null;
+  // Task 16 Part C — written by data-pipeline/anomaly_detector.py directly
+  // onto the measured_signals doc this row is joined from.
+  anomaly_flags: AnomalyItem[];
   locked: boolean;
 }
 
@@ -269,6 +272,7 @@ export interface SmartScreenFilters {
   dma_state: string | null;
   pcr_band: string | null;
   event_risk: boolean | null;
+  anomaly: boolean | null;
   watchlist_only: boolean | null;
 }
 
@@ -847,4 +851,131 @@ export interface TrackRecordSymbolHistory {
   sector_index: string | null;
   crossings: SignalCrossing[];
   change_log: SignalChangeLogEntry[];
+}
+
+// ---------- Task 16 Part A: personalized portfolio brief ----------
+
+export interface PortfolioBriefMover {
+  symbol: string;
+  delta_1d: number;
+  note: string | null;
+}
+
+export interface PortfolioBrief {
+  user_id: string;
+  date: string;
+  title: string;
+  body: string;
+  symbol_count: number;
+  strengthened: string[];
+  weakened: string[];
+  unchanged: string[];
+  unscored: string[];
+  biggest_movers: PortfolioBriefMover[];
+}
+
+// ---------- Task 16 Part B: portfolio-level analytics ----------
+
+export interface PortfolioConcentrationGroup {
+  industry: string;
+  symbols: string[];
+  count: number;
+  pct: number;
+}
+
+export interface PortfolioConcentration {
+  summary: string;
+  groups: PortfolioConcentrationGroup[];
+  top_industry: string | null;
+  top_industry_pct: number | null;
+  flagged: boolean;
+  flag_threshold_pct: number;
+}
+
+export interface PortfolioDeliveryTrend {
+  summary: string;
+  avg_ratio: number | null;
+  scored_count: number;
+  total_count: number;
+}
+
+export interface PortfolioEventRiskSymbol {
+  symbol: string;
+  company_name: string | null;
+  categories: string[];
+}
+
+export interface PortfolioEventRisk {
+  summary: string;
+  count: number;
+  symbols: PortfolioEventRiskSymbol[];
+}
+
+export interface PortfolioPledgeSymbol {
+  symbol: string;
+  company_name: string | null;
+  pledge_pct: number;
+  pledge_trend: string | null;
+}
+
+export interface PortfolioPledgeExposure {
+  summary: string;
+  max_pledge_pct: number | null;
+  max_symbol: string | null;
+  high_count: number;
+  flagged_symbols: PortfolioPledgeSymbol[];
+  scored_count: number;
+}
+
+export interface PortfolioAnalytics {
+  symbol_count: number;
+  concentration: PortfolioConcentration;
+  delivery_trend: PortfolioDeliveryTrend;
+  event_risk: PortfolioEventRisk;
+  pledge_exposure: PortfolioPledgeExposure;
+}
+
+// ---------- Task 16 Part C: anomaly / unusual-activity detection ----------
+
+export type AnomalyType = "volume_extreme" | "pcr_shift" | "insider_cluster";
+export type AnomalyDirection = "up" | "down" | "flat" | "put_heavy" | "call_heavy" | "buying" | "selling";
+
+export interface AnomalyItem {
+  type: AnomalyType;
+  // NOT `direction` — the API strips any key literally named "direction"
+  // from every response body (ra_mode.FORBIDDEN_FIELDS, predictions_
+  // snapshot's directional-call field) regardless of context. See
+  // api/app/routers/anomalies.py's module docstring for the live bug this
+  // renaming fixed.
+  anomaly_direction: AnomalyDirection;
+  metric: string;
+  value: number;
+  detail: string;
+  method: string;
+}
+
+export interface AnomalyFlagDoc {
+  symbol: string;
+  date: string;
+  company_name: string | null;
+  sector_index: string | null;
+  industry: string | null;
+  anomalies: AnomalyItem[];
+}
+
+export interface AnomalyScanMeta {
+  date: string;
+  universe_count: number;
+  flagged_symbol_count: number;
+  direction_counts: Record<string, number>;
+  thresholds: Record<string, number>;
+}
+
+// GET /anomalies' page_info carries `scan` (universe size + disclosed
+// thresholds) and `date` alongside the usual page/size/total — envelope()
+// only accepts data+page_info, so the scan-meta disclosure rides here
+// rather than in a second nested container around the results list.
+export interface AnomalyPageInfo extends PageInfo {
+  scan: AnomalyScanMeta | null;
+  date: string;
 }

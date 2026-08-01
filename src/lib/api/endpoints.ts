@@ -21,6 +21,11 @@ import type {
   SectorSummary,
   TrackRecordSnapshot,
   TrackRecordSymbolHistory,
+  AnomalyFlagDoc,
+  AnomalyPageInfo,
+  AnomalyType,
+  AnomalyDirection,
+  ApiMeta,
 } from "./types";
 
 // ---------- market ----------
@@ -157,3 +162,27 @@ export const getTrackRecord = (opts?: FetchOpts) => apiGet<TrackRecordSnapshot>(
 
 export const getTrackRecordSymbol = (symbol: string, opts?: FetchOpts) =>
   apiGet<TrackRecordSymbolHistory>(`/track-record/${encodeURIComponent(symbol)}`, opts);
+
+// ---------- anomalies (Task 16 Part C) — public, no auth, full-universe,
+// disclosed-criteria, symmetric (never only the "up" side) ----------
+
+export interface AnomalyListParams {
+  type?: AnomalyType;
+  direction?: AnomalyDirection;
+  page?: number;
+  size?: number;
+}
+
+export interface AnomalyListResult {
+  meta: ApiMeta;
+  data: AnomalyFlagDoc[];
+  page_info: AnomalyPageInfo;
+}
+
+export async function getAnomalies(params: AnomalyListParams = {}, opts?: FetchOpts): Promise<AnomalyListResult> {
+  const env = await apiGetPaged<AnomalyFlagDoc>("/anomalies", { ...opts, params });
+  // page_info carries `scan`/`date` at runtime (see routers/anomalies.py) —
+  // PagedEnvelope's generic PageInfo type just doesn't declare those extra
+  // keys, so this cast reflects the real, verified response shape.
+  return env as unknown as AnomalyListResult;
+}

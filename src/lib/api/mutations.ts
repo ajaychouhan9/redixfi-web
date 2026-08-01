@@ -3,7 +3,7 @@
 // Client-side write calls (auth required, so these can't run as cached
 // Server Component fetches). Response envelopes match the GET endpoints exactly.
 
-import { apiGet, apiGetPaged, apiMutate } from "./client";
+import { apiGet, apiGetPaged, apiGetOptional, apiMutate } from "./client";
 import type {
   MeProfile,
   AlertPreferences,
@@ -13,6 +13,9 @@ import type {
   BillingOrder,
   SmartScreenResult,
   WatchlistSummary,
+  PortfolioBrief,
+  PortfolioAnalytics,
+  AnomalyFlagDoc,
 } from "./types";
 
 // ---------- auth ----------
@@ -152,5 +155,26 @@ export async function logEducationEngagement(
 // here alongside the other token-gated calls rather than in endpoints.ts.
 export async function getWatchlistSummary(token: string): Promise<WatchlistSummary> {
   const env = await apiGet<WatchlistSummary>("/summary/watchlist", { token });
+  return env.data;
+}
+
+// ---------- portfolio (Task 16 Parts A + B) — auth required, per-user ----------
+
+/** null when data-pipeline/portfolio_brief_builder.py hasn't run for this
+ * user yet (honest 404, same stance as GET /brief/latest before daily_brief
+ * existed) — never a fabricated empty-looking brief. */
+export async function getPortfolioBrief(token: string): Promise<PortfolioBrief | null> {
+  return apiGetOptional<PortfolioBrief>("/portfolio/brief", { token });
+}
+
+export async function getPortfolioAnalytics(token: string): Promise<PortfolioAnalytics> {
+  const env = await apiGet<PortfolioAnalytics>("/portfolio/analytics", { token });
+  return env.data;
+}
+
+// ---------- watchlist-scoped anomalies (Task 16 Part C) ----------
+
+export async function getWatchlistAnomalies(token: string): Promise<AnomalyFlagDoc[]> {
+  const env = await apiGetPaged<AnomalyFlagDoc>("/anomalies/watchlist", { token });
   return env.data;
 }
