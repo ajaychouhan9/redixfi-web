@@ -189,9 +189,9 @@ export function FundamentalsPanels({
                     <td className="py-1.5 pr-3">{symbol} (this stock)</td>
                     <td className="py-1.5 pr-3">{fmtNum(valuation.pe_ttm, 1)}</td>
                     <td className="py-1.5 pr-3">{fmtNum(valuation.pb, 1)}</td>
-                    <td className="py-1.5 pr-3">—</td>
-                    <td className="py-1.5 pr-3">—</td>
-                    <td className="py-1.5 pr-3">—</td>
+                    <td className="py-1.5 pr-3">{fmtPct(valuation.net_margin_ttm)}</td>
+                    <td className="py-1.5 pr-3">{fmtPct(valuation.roe_ttm)}</td>
+                    <td className="py-1.5 pr-3">{fmtNum(valuation.debt_to_equity, 2)}</td>
                     <td className="py-1.5 pr-3">{fmtPct(valuation.dividend_yield_pct)}</td>
                   </tr>
                   {peers.map((p, i) => (

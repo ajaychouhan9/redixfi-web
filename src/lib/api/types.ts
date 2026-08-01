@@ -578,6 +578,16 @@ export interface FundamentalsCashflow {
 export interface FundamentalsValuation {
   pe_ttm: number | null;
   pb: number | null;
+  // net_margin_ttm/roe_ttm/debt_to_equity: computed by fundamentals_
+  // derived_builder.py's compute_valuation_extras() from data it already
+  // parses (quarterly TTM sums, balance sheet) — indianapi's own payload
+  // has no top-level equivalent of these three for the subject stock
+  // (only per-peer, inside peerCompanyList[]). Same field names peer rows
+  // (PeerRow below) use, so the "this stock" row in the peer-comparison
+  // table can render identically to a peer row instead of showing "—".
+  net_margin_ttm: number | null;
+  roe_ttm: number | null;
+  debt_to_equity: number | null;
   sector_pe: number | null;
   pe_vs_sector: "above" | "below" | "inline" | null;
   dividend_yield_pct: number | null;
@@ -662,7 +672,23 @@ export interface PeerRow {
 
 export interface PeersResponse {
   symbol: string;
-  self: { pe: number | null; pb: number | null; market_cap: number | null; sector_pe: number | null } | null;
+  // Same field set as PeerRow (minus company_name/percent_change/yhigh/
+  // ylow — identity + price-history fields out of this route's scope,
+  // see api/app/routers/research.py::PEER_COMPARISON_FIELDS) — the web
+  // app doesn't currently render this "self" block (it builds the
+  // subject's own peer-table row from FundamentalsBlock.valuation
+  // instead, see FundamentalsPanels.tsx), but the shape is kept accurate
+  // for other/future consumers of this endpoint.
+  self: {
+    pe: number | null;
+    pb: number | null;
+    market_cap: number | null;
+    net_margin_ttm: number | null;
+    roe_ttm: number | null;
+    debt_to_equity: number | null;
+    dividend_yield: number | null;
+    sector_pe: number | null;
+  } | null;
   peers: PeerRow[];
 }
 
