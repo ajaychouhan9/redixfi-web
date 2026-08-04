@@ -10,7 +10,9 @@ import { NewsList } from "@/components/app/NewsList";
 import { RecordView } from "@/components/app/RecordView";
 import { FundamentalsPanels } from "@/components/app/research/FundamentalsPanels";
 import { ResearchChart } from "@/components/app/research/ResearchChart";
-import { AddToComparisonChip } from "@/components/app/signals/AddToComparisonChip";
+import { ResearchExportButton } from "@/components/app/research/ResearchExportButton";
+import { CompareIndicator } from "@/components/app/CompareIndicator";
+import { CurrentSymbolSync } from "@/components/app/CurrentSymbolSync";
 import { formatShortDate } from "@/lib/format";
 
 /**
@@ -21,9 +23,9 @@ import { formatShortDate } from "@/lib/format";
  * HTML response instead of a client-fetched "Loading…" placeholder.
  * The only remaining client-side pieces are genuinely interactive leaves
  * (ResearchChart's range toggle + on-demand intraday fetch,
- * AddToComparisonChip, FundamentalsPanels' Collapsible sections) — none
- * of them gate the INITIAL content the way the old data-fetching version
- * of this component did.
+ * CompareIndicator, ResearchExportButton, FundamentalsPanels' Collapsible
+ * sections) — none of them gate the INITIAL content the way the old
+ * data-fetching version of this component did.
  */
 export function ResearchDetail({
   data,
@@ -40,6 +42,7 @@ export function ResearchDetail({
 
   return (
     <div className="space-y-4">
+      <CurrentSymbolSync symbol={data.symbol} />
       <RecordView symbol={data.symbol} companyName={data.company_name} />
 
       <div>
@@ -47,7 +50,10 @@ export function ResearchDetail({
           <p className="text-sm text-foreground-muted">
             {data.symbol} · {data.sector}
           </p>
-          <AddToComparisonChip symbol={data.symbol} companyName={data.company_name} />
+          <div className="flex shrink-0 items-center gap-2">
+            <ResearchExportButton data={data} peers={peers} />
+            <CompareIndicator symbol={data.symbol} companyName={data.company_name} />
+          </div>
         </div>
         <div className="mt-1 flex flex-wrap items-baseline gap-3">
           <span className="text-2xl font-semibold">₹{data.price.last_price.toLocaleString("en-IN")}</span>

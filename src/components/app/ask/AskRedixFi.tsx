@@ -6,6 +6,7 @@ import { Sparkles, X, Send, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { apiGet, ApiError } from "@/lib/api/client";
 import { askRedixfi } from "@/lib/api/mutations";
+import { getCurrentSymbol } from "@/lib/current-symbol";
 import type { AskLimitDetail, ResearchSearchRow } from "@/lib/api/types";
 
 /**
@@ -15,10 +16,12 @@ import type { AskLimitDetail, ResearchSearchRow } from "@/lib/api/types";
  * entry points on the same page were redundant).
  *
  * POST /ask (Task 17 backend) is per-symbol and auth-required — there's no
- * general free-form chat. On pages that already have an obvious subject
- * (a stock detail page) a future session can preset one; Home and the
- * Signals list (this session's scope) have no single current stock, so the
- * panel opens on a lightweight symbol search step first.
+ * general free-form chat. Home and the Signals list have no single current
+ * stock, so the panel opens on a lightweight symbol search step first.
+ * Signal detail and Research detail pages DO have an obvious subject —
+ * they register it via CurrentSymbolSync, and a fresh open here (no symbol
+ * picked yet this session) presets straight into that conversation,
+ * skipping the search step entirely.
  */
 interface AskMessage {
   role: "user" | "ai";
@@ -117,10 +120,18 @@ export function AskRedixFi() {
 
   const dailyLimitLabel = user?.tier === "free" ? "1/symbol/day" : "25/day";
 
+  function openPanel() {
+    if (!symbol) {
+      const preset = getCurrentSymbol();
+      if (preset) pickSymbol(preset);
+    }
+    setOpen(true);
+  }
+
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={openPanel}
         className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-transform hover:scale-105"
         style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dim))", color: "var(--accent-foreground)" }}
       >

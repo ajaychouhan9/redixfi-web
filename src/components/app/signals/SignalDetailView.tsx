@@ -10,6 +10,8 @@ import { CandleChart } from "@/components/app/CandleChart";
 import { NewsList } from "@/components/app/NewsList";
 import { WatchlistButton } from "@/components/app/WatchlistButton";
 import { RecordView } from "@/components/app/RecordView";
+import { CompareIndicator } from "@/components/app/CompareIndicator";
+import { CurrentSymbolSync } from "@/components/app/CurrentSymbolSync";
 import { formatShortDate } from "@/lib/format";
 import Link from "next/link";
 import type { Candle, DeliveryPoint, FundamentalsBlock, SignalConflict, SignalDetail } from "@/lib/api/types";
@@ -39,29 +41,35 @@ export function SignalDetailView({
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
+      <CurrentSymbolSync symbol={detail.symbol} />
       <RecordView symbol={detail.symbol} companyName={detail.company_name} />
 
       <div>
-        <p className="text-sm text-foreground-muted">
-          {detail.symbol} · {detail.sector}
-        </p>
-        <div className="mt-1 flex flex-wrap items-baseline gap-3">
-          <ExplainTerm metricKey="composite_score" symbol={detail.symbol} ctx={{ composite_score: detail.composite_score, symbol: detail.symbol }}>
-            <span className="text-3xl font-semibold">{detail.composite_score}/100</span>
-          </ExplainTerm>
-          <ExplainTerm metricKey="delta_1d" symbol={detail.symbol} ctx={{ delta_1d: detail.delta_1d, symbol: detail.symbol }}>
-            <DeltaValue value={detail.delta_1d} />
-          </ExplainTerm>
-          <span className="text-xs text-foreground-faint">5d: <DeltaValue value={detail.delta_5d} /></span>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-sm text-foreground-muted">
+              {detail.symbol} · {detail.sector}
+            </p>
+            <div className="mt-1 flex flex-wrap items-baseline gap-3">
+              <ExplainTerm metricKey="composite_score" symbol={detail.symbol} ctx={{ composite_score: detail.composite_score, symbol: detail.symbol }}>
+                <span className="text-3xl font-semibold">{detail.composite_score}/100</span>
+              </ExplainTerm>
+              <ExplainTerm metricKey="delta_1d" symbol={detail.symbol} ctx={{ delta_1d: detail.delta_1d, symbol: detail.symbol }}>
+                <DeltaValue value={detail.delta_1d} />
+              </ExplainTerm>
+              <span className="text-xs text-foreground-faint">5d: <DeltaValue value={detail.delta_5d} /></span>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <WatchlistButton symbol={detail.symbol} />
+            <CompareIndicator symbol={detail.symbol} companyName={detail.company_name} />
+          </div>
         </div>
         <p className="mt-1 text-xs text-foreground-faint">A measured summary of observed signals. Not a prediction.</p>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {detail.signal_states.map((st) => (
             <SignalStateChip key={st} code={st} />
           ))}
-        </div>
-        <div className="mt-3">
-          <WatchlistButton symbol={detail.symbol} />
         </div>
         {(detail.insight_chips ?? []).length > 0 && (
           <div className="mt-3">
