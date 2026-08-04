@@ -1435,151 +1435,214 @@ Founder action items from this note (enable Google provider, test live
 signup) were ALREADY DONE in the founder's own live Firebase debugging
 session — see prior entry. Both closed.
 
-## Completion note — UI reframe session 1: Home + Signals list (2026-08-04)
-REPO: C:\redixfi-web only — backend untouched (677/677 offline checks
-re-run unchanged, 0 regressions, confirms nothing here required a
-backend change). Firebase/Vercel env vars NOT touched, per instruction.
+## ⚠️ SECURITY FLAG (2026-08-04) — action required, separate from any task
+An IDE session surfaced a live-looking OpenAI key (sk-live-...) in
+plaintext at C:\Redixfi\.env — OUTSIDE any git repo (api/.git is one
+level down), so not at risk of being committed, but sitting exposed on
+disk regardless. FOUNDER ACTION NEEDED: rotate this key in the OpenAI
+dashboard and move it into api/.env's existing gitignored discipline
+rather than the loose repo-root location. Not yet confirmed done.
 
-SCOPE DONE: Home page and Signals page (list view) rebuilt as real
-Next.js pages matching mockups/redixfi-home-mockup.jsx and
-redixfi-signals-mockup.jsx, wired to existing real API endpoints (no
-mock data), real free/paid tier logic, real Ask-RedixFi backend
-(Task 17) powering a new persistent AI button.
+## Completion note — UI reframe Session 1: Home + Signals (2026-08-04)
+DONE. TypeScript clean, compliance sweep 0 errors, npm run build clean.
+Backend unchanged, 677/677 offline checks still passing (expected).
+Live-verified headless (both themes, mobile viewport, AI panel,
+compare-toggle) — zero console errors.
+Design system now applied SITE-WIDE (necessarily, since the AI button
++ color system are every-page requirements): indigo-navy/gold palette
+replacing the old generic blue theme, IBM Plex Sans/Mono, real manual
+dark/light toggle (was OS-only before).
+Persistent "RedixFi AI" button wired to real POST /ask (Task 17),
+login-gated. Since /ask is per-symbol with no general-chat mode, pages
+with no obvious "current stock" (Home, Signals list) open a symbol-
+search step first — worth knowing this UX pattern before later
+sessions touch pages that DO have an obvious symbol.
+Shared LockedInline/LockedRow components applied to Signals table's
+real per-tier locked field (not fabricated).
+⚠️ THIRD OCCURRENCE of the recurring token-bug pattern (Signals paywall
+→ News/Events staleness → now Home's server-side news fetch shown
+free-tier-delayed to paid subscribers). Fixed same way as before
+(moved fetch client-side). GIVEN THIS IS NOW THE THIRD INSTANCE: next
+session touching data-fetching should do a DELIBERATE AUDIT — grep
+every server-component fetch across the whole app for correct auth-
+token attachment, rather than continuing to find these one screenshot
+at a time.
+DEVIATIONS (documented, reasoned): did not fabricate lock overlays
+where backend doesn't actually mask data (Home movers/continue-
+research) — correct, avoids UI lying about what's real. Dropped
+mockup's fake "3" notification badge (wasn't real data). Kept existing
+localStorage-backed comparison queue rather than rebuilding for
+sessionStorage (low-stakes either way).
+⚠️ NOT VERIFIED (sandbox couldn't test) — FOUNDER MUST CHECK: real
+authenticated free-vs-paid rendering — log in for real, confirm tier
+badge, table unlocking, and Ask panel all behave correctly for both
+tiers before considering Session 1 fully closed.
 
-SHARED SHELL (necessarily touched — the AI button + design system are
-explicitly "every page" requirements, so this is intended blast
-radius, not creep; PAGE CONTENT outside Home/Signals was not touched):
-- globals.css: full retint to the locked indigo-navy/gold system
-  (#0B0F1A / #F7F8FB bases), replacing the old generic blue-accent
-  theme. Added [data-theme] overrides alongside the existing
-  prefers-color-scheme block so a manual toggle can win either way.
-- layout.tsx: Geist → IBM Plex Sans/Mono (next/font/google), new
-  ThemeProvider, no-flash inline theme script (localStorage/system
-  pref applied before hydration paints).
-- New lib/theme/ThemeContext.tsx + ui/ThemeToggle.tsx — dark/light
-  toggle, persisted, live-verified both directions in a real headless
-  browser (see TESTING below).
-- MarketRibbon.tsx, Sidebar.tsx/BottomNav restyled to the locked
-  palette + lucide-react icons (new dependency, wasn't installed —
-  mockups are lucide-based). Ribbon right-cluster now always renders
-  (AI button/bell/tier badge/theme toggle) even while market data is
-  still loading/erroring, since those aren't market-data-dependent.
-- New components/app/ask/AskRedixFi.tsx — the persistent "RedixFi AI"
-  pill, wired to the REAL POST /ask (Task 17), not a stub. Real
-  contract constraints handled explicitly: /ask is per-symbol +
-  require_auth (no anonymous, no general free-form chat) — logged-out
-  shows a login CTA; logged-in but no page-level symbol context (true
-  for Home/Signals-list) opens a symbol search step first (reuses
-  /research/search) before the chat. Real 429 handling: ApiError.detail
-  (AskLimitDetail: reason/message/cta/topup_questions) is surfaced
-  verbatim, no fabricated copy. Did NOT build an in-panel topup
-  purchase flow — that's Razorpay/checkout surface, explicitly Task
-  20's territory this session was told not to touch; the 429 just
-  links to /pricing.
-- New ui/Locked.tsx (LockedInline/LockedRow/UnlockBanner) — the
-  mockup's blur+lock-icon pattern extracted once, reused in
-  SignalTableRow and the Signals free-tier banner rather than
-  reinvented per-surface.
+Roadmap: UI reframe continues — Session 2 next (Signal detail +
+Research, per the planned pairing).
 
-REAL BUG FOUND + FIXED (recurring pattern, 3rd occurrence): Home's
-Server Component was calling getNews({severity:"high"}) directly in
-SSR with no token — Server Components can't reach localStorage, so
-every visitor including paid/founding subscribers was silently served
-the free-tier's 24h-delayed news feed on Home's "Event Risk Today"
-card. Identical bug SHAPE to the 2026-08-04 News-page/EventsTab fix
-(frontend forgetting to attach the auth token) — same fix pattern
-applied: EventRiskCard converted to a client component that resolves
-a real token via useAuth().getToken() before fetching, SSR anonymous
-fetch removed from page.tsx entirely. Checked every other fetch this
-session touched or added (Home's other Promise.allSettled calls,
-SignalsExplorer, SmartScreenerBox, AskRedixFi, MarketRibbon) — all
-either already correctly token-aware (SignalsExplorer/SmartScreenerBox
-were already fixed in earlier sessions) or genuinely public/untiered
-routes (movers, brief, intraday session, anomalies, market overview,
-research search) verified against the actual backend router code, not
-assumed.
+## ⚠️ SECURITY FLAG STILL OPEN (2026-08-04/05) — founder explicitly deferred
+Re-checked at the start of this session per standing instruction: the
+OpenAI key flagged 2026-08-04 was NOT rotated — C:\Redixfi\.env and
+api/.env still hold the identical key. Worse than previously recorded:
+C:\Redixfi\.env is currently TRACKED in the redixfi-backend git repo, in
+the current HEAD commit, and that HEAD has already been PUSHED to
+github.com/ajaychouhan9/redixfi-backend (unauthenticated GitHub API
+returns 404 — consistent with private, but still exposed to anyone with
+repo access, and permanently in git history either way). NEW finding: the
+same tracked file also exposes 3 live INDIANAPI_KEYS (sk-live-...), not
+just the OpenAI key. Founder was asked how to sequence this against the
+UI work and explicitly said to ignore it and handle it personally — not
+resolved by this session, on record as a founder decision, not an
+oversight. Re-flag if a future session finds it STILL unrotated after a
+reasonable interval.
 
-DELIBERATE DEVIATIONS FROM THE MOCKUP (flagged, not silent):
-- Mockup's Home demo shows `locked: tier === 'free'` on some
-  gainers/decliners and "Continue research" rows. Verified against
-  the real backend (routers/signals.py::signal_movers) — /signals/
-  movers applies NO B8 masking at all, unmasked for every tier; and
-  "Continue research" is the user's own client-side viewing history,
-  nothing to lock. Did not fabricate lock overlays for either — real
-  data has no locked field there, and "no mock data" was explicit.
-  Real locking (LockedInline, from a real per-row `locked` field) is
-  applied only where genuinely true this session: the Signals table.
-- Bell icon: dropped the mockup's static "3" badge — no cheap accurate
-  real unread count exists (no dedicated endpoint), and fabricating a
-  number violates "wired to real data, no mock data" instruction. Bell
-  now links to /account/inbox with no badge.
-- Comparison queue: reused lib/comparison-queue.ts UNCHANGED (Task 13,
-  already real/shared/working) rather than rebuilding — it's
-  localStorage-backed, not literally sessionStorage as this session's
-  brief worded it. Flagged rather than changed: changing the storage
-  mechanism would touch SmartScreenerBox/AddToComparisonChip/detail
-  pages outside this session's scope for a naming-only difference: it
-  already satisfies the actual requirement (ONE shared client state
-  across real routes, not per-page).
-- "Gold reserved exclusively for AI-generated content and brand" read
-  per the approved mockups' own actual usage (all 9 files): gold is
-  the brand's interactive accent — active nav, primary CTAs, compare
-  buttons, locks/upsell — and AI-content labels; jade/rose are the
-  only colors ever touching a signed gain/loss. Interpreted "brand
-  elements" to include primary interactive chrome, not literally only
-  the logo/AI badge — matches every mockup file's real usage, not a
-  narrower reading that would contradict the approved reference.
+## Completion note — UI reframe Session 2, all 4 phases (2026-08-05)
+DONE. Phase-by-phase, one commit each, both repos (redixfi-web +
+redixfi-backend/api). 711 backend offline checks (677 pre-existing + 34
+new, smoke_test_task20.py) across 16 suites, 0 regressions from this
+session's changes. Frontend: TypeScript clean, compliance sweep clean (0
+errors) and production build clean after every phase.
 
-TESTING: tsc --noEmit clean. Compliance sweep: 0 errors (8 pre-existing
-negated-word warnings, none from this session's files). `npm run
-build` clean (Turbopack, all 24 routes). Backend: all 14 offline
-suites re-run, 677/677 passed, 0 regressions (expected — no backend
-touched). Live-verified with a real headless-Chromium pass (Playwright,
-installed ad-hoc — no chromium-cli / no existing run-skill in this
-repo, recommend `/run-skill-generator` if this becomes routine):
-Home + Signals in both themes + mobile viewport, theme toggle both
-directions, Ask panel open→login-gate, Signals row "+Compare"→"Added"
-toggle updating the AI Smart Screener tray live — zero console/page
-errors across the whole pass, real live API data rendering correctly
-(confirms api.redixfi.com reachable from this session).
-NOT verified: authenticated free-vs-paid rendering (ribbon tier badge,
-Signals table actually unlocking past the fixed 20, Ask panel's real
-chat turn + a genuine 429 at the daily cap) — no live login
-credentials available in this sandboxed pass. Founder should log in
-for real and spot-check those three, same posture prior sessions have
-taken for anything requiring a real authenticated session.
+**Phase 1 (Signal detail + Research detail):** Found most of the content
+already matched the mockups from earlier sessions (Task 09/12/14/17 built
+the substance; Session 1's site-wide design-token change auto-reskinned
+it) — genuine new work was narrower than the task assumed: new shared
+CompareIndicator ("Compare (N)" dropdown, replaces the simpler
+AddToComparisonChip, reads/writes the SAME comparison-queue.ts the
+Signals-page tray already used) on both pages; new current-symbol.ts +
+CurrentSymbolSync so the persistent AI button opens directly into a
+conversation on these two pages instead of the symbol-search step;
+ResearchExportButton (mockup parity, paid-tier gated). CONFIRMED (not
+re-fixed) that Task 04's flagged /signals/{symbol} B8 direct-detail
+masking gap is already closed — live-verified via curl against both the
+anonymous-locked and unlocked paths; this must have shipped in Task 11's
+ops sprint without an explicit note.
 
-OTHER FINDINGS (not fixed, not blocking, noted for later):
-- `npm audit` flags 3 high-severity advisories, all inside the pinned
-  `next@16.2.10` / its `postcss`/`sharp` sub-deps — pre-existing,
-  unrelated to this session, would need a Next version bump (separate
-  decision, out of scope here).
-- Bare `npx eslint src` reports `react-hooks/set-state-in-effect`
-  errors on ~10 files — ALL pre-existing, confirmed via `git status`
-  that none of the flagged files were touched this session (AuthContext.tsx,
-  ExplainTerm.tsx, useEducationContent.ts, SignalUnlockGate.tsx,
-  ScannerTab.tsx, etc.). `npm run build`'s own lint pass does not fail
-  on these, so it wasn't blocking; a repo-wide fix would be unrelated
-  churn across files this session had no reason to touch. New
-  ThemeContext.tsx deliberately mirrors AuthContext.tsx's identical
-  mount-time-hydration pattern for consistency, so it has the same
-  lint shape as that file — not fixed for the same reason.
+**Phase 2 (Watchlist + Intraday):** New standalone /watchlist route — the
+long-term-holder persona's main product surface, distinct from
+/account/watchlist's lighter management list. Reuses
+PortfolioBriefCard/PortfolioAnalyticsCard (Task 16 Parts A/B) AS-IS rather
+than rebuilding a compact-grid variant — a deliberate DRY-over-pixel-
+fidelity call, flagged here. Table joins GET /intraday/watchlist-states
+(confirmed now live — a prior session's "not available" fallback was
+stale) with per-symbol GET /signals/{symbol} for score/delta/industry (no
+exact-symbol-list filter exists on GET /signals, and its pagination cap
+can't guarantee covering a scattered watchlist). Added a secondary
+"Watchlist" sidebar link. Intraday: independently re-verified in
+phase1_unified.py::run() that the Active Universe is genuinely mechanical-
+only (score/bucket computed but never gate insertion) — confirms the
+existing frontend disclosure copy was already correct, not just trusted.
 
-FILES: package.json/package-lock.json (+lucide-react) · src/app/
-globals.css, layout.tsx, (app)/page.tsx, (app)/signals/page.tsx ·
-src/components/layout/{MarketRibbon,Sidebar}.tsx · src/components/app/
-{AiDailyBriefCard,MarketPulseCard,TopSignalChangesCard,EventRiskCard,
-IntradayNowCard,ContinueResearchCard,AnomalyCard}.tsx ·
-src/components/app/education/SummaryCard.tsx (SectorSummaryCard only)
-· src/components/app/signals/{SignalTableRow,SignalsExplorer,
-SmartScreenerBox}.tsx · src/lib/api/{types,mutations}.ts (Ask-RedixFi
-types + askRedixfi()) · NEW: src/lib/theme/ThemeContext.tsx ·
-src/components/ui/{ThemeToggle,Locked}.tsx ·
-src/components/app/ask/AskRedixFi.tsx.
+**Phase 3 (News + More; Account left unchanged):** Account's 5 tabs were
+already complete and mockup-aligned — verified, not touched. News: header/
+badge/subtitle polish + a visible-but-inactive "Filter by stock — Coming
+soon" slot for Task 18 (still deferred, per the locked sequence). More:
+added menu icons, kept the existing separate-route architecture over the
+mockup's client-side view-swap (SEO/addressability). Data Sources
+fact-check (explicit instruction: verify against real source scripts, not
+the list as given): "Composite signal scores" cadence was stale at
+"~07:50 IST" from before Task 10's move to 16:30 — fixed. Also found and
+FLAGGED (not fixed — ops question, out of this session's scope):
+nse_delivery_sync.py and macro_fi_di.py appear nowhere in
+prediction_engine/scheduler.py or any other scheduler in the repo despite
+the page claiming "Daily" for both; data_freshness_check.py does monitor
+both collections (2-day tolerance) so they're plausibly kept current by
+something outside this repo, but that could not be confirmed without
+VM/Mongo access from this sandbox.
 
-Roadmap: continue the full UI reframe next session — remaining
-mockup screens (Signal detail, Research, Watchlist, Intraday, Account,
-News, More +Data Sources/Disclaimer) and Task 20's checkout redesign,
-per the locked execution sequence. The shared shell built this session
-(theme system, AI button, Locked components) should be reused as-is,
-not rebuilt.
+**Phase 4 (Task 20 Checkout):** Backend was more incomplete than the task
+doc assumed — worth a founder read. Final pricing shipped (monthly_249/
+annual_2499/founding_1799, PLANS keys renamed outright — grepped both
+repos first, confirmed PLANS is only read at new-purchase time, existing
+monthly_499/founding_4999 subscribers unaffected). Part B (scheduled, not
+prorated, monthly->annual upgrade) built for real: new
+`pending_plan_change` field, new daily job
+data-pipeline/apply_pending_plan_changes.py (wired into scheduler.py,
+07:10, always-on since billing isn't market-day-gated), explicit
+cancellation-while-pending branch (full refund of the annual, current
+monthly period left untouched) — zero proration math, same tz-aware-
+coercion discipline as the fundamentals_fetcher fix, with a genuine
+reproduce-the-bug-then-prove-the-fix regression test. Part C: found that
+POST /billing/promo-code/validate existed but NOTHING actually discounted
+a real order or incremented redeemed_count — the task doc's "just confirm
+the validation flow" framing was wrong, caught by grepping the file before
+trusting it (same discipline Task 15 used to catch the predictions_snapshot
+mislabeling). Now wired for real: /billing/order accepts an optional
+promo_code and discounts the Razorpay order; /billing/verify redeems it
+(atomic guarded increment, same CAS pattern as the founding-slot counter)
+only after payment confirms. 100%-off codes are explicitly rejected (501,
+"contact support") rather than silently mischarged or crashing — a real
+no-payment activation path was out of scope this session, flagged not
+built. New scripts/create_promo_code.py (founder CLI). Part D: Ask-RedixFi
+topup now proactively purchasable from Checkout, reusing Task 17's
+existing /ask/topup/order+verify endpoints unchanged. GET /me now surfaces
+pending_plan_change (previously invisible — lived only on the
+subscriptions collection). New shared SubscriptionStatusCard (extracted
+from Account/Profile, used by both Account and Checkout per the explicit
+reuse instruction). COMPLIANCE FIX (live, real): the old /pricing page's
+"founding members get it at no extra cost" line directly violated the
+locked founding price-lock-only rule (real RAASB client-count exposure if
+left as-is) — removed, replaced with the locked RA disclosure wording.
+Route stayed at /pricing (relabeled "Checkout" in the sidebar/page title
+only) rather than a URL rename — avoids a redirect/broken-link exercise
+across dozens of existing internal links for a routing decision the task
+doc didn't actually require.
+
+**Cross-phase, standing token-bug audit:** grepped every server-component
+fetch touched in each phase before writing new fetch code, per the
+3-strikes standing rule. Zero new instances found or introduced — every
+new client fetch this session had a real token from its first request
+(WatchlistMainView, CheckoutView, TopupCard, SubscriptionStatusCard all
+fully client-side, no anonymous-SSR-then-correct step needed); the two
+server-side fetches touched (GET /charts, GET /billing/plans) are
+correctly untiered/public and needed no token, confirmed against their
+backend routes before concluding that.
+
+**Test suite note (not a regression):** re-running the full offline suite
+after Phase 4 showed 11 failures across smoke_test_task04.py,
+smoke_test_task17.py and smoke_test_bugfixes_20260804.py that were NOT
+present earlier in the same session. Root-caused, not guessed: these
+three files were untouched by this session (task04's only diff was the
+mechanical plan-id rename) — the real cause is smoke_test_task04.py's
+`today_str()` helper computing "today" from UTC
+(`datetime.utcnow()`), while the actual alert-trigger/cap logic under
+test correctly uses IST-based "today" — the two disagree for the ~5.5
+daily hours where the UTC date and IST date differ, which is exactly the
+window this session's later test runs happened to fall in (confirmed via
+the sandbox's raw system clock: UTC still Aug 4 while IST had already
+rolled to Aug 5). smoke_test_task17.py/smoke_test_bugfixes_20260804.py
+independently confirm the same class — both hardcode `TODAY = "2026-08-04"`
+as a literal string. Would reproduce identically for ANY session running
+these three specific files during that UTC/IST window, regardless of what
+changed. Flagged for whoever next touches these fixtures, not fixed here
+(out of this session's scope, same "flag don't silently patch" precedent
+already established for the news/delay fixture flakiness noted after
+Task 17). All other 13 suites, including the new smoke_test_task20.py,
+passed clean on every re-run.
+
+OPEN items carried forward:
+- Security flag above (founder-deferred, not a gap in this session).
+- nse_delivery_sync.py / macro_fi_di.py scheduler-visibility question
+  (Phase 3 finding).
+- 100%-off promo codes 501 rather than activating for free — needs a
+  real no-payment activation path if the founder wants that path used.
+- The 3 UTC/IST-sensitive test fixtures above (task04's helper +
+  task17/bugfixes_20260804's hardcoded TODAY constants).
+- VM deployment: none of this session's backend changes (Task 20's
+  PLANS/scheduling/promo work, GET /me's pending_plan_change field) are
+  live yet — commit+push+deploy+restart is the founder's next step,
+  same as every prior session's backend work.
+- Sandbox couldn't exercise a real Razorpay payment end-to-end (no live
+  keys reachable here) — the scheduled-upgrade and promo-discount flows
+  are verified by the new offline suite + code review, not a live
+  purchase; recommend one real test-mode purchase of each (plain
+  monthly, monthly->annual upgrade, a promo-coded purchase) after deploy,
+  same "verify live, don't assume" lesson this project has learned
+  before.
+
+Roadmap: UI reframe (all 9 mockup screens + Task 20) is now COMPLETE.
+Next: founder deploy + live verification per the open items above, then
+resume the parked queue (₹249 pricing rollout is now DONE as part of this
+session, not still parked; founding-counter visibility, remaining minor
+P0s) or whatever the founder prioritizes next.
