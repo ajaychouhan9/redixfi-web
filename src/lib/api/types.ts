@@ -761,7 +761,34 @@ export interface BillingOrder {
   amount_paise: number;
   currency: string;
   razorpay_key_id?: string;
+  discount_pct?: number | null;
   [key: string]: unknown;
+}
+
+// Task 20 Part B — real shape of POST /billing/verify's response, distinct
+// from the older, loosely-typed `{ ok: boolean }` other callers use (that
+// field never actually existed on the wire — the real key is `success` —
+// but nothing previously read it, so it never surfaced as a bug).
+export interface BillingVerifyResult {
+  success: boolean;
+  subscription_id: string;
+  tier: string;
+  founding_number: number | null;
+  scheduled: boolean;
+  effective_date?: string;
+}
+
+export interface PendingPlanChange {
+  to_plan: string;
+  to_subscription_id: string;
+  effective_date: string;
+  purchased_at: string;
+}
+
+export interface PromoValidation {
+  valid: boolean;
+  discount_pct: number | null;
+  message: string;
 }
 
 // ---------- me / account ----------
@@ -786,6 +813,9 @@ export interface MeProfile {
   email: string | null;
   tier: "free" | "paid" | "founding" | string;
   subscription: SubscriptionState;
+  // Task 20 Part B — set only while a monthly->annual upgrade is
+  // SCHEDULED (payment captured, not yet active). null otherwise.
+  pending_plan_change: PendingPlanChange | null;
   kyc_status: string;
   tnc_accepted_at: string | null;
   alerts_opt_in: AlertPreferences;

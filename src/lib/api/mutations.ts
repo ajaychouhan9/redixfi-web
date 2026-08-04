@@ -11,6 +11,8 @@ import type {
   UsageInfo,
   InboxAlert,
   BillingOrder,
+  BillingVerifyResult,
+  PromoValidation,
   SmartScreenResult,
   WatchlistSummary,
   PortfolioBrief,
@@ -113,21 +115,50 @@ export async function addPushToken(token: string, pushToken: string, platform: "
 
 // ---------- billing ----------
 
-export async function createBillingOrder(token: string, plan: string): Promise<BillingOrder> {
-  const env = await apiMutate<BillingOrder>("/billing/order", "POST", { plan }, { token });
+export async function createBillingOrder(token: string, plan: string, promoCode?: string): Promise<BillingOrder> {
+  const env = await apiMutate<BillingOrder>(
+    "/billing/order",
+    "POST",
+    promoCode ? { plan, promo_code: promoCode } : { plan },
+    { token }
+  );
   return env.data;
 }
 
 export async function verifyBilling(
   token: string,
   body: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }
-) {
-  const env = await apiMutate<{ ok: boolean }>("/billing/verify", "POST", body, { token });
+): Promise<BillingVerifyResult> {
+  const env = await apiMutate<BillingVerifyResult>("/billing/verify", "POST", body, { token });
   return env.data;
 }
 
 export async function cancelBilling(token: string) {
   const env = await apiMutate<{ ok: boolean }>("/billing/cancel", "POST", undefined, { token });
+  return env.data;
+}
+
+// Task 20 Part C — universal promo input. No auth required (pre-login web
+// checkout can validate before a user commits to logging in), matches the
+// backend's own no-auth-required design.
+export async function validatePromoCode(code: string, plan: string): Promise<PromoValidation> {
+  const env = await apiMutate<PromoValidation>("/billing/promo-code/validate", "POST", { code, plan });
+  return env.data;
+}
+
+// Task 20 Part D — Ask-RedixFi topup, already built (Task 17) for the
+// reactive 429-triggered flow; reused here for the proactive Checkout
+// line item. Same order/verify shape as billing's, distinct endpoints.
+export async function createTopupOrder(token: string): Promise<BillingOrder> {
+  const env = await apiMutate<BillingOrder>("/ask/topup/order", "POST", undefined, { token });
+  return env.data;
+}
+
+export async function verifyTopupOrder(
+  token: string,
+  body: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }
+): Promise<{ success: boolean; topup_questions_remaining: number }> {
+  const env = await apiMutate<{ success: boolean; topup_questions_remaining: number }>("/ask/topup/verify", "POST", body, { token });
   return env.data;
 }
 

@@ -84,7 +84,7 @@ export function Sidebar() {
           className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-foreground-muted hover:bg-hover hover:text-foreground"
         >
           <CreditCard size={16} strokeWidth={2} />
-          Pricing
+          Checkout
         </Link>
       </div>
     </aside>
