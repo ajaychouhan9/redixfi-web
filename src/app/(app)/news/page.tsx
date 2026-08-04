@@ -9,27 +9,44 @@ import { useAuth } from "@/lib/auth/AuthContext";
 const SEVERITIES = ["", "high", "medium", "low", "none"] as const;
 
 export default function NewsPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading, getToken } = useAuth();
   const [severity, setSeverity] = useState<string>("");
   const [page, setPage] = useState(1);
   const [items, setItems] = useState<NewsItem[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  // Bug fix (2026-08-04): this call never passed a token, so EVERY visitor —
+  // including a logged-in paid/founding subscriber — hit GET /news
+  // unauthenticated. The backend correctly defaults an unauthenticated
+  // caller to tier="free" and applies the 24h delay (core/auth.py's own
+  // documented behavior), so paid users were silently seeing the same
+  // delayed feed as free/anonymous ones. Same root cause class as
+  // SignalUnlockGate's fix, simpler here since this page was already a
+  // client component (no SSR-can't-read-localStorage step) — it just never
+  // attached the token it already had available via useAuth(). Waiting on
+  // authLoading first (rather than firing once anonymously, then again with
+  // a token) avoids a double-fetch/flash of stale data for a returning
+  // logged-in user.
   useEffect(() => {
+    if (authLoading) return;
     let cancelled = false;
     setLoading(true);
-    apiGetPaged<NewsItem>("/news", { params: { severity: severity || undefined, page, size: 20 } })
-      .then((env) => {
-        if (cancelled) return;
-        setItems(env.data);
-        setTotal(env.page_info.total);
-      })
-      .finally(() => !cancelled && setLoading(false));
+    (async () => {
+      const token = await getToken();
+      if (cancelled) return;
+      apiGetPaged<NewsItem>("/news", { params: { severity: severity || undefined, page, size: 20 }, token })
+        .then((env) => {
+          if (cancelled) return;
+          setItems(env.data);
+          setTotal(env.page_info.total);
+        })
+        .finally(() => !cancelled && setLoading(false));
+    })();
     return () => {
       cancelled = true;
     };
-  }, [severity, page]);
+  }, [severity, page, authLoading, getToken]);
 
   const totalPages = Math.max(1, Math.ceil(total / 20));
   const isFreeOrAnon = !user || user.tier === "free";
