@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { Home, BarChart3, Zap, Search, MoreHorizontal, User, CreditCard } from "lucide-react";
+import { Home, BarChart3, Zap, Search, MoreHorizontal, User, CreditCard, Bookmark } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 const NAV_ITEMS = [
@@ -53,6 +53,16 @@ export function Sidebar() {
         })}
       </nav>
       <div className="border-t border-border p-3">
+        <Link
+          href="/watchlist"
+          className={clsx(
+            "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium",
+            isActive(pathname, "/watchlist") ? "text-accent" : "text-foreground-muted hover:bg-hover hover:text-foreground"
+          )}
+        >
+          <Bookmark size={16} strokeWidth={2} />
+          Watchlist
+        </Link>
         {user ? (
           <Link
             href="/account"

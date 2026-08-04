@@ -75,8 +75,14 @@ export function IntradayScreen({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3 text-sm">
-        <span className="rounded-full bg-neutral-bg px-2.5 py-1 font-semibold text-neutral">
+      <div className="flex flex-wrap items-center gap-3 text-sm">
+        <span
+          className={clsx(
+            "flex items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold",
+            session.state === "live" ? "bg-up-bg text-up" : "bg-neutral-bg text-neutral"
+          )}
+        >
+          {session.state === "live" && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-up" aria-hidden />}
           Session: {session.state === "live" ? "LIVE" : session.state === "premarket" ? "PRE-MARKET" : "CLOSED"}
         </span>
         {session.risk_off && <span className="rounded-full bg-amber-bg px-2.5 py-1 text-amber">Risk-off tone</span>}
