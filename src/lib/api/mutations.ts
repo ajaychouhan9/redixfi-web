@@ -23,6 +23,10 @@ import type {
 export interface AuthUser {
   user_id: string;
   phone: string | null;
+  // Task 19 — a Google/email+password account's identity; null for an
+  // existing phone-OTP account that hasn't separately added an email via
+  // Account/Profile.
+  email: string | null;
   name: string | null;
   tier: string;
   tnc_accepted_at: string | null;
@@ -55,7 +59,7 @@ export async function getMe(token: string): Promise<MeProfile> {
   return env.data;
 }
 
-export async function updateProfile(token: string, body: { name?: string; email?: string; accept_tnc?: boolean }) {
+export async function updateProfile(token: string, body: { name?: string; email?: string; phone?: string; accept_tnc?: boolean }) {
   const env = await apiMutate<MeProfile>("/me", "PATCH", body, { token });
   return env.data;
 }

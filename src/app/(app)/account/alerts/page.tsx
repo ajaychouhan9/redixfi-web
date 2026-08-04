@@ -6,7 +6,7 @@ import { RequireAuth } from "@/components/app/account/RequireAuth";
 import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getMe, updateAlertPrefs } from "@/lib/api/mutations";
-import type { AlertPreferences } from "@/lib/api/types";
+import type { AlertPreferences, MeProfile } from "@/lib/api/types";
 
 const LABELS: Record<keyof AlertPreferences, { title: string; help: string }> = {
   watchlist: { title: "Signal changes on watchlist", help: "Notified when a signal state flips on a stock you're watching." },
@@ -16,32 +16,32 @@ const LABELS: Record<keyof AlertPreferences, { title: string; help: string }> = 
 
 function AlertsForm() {
   const { getToken } = useAuth();
-  const [prefs, setPrefs] = useState<AlertPreferences | null>(null);
+  const [profile, setProfile] = useState<MeProfile | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       const token = await getToken();
       if (!token) return;
-      const me = await getMe(token);
-      setPrefs(me.alerts_opt_in);
+      setProfile(await getMe(token));
     })();
   }, [getToken]);
 
   async function toggle(key: keyof AlertPreferences) {
-    if (!prefs) return;
+    if (!profile) return;
     setSaving(key);
     try {
       const token = await getToken();
       if (!token) return;
-      const next = await updateAlertPrefs(token, { [key]: !prefs[key] });
-      setPrefs(next);
+      const next = await updateAlertPrefs(token, { [key]: !profile.alerts_opt_in[key] });
+      setProfile({ ...profile, alerts_opt_in: next });
     } finally {
       setSaving(null);
     }
   }
 
-  if (!prefs) return <p className="text-sm text-foreground-muted">Loading…</p>;
+  if (!profile) return <p className="text-sm text-foreground-muted">Loading…</p>;
+  const prefs = profile.alerts_opt_in;
 
   return (
     <Card title="Alert preferences">

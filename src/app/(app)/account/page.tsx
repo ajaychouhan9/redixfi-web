@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AccountTabs } from "@/components/app/account/AccountTabs";
+import { AddPhoneCard } from "@/components/app/account/AddPhoneCard";
 import { RequireAuth } from "@/components/app/account/RequireAuth";
 import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -42,6 +43,7 @@ function AccountProfile() {
 
   return (
     <div className="space-y-4">
+      <AddPhoneCard profile={profile} onSaved={setProfile} />
       <Card title="Profile">
         <dl className="grid grid-cols-2 gap-y-2 text-sm">
           <dt className="text-foreground-muted">Phone</dt>
