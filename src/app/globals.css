@@ -1,60 +1,95 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --surface: #f7f8fa;
-  --surface-raised: #ffffff;
-  --border: #e4e7eb;
-  --foreground: #14181f;
-  --foreground-muted: #5b6472;
-  --foreground-faint: #8992a0;
+/* ===== RedixFi design system (UI reframe, locked 2026-08) =====
+   Deep indigo-navy dark theme / soft off-white light theme. Gold is the
+   brand color — used for chrome/CTAs/active states/AI content — and is
+   NEVER used for a signed gain/loss (jade/rose own that, symmetric,
+   market convention). Toggled manually via [data-theme] on <html>
+   (see lib/theme/ThemeContext.tsx); prefers-color-scheme only supplies
+   the first-paint default before JS picks a stored/system preference. */
 
-  /* Brand accent — used only for chrome/links/CTAs, never to imply
-     direction or sentiment (compliance: symmetric color use). */
-  --accent: #2f5ce0;
+:root,
+:root[data-theme="light"] {
+  --background: #f7f8fb;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --border: #e6e9f2;
+  --foreground: #1a2036;
+  --foreground-muted: #5c6584;
+  --foreground-faint: #9aa2b8;
+  --hover: rgba(0, 0, 0, 0.03);
+
+  --accent: #b8873a;
+  --accent-dim: #96702e;
   --accent-foreground: #ffffff;
 
-  /* Reserved EXCLUSIVELY for signed numeric deltas of things that already
-     happened (price/score change). Never used for aggregate mood, verdict
-     visuals, or anything forward-looking. Equal visual weight both ways. */
-  --up: #0f7a4a;
-  --up-bg: #e6f4ec;
-  --down: #b3261e;
-  --down-bg: #fbeae9;
-  --neutral: #5b6472;
-  --neutral-bg: #eef0f3;
+  --up: #1c9a63;
+  --up-bg: rgba(28, 154, 99, 0.08);
+  --down: #d63e30;
+  --down-bg: rgba(214, 62, 48, 0.1);
+  --neutral: #5c6584;
+  --neutral-bg: rgba(136, 145, 168, 0.1);
 
-  --amber: #9a6b00;
-  --amber-bg: #fbf1d9;
+  --amber: #a8650a;
+  --amber-bg: rgba(168, 101, 10, 0.1);
 
-  --focus-ring: #2f5ce0;
+  --focus-ring: #b8873a;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0b0d12;
-    --surface: #12151c;
-    --surface-raised: #171b23;
-    --border: #262b35;
-    --foreground: #e7e9ee;
-    --foreground-muted: #9aa3b2;
-    --foreground-faint: #6b7280;
+    --background: #0b0f1a;
+    --surface: #0d1220;
+    --surface-raised: #12172a;
+    --border: #1e2438;
+    --foreground: #e8eaf2;
+    --foreground-muted: #8891a8;
+    --foreground-faint: #5c6584;
+    --hover: rgba(255, 255, 255, 0.03);
 
-    --accent: #6c8fff;
-    --accent-foreground: #0b0d12;
+    --accent: #d4a94e;
+    --accent-dim: #b8873a;
+    --accent-foreground: #0b0f1a;
 
-    --up: #34c281;
-    --up-bg: #0f2a1e;
-    --down: #f27069;
-    --down-bg: #341313;
-    --neutral: #9aa3b2;
-    --neutral-bg: #1c212b;
+    --up: #3ecf8e;
+    --up-bg: rgba(62, 207, 142, 0.1);
+    --down: #f2685c;
+    --down-bg: rgba(242, 104, 92, 0.12);
+    --neutral: #8891a8;
+    --neutral-bg: rgba(136, 145, 168, 0.12);
 
-    --amber: #e0b23e;
-    --amber-bg: #2c2409;
+    --amber: #e8a33d;
+    --amber-bg: rgba(232, 163, 61, 0.14);
 
-    --focus-ring: #6c8fff;
+    --focus-ring: #d4a94e;
   }
+}
+
+:root[data-theme="dark"] {
+  --background: #0b0f1a;
+  --surface: #0d1220;
+  --surface-raised: #12172a;
+  --border: #1e2438;
+  --foreground: #e8eaf2;
+  --foreground-muted: #8891a8;
+  --foreground-faint: #5c6584;
+  --hover: rgba(255, 255, 255, 0.03);
+
+  --accent: #d4a94e;
+  --accent-dim: #b8873a;
+  --accent-foreground: #0b0f1a;
+
+  --up: #3ecf8e;
+  --up-bg: rgba(62, 207, 142, 0.1);
+  --down: #f2685c;
+  --down-bg: rgba(242, 104, 92, 0.12);
+  --neutral: #8891a8;
+  --neutral-bg: rgba(136, 145, 168, 0.12);
+
+  --amber: #e8a33d;
+  --amber-bg: rgba(232, 163, 61, 0.14);
+
+  --focus-ring: #d4a94e;
 }
 
 @theme inline {
@@ -65,7 +100,9 @@
   --color-foreground: var(--foreground);
   --color-foreground-muted: var(--foreground-muted);
   --color-foreground-faint: var(--foreground-faint);
+  --color-hover: var(--hover);
   --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
   --color-accent-foreground: var(--accent-foreground);
   --color-up: var(--up);
   --color-up-bg: var(--up-bg);
@@ -75,8 +112,8 @@
   --color-neutral-bg: var(--neutral-bg);
   --color-amber: var(--amber);
   --color-amber-bg: var(--amber-bg);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-plex-sans);
+  --font-mono: var(--font-plex-mono);
 }
 
 * {
@@ -86,6 +123,15 @@
 body {
   background: var(--background);
   color: var(--foreground);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Financial figures (scores, prices, deltas, percentages) always render in
+   the mono face with tabular numerals so columns of numbers align — prose
+   stays on the sans face. Apply via the `font-mono` utility class. */
+.font-mono,
+[class*="font-mono"] {
+  font-variant-numeric: tabular-nums;
 }
 
 ::selection {

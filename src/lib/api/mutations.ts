@@ -16,6 +16,7 @@ import type {
   PortfolioBrief,
   PortfolioAnalytics,
   AnomalyFlagDoc,
+  AskResult,
 } from "./types";
 
 // ---------- auth ----------
@@ -180,5 +181,19 @@ export async function getPortfolioAnalytics(token: string): Promise<PortfolioAna
 
 export async function getWatchlistAnomalies(token: string): Promise<AnomalyFlagDoc[]> {
   const env = await apiGetPaged<AnomalyFlagDoc>("/anomalies/watchlist", { token });
+  return env.data;
+}
+
+// ---------- Ask-RedixFi (Task 17) — auth required (require_auth, no
+// anonymous path); free tier is 1 question/symbol/day, paid/founding
+// 25/day + 450/month. A 429 here always carries a structured AskLimitDetail
+// in ApiError.detail — callers should catch ApiError and read e.detail
+// rather than treating this as a generic failure. ----------
+
+export async function askRedixfi(
+  token: string,
+  body: { symbol: string; question: string; conversation_id?: string | null }
+): Promise<AskResult> {
+  const env = await apiMutate<AskResult>("/ask", "POST", body, { token });
   return env.data;
 }

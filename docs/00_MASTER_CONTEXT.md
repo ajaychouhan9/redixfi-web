@@ -929,138 +929,657 @@ sweep is necessary but not sufficient here.
 Roadmap resumes at: **Task 16 — Tier 2 (personalized holdings brief,
 portfolio analytics, anomaly detection).**
 
-## Completion note — 3-bug fix session (2026-07-31)
+## Completion note — 3-bug session (2026-07-30)
+Bug 1 (AI Brief blank) — FIXED, LIVE-VERIFIED. Root cause: DailyBrief TS
+type declared brief_text, real API shape is {title, body}. Same bug
+found+fixed in 2 more places (/market-brief archive pages). Card moved
+above Market Pulse per founder decision.
+Bug 2 (paid users seeing paywall) — FIXED, code-verified, REQUIRES
+FOUNDER LIVE CHECK. Real root cause was NOT masking logic — it was
+architectural: Signals detail/list pages are Server Components that
+cannot read the browser's localStorage JWT, so SSR fetch was ALWAYS
+anonymous for EVERY visitor regardless of tier. Fixed: SSR renders
+anonymous-by-default (correct for SEO), small client component corrects
+with real token when logged in. Anonymous path verified live; the
+paid-correction path needs a real authenticated session to confirm
+(sandbox couldn't fake this) — FOUNDER MUST VERIFY by logging in for
+real and checking a locked symbol.
+Bug 3 (fundamentals_fetcher crash) — FIXED IN CODE ONLY, NOT
+OPERATIONALLY CLOSED. Confirmed root cause: pymongo decodes stored
+datetimes naive by default vs aware cutoff. Fixed with tz_aware=True
+scoped to this file only (not globally in config/db.py). Regression
+test 9/9 (reproduces crash, then proves fix). COULD NOT run against
+real prod data (no live Mongo path from sandbox) — fundamentals_raw
+WAS STUCK AT 1 DOC since Task 09 (confirmed via 3 days of identical
+failed-run logs, 2026-07-28/29/30). FOUNDER MUST run fetcher manually
+on VM and confirm count grows past 1 before this is truly closed.
+Comment fix (16:15→16:45) done as scoped. Flagged-not-touched: alert_worker
+window may also not reach 16:45 — noted for a future session, not fixed.
+NOTE: insider_trading_api.py has substantial uncommitted changes in the
+working tree — confirmed as founder's own in-progress work, correctly
+left untouched and excluded from this session's commit.
+537 backend checks + full frontend build pass, zero regressions.
 
-DONE, all 3 confirmed bugs fixed + verified, plus the stale scheduler
-comment. 537 backend offline checks (531 existing + 6 new in
-smoke_test_bugfixes.py) + 2 dedicated Python regression tests
-(test_fundamentals_fetcher_tz_fix.py, re-ran test_track_record_
-compliance.py) all passing, zero regressions. Frontend: tsc clean, lint
-13 problems (was 12 — see Bug 2 note below, not a new category), build
-clean (compliance sweep 0 errors, same 6 pre-existing warnings).
+## ⚠️ ACTION REQUIRED before Task 16 (founder, not a coding session)
+1. Deploy: git pull + restart redixfi + redixfi-api on VM.
+2. Run fundamentals_fetcher.py manually, confirm fundamentals_raw count
+   grows past 1 (was stuck since Task 09).
+3. Log in with a real paid account, check a locked symbol's Signals
+   detail page renders full (not paywalled) content.
+Both are the last unverified pieces from this session — do not start
+Task 16 until confirmed, since Task 16 (portfolio analytics) will lean
+on fundamentals data being genuinely populated.
 
-BUG 1 — AI Daily Brief blank on Home. ROOT CAUSE: `DailyBrief` TS type
-declared a `brief_text` field that never existed on the real API
-response — verified directly against data-pipeline/daily_brief_
-builder.py's own written doc shape: `{date, period, title, body, model,
-builder_version, created_at}`, no `brief_text`, no separate
-`stat_of_the_day` (already merged into `body` before save). The fetch
-succeeded every time (backend was correctly returning complete data,
-exactly as reported) — every reader just read `undefined` off the
-wrong field name, rendering an invisible blank paragraph rather than an
-error or the "no brief yet" fallback (since `brief` itself was
-truthy). FOUND THE SAME BUG IN 2 MORE PLACES while fixing (same root
-cause, not separately reported): /market-brief and /market-brief/
-[date] (the SEO archive pages) had the identical `brief.brief_text`
-read — fixed all 3 render sites + the type. Also moved AiDailyBriefCard
-to the top of Home, above MarketPulseCard (founder decision, literal
-JSX reorder). LIVE-VERIFIED against the real production API: raw HTML
-now shows real generated text ("The NIFTY 500 closed little changed,
-with 431 of 734 tracked stocks advancing...") in the correct top
-position; the "No brief generated yet today" fallback correctly does
-NOT appear.
+## Pattern watch: naive/aware datetime bug, 2nd occurrence
+cancel_subscription (Task 11) and fundamentals_fetcher.py (this
+session) both hit the identical naive-vs-aware datetime comparison
+crash. Worth a dedicated sweep across the codebase for the same pattern
+before a 3rd instance surfaces in production — not urgent, but flagged
+for a future small cleanup task.
 
-BUG 2 — paid users seeing the free-tier paywall on /signals/{symbol}.
-Could NOT query redixfi_app.users directly (no live Mongo path from
-this sandbox — confirmed via connection attempt against both MONGO_URI
-and MONGO_URI_APP, both refused). Traced the masking logic instead:
-core/auth.py's get_auth_context() and routers/signals.py's
-signal_detail() B8 check are BOTH correct — live per-request DB tier
-lookup, plain string comparison, no caching. Added the regression test
-the task asked for anyway (scripts/smoke_test_bugfixes.py — same route,
-same symbol, free-token vs paid-token vs founding-token, all 6 checks
-pass) — this ALSO serves as hard evidence the backend isn't the
-culprit. REAL ROOT CAUSE, found by tracing the actual frontend call
-path: app/(app)/signals/[symbol]/page.tsx is a Server Component and
-NEVER sent the caller's auth token to GET /signals/{symbol} — Server
-Components can't read localStorage (where AuthContext keeps the JWT;
-this codebase has no cookie-based session anywhere), so the SSR fetch
-was ALWAYS anonymous, meaning EVERY visitor — including real paying
-subscribers — got the free-tier `locked` response for any symbol
-outside the fixed unlocked-N. FOUND THE SAME BUG in
-SignalsExplorer.tsx's /signals LIST fetch too (client component, had
-`useAuth`/`getToken` imported and used elsewhere in the same file, just
-never wired into the main list fetch) — fixed both.
-FIX: SignalsExplorer.tsx — trivial, wire getToken() into the existing
-fetch. Signal detail page — extracted the full unlocked-view markup
-into a new presentational SignalDetailView.tsx (same split Task 14 used
-for Research), and added SignalUnlockGate.tsx (client component): the
-server page still renders anonymously by default (correct for SEO/
-crawlers/logged-out visitors, the majority case — deliberately NOT
-retrofitting cookie-based SSR auth, which would be a much bigger,
-riskier architecture change affecting every server-rendered page in the
-app, out of scope for a bug-fix session); the gate only fires an extra
-client-side re-fetch WITH the real token when someone is actually
-logged in AND the anonymous SSR render came back locked — zero extra
-work for anonymous visitors or already-unlocked symbols. LIVE-VERIFIED
-anonymous behavior unchanged (RELIANCE still correctly locked, 360ONE
-still correctly unlocked with full content) — the paid-correction path
-itself couldn't be exercised with a real authenticated browser session
-from this sandbox, but rests on the same already-proven getSignalDetail
-call + the backend regression test above.
-LINT NOTE: SignalUnlockGate.tsx's early-return setState call trips the
-same non-build-blocking `react-hooks/set-state-in-effect` rule already
-present in 12 other places across this codebase (never fixed anywhere
-else, not wired into next build's lint gate) — left consistent with
-existing convention rather than restructuring a correct component to
-chase a stylistic rule enforced nowhere else in the app. 13 vs the
-previous 12-error lint baseline; not a new category of issue.
+## ✅ ALL 3 BUGS + fundamentals backfill FULLY CLOSED (2026-07-31)
+Founder completed all verification steps personally:
+- Bug 2 (paid paywall): LIVE-CONFIRMED via real login. Account shows
+  Tier=Paid, Plan=monthly_499, Status=Active. SMLMAH renders full
+  content: score, tension callout, why-did-this-change, complete
+  analyst checklist INCLUDING two new fundamentals-derived rows now
+  flowing correctly end-to-end ("Growth trend: Revenue grew 13.2% YoY",
+  "Valuation vs peers: P/E 37.92 vs sector avg 27.85"), full change log.
+  No paywall message. Fully closed.
+- Bug 3 (fundamentals_fetcher) + derived builder: fundamentals_raw
+  1→751, fundamentals_derived 1→751 (100% coverage), symbols_master
+  market_cap/industry backfilled for 740 symbols. parse_warnings on
+  742/751 docs INVESTIGATED AND CONFIRMED HEALTHY — matches indianapi's
+  own real data pattern (BAL/CAS only reported for Mar/Sep quarters,
+  income-statement-only for Jun/Dec — verified against the actual
+  RELIANCE payload seen earlier in this project). Not a bug, expected
+  source-data behavior, defensive parsing working correctly.
+- Bug 1 (AI brief): already live-verified in prior message.
+This closes the entire fundamentals pipeline gap that had been open
+since Task 09 — Task 16 (portfolio analytics) can now build on genuinely
+populated data across ~750 stocks, not just RELIANCE.
 
-BUG 3 — fundamentals_fetcher.py crashing every run since Task 09.
-ROOT CAUSE CONFIRMED exactly as reported: pymongo's DEFAULT decode
-returns Mongo-stored datetimes as timezone-NAIVE even when written
-tz-AWARE (`fetched_at: dt.datetime.now(timezone.utc)`) — pick_targets()
-then compared that naive `ts` against a freshly-computed AWARE `cutoff`,
-raising the exact reported TypeError on every run. FIX: applied
-tz_aware=True via CodecOptions scoped to THIS FILE's own
-fundamentals_raw collection access (`_fundamentals_collection()`
-helper using `.with_options()`) rather than globally in config/db.py —
-that shared module is used by every other pipeline script
-(measured_signals_builder.py, daily_brief_builder.py, accuracy_
-checker.py, signal_attribution.py, track_record_builder.py, etc.) and
-an unaudited global tz_aware flip risked breaking datetime comparisons
-in scripts this session never touched. Confirmed mongomock faithfully
-reproduces the real naive/aware distinction (checked directly before
-writing the fix) — data-pipeline/test_fundamentals_fetcher_tz_fix.py
-is a genuine regression test: it first REPRODUCES the exact TypeError
-using the old read pattern (proving the test isn't vacuous), then
-proves pick_targets() runs clean and correctly orders never-fetched
-before stale, excludes fresh, using the ACTUAL fixed module (imported
-directly, not reimplemented) — 9/9 passing.
-⚠️ OPEN, NOT CLOSED YET per the task's own acceptance bar: "run the
-fetcher manually and confirm fundamentals_raw count increases beyond 1"
-could NOT be done from this sandbox — confirmed no live Mongo path via
-direct connection attempts against both MONGO_URI and MONGO_URI_APP
-(both refused at 127.0.0.1:27017, the SSH-tunnel-only address). An
-operator with VM access must run:
-    cd /home/ubuntu/redixfi-backend && python3 data-pipeline/fundamentals_fetcher.py
-and confirm `db.fundamentals_raw.count_documents({})` > 1 afterward —
-until that's done live, this bug is code-fixed and test-proven but NOT
-yet operationally closed.
+Roadmap resumes at: **Task 16 — Tier 2 (personalized holdings brief,
+portfolio analytics, anomaly detection).**
 
-ALSO: scheduler.py's stale "16:15" comment near the alert_worker window
-(now correctly reads "16:45 — see Task 10 A4's move off the original
-16:15 TEMPORARY slot") — comment-only, exactly as instructed. NOTED but
-NOT fixed (out of the literal "comment only" scope, flagging for a
-future session): the alert_worker window itself still reads
-`(h==16 and m<=30)`, which may not actually extend far enough to catch
-a 16:45 daily_brief_close write until the following day's window opens
-— worth a operator check, not assumed to be a problem, not fixed here.
+## Completion note — Task 16 (2026-08-01)
+DONE. 588/588 offline checks (537+51 new), 0 regressions. Frontend
+build/typecheck/compliance clean incl. new /account/portfolio route.
+Part A: portfolio_brief_builder.py reuses summary_cards.watchlist_summary()
++ Task 10's component_changes — computes nothing new. Zero-live-LLM
+proven same way as Task 12 (key removed + urlopen patched to raise).
+Part B: portfolio_analytics.py, pure aggregation, hand-verified against
+fixture. Part C: anomaly_detector.py, full-universe/disclosed-criteria/
+symmetric by construction, CALIBRATED against real historical data —
+CAPILLARY 11.83x volume ("up") and ROUTE 19.96x ("down") from the
+2026-07-27 live observation both correctly caught by the same
+mechanical rule.
 
-FILES (backend, C:\redixfi): data-pipeline/fundamentals_fetcher.py
-(patched) · data-pipeline/test_fundamentals_fetcher_tz_fix.py (new) ·
-prediction_engine/scheduler.py (patched: comment only) ·
-api/scripts/smoke_test_bugfixes.py (new).
-FILES (frontend, C:\redixfi-web): src/lib/api/types.ts (patched:
-DailyBrief) · src/components/app/AiDailyBriefCard.tsx (patched) ·
-src/app/(seo)/market-brief/page.tsx (patched) · src/app/(seo)/
-market-brief/[date]/page.tsx (patched) · src/app/(app)/page.tsx
-(patched: card reorder) · src/components/app/signals/
-SignalsExplorer.tsx (patched: token wiring) · src/app/(app)/signals/
-[symbol]/page.tsx (rewritten) · src/components/app/signals/
-SignalDetailView.tsx (new) · src/components/app/signals/
-SignalUnlockGate.tsx (new).
+## ⚠️ TOP PRIORITY OPEN ITEM — found this session, NOT fixed
+`ra_mode.FORBIDDEN_FIELDS` strips ANY key literally named "direction"
+from every API response, recursively. This is CORRECTLY stripping
+Task 16's own anomaly "direction" field (renamed to anomaly_direction
+to fix), but the SAME collision has ALSO been silently stripping
+`measured_signals.component_changes[].direction` since TASK 10 — every
+"Why did this change?" up/down/flat arrow has been invisible in the
+live API since it shipped, a LIVE user-facing bug running for days
+undetected. NOT fixed this session (bigger than Task 16's contract).
+FIX NEXT SESSION: rename component_changes' direction field (e.g. to
+change_direction) to avoid the FORBIDDEN_FIELDS collision, matching
+the same fix pattern already applied to Task 16's anomaly field.
 
-Roadmap resumes at: **Task 16 — Tier 2** (unchanged) — the fundamentals_
-fetcher live-run confirmation above should happen opportunistically
-before or alongside it, not block it.
+## Other findings this session
+- filings_insider.trade_date is DD-Mon-YYYY format — a broken date-
+  parse call was caught+fixed in Task 16's own insider-cluster
+  detector; FLAG: measured_signals_builder.preload_insider likely has
+  the IDENTICAL bug (same date format, unverified) — check next session.
+- alert_worker's scheduler window never actually reached 16:45 (long-
+  flagged) — FIXED this session while wiring Task 16's own evening jobs
+  into the same window.
+- Compliance-test regex false-positived on legitimate "call-heavy"/
+  "put-heavy" PCR vocabulary — carve-out added with its own self-test.
+- Real writes made to production Mongo during live verification — left
+  as-is per established precedent (same call as prior sessions).
+
+OPEN: VM deployment not yet done this session (commit+push+deploy is
+the founder's next immediate step). component_changes direction bug
+(above) is the clear top priority for the next session — it directly
+affects a feature already marketed as live (the "Why did this change?"
+breakdown, confirmed working in earlier live screenshots via a
+different rendering path — worth checking whether the UI has a
+fallback that's been masking this, or whether it's been silently blank).
+
+Roadmap: Tier 2 (Task 16) complete. Remaining queue: parked UI reform
+pass (repricing to ₹249/mo, founding-counter visibility, comparison-
+tray polish, remaining minor P0s), the direction-field bug fix above,
+WhatsApp/Telegram delivery (still blocked on opt-in checkbox, not yet
+built), and eventual RA-registration-triggered post-RA build (doc 08).
+
+## DECISION — Ask-RedixFi (Task 17) pricing: BUNDLED, not add-on (2026-08-XX)
+FINAL: Ask-RedixFi chat is INCLUDED in the base ₹249/mo tier (and
+Founding Annual) — NOT sold as a separate add-on. Free tier gets 1
+question/symbol/day (same taste-not-full-access pattern as the existing
+3 research-lookups/day rule); paid/founding get the existing 25/day
+fair-use cap from Task 17's spec, no elevated tier for Founding.
+
+REASONING (founder + AI reasoning, both converged):
+1. 1/day free is a real conversion lever toward paid (taste, not access).
+2. Some margin from bundling beats zero visibility from a hidden add-on
+   — an add-on nobody tries can't convert anyone, regardless of price.
+3. Cost is worst-case ~₹75-100/user/month (still profitable against
+   ₹249) and SHRINKS as the base grows, since realistic average usage
+   sits well below the fair-use ceiling — scale improves unit economics
+   here, doesn't just dilute a fixed cost.
+4. Strongest underweighted reason: this is genuinely the most
+   SHAREABLE feature in the product (a grounded, correctly-hedged AI
+   answer is a natural screenshot/social post) — directly serves the
+   organic-only acquisition strategy (no paid ads, CAC ceiling ~₹2k).
+5. Consistent with the ₹249 repositioning thesis: more value at lower
+   price, confident-newcomer positioning, not per-feature revenue
+   maximization.
+6. Builds visible brand differentiation NOW so the founding-annual
+   pitch ("lock in before RA") and eventual RA-day pricing both land on
+   a base that already believes RedixFi is worth more than its price —
+   consistent with the "pre-RA phase must build the real moat, not just
+   fund registration" position from the original competitive-threat
+   discussion (Screener/Trendlyne/free-AI-tools).
+
+DOWNSIDE ASYMMETRY (the deciding argument): bundling underperforming
+costs a small, capped, affordable margin. Add-on pricing underperforming
+silently buries the product's best differentiator where most users never
+see it — an uncapped strategic loss, not a financial one. Given the
+product's whole growth model depends on organic/shareable moments,
+the bundled path's downside is the only one that stays inside the
+existing pricing-decision framework's risk tolerance.
+
+Update Task 17's acceptance criteria: add explicit line — free tier
+1 question/symbol/day, paid+founding 25/day shared cap, no separate
+paid tier for this feature.
+
+## Data depth reference (confirmed 2026-08-XX, for UI/marketing honesty)
+- Price candles: ~1Y today, EASILY EXTENDABLE anytime via dhan_candles.py
+  (configurable date range, not hardcoded — just widen fromDate, no new
+  integration). Non-issue, config-only whenever desired.
+- Fundamentals (5Y annual financials, shareholding history): rich TODAY
+  via indianapi's own filed data — this is third-party historical depth,
+  not something RedixFi accumulated. Lean on this in early marketing —
+  it's the deepest, most credible historical asset available right now.
+- RedixFi's OWN composite score / Signal Change Log / "Why did this
+  change?": only since ~18 Jul 2026 (~2-3 weeks as of writing). This is
+  the ONE genuinely time-bound gap — cannot be backfilled, only grows
+  forward day by day as the system runs. UI IMPLICATION: do not show a
+  "1Y" toggle on signal history the way price charts have one (would
+  visually promise depth that doesn't exist) — Signal Change Log should
+  just show what exists, however short, honestly.
+- Track record (Task 15): effectively empty/sparse right now — the
+  20-session forward-return study needs completed observation windows,
+  which barely exist yet given the above. DO NOT prominently promote
+  /track-record in primary nav until it has a few months of real
+  completed data — premature promotion would show an embarrassingly
+  empty proof-of-concept instead of the intended trust-builder.
+
+## Vendor evaluation — Marketaux + IndianAPI (2026-08-XX)
+Confirmed via real pricing pages (screenshots): IndianAPI free tier
+(500 req/mo) sufficient today given current fundamentals_fetcher pace
+(~30/day rolling). $399 vs $799 tiers are CAPACITY-ONLY, no feature
+gap (Corporate Actions data already in the free/basic /stock payload,
+confirmed via Task 09's own field map) — upgrade decision is pure
+request-volume math whenever needed, $399 not $799 first.
+Marketaux free tier (100 req/day, 3 articles/req) currently sufficient
+because architecture fetches breaking news + LLM-classifies, NOT
+per-symbol (confirmed — corrects an earlier assumption in this doc).
+Standard tier ($49/mo) unlocks a REAL feature (Market Stats sentiment
+API) not just more headroom — genuine future upgrade, see Task 18.
+DEFERRED, POST-LAUNCH per founder decision: Task 18 (Marketaux upgrade
++ hybrid per-stock news, full NSE ~2,000 stock coverage without adding
+LLM classification cost — only the per-symbol classification would have
+been expensive, ~₹15-27k/mo worst case; skipping classification on the
+per-stock tier keeps added cost to just the ₹4,100/mo subscription).
+Do not build until founder confirms post-launch revenue supports it.
+
+## ✅ UI MOCKUP PHASE COMPLETE (2026-08-XX)
+9 interactive React mockups built and approved, covering the entire
+sitemap: Home, Signals (list+detail), Research, Watchlist, Intraday,
+Account (5 tabs: Profile/Watchlist/Portfolio/Alerts/Inbox), News, More
+(+Data Sources +Disclaimer, content preserved verbatim from real site).
+Design system locked: deep indigo-navy base (#0B0F1A dark /
+#F7F8FB light) with dark/light toggle, IBM Plex Mono for all financial
+figures, IBM Plex Sans for prose, warm gold (#D4A94E) reserved
+EXCLUSIVELY for AI-generated content and brand — never touches gains/
+losses (jade #3ECF8E / rose #F2685C, market convention preserved).
+Key patterns established, apply consistently in real build:
+- Persistent "RedixFi AI" button in top ribbon on EVERY page (not a
+  floating bubble — that was tried and deliberately removed for
+  redundancy once the persistent button existed)
+- Comparison: add from anywhere (Signals rows, Signal/Research detail
+  "Compare (N)" indicator with dropdown preview), always resolves on
+  Signals page (Task 13's backend). Must be ONE shared sessionStorage-
+  backed list across real routes, not per-page state.
+- Locked-content pattern: blur + lock icon + "Unlock with Analytics
+  Pro" CTA, reusable Panel component
+- Tier toggle demonstrates free/paid states side by side for review
+Files: redixfi_plan_package/mockups/*.jsx (9 files, reference only —
+NOT production code, rebuild properly in Next.js/TypeScript preserving
+the visual system + established patterns).
+
+## FINAL EXECUTION SEQUENCE (founder decision, locked)
+1. **Task 17 (Ask-RedixFi) FIRST** — build the backend (fact-packet
+   assembly, grounded LLM call, causal-question rule, tense validator,
+   /ask API) per the already-fully-specced task doc (architecture,
+   cost model ~₹0.10-0.15/query, bundled-not-addon pricing, dual daily+
+   monthly caps, topup persistence rules all locked).
+2. **THEN the full UI reframe** — rebuild all 9 mockup screens as real
+   Next.js pages in redixfi-web, preserving the design system + patterns
+   above, wiring in the real Ask-RedixFi backend from step 1.
+3. **News per-stock upgrade (Task 18) — EXPLICITLY DEFERRED past launch.**
+   Add a visible but INACTIVE placeholder now during the UI reframe
+   ("Coming soon" state or simply hidden/feature-flagged) rather than
+   building the real hybrid fetch — Task 18's full spec (Marketaux
+   Standard upgrade, LLM-free per-stock fetch, dedup, Market Stats
+   sentiment field) stays parked until post-launch revenue, per its
+   existing "DEFERRED, POST-LAUNCH" status. Do not build the real
+   fetcher now — just make sure the UI has a graceful placeholder slot
+   so it can be enabled later without a UI rebuild.
+Other deferred items (unchanged, still parked): Firebase→MSG91
+migration (founder doing separate R&D), ₹249 pricing rollout, founding-
+counter visibility fix, remaining minor P0s (duplicate insider rows,
+number formatting) — batch these in whenever convenient, not blocking
+the 3-step sequence above.
+
+## New tasks added: 19 (Auth redesign), 20 (Checkout redesign)
+Task 19: Google Sign-In primary + email/password fallback, replacing
+phone-OTP-as-default. Phone becomes optional post-signup field (WhatsApp
+alerts / future KYC). Apple Sign-In deferred until iOS app exists.
+KEY INSIGHT: this may make the Firebase→MSG91 migration UNNECESSARY —
+the cost driver was phone SMS verification specifically, not Firebase
+itself; Google/email login triggers no SMS billing.
+
+Task 20: Pricing → Checkout page. Real subscription status display
+(reusing Account/Profile's component). Monthly→annual upgrade is
+SCHEDULED (payment captured now, plan activates at current cycle's
+end) rather than prorated — deliberately avoids proration date-math
+given this project's TWO prior naive/aware datetime bugs
+(cancel_subscription, fundamentals_fetcher). Universal single promo-
+code input (no separate public/private UI, same existing
+promo_codes/validate infra from Task 04) + new create_promo_code.py
+script for founder to generate codes (up to 100% discount) without
+touching DB directly. Ask-RedixFi 50-question/₹99 topup added as a
+proactively-purchasable checkout line item for paid/founding users
+(was reactive-only per Task 17).
+
+## UPDATED EXECUTION SEQUENCE
+1. Task 17 (Ask-RedixFi backend) — unchanged, first.
+2. Task 19 (Auth redesign) — should land BEFORE or ALONGSIDE the full
+   UI reframe, since it changes the login screen fundamentally.
+3. Full UI reframe (9 mockup screens → real Next.js) — now INCLUDES
+   Task 20's checkout redesign as part of this pass, not a separate
+   later effort. News per-stock (Task 18) stays placeholder/hidden.
+
+## ⚠️ PRICING STRUCTURE UPDATE — final, supersedes all earlier numbers
+FINAL locked pricing (replaces every earlier ₹499/₹4,999/₹2,499-only
+mention in this doc — this is the authoritative structure going forward):
+- **Free**: ₹0 — 1 AI question/day, limited research lookups
+- **Analytics Pro (monthly)**: ₹249/month
+- **Annual (standard)**: ₹2,499/year — same features as monthly, billed
+  yearly, available to everyone once founding cap is reached
+- **Founding Annual**: ₹1,799/year — LOCKED for as long as subscription
+  stays active, capped at first 200 subscribers (matches existing
+  founding-counter mechanic in Task 04/UI mockups — do not need to
+  rebuild that counter, just the price attached to it changes)
+- **AI topup**: ₹99 for 50 questions, never expires, survives
+  cancellation (unchanged, Task 17)
+
+## ⚠️ CRITICAL — founding tier is PRICE-LOCK ONLY, never a feature promise
+FOUNDER DECISION, IMPORTANT: Founding Annual subscribers are promised
+LOWER PRICE ONLY (₹1,799 vs standard ₹2,499), NEVER specific future
+features, and explicitly NEVER "post-RA features included free."
+REASONING (founder's own analysis, correct and important):
+1. No prototype of post-RA features exists yet — promising specific
+   scope to specific paying customers before the product exists creates
+   a real commercial obligation to a shape of product that may not
+   match what actually gets built once RA registration happens.
+2. REAL REGULATORY RISK FOUND: RAASB deposit requirements scale by
+   CLIENT COUNT, not revenue (₹1L up to 150 clients, ₹2L for 151-300,
+   etc. — confirmed earlier in this project). If 200 founding members
+   were promised automatic access to future RA-gated features, they
+   would ALL instantly become RA "clients" the moment registration
+   completes — regardless of whether any of them pay another rupee
+   after their original founding purchase (which may have happened
+   months or years earlier). This could push the deposit bracket up
+   on day one of registration, funded by revenue that was already
+   spent long before RA existed. This is a genuine, quantifiable
+   financial exposure — NOT a hypothetical concern.
+This decision is now FINAL and must be reflected everywhere: marketing
+copy (one-pager, done), the actual Founding Annual product description
+on the real Pricing/Checkout page (Task 20 — UPDATE Task 20's plan
+references from the old ₹4,999→₹2,499 framing to this final ₹1,799
+founding / ₹2,499 standard-annual structure), and any future RA-day
+communication to existing founding subscribers (do NOT imply they get
+new features automatically — if/when a decision is made to reward
+early subscribers post-RA, it must be a SEPARATE, deliberate decision
+made with real data at that time, not a promise locked in today).
+
+## RA disclosure wording — final, locked
+"Our current focus is building the most trusted analytics platform in
+India. Any future regulated research services will only be introduced
+after we receive the necessary regulatory approvals." — use this
+phrasing (or minor variations preserving the same meaning) EVERYWHERE
+RA status is mentioned publicly. Do NOT use forward-promise language
+("once registered, we will also offer...") anywhere in marketing copy,
+UI, or public communication — matches the same discipline already
+enforced in-product (tense/forbidden-words validators) but this was a
+real gap in marketing copy specifically, now closed.
+
+## Completion note — Task 17, Ask-RedixFi backend (2026-08-04)
+DONE. 56 new offline checks, 0 regressions against 11 pre-existing
+offline suites re-run this session.
+ARCHITECTURE: fact packet (measured_signals + fundamentals_derived +
+signal_change_log + matched news_events + keyword-matched
+education_content) assembled in build_fact_packet(), pure code, before
+any LLM call — verified TWO ways: exact dict diffed byte-for-byte
+against packet builder's own output, AND a separate test stubs
+urllib.request.urlopen directly to confirm the real outbound HTTP body
+contains exactly that packet's JSON, nothing else.
+GUARDRAILS: causal-question rule reuses Task 12's causal.py verbatim +
+a code-level regex backstop (CAUSAL_ATTRIBUTION_RE), forced-failure
+tested (mocked LLM fabricating a cause rejected pass 1, clean
+regeneration accepted pass 2, doubly-fabricated falls to template).
+Refusal: two-layer guard reusing screener.REFUSAL_LINE +
+raw_query_forward_intent directly — DEVIATION (smart, unprompted): a
+layer-2 match now skips the LLM call entirely, no cost paid on an
+already-forced refusal. sources_used computed in code from which
+packet sections had data, never LLM-self-reported (guarantees "never
+empty on real answer" by construction).
+USAGE LIMITS: free 1/symbol/day → subscribe-CTA, never topup. Paid/
+founding: daily(25)+monthly(~450), neither carries forward (verified
+by seeding a stale prior-period counter at 999, confirmed zero
+effect). Topup independent persistent top-level field, reactive-
+purchase only, verified to survive a tier-flip/cancellation and remain
+usable after. Free tier's topup purchase attempt correctly 403s.
+SCOPE DECISION (flagged): did not apply /signals/{symbol}'s free-tier
+symbol-locking to Ask-RedixFi — task doc names exactly two limiting
+axes (daily+monthly), and topup's "usable regardless of subscription
+status" language reads as usable on any symbol. Founder to confirm
+this matches intent.
+⚠️ PRE-EXISTING BUG FOUND (not caused, not fixed this session):
+scripts/smoke_test.py crashes at a /news?symbol=TCS check — root
+cause: news.py's free-tier 24h delay filters out a fixture doc that
+research.py's undelayed embed shows. This is a REAL inconsistency
+(free users see fresher news via Research page than via News page —
+a loophole), not just a test artifact. Confirmed unrelated to this
+session's changes.
+⚠️ REPO STATE FOUND: only one prior commit ("Tasks 03-05 complete")
+existed — everything through Task 16 was sitting uncommitted. Bundled
+into one commit with Task 17 per founder's choice. THIS GAP IS NOW
+CLOSED — confirm git log shows the full history before trusting "what
+Task N did" purely from working-tree state in future sessions.
+
+## Live bugs found via founder screenshot review (2026-08-04) — QUEUED, NOT YET FIXED
+Two confirmed, precisely evidenced bugs, next session's scope:
+
+**Bug A — News page + Intraday Events tab show STALE results; per-symbol
+pages are current.** Confirmed via screenshots: GODFRYPHLP's Research
+page shows a real 04-Aug 11:54am article; the News page and Intraday
+Events tab both top out at 03-Aug 06:03pm — today's articles missing
+from both aggregate views entirely. NOT a fetcher problem (article
+demonstrably exists, was fetched, displays correctly per-symbol) — the
+aggregate News/Events queries differ from the per-symbol embed query
+somehow (date-range bug, timezone mismatch, wrong sort, or hitting a
+stale view/collection — root cause not yet found, needs investigation).
+Same root SHAPE as the pre-existing smoke_test.py bug above (aggregate
+vs per-symbol news inconsistency) but this is a plain staleness bug,
+not the free-tier-delay tier-logic issue — likely worth investigating
+together in the same session since both touch news query consistency
+across surfaces.
+
+**Bug B — AI Smart Screener has no fallback for a bare stock symbol/
+company name.** Confirmed: typing "GODFRYPHLP" into the AI Smart
+Screener box returns "No filters recognized, No stocks matched (0)" —
+but the SAME text in the separate plain "Search company or symbol"
+filter box instantly finds it. Underlying data/matching both work
+fine — the AI parser just doesn't recognize "this is just a name, show
+me that stock" as a valid intent alongside its existing filter-
+extraction and compare intents. Fix: add direct-symbol-search as a
+third recognized intent, fuzzy-matched against symbols_master (reuse
+the same lookup Task 13's compare feature already uses for unknown-
+symbol suggestions).
+
+NEXT SESSION should tackle: Bug A + Bug B above, PLUS the pre-existing
+smoke_test.py free-tier-delay inconsistency (Research page should
+respect the same 24h delay News page enforces for free users — founder
+confirmed real paid-tier news freshness is currently ~1 day old anyway
+since the fetcher only runs a few times daily, so "live" must never be
+claimed in copy anywhere until Task 18's upgrade — this is already
+reflected correctly in the one-pager's "Same-day news" phrasing, just
+confirming no other UI copy overclaims).
+
+## ✅ 2-bug fix session CLOSED, verified on production (2026-08-04)
+Both root-caused with real evidence, neither matched the original
+queued hypothesis:
+Bug A — NOT a backend bug. news.py's query was correct all along.
+Root cause: redixfi-web's news/page.tsx AND EventsTab.tsx both forgot
+to attach the logged-in user's auth token when calling /news — every
+visitor, including paid/founding accounts, was silently hit as
+anonymous, triggering the free-tier 24h delay unconditionally.
+research.py's embed has no such delay, which is why it alone looked
+current. SAME BUG CLASS as the 2026-07-30 Signals-paywall fix
+(frontend forgetting to pass the token) — recurring pattern, worth
+watching for a third occurrence. Fixed: both call sites now resolve
+and pass a real token. Backend contract test added (redixfi-web has
+no test runner).
+Bug B — confirmed as suspected. Fixed via
+core/screener.py::_resolve_direct_symbol_search() — pure code
+fallback, reuses Task 13's resolve_compare_symbols() unchanged, fires
+only when LLM returns zero filters + query not refused + confident
+match only (never fuzzy-guesses). Works even with no OPENAI_API_KEY.
+SIDE FINDING (not fixed, correctly left alone): the Task-17-session
+smoke_test.py crash didn't reproduce this run (308 clean vs crashing
+at 292 before) — consistent with the fixture comparing against
+real-time now_ist(), making it flaky around the 24h-delay boundary
+rather than a deterministic bug. Out of scope, noted for whoever next
+touches that fixture.
+17 new regression checks, 0 regressions across 450 total. Frontend
+build clean. PUSHED AND VERIFIED WORKING ON PRODUCTION by founder.
+
+Roadmap resumes at: **Task 19 — Auth redesign (Google Sign-In primary
++ email fallback)**, per the locked execution sequence.
+
+## ✅ Task 19 (Auth redesign) CLOSED, verified working live (2026-08-04)
+Google Sign-In + Email/Password both live and confirmed working on
+production. Two real deployment gaps found and fixed during rollout
+(both worth remembering as a pattern for future Firebase/Vercel work):
+1. NEXT_PUBLIC_FIREBASE_PROJECT_ID was scoped to "Preview" only in
+   Vercel while the other 3 Firebase vars were "Production and
+   Preview" — silent mismatch, caused "Firebase is not configured" on
+   the live site despite correct-looking individual values. LESSON:
+   when checking Vercel env vars, verify EVERY var's environment scope
+   individually, not just that "it's set" — a single mis-scoped var
+   among several correct ones is an easy miss.
+2. Google and Email/Password sign-in providers both needed to be
+   manually enabled in Firebase Console (Authentication → Sign-in
+   method) — same "provider must be explicitly toggled on" pattern
+   already hit once before with Email/Password itself. Phone was
+   already enabled from the original setup.
+Both fixed, confirmed working via live testing by founder.
+
+Roadmap resumes at: **Full UI reframe** (rebuild all 9 mockup screens
+as real Next.js pages, preserving the established design system +
+patterns, now including Task 20's checkout redesign as part of this
+same pass per the locked execution sequence). News per-stock (Task 18)
+stays placeholder/hidden throughout.
+
+## Completion note — Task 19 code detail (2026-08-04)
+19 new regression checks, 0 regressions across 14 suites (677 total).
+Frontend build clean, all 24 routes.
+ARCHITECTURE: Google + email/password both produce a Firebase ID token
+with an email claim — ONE endpoint (POST /auth/firebase-login,
+unchanged) serves all three login kinds, branching on which claim
+came back. Phone-flow accounts completely untouched.
+⚠️ REAL BUG CAUGHT: phone's unique index needed to become SPARSE — a
+plain unique index treats every doc missing the field as an implicit
+null, so the 2nd+ Google/email signup (no phone) would have collided
+on that shared null and failed to register. Fixed with sparse-unique
+index on phone AND a matching one added on email. Also fixed two
+pre-existing unsafe user["phone"] bracket accesses that would 500 on
+any email-only account.
+DEVIATION (deliberate, reasoned): phone-OTP NOT deleted from login —
+collapsed behind "Log in with phone instead" link, existing-accounts-
+only. Correct call: outright deletion would satisfy "no phone at
+signup" while silently breaking "existing accounts still work" (no
+path left to obtain a phone-based token at all).
+Phone add-on: PATCH /me, deliberately NOT OTP-verified (grep-verified
+no SMS round-trip), placed in Account/Profile per the literal
+acceptance criterion. Empty string correctly $unsets rather than
+storing "" (would collide against the new sparse index otherwise).
+Founder action items from this note (enable Google provider, test live
+signup) were ALREADY DONE in the founder's own live Firebase debugging
+session — see prior entry. Both closed.
+
+## Completion note — UI reframe session 1: Home + Signals list (2026-08-04)
+REPO: C:\redixfi-web only — backend untouched (677/677 offline checks
+re-run unchanged, 0 regressions, confirms nothing here required a
+backend change). Firebase/Vercel env vars NOT touched, per instruction.
+
+SCOPE DONE: Home page and Signals page (list view) rebuilt as real
+Next.js pages matching mockups/redixfi-home-mockup.jsx and
+redixfi-signals-mockup.jsx, wired to existing real API endpoints (no
+mock data), real free/paid tier logic, real Ask-RedixFi backend
+(Task 17) powering a new persistent AI button.
+
+SHARED SHELL (necessarily touched — the AI button + design system are
+explicitly "every page" requirements, so this is intended blast
+radius, not creep; PAGE CONTENT outside Home/Signals was not touched):
+- globals.css: full retint to the locked indigo-navy/gold system
+  (#0B0F1A / #F7F8FB bases), replacing the old generic blue-accent
+  theme. Added [data-theme] overrides alongside the existing
+  prefers-color-scheme block so a manual toggle can win either way.
+- layout.tsx: Geist → IBM Plex Sans/Mono (next/font/google), new
+  ThemeProvider, no-flash inline theme script (localStorage/system
+  pref applied before hydration paints).
+- New lib/theme/ThemeContext.tsx + ui/ThemeToggle.tsx — dark/light
+  toggle, persisted, live-verified both directions in a real headless
+  browser (see TESTING below).
+- MarketRibbon.tsx, Sidebar.tsx/BottomNav restyled to the locked
+  palette + lucide-react icons (new dependency, wasn't installed —
+  mockups are lucide-based). Ribbon right-cluster now always renders
+  (AI button/bell/tier badge/theme toggle) even while market data is
+  still loading/erroring, since those aren't market-data-dependent.
+- New components/app/ask/AskRedixFi.tsx — the persistent "RedixFi AI"
+  pill, wired to the REAL POST /ask (Task 17), not a stub. Real
+  contract constraints handled explicitly: /ask is per-symbol +
+  require_auth (no anonymous, no general free-form chat) — logged-out
+  shows a login CTA; logged-in but no page-level symbol context (true
+  for Home/Signals-list) opens a symbol search step first (reuses
+  /research/search) before the chat. Real 429 handling: ApiError.detail
+  (AskLimitDetail: reason/message/cta/topup_questions) is surfaced
+  verbatim, no fabricated copy. Did NOT build an in-panel topup
+  purchase flow — that's Razorpay/checkout surface, explicitly Task
+  20's territory this session was told not to touch; the 429 just
+  links to /pricing.
+- New ui/Locked.tsx (LockedInline/LockedRow/UnlockBanner) — the
+  mockup's blur+lock-icon pattern extracted once, reused in
+  SignalTableRow and the Signals free-tier banner rather than
+  reinvented per-surface.
+
+REAL BUG FOUND + FIXED (recurring pattern, 3rd occurrence): Home's
+Server Component was calling getNews({severity:"high"}) directly in
+SSR with no token — Server Components can't reach localStorage, so
+every visitor including paid/founding subscribers was silently served
+the free-tier's 24h-delayed news feed on Home's "Event Risk Today"
+card. Identical bug SHAPE to the 2026-08-04 News-page/EventsTab fix
+(frontend forgetting to attach the auth token) — same fix pattern
+applied: EventRiskCard converted to a client component that resolves
+a real token via useAuth().getToken() before fetching, SSR anonymous
+fetch removed from page.tsx entirely. Checked every other fetch this
+session touched or added (Home's other Promise.allSettled calls,
+SignalsExplorer, SmartScreenerBox, AskRedixFi, MarketRibbon) — all
+either already correctly token-aware (SignalsExplorer/SmartScreenerBox
+were already fixed in earlier sessions) or genuinely public/untiered
+routes (movers, brief, intraday session, anomalies, market overview,
+research search) verified against the actual backend router code, not
+assumed.
+
+DELIBERATE DEVIATIONS FROM THE MOCKUP (flagged, not silent):
+- Mockup's Home demo shows `locked: tier === 'free'` on some
+  gainers/decliners and "Continue research" rows. Verified against
+  the real backend (routers/signals.py::signal_movers) — /signals/
+  movers applies NO B8 masking at all, unmasked for every tier; and
+  "Continue research" is the user's own client-side viewing history,
+  nothing to lock. Did not fabricate lock overlays for either — real
+  data has no locked field there, and "no mock data" was explicit.
+  Real locking (LockedInline, from a real per-row `locked` field) is
+  applied only where genuinely true this session: the Signals table.
+- Bell icon: dropped the mockup's static "3" badge — no cheap accurate
+  real unread count exists (no dedicated endpoint), and fabricating a
+  number violates "wired to real data, no mock data" instruction. Bell
+  now links to /account/inbox with no badge.
+- Comparison queue: reused lib/comparison-queue.ts UNCHANGED (Task 13,
+  already real/shared/working) rather than rebuilding — it's
+  localStorage-backed, not literally sessionStorage as this session's
+  brief worded it. Flagged rather than changed: changing the storage
+  mechanism would touch SmartScreenerBox/AddToComparisonChip/detail
+  pages outside this session's scope for a naming-only difference: it
+  already satisfies the actual requirement (ONE shared client state
+  across real routes, not per-page).
+- "Gold reserved exclusively for AI-generated content and brand" read
+  per the approved mockups' own actual usage (all 9 files): gold is
+  the brand's interactive accent — active nav, primary CTAs, compare
+  buttons, locks/upsell — and AI-content labels; jade/rose are the
+  only colors ever touching a signed gain/loss. Interpreted "brand
+  elements" to include primary interactive chrome, not literally only
+  the logo/AI badge — matches every mockup file's real usage, not a
+  narrower reading that would contradict the approved reference.
+
+TESTING: tsc --noEmit clean. Compliance sweep: 0 errors (8 pre-existing
+negated-word warnings, none from this session's files). `npm run
+build` clean (Turbopack, all 24 routes). Backend: all 14 offline
+suites re-run, 677/677 passed, 0 regressions (expected — no backend
+touched). Live-verified with a real headless-Chromium pass (Playwright,
+installed ad-hoc — no chromium-cli / no existing run-skill in this
+repo, recommend `/run-skill-generator` if this becomes routine):
+Home + Signals in both themes + mobile viewport, theme toggle both
+directions, Ask panel open→login-gate, Signals row "+Compare"→"Added"
+toggle updating the AI Smart Screener tray live — zero console/page
+errors across the whole pass, real live API data rendering correctly
+(confirms api.redixfi.com reachable from this session).
+NOT verified: authenticated free-vs-paid rendering (ribbon tier badge,
+Signals table actually unlocking past the fixed 20, Ask panel's real
+chat turn + a genuine 429 at the daily cap) — no live login
+credentials available in this sandboxed pass. Founder should log in
+for real and spot-check those three, same posture prior sessions have
+taken for anything requiring a real authenticated session.
+
+OTHER FINDINGS (not fixed, not blocking, noted for later):
+- `npm audit` flags 3 high-severity advisories, all inside the pinned
+  `next@16.2.10` / its `postcss`/`sharp` sub-deps — pre-existing,
+  unrelated to this session, would need a Next version bump (separate
+  decision, out of scope here).
+- Bare `npx eslint src` reports `react-hooks/set-state-in-effect`
+  errors on ~10 files — ALL pre-existing, confirmed via `git status`
+  that none of the flagged files were touched this session (AuthContext.tsx,
+  ExplainTerm.tsx, useEducationContent.ts, SignalUnlockGate.tsx,
+  ScannerTab.tsx, etc.). `npm run build`'s own lint pass does not fail
+  on these, so it wasn't blocking; a repo-wide fix would be unrelated
+  churn across files this session had no reason to touch. New
+  ThemeContext.tsx deliberately mirrors AuthContext.tsx's identical
+  mount-time-hydration pattern for consistency, so it has the same
+  lint shape as that file — not fixed for the same reason.
+
+FILES: package.json/package-lock.json (+lucide-react) · src/app/
+globals.css, layout.tsx, (app)/page.tsx, (app)/signals/page.tsx ·
+src/components/layout/{MarketRibbon,Sidebar}.tsx · src/components/app/
+{AiDailyBriefCard,MarketPulseCard,TopSignalChangesCard,EventRiskCard,
+IntradayNowCard,ContinueResearchCard,AnomalyCard}.tsx ·
+src/components/app/education/SummaryCard.tsx (SectorSummaryCard only)
+· src/components/app/signals/{SignalTableRow,SignalsExplorer,
+SmartScreenerBox}.tsx · src/lib/api/{types,mutations}.ts (Ask-RedixFi
+types + askRedixfi()) · NEW: src/lib/theme/ThemeContext.tsx ·
+src/components/ui/{ThemeToggle,Locked}.tsx ·
+src/components/app/ask/AskRedixFi.tsx.
+
+Roadmap: continue the full UI reframe next session — remaining
+mockup screens (Signal detail, Research, Watchlist, Intraday, Account,
+News, More +Data Sources/Disclaimer) and Task 20's checkout redesign,
+per the locked execution sequence. The shared shell built this session
+(theme system, AI button, Locked components) should be reused as-is,
+not rebuilt.

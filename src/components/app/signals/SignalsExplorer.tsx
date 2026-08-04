@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Search, Filter, ArrowUpDown, Download, SlidersHorizontal } from "lucide-react";
 import { apiGetPaged } from "@/lib/api/client";
 import type { SignalRow } from "@/lib/api/types";
 import { SIGNAL_SECTORS } from "@/data/sectors";
 import { SignalTableRow, type VisibleColumns } from "./SignalTableRow";
+import { UnlockBanner } from "@/components/ui/Locked";
 import { downloadCsv } from "@/lib/csv";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getWatchlist } from "@/lib/api/mutations";
@@ -141,14 +143,21 @@ export function SignalsExplorer() {
 
   return (
     <div>
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search company or symbol"
-          className="w-52 rounded-lg border border-border bg-transparent px-3 py-1.5 text-sm"
-        />
-        <select value={sector} onChange={(e) => setSector(e.target.value)} className="rounded-lg border border-border bg-transparent px-2 py-1.5 text-sm">
+      <div className="mb-3 flex flex-wrap items-center gap-2 overflow-x-auto pb-1">
+        <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-xs text-foreground-muted">
+          <Search size={12} />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search company or symbol"
+            className="w-36 bg-transparent outline-none sm:w-44"
+          />
+        </label>
+        <select
+          value={sector}
+          onChange={(e) => setSector(e.target.value)}
+          className="shrink-0 rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs text-foreground-muted"
+        >
           <option value="">All sectors</option>
           {SIGNAL_SECTORS.map((s) => (
             <option key={s} value={s}>
@@ -161,28 +170,33 @@ export function SignalsExplorer() {
           onChange={(e) => setScoreMin(e.target.value)}
           placeholder="Score min"
           type="number"
-          className="w-24 rounded-lg border border-border bg-transparent px-2 py-1.5 text-sm"
+          className="w-20 shrink-0 rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs"
         />
         <input
           value={scoreMax}
           onChange={(e) => setScoreMax(e.target.value)}
           placeholder="Score max"
           type="number"
-          className="w-24 rounded-lg border border-border bg-transparent px-2 py-1.5 text-sm"
+          className="w-20 shrink-0 rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs"
         />
-        <label className="flex items-center gap-1.5 text-sm text-foreground-muted">
+        <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-xs text-foreground-muted">
+          <Filter size={12} />
           <input type="checkbox" checked={eventRiskOnly} onChange={(e) => setEventRiskOnly(e.target.checked)} />
           Event risk
         </label>
         {user && (
-          <label className="flex items-center gap-1.5 text-sm text-foreground-muted">
+          <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-xs text-foreground-muted">
             <input type="checkbox" checked={watchlistOnly} onChange={(e) => setWatchlistOnly(e.target.checked)} />
             Watchlist only
           </label>
         )}
 
-        <div className="ml-auto flex items-center gap-2">
-          <select value={sort} onChange={(e) => setSort(e.target.value)} className="rounded-lg border border-border bg-transparent px-2 py-1.5 text-sm">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className="rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs text-foreground-muted"
+          >
             {SORT_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
                 Sort: {o.label}
@@ -191,14 +205,17 @@ export function SignalsExplorer() {
           </select>
           <button
             onClick={() => setOrder((o) => (o === "asc" ? "desc" : "asc"))}
-            className="rounded-lg border border-border px-2 py-1.5 text-sm"
+            className="flex items-center gap-1 rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs text-foreground-muted"
             title="Toggle sort order"
           >
-            {order === "asc" ? "↑" : "↓"}
+            <ArrowUpDown size={11} /> {order === "asc" ? "↑" : "↓"}
           </button>
           <div className="relative">
-            <button onClick={() => setColumnPickerOpen((o) => !o)} className="rounded-lg border border-border px-2 py-1.5 text-sm">
-              Columns ⚙
+            <button
+              onClick={() => setColumnPickerOpen((o) => !o)}
+              className="flex items-center gap-1 rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs text-foreground-muted"
+            >
+              <SlidersHorizontal size={11} /> Columns
             </button>
             {columnPickerOpen && (
               <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-border bg-surface-raised p-2 text-sm shadow-lg">
@@ -219,41 +236,52 @@ export function SignalsExplorer() {
             onClick={exportCsv}
             disabled={!canExport || exporting}
             title={canExport ? "Export current filter as CSV" : "Upgrade to export CSV"}
-            className="rounded-lg border border-border px-2 py-1.5 text-sm disabled:opacity-40"
+            className="flex items-center gap-1 rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs text-foreground-muted disabled:opacity-40"
           >
-            {exporting ? "Exporting…" : "Export CSV"}
+            <Download size={11} /> {exporting ? "Exporting…" : "CSV"}
           </button>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-border">
-        <table className="w-full min-w-[640px] text-sm">
-          <thead className="bg-surface text-left text-xs font-semibold uppercase tracking-wide text-foreground-faint">
-            <tr>
-              <th className="px-3 py-2">Symbol</th>
-              {columns.sector && <th className="px-3 py-2">Sector</th>}
-              {columns.marketCap && <th className="px-3 py-2">Market cap</th>}
-              <th className="px-3 py-2">Score</th>
-              <th className="px-3 py-2">Change</th>
-              {columns.delivery && <th className="px-3 py-2">Delivery</th>}
-              {columns.chips && <th className="px-3 py-2">Signals</th>}
-              {columns.eventRisk && <th className="px-3 py-2 text-center">Event</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <SignalTableRow key={row.symbol} row={row} columns={columns} />
-            ))}
-          </tbody>
-        </table>
+      <div className="overflow-hidden rounded-xl border border-border bg-surface-raised">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[680px] text-sm">
+            <thead>
+              <tr className="border-b border-border text-left font-mono text-[10px] uppercase tracking-wider text-foreground-faint">
+                <th className="px-4 py-3">Symbol</th>
+                {columns.sector && <th className="hidden px-3 py-3 md:table-cell">Sector</th>}
+                {columns.marketCap && <th className="px-3 py-3 text-right">Market cap</th>}
+                <th className="px-3 py-3">Score</th>
+                {columns.delivery && <th className="hidden px-3 py-3 sm:table-cell">Delivery</th>}
+                {columns.chips && <th className="hidden px-3 py-3 lg:table-cell">Signals</th>}
+                {columns.eventRisk && <th className="px-3 py-3 text-center">Event</th>}
+                <th className="px-3 py-3" />
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <SignalTableRow key={row.symbol} row={row} columns={columns} />
+              ))}
+            </tbody>
+          </table>
+        </div>
         {loading && <div className="p-4 text-center text-sm text-foreground-muted">Loading…</div>}
         {!loading && rows.length === 0 && <div className="p-4 text-center text-sm text-foreground-muted">No stocks match these filters.</div>}
         {error && <div className="p-4 text-center text-sm text-down">{error}</div>}
+
+        {!user?.tier || user.tier === "free" ? (
+          // B5: was silent on WHICH 20 stay unlocked, which read as an
+          // implied "top by market cap" selection — the free-tier unlock
+          // set is a fixed A–Z sample regardless of sort (Task 04's
+          // free_tier_unlocked_symbols, name-asc so it can't be gamed by
+          // re-sorting), so the real rule is stated plainly here.
+          <UnlockBanner label="Locked rows show 🔒 in place of scores — a fixed sample of 20 stocks (A–Z) stays visible on the free tier." />
+        ) : null}
       </div>
 
       {!watchlistOnly && (
         <div className="mt-3 flex items-center justify-between text-xs text-foreground-muted">
-          <span>
+          <span className="font-mono">
             {total.toLocaleString("en-IN")} stocks · page {page} of {totalPages}
           </span>
           <div className="flex gap-2">
@@ -266,23 +294,6 @@ export function SignalsExplorer() {
           </div>
         </div>
       )}
-
-      {!user?.tier || user.tier === "free" ? (
-        <div className="mt-3 rounded-lg border border-accent/30 bg-accent/5 px-4 py-3 text-sm">
-          {/* B5: was silent on WHICH 20 stay unlocked, which read as an
-              implied "top by market cap" selection — the free-tier unlock
-              set is a fixed A–Z sample regardless of sort (Task 04's
-              free_tier_unlocked_symbols, name-asc so it can't be gamed by
-              re-sorting), so the real rule is stated plainly instead. Task 09
-              added a genuine symbols_master.market_cap field/sort, but it
-              does not change which symbols are unlocked. */}
-          Locked rows show 🔒 in place of scores — a fixed sample of 20 stocks (A–Z) stays visible on the free tier.{" "}
-          <a href="/pricing" className="font-medium text-accent">
-            Unlock all 750 measured scores
-          </a>
-          .
-        </div>
-      ) : null}
     </div>
   );
 }

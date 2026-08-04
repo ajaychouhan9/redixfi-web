@@ -14,22 +14,33 @@ export function MarketPulseCard({ overview }: { overview: MarketOverview | null 
   const volState = overview.india_vix_change_pct > 5 ? "VOLATILE" : overview.india_vix_change_pct < -5 ? "CALM" : "NORMAL";
 
   return (
-    <Card title="Market Pulse">
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-        <span className="rounded-full bg-neutral-bg px-2 py-0.5 text-xs font-semibold text-neutral">{volState}</span>
-        <span>
-          FII net <DeltaValue value={overview.fii_net} />
-        </span>
-        <span>
-          DII net <DeltaValue value={overview.dii_net} />
-        </span>
-        <span>
-          Sectors <span className="text-up">{overview.sectors_up}↑</span> <span className="text-down">{overview.sectors_down}↓</span>
-        </span>
-        <span>
-          India VIX <DeltaValue value={overview.india_vix_change_pct} kind="pct" />
-        </span>
+    <Card title="Market Pulse" action={<span className="rounded bg-hover px-2 py-0.5 font-mono text-[10px] text-foreground-muted">{volState}</span>}>
+      <div className="space-y-3">
+        <Row label="FII net">
+          <DeltaValue value={overview.fii_net} />
+        </Row>
+        <Row label="DII net">
+          <DeltaValue value={overview.dii_net} />
+        </Row>
+        <Row label="India VIX">
+          <DeltaValue value={overview.india_vix_change_pct} kind="pct" />
+        </Row>
+        <div className="flex items-center justify-between border-t border-border pt-2">
+          <span className="text-xs text-foreground-muted">Sectors</span>
+          <span className="font-mono text-sm">
+            <span className="text-up">{overview.sectors_up}↑</span> <span className="text-down">{overview.sectors_down}↓</span>
+          </span>
+        </div>
       </div>
     </Card>
+  );
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-xs text-foreground-muted">{label}</span>
+      <span className="font-mono text-sm">{children}</span>
+    </div>
   );
 }

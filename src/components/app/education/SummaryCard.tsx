@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
+import { Layers, ChevronDown, ChevronUp } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import type { SectorSummary, WatchlistSummary } from "@/lib/api/types";
@@ -45,26 +49,54 @@ function SymbolGroup({ label, symbols, tone }: { label: string; symbols: string[
   );
 }
 
+const SECTOR_CAP = 4;
+
 /** Ranked symmetrically — both the strongest AND weakest sector are always
  * shown, matching the master-context symmetry rule (a movers-style display
- * must never show only the up side). */
+ * must never show only the up side). Capped to 4 by default, expandable —
+ * same pattern as the approved Signals mockup. */
 export function SectorSummaryCard({ data }: { data: SectorSummary }) {
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? data.ranked : data.ranked.slice(0, SECTOR_CAP);
+
   return (
-    <Card title="Sector standing today">
-      <p className="text-sm leading-relaxed">{data.summary}</p>
-      {data.ranked.length > 0 && (
-        <ul className="mt-3 divide-y divide-border">
-          {data.ranked.map((r) => (
-            <li key={r.sector} className="flex items-center justify-between py-1.5 text-sm">
-              <span>{r.sector}</span>
-              <span className="flex items-center gap-2">
-                <DeltaValue value={r.avg_delta} className="w-14" />
-                <span className="text-xs text-foreground-faint">{r.count} stocks</span>
+    <div className="overflow-hidden rounded-xl border border-border bg-surface-raised">
+      <div className="flex items-center gap-2 px-5 py-4">
+        <Layers size={14} className="text-accent" />
+        <div>
+          <h3 className="text-sm font-semibold">Sector standing today</h3>
+          <p className="text-[11px] text-foreground-faint">{data.summary}</p>
+        </div>
+      </div>
+      {visible.length > 0 && (
+        <div className="divide-y divide-border border-t border-border">
+          {visible.map((r) => (
+            <div key={r.sector} className="flex items-center justify-between px-5 py-2.5">
+              <span className="text-sm">{r.sector}</span>
+              <span className="flex items-center gap-3">
+                <span className="font-mono text-[11px] text-foreground-faint">{r.count} stocks</span>
+                <DeltaValue value={r.avg_delta} className="w-16 justify-end" />
               </span>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
-    </Card>
+      {data.ranked.length > SECTOR_CAP && (
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="flex w-full items-center justify-center gap-1 border-t border-border py-2.5 text-xs font-medium text-accent"
+        >
+          {expanded ? (
+            <>
+              Show less <ChevronUp size={13} />
+            </>
+          ) : (
+            <>
+              View all {data.ranked.length} sectors <ChevronDown size={13} />
+            </>
+          )}
+        </button>
+      )}
+    </div>
   );
 }

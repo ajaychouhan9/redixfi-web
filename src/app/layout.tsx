@@ -1,17 +1,28 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth/AuthContext";
+import { ThemeProvider } from "@/lib/theme/ThemeContext";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Design system (locked 2026-08 UI reframe): IBM Plex Sans for prose, IBM
+// Plex Mono for every financial figure (scores, prices, deltas, %).
+const plexSans = IBM_Plex_Sans({
+  variable: "--font-plex-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
+
+// Applied before hydration so a stored/system "light" preference doesn't
+// flash the CSS default (dark) first — same no-flash technique the
+// dark/light toggle requires whenever the choice isn't derivable from
+// prefers-color-scheme alone (it's user-overridable here, so it can't be).
+const NO_FLASH_THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("redixfi:theme");if(t!=="dark"&&t!=="light"){t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){}})();`;
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://redixfi.com";
 
@@ -34,9 +45,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full bg-background text-foreground">
-        <AuthProvider>{children}</AuthProvider>
+    <html lang="en" className={`${plexSans.variable} ${plexMono.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: NO_FLASH_THEME_SCRIPT }} />
+      </head>
+      <body className="min-h-full bg-background font-sans text-foreground">
+        <ThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

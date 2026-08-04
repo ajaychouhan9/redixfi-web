@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Activity, ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import type { AnomalyFlagDoc, AnomalyScanMeta } from "@/lib/api/types";
 
@@ -67,10 +68,14 @@ export function AnomalyCard({ results, scan }: { results: AnomalyFlagDoc[]; scan
 
   return (
     <Card
-      title="Unusual activity today"
+      title={
+        <span className="flex items-center gap-2">
+          <Activity size={14} className="text-accent" /> Unusual activity today
+        </span>
+      }
       action={
-        <Link href="/signals" className="text-xs font-medium text-accent">
-          Screen for unusual activity
+        <Link href="/signals" className="flex items-center gap-0.5 text-xs font-medium text-accent">
+          Screen <ArrowRight size={12} />
         </Link>
       }
     >

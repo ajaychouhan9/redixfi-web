@@ -13,9 +13,9 @@ export default async function SignalsPage() {
   const sectorSummary = await getSectorSummary().then((r) => r.data).catch(() => null);
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Signal Dashboard</h1>
-      {sectorSummary && <SectorSummaryCard data={sectorSummary} />}
+    <div>
+      <h1 className="mb-5 text-lg font-semibold">Signal Dashboard</h1>
+      <div className="mb-5">{sectorSummary && <SectorSummaryCard data={sectorSummary} />}</div>
       <SmartScreenerBox />
       <SignalsExplorer />
     </div>

@@ -961,6 +961,24 @@ export interface PortfolioAnalytics {
   pledge_exposure: PortfolioPledgeExposure;
 }
 
+// ---------- Task 17: Ask-RedixFi chat ----------
+
+export interface AskResult {
+  answer: string;
+  sources_used: string[];
+  refused: boolean;
+  conversation_id: string;
+}
+
+/** Shape of ApiError.detail on a 429 from POST /ask (core/metering.py::enforce_ask_usage). */
+export interface AskLimitDetail {
+  reason: "free_daily_limit" | "daily_cap" | "monthly_cap";
+  message: string;
+  cta: "subscribe" | "topup";
+  topup_questions?: number;
+  topup_price_paise?: number;
+}
+
 // ---------- Task 16 Part C: anomaly / unusual-activity detection ----------
 
 export type AnomalyType = "volume_extreme" | "pcr_shift" | "insider_cluster";
