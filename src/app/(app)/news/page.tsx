@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Newspaper, Search } from "lucide-react";
 import { apiGetPaged } from "@/lib/api/client";
 import type { NewsItem } from "@/lib/api/types";
 import { NewsList } from "@/components/app/NewsList";
@@ -52,8 +53,24 @@ export default function NewsPage() {
   const isFreeOrAnon = !user || user.tier === "free";
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <h1 className="mb-2 text-xl font-semibold">News</h1>
+    <div className="mx-auto max-w-3xl">
+      <div className="mb-1 flex items-center gap-2">
+        <Newspaper size={16} className="text-accent" />
+        <h1 className="text-lg font-semibold">News</h1>
+        <span className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wide text-accent-dim">AI-Classified</span>
+      </div>
+      <p className="mb-4 text-xs text-foreground-faint">Every headline read and classified by severity, category and scope.</p>
+
+      {/* Task 18 (per-stock news upgrade) — explicitly deferred past launch
+          per the master context's locked execution sequence. Visible but
+          inactive so it can be enabled later without a UI rebuild; wired to
+          nothing, no endpoint call. */}
+      <div className="mb-4 flex items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-xs text-foreground-faint">
+        <Search size={13} />
+        <span className="flex-1">Filter by stock</span>
+        <span className="rounded-full bg-hover px-2 py-0.5 font-medium">Coming soon</span>
+      </div>
+
       {isFreeOrAnon && (
         <p className="mb-4 rounded-lg border border-amber/30 bg-amber-bg px-3 py-2 text-xs text-amber">
           Free tier sees news on a 24-hour delay.{" "}
@@ -63,7 +80,7 @@ export default function NewsPage() {
           for same-day news.
         </p>
       )}
-      <div className="mb-3 flex gap-2">
+      <div className="mb-3 flex flex-wrap gap-2">
         {SEVERITIES.map((s) => (
           <button
             key={s || "all"}
