@@ -993,11 +993,29 @@ export interface PortfolioAnalytics {
 
 // ---------- Task 17: Ask-RedixFi chat ----------
 
+/** Task 22 Phase 2/3 — a filter-shaped Ask question resolves through the
+ * SAME B9 smart-screener code GET /signals/smart-screen uses (core/
+ * ask.py::run_ask_open -> core/screener.py::run_smart_screen, unchanged),
+ * so `results` is real SignalRow data (masking already applied) meant to
+ * render with the EXACT same <SignalTableRow> the Signals page uses. */
+export interface AskScreenResult {
+  parsed_filters: SmartScreenFilters | null;
+  results: SignalRow[];
+  result_count: number;
+}
+
 export interface AskResult {
   answer: string;
   sources_used: string[];
   refused: boolean;
   conversation_id: string;
+  // Task 22 Phase 1/2/3 — additive. Every pre-existing caller (explicit
+  // `symbol`, non-comparative/non-screen question) gets mode="symbol" and
+  // both compare/screen null, so nothing about the old contract changes.
+  mode: "symbol" | "compare" | "screen" | "general";
+  resolved_symbol: string | null;
+  compare: CompareResult | null;
+  screen: AskScreenResult | null;
 }
 
 /** Shape of ApiError.detail on a 429 from POST /ask (core/metering.py::enforce_ask_usage). */

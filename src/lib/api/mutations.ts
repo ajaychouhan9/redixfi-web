@@ -221,9 +221,14 @@ export async function getWatchlistAnomalies(token: string): Promise<AnomalyFlagD
 // in ApiError.detail — callers should catch ApiError and read e.detail
 // rather than treating this as a generic failure. ----------
 
+// Task 22 Phase 1 — `symbol` is optional: omit it (or pass null) from any
+// page with no current-stock context (Home, Signals list, Watchlist) and
+// the backend extracts/routes free-text on its own (core/ask.py::
+// run_ask_open). Symbol-context pages (Signal/Research detail) keep
+// passing it explicitly, unchanged.
 export async function askRedixfi(
   token: string,
-  body: { symbol: string; question: string; conversation_id?: string | null }
+  body: { symbol?: string | null; question: string; conversation_id?: string | null }
 ): Promise<AskResult> {
   const env = await apiMutate<AskResult>("/ask", "POST", body, { token });
   return env.data;

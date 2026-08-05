@@ -7,39 +7,54 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { apiGet, ApiError } from "@/lib/api/client";
 import { askRedixfi } from "@/lib/api/mutations";
 import { getCurrentSymbol } from "@/lib/current-symbol";
-import type { AskLimitDetail, ResearchSearchRow } from "@/lib/api/types";
+import { CompareResultCard } from "@/components/app/signals/CompareResultCard";
+import { SignalTableRow, type VisibleColumns } from "@/components/app/signals/SignalTableRow";
+import { filterChips } from "@/components/app/signals/SmartScreenerBox";
+import { Chip } from "@/components/ui/Chip";
+import type { AskLimitDetail, AskScreenResult, CompareResult, ResearchSearchRow } from "@/lib/api/types";
 
 /**
  * Persistent "RedixFi AI" entry point, per the locked design system: lives
- * ONLY in the top ribbon on every page (the mockup phase tried a floating
- * bubble too and deliberately removed it once this button existed — two
- * entry points on the same page were redundant).
+ * ONLY in the top ribbon on every page.
  *
- * POST /ask (Task 17 backend) is per-symbol and auth-required — there's no
- * general free-form chat. Home and the Signals list have no single current
- * stock, so the panel opens on a lightweight symbol search step first.
- * Signal detail and Research detail pages DO have an obvious subject —
- * they register it via CurrentSymbolSync, and a fresh open here (no symbol
- * picked yet this session) presets straight into that conversation,
- * skipping the search step entirely.
+ * TASK 22 PHASE 1 — the "select a stock first" gate is gone. POST /ask
+ * (core/ask.py::run_ask_open, Task 22) now extracts a symbol from free
+ * text server-side, or answers directly with no symbol at all, whenever
+ * this panel opens with no current-page context (Home, Signals list,
+ * Watchlist). Signal detail and Research detail pages still register the
+ * obvious current symbol via CurrentSymbolSync and preset straight into
+ * that conversation, unchanged — see openPanel() below.
+ *
+ * TASK 22 PHASE 3 — wider panel (was 380px), and a compare/screen-shaped
+ * answer renders with the EXACT SAME components the Signals page uses
+ * (CompareResultCard, SignalTableRow) rather than a new table.
  */
 interface AskMessage {
   role: "user" | "ai";
   text: string;
   sources?: string[];
+  compare?: CompareResult | null;
+  screen?: AskScreenResult | null;
 }
 
-const QUICK_PROMPTS = [
+const QUICK_PROMPTS_SYMBOL = [
   "What's driving today's score change?",
   "How does this compare to its sector peers?",
   "What does the composite score measure?",
 ];
 
+const QUICK_PROMPTS_GENERAL = [
+  "Which sectors are strongest today?",
+  "What does the composite score measure?",
+  "Show me stocks with rising delivery and above-average volume",
+];
+
+const SCREEN_COLUMNS: VisibleColumns = { sector: true, marketCap: false, delivery: true, chips: true, eventRisk: false };
+
 export function AskRedixFi() {
   const { user, getToken } = useAuth();
   const [open, setOpen] = useState(false);
   const [symbol, setSymbol] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
   const [results, setResults] = useState<ResearchSearchRow[]>([]);
   const [searching, setSearching] = useState(false);
   const [messages, setMessages] = useState<AskMessage[]>([]);
@@ -49,15 +64,18 @@ export function AskRedixFi() {
   const [limit, setLimit] = useState<AskLimitDetail | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Symbol-search suggestions — only relevant while no symbol context is set
+  // yet; the same box doubles as "ask anything" once ≥2 chars are typed, so
+  // this is a convenience overlay, not a gate (Phase 1).
   useEffect(() => {
-    if (query.trim().length < 2) {
+    if (symbol || input.trim().length < 2) {
       setResults([]);
       return;
     }
     let cancelled = false;
     setSearching(true);
     const id = setTimeout(() => {
-      apiGet<ResearchSearchRow[]>("/research/search", { params: { q: query.trim(), limit: 8 } })
+      apiGet<ResearchSearchRow[]>("/research/search", { params: { q: input.trim(), limit: 6 } })
         .then((env) => !cancelled && setResults(env.data))
         .finally(() => !cancelled && setSearching(false));
     }, 250);
@@ -65,7 +83,7 @@ export function AskRedixFi() {
       cancelled = true;
       clearTimeout(id);
     };
-  }, [query]);
+  }, [input, symbol]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -73,7 +91,6 @@ export function AskRedixFi() {
 
   function reset() {
     setSymbol(null);
-    setQuery("");
     setResults([]);
     setMessages([]);
     setConversationId(null);
@@ -87,22 +104,34 @@ export function AskRedixFi() {
 
   function pickSymbol(sym: string) {
     setSymbol(sym);
+    setResults([]);
+    setInput("");
     setMessages([]);
     setConversationId(null);
     setLimit(null);
   }
 
   async function send(text: string) {
-    if (!text.trim() || !symbol || busy) return;
+    if (!text.trim() || busy) return;
     setBusy(true);
     setInput("");
+    setResults([]);
     setMessages((prev) => [...prev, { role: "user", text }]);
     try {
       const token = await getToken();
       if (!token) return;
       const result = await askRedixfi(token, { symbol, question: text, conversation_id: conversationId });
       setConversationId(result.conversation_id);
-      setMessages((prev) => [...prev, { role: "ai", text: result.answer, sources: result.sources_used }]);
+      // Adopt a server-resolved symbol as this panel's context ONLY for a
+      // plain single-stock answer — a compare/screen/general answer must
+      // not lock the panel into one symbol's header for the next turn.
+      if (!symbol && result.mode === "symbol" && result.resolved_symbol) {
+        setSymbol(result.resolved_symbol);
+      }
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: result.answer, sources: result.sources_used, compare: result.compare, screen: result.screen },
+      ]);
     } catch (e) {
       if (e instanceof ApiError && e.status === 429) {
         setLimit(e.detail as AskLimitDetail);
@@ -119,6 +148,7 @@ export function AskRedixFi() {
   }
 
   const dailyLimitLabel = user?.tier === "free" ? "1/symbol/day" : "25/day";
+  const quickPrompts = symbol ? QUICK_PROMPTS_SYMBOL : QUICK_PROMPTS_GENERAL;
 
   function openPanel() {
     if (!symbol) {
@@ -140,7 +170,7 @@ export function AskRedixFi() {
 
       {open && (
         <div
-          className="fixed inset-x-0 bottom-0 z-50 flex max-h-[80vh] w-full flex-col overflow-hidden border border-border bg-surface-raised shadow-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:w-[380px] sm:rounded-2xl"
+          className="fixed inset-x-0 bottom-0 z-50 flex max-h-[85vh] w-full flex-col overflow-hidden border border-border bg-surface-raised shadow-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:w-[460px] sm:rounded-2xl lg:w-[560px]"
           role="dialog"
           aria-label="Ask RedixFi AI"
         >
@@ -149,7 +179,10 @@ export function AskRedixFi() {
               <Sparkles size={14} className="text-accent" />
               <div>
                 <div className="text-sm font-semibold">{symbol ? `Ask about ${symbol}` : "Ask RedixFi AI"}</div>
-                {symbol && <div className="text-[10px] text-foreground-faint">Grounded in measured data only · {dailyLimitLabel}</div>}
+                <div className="text-[10px] text-foreground-faint">
+                  Grounded in measured data only · {dailyLimitLabel}
+                  {!symbol && " · name a stock, a sector, or ask in general"}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -175,48 +208,33 @@ export function AskRedixFi() {
                 Log in
               </Link>
             </div>
-          ) : !symbol ? (
-            <div className="p-4">
-              <label className="mb-2 flex items-center gap-2 rounded-lg border border-border px-3 py-2">
-                <Search size={14} className="text-foreground-faint" />
-                <input
-                  autoFocus
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search a company or symbol to ask about…"
-                  className="flex-1 bg-transparent text-sm outline-none"
-                />
-              </label>
-              {searching && <p className="px-1 text-xs text-foreground-faint">Searching…</p>}
-              {!searching && results.length > 0 && (
-                <ul className="max-h-64 divide-y divide-border overflow-y-auto rounded-lg border border-border">
-                  {results.map((r) => (
-                    <li key={r.canonicalSymbol}>
-                      <button
-                        onClick={() => pickSymbol(r.canonicalSymbol)}
-                        className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-hover"
-                      >
-                        <span>
-                          <span className="font-semibold">{r.canonicalSymbol}</span>{" "}
-                          <span className="text-foreground-faint">{r.company_name}</span>
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {!searching && query.trim().length >= 2 && results.length === 0 && (
-                <p className="px-1 text-xs text-foreground-faint">No companies matched &ldquo;{query}&rdquo;.</p>
-              )}
-            </div>
           ) : (
             <>
-              <div ref={scrollRef} className="space-y-3 overflow-y-auto px-4 py-3" style={{ maxHeight: "45vh", minHeight: messages.length ? 200 : undefined }}>
+              <div ref={scrollRef} className="space-y-3 overflow-y-auto px-4 py-3" style={{ maxHeight: "58vh", minHeight: messages.length ? 200 : undefined }}>
+                {!symbol && results.length > 0 && (
+                  <ul className="max-h-48 divide-y divide-border overflow-y-auto rounded-lg border border-border">
+                    {results.map((r) => (
+                      <li key={r.canonicalSymbol}>
+                        <button
+                          onClick={() => pickSymbol(r.canonicalSymbol)}
+                          className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-hover"
+                        >
+                          <span>
+                            <span className="font-semibold">{r.canonicalSymbol}</span>{" "}
+                            <span className="text-foreground-faint">{r.company_name}</span>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {!symbol && searching && <p className="px-1 text-xs text-foreground-faint">Searching…</p>}
+
                 {messages.length === 0 && (
                   <div>
                     <p className="mb-2 text-xs text-foreground-faint">Try asking:</p>
                     <div className="space-y-1.5">
-                      {QUICK_PROMPTS.map((p) => (
+                      {quickPrompts.map((p) => (
                         <button
                           key={p}
                           onClick={() => send(p)}
@@ -229,26 +247,66 @@ export function AskRedixFi() {
                   </div>
                 )}
                 {messages.map((m, i) => (
-                  <div key={i} className={m.role === "user" ? "flex justify-end" : ""}>
-                    <div
-                      className="max-w-[85%] rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed"
-                      style={
-                        m.role === "user"
-                          ? { background: "var(--accent)", color: "var(--accent-foreground)" }
-                          : { background: "var(--hover)", color: "var(--foreground-muted)", border: "1px solid var(--border)" }
-                      }
-                    >
-                      {m.text}
-                      {m.sources && m.sources.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1 border-t border-border pt-2">
-                          {m.sources.map((s) => (
-                            <span key={s} className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-[9px] uppercase text-accent-dim">
-                              {s}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                  <div key={i}>
+                    <div className={m.role === "user" ? "flex justify-end" : ""}>
+                      <div
+                        className="max-w-[85%] rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed"
+                        style={
+                          m.role === "user"
+                            ? { background: "var(--accent)", color: "var(--accent-foreground)" }
+                            : { background: "var(--hover)", color: "var(--foreground-muted)", border: "1px solid var(--border)" }
+                        }
+                      >
+                        {m.text}
+                        {m.sources && m.sources.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1 border-t border-border pt-2">
+                            {m.sources.map((s) => (
+                              <span key={s} className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-[9px] uppercase text-accent-dim">
+                                {s}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Task 22 Phase 3 — comparative/tabular answers render as a
+                        full-width block below the prose bubble, reusing the
+                        EXACT Signals-page components, never a cramped in-bubble
+                        table. */}
+                    {m.compare && m.compare.symbols.length > 0 && <CompareResultCard compare={m.compare} />}
+                    {m.screen && m.screen.results.length > 0 && (
+                      <div className="mt-2">
+                        {filterChips(m.screen).length > 0 && (
+                          <div className="mb-2 flex flex-wrap gap-1.5">
+                            {filterChips(m.screen).map((c) => (
+                              <Chip key={c} tone="accent">
+                                {c}
+                              </Chip>
+                            ))}
+                          </div>
+                        )}
+                        <div className="overflow-x-auto rounded-lg border border-border">
+                          <table className="w-full min-w-[560px] text-sm">
+                            <thead>
+                              <tr className="border-b border-border text-left font-mono text-[10px] uppercase tracking-wide text-foreground-faint">
+                                <th className="px-3 py-2">Symbol</th>
+                                <th className="px-3 py-2">Sector</th>
+                                <th className="px-3 py-2">Score</th>
+                                <th className="px-3 py-2">Delivery</th>
+                                <th className="px-3 py-2">Signals</th>
+                                <th className="px-3 py-2" />
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {m.screen.results.map((row) => (
+                                <SignalTableRow key={row.symbol} row={row} columns={SCREEN_COLUMNS} />
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
                 {busy && <p className="text-xs text-foreground-faint">RedixFi AI is reading the data…</p>}
@@ -264,11 +322,14 @@ export function AskRedixFi() {
               )}
 
               <div className="flex items-center gap-2 border-t border-border p-3">
+                {!symbol && (
+                  <Search size={14} className="shrink-0 text-foreground-faint" aria-hidden />
+                )}
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && send(input)}
-                  placeholder={`Ask a question about ${symbol}…`}
+                  placeholder={symbol ? `Ask a question about ${symbol}…` : "Ask anything — a stock, a sector, or in general…"}
                   disabled={busy}
                   className="flex-1 rounded-lg border border-border bg-hover px-3 py-2 text-sm outline-none disabled:opacity-60"
                 />

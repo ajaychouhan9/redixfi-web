@@ -20,7 +20,11 @@ import type { SmartScreenResult } from "@/lib/api/types";
 
 const COLUMNS: VisibleColumns = { sector: true, marketCap: false, delivery: true, chips: true, eventRisk: false };
 
-function filterChips(result: SmartScreenResult) {
+// Exported so Ask-RedixFi (Task 22 Phase 3) can render the same filter-chip
+// summary for a screen-shaped Ask answer without re-deriving this mapping —
+// takes just the `parsed_filters` shape (both SmartScreenResult and Ask's
+// own AskScreenResult carry it) rather than the full SmartScreenResult.
+export function filterChips(result: { parsed_filters: SmartScreenResult["parsed_filters"] }) {
   const f = result.parsed_filters;
   if (!f) return [];
   const chips: string[] = [];
