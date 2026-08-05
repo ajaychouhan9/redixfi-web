@@ -1016,6 +1016,15 @@ export interface AskResult {
   resolved_symbol: string | null;
   compare: CompareResult | null;
   screen: AskScreenResult | null;
+  // Task 22 Phase 4 — narrow whitelist-only web fallback (company-profile
+  // facts: sector/industry, incorporation date, HQ, promoters/management,
+  // listing date, ISIN) for a fact not in RedixFi's own DB. MUST be shown
+  // as a visibly distinct label, never folded into the AI-generated
+  // framing used elsewhere — this content wasn't LLM-generated at all,
+  // it's a structured fact read from an external source (Wikidata).
+  web_sourced: boolean;
+  web_source_label: string | null;
+  web_source_url: string | null;
 }
 
 /** Shape of ApiError.detail on a 429 from POST /ask (core/metering.py::enforce_ask_usage). */

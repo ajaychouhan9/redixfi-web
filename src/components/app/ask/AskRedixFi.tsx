@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Sparkles, X, Send, Search } from "lucide-react";
+import { Sparkles, X, Send, Search, Globe } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { apiGet, ApiError } from "@/lib/api/client";
 import { askRedixfi } from "@/lib/api/mutations";
@@ -35,6 +35,13 @@ interface AskMessage {
   sources?: string[];
   compare?: CompareResult | null;
   screen?: AskScreenResult | null;
+  // Task 22 Phase 4 — narrow web fallback (company-profile facts read from
+  // an external source, e.g. Wikidata, when RedixFi's own DB doesn't have
+  // it). Rendered as its own visibly distinct badge below, never mixed
+  // into the AI-generated framing — this content wasn't LLM-authored.
+  webSourced?: boolean;
+  webSourceLabel?: string | null;
+  webSourceUrl?: string | null;
 }
 
 const QUICK_PROMPTS_SYMBOL = [
@@ -130,7 +137,10 @@ export function AskRedixFi() {
       }
       setMessages((prev) => [
         ...prev,
-        { role: "ai", text: result.answer, sources: result.sources_used, compare: result.compare, screen: result.screen },
+        {
+          role: "ai", text: result.answer, sources: result.sources_used, compare: result.compare, screen: result.screen,
+          webSourced: result.web_sourced, webSourceLabel: result.web_source_label, webSourceUrl: result.web_source_url,
+        },
       ]);
     } catch (e) {
       if (e instanceof ApiError && e.status === 429) {
@@ -258,6 +268,23 @@ export function AskRedixFi() {
                         }
                       >
                         {m.text}
+                        {/* Task 22 Phase 4 — MUST be visibly labeled, not just a backend
+                            flag (task doc's explicit requirement): a distinct badge, never
+                            folded into the sources_used chips below (those imply RedixFi's
+                            own measured data; this wasn't LLM-generated or RedixFi-sourced
+                            at all — a structured fact read from an external source). */}
+                        {m.webSourced && (
+                          <div className="mt-2 flex items-center gap-1.5 border-t border-border pt-2 text-[11px] text-foreground-faint">
+                            <Globe size={11} className="shrink-0" />
+                            {m.webSourceUrl ? (
+                              <a href={m.webSourceUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
+                                Sourced from the web ({m.webSourceLabel ?? "external"}), not RedixFi&apos;s own data
+                              </a>
+                            ) : (
+                              <span>Sourced from the web ({m.webSourceLabel ?? "external"}), not RedixFi&apos;s own data</span>
+                            )}
+                          </div>
+                        )}
                         {m.sources && m.sources.length > 0 && (
                           <div className="mt-2 flex flex-wrap gap-1 border-t border-border pt-2">
                             {m.sources.map((s) => (
