@@ -1646,3 +1646,82 @@ Next: founder deploy + live verification per the open items above, then
 resume the parked queue (₹249 pricing rollout is now DONE as part of this
 session, not still parked; founding-counter visibility, remaining minor
 P0s) or whatever the founder prioritizes next.
+
+## Completion note — Ask panel bug investigation (2026-08-05)
+LIVE BUG REPORT (screenshots, TATACAP): "What's driving today's score
+change?" and "How does this compare to its sector peers?" both returned
+the identical canned TEMPLATE_FALLBACK text ("I can't answer that
+directly — see the fundamentals panel...") with data-source tags shown.
+
+INVESTIGATED per explicit instruction, all 3 hypothesized causes tested
+directly and ruled out with hard evidence, NOT assumed:
+1. Two-layer refusal guard — tested both exact reported queries against
+   the real FORWARD_INTENT_RE regex directly: neither matches. Also
+   structurally impossible regardless: the guard's forced response is
+   REFUSAL_LINE, a different string from the observed TEMPLATE_FALLBACK
+   text — generate_answer()'s code makes these mutually exclusive.
+2. Retrieval — confirmed genuinely running: sources_used only populates
+   on the non-refused path, so the observed tags are proof retrieval
+   succeeded, not evidence of a cosmetic/never-fetched display.
+3. LLM being overly conservative — reproduced BOTH exact reported
+   questions LIVE against the real OpenAI API (confirmed outbound access
+   from this sandbox, unlike the VM-only Mongo path) with realistic
+   TATACAP data AND a deliberately near-empty packet: every case answered
+   correctly/appropriately, zero validation rejections. Widened to 5
+   question categories x 3 symbols (15 total, incl. a real matched-news
+   causal answer for RELIANCE) — 15/15 clean, zero fallbacks, zero
+   refusals.
+
+ROOT CAUSE: none of the 3 — generate_answer()'s code structure makes the
+observed symptom (exact template text + refused=false + populated
+sources) producible only 3 ways: missing API key, an LLM-call exception,
+or double validation failure. (3) is now empirically ruled out, leaving
+an infrastructure-level failure (bad/missing key, or a swallowed
+exception) specific to the DEPLOYED environment — unreachable from this
+sandbox (no live VM/Mongo path, standing constraint) but the code had
+ZERO observability into which one it was. THAT is the actual root cause:
+why this needed a live investigation instead of a 30-second log lookup.
+
+FIXED (the missing observability + a real classification gap found along
+the way — not a guard/retrieval/prompt patch, since those were proven
+clean):
+- core/ask.py::generate_answer() — an exception on the FIRST LLM call
+  previously got ZERO retry (a validation failure already got one);
+  unified into one shared two-attempt budget covering both (still
+  capped at 2 real LLM calls, unchanged cost ceiling). A transient
+  network/API hiccup no longer produces an immediate, unrecoverable,
+  refusal-looking fallback.
+- run_ask()/routers/ask.py — every template-fallback now carries a
+  machine-readable `fallback_reason` ("no_api_key" | "llm_exception: ..."
+  | "validation: ...") persisted to ask_log — diagnosable from the DB
+  directly next time, no live re-investigation needed.
+- CAUSAL_QUESTION_RE ("why|reason|cause") didn't match "what's DRIVING
+  today's score change" — the exact phrasing of one of the two reported
+  queries AND the panel's own "Try asking" suggestion. Widened to include
+  driving/drove/behind (only ever makes the causal-attribution backstop
+  MORE likely to apply, never less — safe to broaden). Doesn't explain
+  the reported refusal (a permissive gap, not a stricter one) but is a
+  real, independently-confirmed miss in this exact code path.
+
+TESTING: new scripts/smoke_test_ask_bugfix.py (14 checks, mocked LLM,
+deterministic) — classification fix, retry-budget correctness (exactly 2
+calls whichever failure kind, never 3), fallback_reason across all 4
+terminal states. Full offline suite: 719 checks, 0 regressions (7
+pre-existing failures in smoke_test_task17.py/smoke_test_bugfixes_
+20260804.py are the ALREADY-FLAGGED hardcoded-date staleness bug from
+the prior session — confirmed via empty git diff on both files, this
+session never touched them).
+
+SCOPE HELD: only core/ask.py, routers/ask.py, and the new test file —
+zero UI changes, zero other pages, per this session's explicit
+instruction (verified: redixfi-web git status is empty).
+
+⚠️ STILL OPEN, cannot be closed from this sandbox: the actual PROXIMATE
+trigger (missing/invalid OPENAI_API_KEY on the live VM's api/.env, vs. a
+network/egress exception hitting api.openai.com from the VM) is still
+unconfirmed — this fix makes it DIAGNOSABLE (check `ask_log.
+fallback_reason` for recent entries after redeploying) but does not
+itself prove which one it was. FOUNDER NEXT STEP: after deploying this
+fix, reproduce the same two TATACAP questions live and, if it still
+falls back, check `db.ask_log.find({fallback_reason:{$ne:null}}).sort({_id:-1}).limit(5)`
+on the VM — the reason field now tells you exactly which of the 3 it is.
