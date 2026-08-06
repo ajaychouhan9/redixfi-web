@@ -37,6 +37,10 @@ export function TopupCard() {
       const token = await getToken();
       if (!token) return;
       const order = await createTopupOrder(token);
+      if (!order.order_id || !order.currency) {
+        setError("Could not start checkout.");
+        return;
+      }
       openRazorpayCheckout({
         key: order.razorpay_key_id ?? RAZORPAY_KEY ?? "",
         amount: order.amount_paise,

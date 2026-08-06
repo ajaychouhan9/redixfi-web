@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
-import { PlanCard } from "@/components/app/billing/PlanCard";
+import { PLAN_LABEL, PlanCard } from "@/components/app/billing/PlanCard";
 import { TopupCard } from "@/components/app/billing/TopupCard";
 import { SubscriptionStatusCard } from "@/components/app/account/SubscriptionStatusCard";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -33,8 +33,15 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
   const [profile, setProfile] = useState<MeProfile | null>(null);
   const [plans, setPlans] = useState(initialPlans);
   const [promoInput, setPromoInput] = useState("");
-  const [promoResult, setPromoResult] = useState<PromoValidation | null>(null);
+  // Keyed by plan id — validated INDEPENDENTLY per plan (never one plan's
+  // result reused for another). This is the fix for a live bug where the
+  // Founding Annual card showed a false 100%-off/₹0 preview for a code
+  // that was only ever validated against Analytics Pro (monthly): the old
+  // single `promoResult` state was shared across every rendered card
+  // regardless of which plan it was actually checked against.
+  const [promoResults, setPromoResults] = useState<Record<string, PromoValidation>>({});
   const [promoChecking, setPromoChecking] = useState(false);
+  const promoApplied = Object.values(promoResults).some((r) => r.valid);
 
   async function reload() {
     const token = await getToken();
@@ -71,24 +78,40 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
   // entirely rather than offering it as an option.
   const showMonthly = !isOnAnnual;
 
-  async function checkPromo(plan: BillingPlan) {
-    if (!promoInput.trim()) {
-      setPromoResult(null);
+  // Validates the SAME code against every plan card actually on screen,
+  // in parallel — one /billing/promo-code/validate request per plan, each
+  // keyed by its own plan id, so a card can never show a discount that
+  // wasn't computed for its own plan+code combination.
+  async function checkPromo() {
+    const code = promoInput.trim();
+    if (!code) {
+      setPromoResults({});
       return;
     }
+    const targets = [monthly, annualCardPlan].filter((p): p is BillingPlan => !!p);
+    if (targets.length === 0) return;
     setPromoChecking(true);
     try {
-      setPromoResult(await validatePromoCode(promoInput.trim(), plan.plan));
+      const entries = await Promise.all(targets.map(async (p) => [p.plan, await validatePromoCode(code, p.plan)] as const));
+      setPromoResults(Object.fromEntries(entries));
     } finally {
       setPromoChecking(false);
     }
   }
 
   function promoPreviewFor(plan: BillingPlan | undefined) {
-    if (!plan || !promoResult?.valid || promoResult.final_amount_paise == null) return null;
-    const discountLabel =
-      promoResult.discount_type === "flat" ? `₹${promoResult.discount_value} off` : `${promoResult.discount_pct}% off`;
-    return { discountLabel: `You save — ${discountLabel}`, finalAmountRupees: Math.round(promoResult.final_amount_paise / 100) };
+    if (!plan) return null;
+    const result = promoResults[plan.plan];
+    if (!result) return null;
+    if (!result.valid || result.final_amount_paise == null) {
+      // Explicit "not applicable" rather than silently showing 0% savings
+      // or reusing another plan's result — the user must never see a
+      // number on screen that doesn't match what they'll actually be
+      // charged for THIS plan.
+      return { applicable: false as const, message: `Not applicable to ${PLAN_LABEL[plan.plan] ?? "this plan"}` };
+    }
+    const discountLabel = result.discount_type === "flat" ? `₹${result.discount_value} off` : `${result.discount_pct}% off`;
+    return { applicable: true as const, discountLabel: `You save — ${discountLabel}`, finalAmountRupees: Math.round(result.final_amount_paise / 100) };
   }
 
   return (
@@ -107,7 +130,7 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
 
       <div
         className="sticky top-2 z-10 mb-5 flex flex-col gap-2 rounded-xl border border-border bg-surface-raised p-3 shadow-sm sm:flex-row sm:items-center"
-        style={promoResult?.valid ? { borderColor: "var(--up)" } : undefined}
+        style={promoApplied ? { borderColor: "var(--up)" } : undefined}
       >
         <label className="flex-1">
           <span className="mb-1 block text-xs font-medium text-foreground-faint">Promo code</span>
@@ -115,7 +138,7 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
             value={promoInput}
             onChange={(e) => {
               setPromoInput(e.target.value);
-              setPromoResult(null);
+              setPromoResults({});
             }}
             placeholder="Have a code? Enter it here"
             className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none"
@@ -124,15 +147,15 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
         <button
           type="button"
           disabled={promoChecking || !promoInput.trim() || !(monthly ?? annualCardPlan)}
-          onClick={() => checkPromo(monthly ?? (annualCardPlan as BillingPlan))}
+          onClick={() => checkPromo()}
           className="rounded-lg border border-border bg-hover px-4 py-2 text-sm font-medium disabled:opacity-50"
         >
           {promoChecking ? "Checking…" : "Apply"}
         </button>
-        {promoResult && (
-          <p className={`text-sm sm:ml-2 ${promoResult.valid ? "flex items-center gap-1.5 text-up animate-pop-in" : "text-down"}`}>
-            {promoResult.valid && <CheckCircle2 size={14} className="shrink-0" />}
-            {promoResult.valid ? "Code applied — see savings on the plan below." : promoResult.message}
+        {Object.keys(promoResults).length > 0 && (
+          <p className={`text-sm sm:ml-2 ${promoApplied ? "flex items-center gap-1.5 text-up animate-pop-in" : "text-down"}`}>
+            {promoApplied && <CheckCircle2 size={14} className="shrink-0" />}
+            {promoApplied ? "Code applied — see savings on the plan(s) below." : Object.values(promoResults)[0]?.message}
           </p>
         )}
       </div>
@@ -143,7 +166,7 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
             plan={monthly}
             features={PAID_FEATURES}
             mode={isOnMonthly ? "current" : "new"}
-            promoCode={promoResult?.valid ? promoInput.trim() : undefined}
+            promoCode={promoResults[monthly.plan]?.valid ? promoInput.trim() : undefined}
             promoPreview={promoPreviewFor(monthly)}
             onPurchased={reload}
           />
@@ -159,7 +182,7 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
             mode={isOnAnnual ? "current" : isOnMonthly && !hasPendingUpgrade ? "upgrade" : "new"}
             disabled={isOnMonthly && hasPendingUpgrade && !isOnAnnual}
             disabledReason={isOnMonthly && hasPendingUpgrade ? "An annual upgrade is already scheduled." : undefined}
-            promoCode={promoResult?.valid ? promoInput.trim() : undefined}
+            promoCode={promoResults[annualCardPlan.plan]?.valid ? promoInput.trim() : undefined}
             promoPreview={promoPreviewFor(annualCardPlan)}
             onPurchased={reload}
           />

@@ -757,13 +757,27 @@ export interface BillingPlan {
 }
 
 export interface BillingOrder {
-  order_id: string;
+  // Absent on a free_checkout response (see below) — Razorpay never opens,
+  // so there's no order to hand it.
+  order_id?: string;
   amount_paise: number;
-  currency: string;
+  currency?: string;
   razorpay_key_id?: string;
   discount_pct?: number | null;
   discount_type?: "percentage" | "flat" | null;
   discount_value?: number | null;
+  // 100%-off (or near-enough) promo bypass: the backend skips Razorpay
+  // entirely and activates the subscription synchronously, so this
+  // response carries the SAME shape as BillingVerifyResult below instead
+  // of order_id/razorpay_key_id. When this is true, the caller must skip
+  // openRazorpayCheckout() and treat the purchase as already complete.
+  free_checkout?: boolean;
+  success?: boolean;
+  subscription_id?: string;
+  tier?: string;
+  founding_number?: number | null;
+  scheduled?: boolean;
+  effective_date?: string;
   [key: string]: unknown;
 }
 

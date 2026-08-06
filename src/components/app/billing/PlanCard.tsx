@@ -12,7 +12,7 @@ import type { BillingPlan } from "@/lib/api/types";
 
 const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
-const PLAN_LABEL: Record<string, string> = {
+export const PLAN_LABEL: Record<string, string> = {
   monthly_249: "Analytics Pro",
   annual_2499: "Annual",
   founding_1799: "Founding Annual",
@@ -50,8 +50,16 @@ export function PlanCard({
   disabled?: boolean;
   disabledReason?: string;
   promoCode?: string;
-  /** Live "you save ₹X, final ₹Y" preview from the promo validation response. */
-  promoPreview?: { discountLabel: string; finalAmountRupees: number } | null;
+  /**
+   * Live preview from the promo validation response, computed by the
+   * caller PER PLAN (validated against THIS card's own plan id — never a
+   * different plan's result reused across cards, the root cause of a live
+   * bug where Founding Annual showed a false 100%-off/₹0 preview for a
+   * code that only ever applied to Analytics Pro; see CheckoutView.tsx).
+   * `applicable: false` renders an honest "doesn't apply to this plan"
+   * notice instead of a number the user won't actually be charged.
+   */
+  promoPreview?: { applicable: true; discountLabel: string; finalAmountRupees: number } | { applicable: false; message: string } | null;
   onPurchased?: () => void;
 }) {
   const { user, getToken } = useAuth();
@@ -78,6 +86,21 @@ export function PlanCard({
         return;
       }
       const order = await createBillingOrder(token, plan.plan, promoCode);
+
+      if (order.free_checkout) {
+        // 100%-off promo bypass — the backend already activated the
+        // subscription synchronously; there's no Razorpay order to open.
+        if (order.scheduled && order.effective_date) {
+          setScheduledFor(order.effective_date);
+        }
+        onPurchased?.();
+        return;
+      }
+      if (!order.order_id || !order.currency) {
+        setError("Could not start checkout.");
+        return;
+      }
+
       openRazorpayCheckout({
         key: order.razorpay_key_id ?? RAZORPAY_KEY ?? "",
         amount: order.amount_paise,
@@ -179,10 +202,13 @@ export function PlanCard({
         </p>
       )}
 
-      {promoPreview && !isCurrent && (
+      {promoPreview && !isCurrent && promoPreview.applicable && (
         <p className="animate-pop-in mt-3 rounded-lg bg-up-bg px-3 py-2 text-xs font-medium text-up">
           {promoPreview.discountLabel} — final ₹{promoPreview.finalAmountRupees.toLocaleString("en-IN")}
         </p>
+      )}
+      {promoPreview && !isCurrent && !promoPreview.applicable && (
+        <p className="mt-3 rounded-lg bg-hover px-3 py-2 text-xs font-medium text-foreground-muted">{promoPreview.message}</p>
       )}
 
       {scheduledFor ? (
