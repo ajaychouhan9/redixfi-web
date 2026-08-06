@@ -316,6 +316,11 @@ export interface CompareResult {
   unresolved: CompareUnresolved[];
   rows: CompareRow[];
   biggest_differences: CompareBiggestDifference[];
+  // Additive (2026-08-06) — real composite_score history per symbol
+  // (core/signals_view.py::score_history), keyed by symbol. A locked
+  // symbol is OMITTED from this map entirely (B8 masking parity with
+  // `rows`' own measured-layer masking), never a partial/teaser series.
+  score_history: Record<string, ScoreHistoryPoint[]>;
 }
 
 export interface SmartScreenResult {
@@ -1042,6 +1047,13 @@ export interface AskScreenResult {
   result_count: number;
 }
 
+/** One day's real composite_score, from measured_signals (never synthesized) —
+ * see core/signals_view.py::score_history. */
+export interface ScoreHistoryPoint {
+  date: string;
+  composite_score: number;
+}
+
 export interface AskResult {
   answer: string;
   sources_used: string[];
@@ -1063,6 +1075,16 @@ export interface AskResult {
   web_sourced: boolean;
   web_source_label: string | null;
   web_source_url: string | null;
+  // Additive (2026-08-06). Present only for a causal/trend-shaped
+  // per-symbol question with a real (non-refused) answer — null everywhere
+  // else, incl. plain single-fact answers ("what sector is TCS in"), which
+  // stay text-only by design. For a `compare` answer, the equivalent data
+  // lives at `compare.score_history` instead (one series per symbol).
+  score_history: ScoreHistoryPoint[] | null;
+  // Additive (2026-08-06) — deterministic (never LLM-generated) next-
+  // question suggestions, code-computed from the answer's own mode/fact
+  // type. Empty array for a refusal or a locked/paywalled answer.
+  follow_ups: string[];
 }
 
 /** Shape of ApiError.detail on a 429 from POST /ask (core/metering.py::enforce_ask_usage). */

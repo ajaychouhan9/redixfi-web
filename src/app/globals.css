@@ -34,6 +34,20 @@
   --amber-bg: rgba(168, 101, 10, 0.1);
 
   --focus-ring: #b8873a;
+
+  /* Categorical series colors (2026-08-06) — Ask-RedixFi's multi-symbol
+     score-history comparison chart ONLY (a distinct role from --up/--down,
+     which stay reserved for signed gain/loss). Fixed slot order, validated
+     via the dataviz skill's CVD/contrast checks against this surface
+     (--surface-raised #ffffff): PASS on lightness/chroma/CVD-separation/
+     normal-vision floors; contrast vs. surface WARNs for slots 3/4/5 (below
+     3:1) — relief satisfied by ScoreHistoryChart's own legend, which always
+     direct-labels every series by symbol name, never color alone. */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -62,6 +76,15 @@
     --amber-bg: rgba(232, 163, 61, 0.14);
 
     --focus-ring: #d4a94e;
+
+    /* Dark-mode step of the same 5 categorical series slots — validated
+       against --surface-raised #12172a: all 5 checks PASS (incl. full
+       3:1+ contrast, no relief needed, unlike the light step). */
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
   }
 }
 
@@ -90,6 +113,12 @@
   --amber-bg: rgba(232, 163, 61, 0.14);
 
   --focus-ring: #d4a94e;
+
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
 }
 
 @theme inline {

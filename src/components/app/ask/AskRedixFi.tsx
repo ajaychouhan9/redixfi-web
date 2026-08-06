@@ -8,10 +8,11 @@ import { apiGet, ApiError } from "@/lib/api/client";
 import { askRedixfi } from "@/lib/api/mutations";
 import { getCurrentSymbol } from "@/lib/current-symbol";
 import { CompareResultCard } from "@/components/app/signals/CompareResultCard";
+import { ScoreHistoryChart } from "@/components/app/ask/ScoreHistoryChart";
 import { SignalTableRow, type VisibleColumns } from "@/components/app/signals/SignalTableRow";
 import { filterChips } from "@/components/app/signals/SmartScreenerBox";
 import { Chip } from "@/components/ui/Chip";
-import type { AskLimitDetail, AskScreenResult, CompareResult, ResearchSearchRow } from "@/lib/api/types";
+import type { AskLimitDetail, AskScreenResult, CompareResult, ResearchSearchRow, ScoreHistoryPoint } from "@/lib/api/types";
 
 /**
  * Persistent "RedixFi AI" entry point, per the locked design system: lives
@@ -42,6 +43,12 @@ interface AskMessage {
   webSourced?: boolean;
   webSourceLabel?: string | null;
   webSourceUrl?: string | null;
+  // Additive (2026-08-06) — inline trend/comparison chart data (null/empty
+  // for a plain single-fact answer, which stays text-only by design) and
+  // deterministic follow-up suggestion chips.
+  scoreHistory?: ScoreHistoryPoint[] | null;
+  resolvedSymbol?: string | null;
+  followUps?: string[];
 }
 
 const QUICK_PROMPTS_SYMBOL = [
@@ -140,6 +147,7 @@ export function AskRedixFi() {
         {
           role: "ai", text: result.answer, sources: result.sources_used, compare: result.compare, screen: result.screen,
           webSourced: result.web_sourced, webSourceLabel: result.web_source_label, webSourceUrl: result.web_source_url,
+          scoreHistory: result.score_history, resolvedSymbol: result.resolved_symbol, followUps: result.follow_ups,
         },
       ]);
     } catch (e) {
@@ -332,6 +340,41 @@ export function AskRedixFi() {
                             </tbody>
                           </table>
                         </div>
+                      </div>
+                    )}
+
+                    {/* Additive (2026-08-06) — inline trend/comparison chart.
+                        A compare answer's chart data lives on `compare.score_history`
+                        (one series per resolved, unlocked symbol); a plain
+                        per-symbol causal/trend answer carries its own single-
+                        series `scoreHistory` directly. Plain single-fact
+                        answers carry neither and render no chart, by design. */}
+                    {m.compare && m.compare.symbols.length > 0 && Object.keys(m.compare.score_history ?? {}).length > 0 && (
+                      <ScoreHistoryChart
+                        series={m.compare.symbols
+                          .filter((sym) => m.compare!.score_history[sym])
+                          .map((sym) => ({ symbol: sym, points: m.compare!.score_history[sym] }))}
+                      />
+                    )}
+                    {!m.compare && m.scoreHistory && m.scoreHistory.length > 0 && m.resolvedSymbol && (
+                      <ScoreHistoryChart series={[{ symbol: m.resolvedSymbol, points: m.scoreHistory }]} />
+                    )}
+
+                    {/* Additive (2026-08-06) — deterministic follow-up chips,
+                        reusing the SAME empty-state "Try asking" chip pattern
+                        above (no new chip component), shown only under the
+                        MOST RECENT answer. */}
+                    {m.role === "ai" && i === messages.length - 1 && !busy && m.followUps && m.followUps.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {m.followUps.map((f) => (
+                          <button
+                            key={f}
+                            onClick={() => send(f)}
+                            className="rounded-full border border-border bg-hover px-2.5 py-1 text-left text-[11.5px] text-foreground-muted transition-colors hover:text-foreground"
+                          >
+                            {f}
+                          </button>
+                        ))}
                       </div>
                     )}
                   </div>
