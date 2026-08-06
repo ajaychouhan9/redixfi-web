@@ -762,6 +762,8 @@ export interface BillingOrder {
   currency: string;
   razorpay_key_id?: string;
   discount_pct?: number | null;
+  discount_type?: "percentage" | "flat" | null;
+  discount_value?: number | null;
   [key: string]: unknown;
 }
 
@@ -788,7 +790,29 @@ export interface PendingPlanChange {
 export interface PromoValidation {
   valid: boolean;
   discount_pct: number | null;
+  discount_type?: "percentage" | "flat" | null;
+  discount_value?: number | null;
+  final_amount_paise?: number | null;
   message: string;
+}
+
+// ---------- promo-code admin (/admin/promo-codes) ----------
+
+export interface PromoCodeAdmin {
+  code: string;
+  discount_type: "percentage" | "flat";
+  discount_value: number;
+  applies_to: string[];
+  max_redemptions: number | null;
+  one_use_per_user: boolean;
+  valid_till: string | null;
+  active: boolean;
+  redeemed_count: number;
+  redeemed_by: string[];
+  channel_tag: string;
+  created_at: string;
+  created_by?: string;
+  updated_at: string;
 }
 
 // ---------- me / account ----------

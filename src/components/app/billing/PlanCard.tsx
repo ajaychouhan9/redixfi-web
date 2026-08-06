@@ -29,20 +29,29 @@ const PLAN_LABEL: Record<string, string> = {
 export function PlanCard({
   plan,
   highlighted,
+  badge,
+  savingsNote,
   features,
   mode = "new",
   disabled,
   disabledReason,
   promoCode,
+  promoPreview,
   onPurchased,
 }: {
   plan: BillingPlan;
   highlighted?: boolean;
+  /** "Most Popular" / "Best Value" — only meaningful alongside `highlighted`. */
+  badge?: string;
+  /** e.g. "Save ~16% vs paying monthly" — rendered under the price. */
+  savingsNote?: string;
   features: string[];
   mode?: "new" | "current" | "upgrade";
   disabled?: boolean;
   disabledReason?: string;
   promoCode?: string;
+  /** Live "you save ₹X, final ₹Y" preview from the promo validation response. */
+  promoPreview?: { discountLabel: string; finalAmountRupees: number } | null;
   onPurchased?: () => void;
 }) {
   const { user, getToken } = useAuth();
@@ -106,18 +115,54 @@ export function PlanCard({
 
   const isCurrent = mode === "current";
   const isUpgrade = mode === "upgrade";
+  const foundingSlotsShown = typeof plan.founding_slots_remaining === "number";
+  const foundingProgressPct = foundingSlotsShown ? Math.max(0, Math.min(100, ((200 - (plan.founding_slots_remaining as number)) / 200) * 100)) : 0;
 
   return (
-    <div className={`rounded-xl border p-5 ${highlighted ? "border-accent bg-accent/5" : "border-border"}`}>
+    <div
+      className={`relative rounded-xl border p-5 ${highlighted ? "border-transparent" : "border-border"}`}
+      style={
+        // --accent IS the design system's gold CTA color already (see
+        // globals.css's own header comment: "Gold... used for chrome/
+        // CTAs/active states"), so the highlighted card's gradient border
+        // reuses it directly rather than introducing a second gold-ish
+        // tone — --amber stays reserved for its own distinct existing
+        // meaning (the founding-spots scarcity indicator just below).
+        highlighted
+          ? {
+              backgroundImage: "linear-gradient(var(--surface-raised), var(--surface-raised)), linear-gradient(135deg, var(--accent), var(--accent-dim))",
+              backgroundOrigin: "border-box",
+              backgroundClip: "padding-box, border-box",
+              border: "1.5px solid transparent",
+            }
+          : undefined
+      }
+    >
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      {highlighted && badge && (
+        <span
+          className="absolute -top-3 left-5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent-foreground"
+          style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dim))" }}
+        >
+          {badge}
+        </span>
+      )}
       <h3 className="text-sm font-semibold uppercase tracking-wide text-foreground-muted">{PLAN_LABEL[plan.plan] ?? plan.plan}</h3>
-      <p className="mt-1 text-3xl font-bold">
+      <p className="mt-1 text-3xl font-bold tracking-tight">
         ₹{plan.amount_rupees.toLocaleString("en-IN")}
         <span className="text-sm font-normal text-foreground-muted">/{plan.period_days >= 300 ? "yr" : "mo"}</span>
       </p>
-      {typeof plan.founding_slots_remaining === "number" && (
-        <p className="mt-1 text-xs font-medium text-amber">{plan.founding_slots_remaining} of 200 founding spots left</p>
+      {savingsNote && <p className="mt-0.5 text-xs font-medium text-up">{savingsNote}</p>}
+
+      {foundingSlotsShown && (
+        <div className="mt-2.5">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-hover">
+            <div className="h-full rounded-full bg-amber transition-[width]" style={{ width: `${foundingProgressPct}%` }} />
+          </div>
+          <p className="mt-1 text-xs font-medium text-amber">{plan.founding_slots_remaining} of 200 founding spots left</p>
+        </div>
       )}
+
       <ul className="mt-4 space-y-1.5 text-sm">
         {features.map((f) => (
           <li key={f} className="flex gap-2">
@@ -134,6 +179,12 @@ export function PlanCard({
         </p>
       )}
 
+      {promoPreview && !isCurrent && (
+        <p className="animate-pop-in mt-3 rounded-lg bg-up-bg px-3 py-2 text-xs font-medium text-up">
+          {promoPreview.discountLabel} — final ₹{promoPreview.finalAmountRupees.toLocaleString("en-IN")}
+        </p>
+      )}
+
       {scheduledFor ? (
         <p className="mt-5 rounded-lg bg-up-bg px-3 py-2 text-sm text-up">Scheduled — annual starts {formatShortDate(scheduledFor)} ✓</p>
       ) : isCurrent ? (
@@ -145,7 +196,8 @@ export function PlanCard({
           onClick={subscribe}
           disabled={busy || disabled}
           title={disabled ? disabledReason : undefined}
-          className="mt-5 w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground disabled:opacity-60"
+          className="mt-5 w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-accent-foreground disabled:opacity-60"
+          style={{ background: highlighted ? "linear-gradient(135deg, var(--accent), var(--accent-dim))" : "var(--accent)" }}
         >
           {busy ? "Starting checkout…" : isUpgrade ? "Upgrade to annual" : "Subscribe"}
         </button>

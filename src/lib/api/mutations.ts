@@ -19,6 +19,7 @@ import type {
   PortfolioAnalytics,
   AnomalyFlagDoc,
   AskResult,
+  PromoCodeAdmin,
 } from "./types";
 
 // ---------- auth ----------
@@ -231,5 +232,55 @@ export async function askRedixfi(
   body: { symbol?: string | null; question: string; conversation_id?: string | null }
 ): Promise<AskResult> {
   const env = await apiMutate<AskResult>("/ask", "POST", body, { token });
+  return env.data;
+}
+
+// ---------- promo-code admin (/admin/promo-codes) — every call here is
+// gated SERVER-SIDE by core/admin_auth.py::require_admin (ADMIN_USER_IDS
+// allowlist). A non-admin token gets a plain 403 from every one of these,
+// same as any other authorization failure — the hidden frontend route is
+// not the security boundary, this check (on the API side) is. ----------
+
+export async function listPromoCodes(token: string): Promise<PromoCodeAdmin[]> {
+  const env = await apiGet<PromoCodeAdmin[]>("/admin/promo-codes", { token });
+  return env.data;
+}
+
+export interface CreatePromoCodeBody {
+  code: string;
+  discount_type: "percentage" | "flat";
+  discount_value: number;
+  applies_to: string[];
+  max_redemptions?: number | null;
+  one_use_per_user?: boolean;
+  valid_till?: string | null;
+  channel_tag?: string;
+}
+
+export async function createPromoCodeAdmin(token: string, body: CreatePromoCodeBody): Promise<PromoCodeAdmin> {
+  const env = await apiMutate<PromoCodeAdmin>("/admin/promo-codes", "POST", body, { token });
+  return env.data;
+}
+
+export interface UpdatePromoCodeBody {
+  discount_type?: "percentage" | "flat";
+  discount_value?: number;
+  applies_to?: string[];
+  max_redemptions?: number | null;
+  max_redemptions_unlimited?: boolean;
+  one_use_per_user?: boolean;
+  valid_till?: string | null;
+  valid_till_no_expiry?: boolean;
+  channel_tag?: string;
+  active?: boolean;
+}
+
+export async function updatePromoCodeAdmin(token: string, code: string, body: UpdatePromoCodeBody): Promise<PromoCodeAdmin> {
+  const env = await apiMutate<PromoCodeAdmin>(`/admin/promo-codes/${encodeURIComponent(code)}`, "PATCH", body, { token });
+  return env.data;
+}
+
+export async function deactivatePromoCodeAdmin(token: string, code: string): Promise<PromoCodeAdmin> {
+  const env = await apiMutate<PromoCodeAdmin>(`/admin/promo-codes/${encodeURIComponent(code)}/deactivate`, "POST", undefined, { token });
   return env.data;
 }
