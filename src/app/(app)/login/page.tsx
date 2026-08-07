@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getFirebaseAuth } from "@/lib/auth/firebase";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { Card } from "@/components/ui/Card";
@@ -66,6 +66,21 @@ export default function LoginPage() {
   const [otp, setOtp] = useState("");
   const [phoneStage, setPhoneStage] = useState<"phone" | "otp">("phone");
   const [confirmation, setConfirmation] = useState<import("firebase/auth").ConfirmationResult | null>(null);
+
+  // Lets the homepage's "Start free" CTA (VisitorIntroStrip) land directly
+  // on the signup form instead of sign-in. Read via window.location rather
+  // than useSearchParams so this page doesn't need a Suspense boundary for
+  // a one-time initial-mode read.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("mode") === "signup") {
+      // One-time initial-mode read from the URL on mount, not a sync loop —
+      // deliberately not useSearchParams() to avoid forcing this otherwise-
+      // static page into a Suspense boundary for a single query param.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMode("signup");
+    }
+  }, []);
 
   function switchMode(next: Mode) {
     setMode(next);

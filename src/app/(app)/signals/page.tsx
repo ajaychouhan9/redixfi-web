@@ -6,7 +6,7 @@ import { getSectorSummary } from "@/lib/api/endpoints";
 
 export const metadata: Metadata = {
   title: "Signal Dashboard",
-  description: "Measured composite signal scores across 750 NSE/BSE stocks — trend, delivery, sector standing and options positioning, factually reported.",
+  description: "Measured composite signal scores across 750+ NSE/BSE stocks — trend, delivery, sector standing and options positioning, factually reported.",
 };
 
 export default async function SignalsPage() {

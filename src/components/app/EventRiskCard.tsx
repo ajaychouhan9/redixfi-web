@@ -14,34 +14,47 @@ import type { NewsItem, NewsToday } from "@/lib/api/types";
 const SEVERITY_TONE = { high: "down", medium: "amber", low: "neutral", none: "neutral" } as const;
 
 /**
- * Client component, not server-fetched from the Home page (deliberately):
- * /news applies a 24h delay to free/anonymous callers (B8). This page is a
- * Server Component and can't read the browser's localStorage-held auth
- * token, so a plain SSR fetch here would silently show every visitor —
- * including paid/founding subscribers — the stale, delayed feed. That's
- * the exact bug class already found twice on this project (News page,
- * Intraday Events tab: both forgot to attach the caller's token). Fixed
- * here the same way those were: fetch client-side, after AuthContext has
- * resolved a real token when one exists.
+ * Client component. The Home page is a Server Component and can't read the
+ * browser's localStorage-held auth token, so it passes `initialItems` —
+ * the SAME anonymous/free-tier feed (24h-delayed per B8) any logged-out
+ * visitor or crawler should see — fetched server-side with no token. That
+ * SSR data is used as this component's initial render, closing the SEO/
+ * content-completeness gap this card used to have (raw HTML showed a bare
+ * "Loading…" placeholder with no fallback content). A real, currently-
+ * logged-in caller then gets corrected client-side with their own token
+ * once resolved, exactly the pattern already used for the Signals paywall
+ * bug (SSR anonymous-by-default, client component upgrades if entitled) —
+ * this is NOT a UA/IP branch, it's the same real-token check used
+ * everywhere else in this app.
  */
-export function EventRiskCard({ newsToday }: { newsToday: NewsToday | null }) {
+export function EventRiskCard({
+  newsToday,
+  initialItems = null,
+}: {
+  newsToday: NewsToday | null;
+  initialItems?: NewsItem[] | null;
+}) {
   const { getToken } = useAuth();
-  const [items, setItems] = useState<NewsItem[] | null>(null);
+  const [items, setItems] = useState<NewsItem[] | null>(initialItems);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const token = await getToken();
+      // Anonymous visitor whose SSR fetch already succeeded: the anonymous
+      // feed we already have IS the correct feed for them — no refetch.
+      if (!token && items !== null) return;
       try {
         const env = await getNews({ severity: "high", size: 3 }, { token });
         if (!cancelled) setItems(env.data);
       } catch {
-        if (!cancelled) setItems([]);
+        if (!cancelled) setItems((prev) => prev ?? []);
       }
     })();
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getToken]);
 
   return (

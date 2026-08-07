@@ -10,7 +10,7 @@ import { getMe, validatePromoCode } from "@/lib/api/mutations";
 import type { BillingPlan, MeProfile, PromoValidation } from "@/lib/api/types";
 
 const PAID_FEATURES = [
-  "All 750 stocks' measured signal scores, unlocked",
+  "All 750+ stocks' measured signal scores, unlocked",
   "Unlimited Research Pro company lookups",
   "Same-day news (no 24h delay)",
   "Watchlist alerts: signal changes, event risk, market-wide events",
