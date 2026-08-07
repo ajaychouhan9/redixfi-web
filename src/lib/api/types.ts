@@ -757,7 +757,11 @@ export interface BillingPlan {
   plan: string;
   amount_rupees: number;
   period_days: number;
-  tier: "paid" | "founding" | string;
+  // Multi-tier restructure (2026-08-08) — "paid" is retired (see
+  // app_models.py's Tier docstring); kept in the union for the same
+  // reason it's kept there, not because GET /billing/plans can still
+  // return it (retired plans are filtered out server-side).
+  tier: "free" | "basic" | "pro" | "paid" | "founding" | string;
   founding_slots_remaining?: number;
 }
 
@@ -854,7 +858,7 @@ export interface MeProfile {
   phone: string | null;
   name: string | null;
   email: string | null;
-  tier: "free" | "paid" | "founding" | string;
+  tier: "free" | "basic" | "pro" | "paid" | "founding" | string;
   subscription: SubscriptionState;
   // Task 20 Part B — set only while a monthly->annual upgrade is
   // SCHEDULED (payment captured, not yet active). null otherwise.

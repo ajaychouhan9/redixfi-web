@@ -12,7 +12,18 @@ import type { BillingPlan } from "@/lib/api/types";
 
 const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
+// Multi-tier restructure (2026-08-08) — Basic/Pro replace the single
+// paid tier; Founding Annual is retired (no longer purchasable, never
+// returned by GET /billing/plans, so PlanCard itself never renders these
+// three anymore). Kept here anyway, not deleted, in case a future
+// receipt/order-history view needs to label an old order — costs
+// nothing to keep, same "retired, not deleted" reasoning as
+// app_models.PLANS itself.
 export const PLAN_LABEL: Record<string, string> = {
+  basic_249: "Basic",
+  pro_399: "Pro",
+  basic_annual_2399: "Basic Annual",
+  pro_annual_3999: "Pro Annual",
   monthly_249: "Analytics Pro",
   annual_2499: "Annual",
   founding_1799: "Founding Annual",
@@ -138,8 +149,6 @@ export function PlanCard({
 
   const isCurrent = mode === "current";
   const isUpgrade = mode === "upgrade";
-  const foundingSlotsShown = typeof plan.founding_slots_remaining === "number";
-  const foundingProgressPct = foundingSlotsShown ? Math.max(0, Math.min(100, ((200 - (plan.founding_slots_remaining as number)) / 200) * 100)) : 0;
 
   return (
     <div
@@ -149,8 +158,7 @@ export function PlanCard({
         // globals.css's own header comment: "Gold... used for chrome/
         // CTAs/active states"), so the highlighted card's gradient border
         // reuses it directly rather than introducing a second gold-ish
-        // tone — --amber stays reserved for its own distinct existing
-        // meaning (the founding-spots scarcity indicator just below).
+        // tone.
         highlighted
           ? {
               backgroundImage: "linear-gradient(var(--surface-raised), var(--surface-raised)), linear-gradient(135deg, var(--accent), var(--accent-dim))",
@@ -176,15 +184,6 @@ export function PlanCard({
         <span className="text-sm font-normal text-foreground-muted">/{plan.period_days >= 300 ? "yr" : "mo"}</span>
       </p>
       {savingsNote && <p className="mt-0.5 text-xs font-medium text-up">{savingsNote}</p>}
-
-      {foundingSlotsShown && (
-        <div className="mt-2.5">
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-hover">
-            <div className="h-full rounded-full bg-amber transition-[width]" style={{ width: `${foundingProgressPct}%` }} />
-          </div>
-          <p className="mt-1 text-xs font-medium text-amber">{plan.founding_slots_remaining} of 200 founding spots left</p>
-        </div>
-      )}
 
       <ul className="mt-4 space-y-1.5 text-sm">
         {features.map((f) => (

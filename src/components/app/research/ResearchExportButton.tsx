@@ -6,14 +6,17 @@ import { downloadCsv } from "@/lib/csv";
 import type { ResearchDetail as ResearchDetailType, PeerRow } from "@/lib/api/types";
 
 /** Web-exclusive per-stock export (mockup's header "Export" button), same
- * paid-tier gate as the Signals list's CSV export — exports this stock's
- * valuation figures alongside its peer set, the one structured comparison
- * table on this page. Renders nothing for free-tier/logged-out visitors
- * rather than a disabled button (same pattern as other paid-only actions
- * on this page not being shown at all to those users). */
+ * Pro-only gate as the Signals list's CSV export (multi-tier restructure,
+ * 2026-08-08 — was any-paid-tier; "founding" still resolves to Pro-
+ * equivalent, matching core/plan_limits.py::resolve_tier() server-side)
+ * — exports this stock's valuation figures alongside its peer set, the
+ * one structured comparison table on this page. Renders nothing for
+ * free/Basic/logged-out visitors rather than a disabled button (same
+ * pattern as other Pro-only actions on this page not being shown at all
+ * to those users). */
 export function ResearchExportButton({ data, peers }: { data: ResearchDetailType; peers: PeerRow[] | null }) {
   const { user } = useAuth();
-  if (!user || user.tier === "free") return null;
+  if (!user || (user.tier !== "pro" && user.tier !== "founding")) return null;
 
   function exportCsv() {
     const f = data.fundamentals;

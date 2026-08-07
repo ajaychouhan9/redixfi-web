@@ -165,7 +165,23 @@ export function AskRedixFi() {
     }
   }
 
-  const dailyLimitLabel = user?.tier === "free" ? "1/symbol/day" : "25/day";
+  // Multi-tier restructure (2026-08-08) — was a binary
+  // `tier === "free" ? "1/symbol/day" : "25/day"`, which silently showed
+  // Pro's number to Basic subscribers too. Mirrors core/plan_limits.py's
+  // AskLimits table exactly (kept in sync manually, same established
+  // cross-file-duplication convention as this codebase's other
+  // backend/frontend constant pairs) — "founding"/"paid" resolve the
+  // same way core/plan_limits.py::resolve_tier() does server-side
+  // (founding -> Pro's number, paid -> Basic's), so this label never
+  // disagrees with what enforce_ask_usage actually enforces.
+  const DAILY_LIMIT_LABEL: Record<string, string> = {
+    free: "1/symbol/day",
+    basic: "10/day",
+    pro: "25/day",
+    founding: "25/day",
+    paid: "10/day",
+  };
+  const dailyLimitLabel = DAILY_LIMIT_LABEL[user?.tier ?? "free"] ?? "1/symbol/day";
   const quickPrompts = symbol ? QUICK_PROMPTS_SYMBOL : QUICK_PROMPTS_GENERAL;
 
   function openPanel() {

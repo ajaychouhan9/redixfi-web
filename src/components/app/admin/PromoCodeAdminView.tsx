@@ -25,15 +25,25 @@ import type { PromoCodeAdmin } from "@/lib/api/types";
  * successful authenticated 403-free response first.
  */
 
+// Multi-tier restructure (2026-08-08) — 4 labels, one per Basic/Pro x
+// monthly/annual combination (was "monthly"/"annual", spanning the
+// single pre-restructure paid tier). Mirrors routers/admin.py's
+// VALID_APPLIES_TO exactly (kept in sync manually — see that file's own
+// comment on why this isn't a shared import across two routers for 4
+// literals).
 const APPLIES_TO_OPTIONS = [
-  { value: "monthly", label: "Analytics Pro (monthly)" },
-  { value: "annual", label: "Annual" },
-  // Deliberately NO "founding" option — a promo code can never discount
-  // the ₹1,799 founding price-lock. This isn't just a UI omission: the
-  // backend (core/routers/billing.py::_valid_promo) refuses the
-  // combination unconditionally even if a request were hand-crafted to
-  // include it, and routers/admin.py refuses to even WRITE it into a
-  // code's applies_to. Belt and suspenders, all three layers agree.
+  { value: "basic_monthly", label: "Basic (monthly)" },
+  { value: "pro_monthly", label: "Pro (monthly)" },
+  { value: "basic_annual", label: "Basic Annual" },
+  { value: "pro_annual", label: "Pro Annual" },
+  // Deliberately NO founding option of any kind — a promo code can never
+  // discount the (now-retired) founding price-lock. This isn't just a UI
+  // omission: the backend (core/routers/billing.py::_valid_promo)
+  // refuses the combination unconditionally even if a request were
+  // hand-crafted to include it (kept as inert defensive code post-
+  // retirement, not removed), and routers/admin.py refuses to even WRITE
+  // a founding-related value into a code's applies_to. Belt and
+  // suspenders, all layers agree.
 ];
 
 function randomCode(): string {
@@ -48,7 +58,7 @@ function emptyForm(): CreatePromoCodeBody & { unlimited: boolean; noExpiry: bool
     code: "",
     discount_type: "percentage",
     discount_value: 10,
-    applies_to: ["monthly", "annual"],
+    applies_to: ["basic_monthly", "pro_monthly"],
     max_redemptions: 100,
     unlimited: false,
     one_use_per_user: false,

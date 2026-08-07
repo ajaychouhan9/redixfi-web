@@ -106,7 +106,23 @@ export function SignalsExplorer() {
 
   useEffect(() => setPage(1), [q, sector, scoreMin, scoreMax, eventRiskOnly, watchlistOnly, sort, order]);
 
-  const canExport = user && user.tier !== "free";
+  // Multi-tier restructure (2026-08-08) — CSV export is now Pro-only
+  // (was any-paid-tier). "founding" resolves to Pro-equivalent, matching
+  // core/plan_limits.py::resolve_tier() server-side (a founding
+  // subscriber shouldn't lose a capability they already had while their
+  // account awaits the founder's manual decision).
+  const canExport = user && (user.tier === "pro" || user.tier === "founding");
+  // The core new differentiation mechanic: Basic sees the full, unmasked
+  // table but with NO sort/filter/search controls — server-side
+  // (routers/signals.py) already ignores these params for a Basic
+  // caller and forces the fixed default order regardless of what this
+  // component sends, so hiding the controls here is a UX match for that
+  // real enforcement, not the enforcement itself. "paid" (legacy,
+  // pre-migration) treated the same as "basic" — matches
+  // core/plan_limits.py::resolve_tier() server-side. Unaffected for
+  // free/anonymous, per the task's own "confirm free tier unaffected"
+  // instruction.
+  const explorerControlsEnabled = user?.tier !== "basic" && user?.tier !== "paid";
 
   const exportCsv = useCallback(async () => {
     setExporting(true);
@@ -143,47 +159,57 @@ export function SignalsExplorer() {
 
   return (
     <div>
+      {!explorerControlsEnabled && (
+        <p className="mb-3 rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-muted">
+          Basic shows the full table, sorted A–Z. For a filtered or sorted view, ask Ask-RedixFi AI directly — e.g.
+          &quot;highest composite score today&quot; or &quot;IT sector stocks with high delivery&quot;.
+        </p>
+      )}
       <div className="mb-3 flex flex-wrap items-center gap-2 overflow-x-auto pb-1">
-        <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-xs text-foreground-muted">
-          <Search size={12} />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search company or symbol"
-            className="w-36 bg-transparent outline-none sm:w-44"
-          />
-        </label>
-        <select
-          value={sector}
-          onChange={(e) => setSector(e.target.value)}
-          className="shrink-0 rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs text-foreground-muted"
-        >
-          <option value="">All sectors</option>
-          {SIGNAL_SECTORS.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-        <input
-          value={scoreMin}
-          onChange={(e) => setScoreMin(e.target.value)}
-          placeholder="Score min"
-          type="number"
-          className="w-20 shrink-0 rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs"
-        />
-        <input
-          value={scoreMax}
-          onChange={(e) => setScoreMax(e.target.value)}
-          placeholder="Score max"
-          type="number"
-          className="w-20 shrink-0 rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs"
-        />
-        <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-xs text-foreground-muted">
-          <Filter size={12} />
-          <input type="checkbox" checked={eventRiskOnly} onChange={(e) => setEventRiskOnly(e.target.checked)} />
-          Event risk
-        </label>
+        {explorerControlsEnabled && (
+          <>
+            <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-xs text-foreground-muted">
+              <Search size={12} />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search company or symbol"
+                className="w-36 bg-transparent outline-none sm:w-44"
+              />
+            </label>
+            <select
+              value={sector}
+              onChange={(e) => setSector(e.target.value)}
+              className="shrink-0 rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs text-foreground-muted"
+            >
+              <option value="">All sectors</option>
+              {SIGNAL_SECTORS.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+            <input
+              value={scoreMin}
+              onChange={(e) => setScoreMin(e.target.value)}
+              placeholder="Score min"
+              type="number"
+              className="w-20 shrink-0 rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs"
+            />
+            <input
+              value={scoreMax}
+              onChange={(e) => setScoreMax(e.target.value)}
+              placeholder="Score max"
+              type="number"
+              className="w-20 shrink-0 rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs"
+            />
+            <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-xs text-foreground-muted">
+              <Filter size={12} />
+              <input type="checkbox" checked={eventRiskOnly} onChange={(e) => setEventRiskOnly(e.target.checked)} />
+              Event risk
+            </label>
+          </>
+        )}
         {user && (
           <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-xs text-foreground-muted">
             <input type="checkbox" checked={watchlistOnly} onChange={(e) => setWatchlistOnly(e.target.checked)} />
@@ -192,24 +218,28 @@ export function SignalsExplorer() {
         )}
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
-            className="rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs text-foreground-muted"
-          >
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                Sort: {o.label}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={() => setOrder((o) => (o === "asc" ? "desc" : "asc"))}
-            className="flex items-center gap-1 rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs text-foreground-muted"
-            title="Toggle sort order"
-          >
-            <ArrowUpDown size={11} /> {order === "asc" ? "↑" : "↓"}
-          </button>
+          {explorerControlsEnabled && (
+            <>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+                className="rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs text-foreground-muted"
+              >
+                {SORT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    Sort: {o.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => setOrder((o) => (o === "asc" ? "desc" : "asc"))}
+                className="flex items-center gap-1 rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs text-foreground-muted"
+                title="Toggle sort order"
+              >
+                <ArrowUpDown size={11} /> {order === "asc" ? "↑" : "↓"}
+              </button>
+            </>
+          )}
           <div className="relative">
             <button
               onClick={() => setColumnPickerOpen((o) => !o)}

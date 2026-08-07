@@ -9,36 +9,54 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { getMe, validatePromoCode } from "@/lib/api/mutations";
 import type { BillingPlan, MeProfile, PromoValidation } from "@/lib/api/types";
 
-const PAID_FEATURES = [
-  "All 750+ stocks' measured signal scores, unlocked",
+// Multi-tier restructure (2026-08-08) — Basic/Pro replace the single paid
+// tier. Feature lists deliberately state each tier's FULL capability set
+// rather than "everything in Basic, plus X" — Pro's Ask-AI cap (25/day)
+// and compare cap (10 stocks) aren't "Basic's numbers plus something",
+// they're different numbers entirely (core/plan_limits.py is the real
+// source of truth these mirror; kept in sync manually, same established
+// convention as this codebase's other cross-file duplicated constants).
+const BASIC_FEATURES = [
+  "All 750+ stocks' measured signal scores — full data, no masking",
   "Unlimited Research Pro company lookups",
   "Same-day news (no 24h delay)",
   "Watchlist alerts: signal changes, event risk, market-wide events",
   "AI Daily Brief digest",
-  "CSV export on the Signal Dashboard",
-  "Ask-RedixFi AI: 25 questions/day",
+  "Ask-RedixFi AI: 10 questions/day",
+  "Compare up to 2 stocks side by side",
+  "View-only signal table — ask Ask-RedixFi to filter or sort for you",
 ];
 
-const ANNUAL_SAVINGS_NOTE = "Save ~16% vs paying monthly for a year";
+const PRO_FEATURES = [
+  "All 750+ stocks' measured signal scores — full data, no masking",
+  "Unlimited Research Pro company lookups",
+  "Same-day news (no 24h delay)",
+  "Watchlist alerts: signal changes, event risk, market-wide events",
+  "AI Daily Brief digest",
+  "Ask-RedixFi AI: 25 questions/day",
+  "Compare up to 10 stocks side by side",
+  "Full sort/filter/search + CSV export on the Signal Dashboard",
+];
 
-// Task 20 Part B.5 — CRITICAL, non-negotiable: price-lock only, never a
-// feature promise. No mention of RA-gated features anywhere in this list —
-// this redesign must not reintroduce the compliance violation already
-// caught once (an earlier pricing-page draft implied founding members got
-// directional research at no extra cost).
-const FOUNDING_EXTRA = ["Founding price locked in for as long as you stay subscribed", "Web-exclusive — not available on the Play Store"];
+const ANNUAL_SAVINGS_NOTE = "Save vs paying monthly for a year";
+
+// Plan ids whose BILLING PERIOD is annual — a naming-convention check
+// (deliberately not a live GET /billing/plans lookup, see below) used
+// only to decide whether to show the Monthly toggle as available, never
+// for anything that determines what a user is actually charged.
+function isAnnualPlanId(planId: string | null | undefined): boolean {
+  return !!planId && (planId.includes("annual") || planId === "founding_1799");
+}
 
 export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) {
   const { user, getToken } = useAuth();
   const [profile, setProfile] = useState<MeProfile | null>(null);
-  const [plans, setPlans] = useState(initialPlans);
-  const [promoInput, setPromoInput] = useState("");
+  const [plans] = useState(initialPlans);
+  const [period, setPeriod] = useState<"monthly" | "annual">("monthly");
   // Keyed by plan id — validated INDEPENDENTLY per plan (never one plan's
-  // result reused for another). This is the fix for a live bug where the
-  // Founding Annual card showed a false 100%-off/₹0 preview for a code
-  // that was only ever validated against Analytics Pro (monthly): the old
-  // single `promoResult` state was shared across every rendered card
-  // regardless of which plan it was actually checked against.
+  // result reused for another) — see the promo-preview-mismatch bug fix
+  // this pattern originated from.
+  const [promoInput, setPromoInput] = useState("");
   const [promoResults, setPromoResults] = useState<Record<string, PromoValidation>>({});
   const [promoChecking, setPromoChecking] = useState(false);
   const promoApplied = Object.values(promoResults).some((r) => r.valid);
@@ -54,41 +72,59 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const monthly = plans.find((p) => p.period_days < 300);
-  const foundingPlan = plans.find((p) => p.tier === "founding");
-  const standardAnnualPlan = plans.find((p) => p.period_days >= 300 && p.tier !== "founding");
-  const capReached = (foundingPlan?.founding_slots_remaining ?? 0) <= 0;
-
   const activeSub = profile?.subscription.status === "active" ? profile.subscription : null;
-  const isOnMonthly = !!activeSub && activeSub.plan === monthly?.plan;
-  const isOnFounding = !!activeSub && activeSub.plan === foundingPlan?.plan;
-  const isOnStandardAnnual = !!activeSub && activeSub.plan === standardAnnualPlan?.plan;
-  const isOnAnnual = isOnFounding || isOnStandardAnnual;
+  // Multi-tier restructure (2026-08-08) — DECOUPLED from GET /billing/
+  // plans on purpose: the OLD checkout derived "is this user on plan X"
+  // by cross-referencing the PURCHASABLE plans list, which broke the
+  // instant a plan stopped being purchasable (an existing founding
+  // subscriber's own card would silently vanish from that derivation the
+  // moment founding_1799 was no longer listed — exactly the "don't break
+  // their view" risk this task flagged). `profile.tier`/`profile.
+  // subscription.plan` are the single source of truth for "what does
+  // THIS user actually have", entirely independent of what's for sale
+  // today.
+  const currentTier = profile?.tier;
+  const isOnFounding = currentTier === "founding" && !!activeSub;
+  const isOnAnnualPeriod = isAnnualPlanId(activeSub?.plan);
   const hasPendingUpgrade = !!profile?.pending_plan_change;
 
-  // SINGLE dynamic Annual card: an existing founding member always keeps
-  // seeing their own card (price-locked, regardless of cap status
-  // elsewhere); anyone else sees Founding while spots remain, auto-
-  // flipping to standard Annual the moment the cap fills — never two
-  // separate annual cards competing for attention.
-  const annualCardPlan = isOnFounding ? foundingPlan : isOnStandardAnnual ? standardAnnualPlan : !capReached && foundingPlan ? foundingPlan : standardAnnualPlan;
-  const annualCardIsFounding = annualCardPlan?.tier === "founding";
+  // Part A precedent (no downgrade path): once on an annual-period plan
+  // (any tier, or founding), Monthly is no longer offered as a view —
+  // force the toggle to Annual and keep it there.
+  useEffect(() => {
+    if (isOnAnnualPeriod) setPeriod("annual");
+  }, [isOnAnnualPeriod]);
 
-  // Part A: no downgrade path — annual (incl. founding) hides monthly
-  // entirely rather than offering it as an option.
-  const showMonthly = !isOnAnnual;
+  const basicMonthly = plans.find((p) => p.plan === "basic_249");
+  const proMonthly = plans.find((p) => p.plan === "pro_399");
+  const basicAnnual = plans.find((p) => p.plan === "basic_annual_2399");
+  const proAnnual = plans.find((p) => p.plan === "pro_annual_3999");
 
-  // Validates the SAME code against every plan card actually on screen,
-  // in parallel — one /billing/promo-code/validate request per plan, each
-  // keyed by its own plan id, so a card can never show a discount that
-  // wasn't computed for its own plan+code combination.
+  const basicPlan = period === "monthly" ? basicMonthly : basicAnnual;
+  const proPlan = period === "monthly" ? proMonthly : proAnnual;
+
+  function modeFor(plan: BillingPlan | undefined): "current" | "upgrade" | "new" {
+    if (!plan || !activeSub) return "new";
+    if (activeSub.plan === plan.plan) return "current";
+    // Mirrors the backend's own condition exactly (routers/billing.py::
+    // _finalize_subscription_purchase's `is_scheduled_upgrade`): ANY
+    // annual purchase while currently on a monthly-period plan schedules
+    // for cycle-end rather than switching immediately, regardless of
+    // whether the destination tier matches the current one — a
+    // deliberate, period-based (not tier-based) generalization, since
+    // Basic and Pro didn't exist as separate products when that
+    // mechanic was first built.
+    if (plan.period_days >= 300 && !isOnAnnualPeriod && !isOnFounding) return "upgrade";
+    return "new";
+  }
+
   async function checkPromo() {
     const code = promoInput.trim();
     if (!code) {
       setPromoResults({});
       return;
     }
-    const targets = [monthly, annualCardPlan].filter((p): p is BillingPlan => !!p);
+    const targets = [basicPlan, proPlan].filter((p): p is BillingPlan => !!p);
     if (targets.length === 0) return;
     setPromoChecking(true);
     try {
@@ -104,15 +140,13 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
     const result = promoResults[plan.plan];
     if (!result) return null;
     if (!result.valid || result.final_amount_paise == null) {
-      // Explicit "not applicable" rather than silently showing 0% savings
-      // or reusing another plan's result — the user must never see a
-      // number on screen that doesn't match what they'll actually be
-      // charged for THIS plan.
       return { applicable: false as const, message: `Not applicable to ${PLAN_LABEL[plan.plan] ?? "this plan"}` };
     }
     const discountLabel = result.discount_type === "flat" ? `₹${result.discount_value} off` : `${result.discount_pct}% off`;
     return { applicable: true as const, discountLabel: `You save — ${discountLabel}`, finalAmountRupees: Math.round(result.final_amount_paise / 100) };
   }
+
+  const foundingDisabledReason = "You're on a Founding Annual plan — contact support to change your plan.";
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -127,6 +161,31 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
           <SubscriptionStatusCard profile={profile} onChange={setProfile} />
         </div>
       )}
+
+      {isOnFounding && (
+        <p className="mb-5 rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-muted">{foundingDisabledReason}</p>
+      )}
+
+      <div className="mb-5 inline-flex rounded-lg border border-border bg-surface-raised p-1 text-sm">
+        <button
+          type="button"
+          onClick={() => setPeriod("monthly")}
+          disabled={isOnAnnualPeriod}
+          title={isOnAnnualPeriod ? "Already on an annual plan" : undefined}
+          className={`rounded-md px-3 py-1.5 font-medium disabled:cursor-not-allowed disabled:opacity-40 ${
+            period === "monthly" ? "bg-accent text-accent-foreground" : "text-foreground-muted"
+          }`}
+        >
+          Monthly
+        </button>
+        <button
+          type="button"
+          onClick={() => setPeriod("annual")}
+          className={`rounded-md px-3 py-1.5 font-medium ${period === "annual" ? "bg-accent text-accent-foreground" : "text-foreground-muted"}`}
+        >
+          Annual
+        </button>
+      </div>
 
       <div
         className="sticky top-2 z-10 mb-5 flex flex-col gap-2 rounded-xl border border-border bg-surface-raised p-3 shadow-sm sm:flex-row sm:items-center"
@@ -146,7 +205,7 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
         </label>
         <button
           type="button"
-          disabled={promoChecking || !promoInput.trim() || !(monthly ?? annualCardPlan)}
+          disabled={promoChecking || !promoInput.trim() || !(basicPlan ?? proPlan)}
           onClick={() => checkPromo()}
           className="rounded-lg border border-border bg-hover px-4 py-2 text-sm font-medium disabled:opacity-50"
         >
@@ -161,29 +220,30 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {monthly && showMonthly && (
+        {basicPlan && (
           <PlanCard
-            plan={monthly}
-            features={PAID_FEATURES}
-            mode={isOnMonthly ? "current" : "new"}
-            promoCode={promoResults[monthly.plan]?.valid ? promoInput.trim() : undefined}
-            promoPreview={promoPreviewFor(monthly)}
+            plan={basicPlan}
+            features={BASIC_FEATURES}
+            mode={modeFor(basicPlan)}
+            disabled={isOnFounding || (modeFor(basicPlan) === "upgrade" && hasPendingUpgrade)}
+            disabledReason={isOnFounding ? foundingDisabledReason : modeFor(basicPlan) === "upgrade" && hasPendingUpgrade ? "An annual upgrade is already scheduled." : undefined}
+            promoCode={promoResults[basicPlan.plan]?.valid ? promoInput.trim() : undefined}
+            promoPreview={promoPreviewFor(basicPlan)}
             onPurchased={reload}
           />
         )}
-        {annualCardPlan && (
+        {proPlan && (
           <PlanCard
-            key={annualCardPlan.plan}
-            plan={annualCardPlan}
+            plan={proPlan}
             highlighted
-            badge={annualCardIsFounding ? "Best Value" : "Most Popular"}
-            savingsNote={ANNUAL_SAVINGS_NOTE}
-            features={annualCardIsFounding ? [...PAID_FEATURES, ...FOUNDING_EXTRA] : PAID_FEATURES}
-            mode={isOnAnnual ? "current" : isOnMonthly && !hasPendingUpgrade ? "upgrade" : "new"}
-            disabled={isOnMonthly && hasPendingUpgrade && !isOnAnnual}
-            disabledReason={isOnMonthly && hasPendingUpgrade ? "An annual upgrade is already scheduled." : undefined}
-            promoCode={promoResults[annualCardPlan.plan]?.valid ? promoInput.trim() : undefined}
-            promoPreview={promoPreviewFor(annualCardPlan)}
+            badge="Most Popular"
+            savingsNote={period === "annual" ? ANNUAL_SAVINGS_NOTE : undefined}
+            features={PRO_FEATURES}
+            mode={modeFor(proPlan)}
+            disabled={isOnFounding || (modeFor(proPlan) === "upgrade" && hasPendingUpgrade)}
+            disabledReason={isOnFounding ? foundingDisabledReason : modeFor(proPlan) === "upgrade" && hasPendingUpgrade ? "An annual upgrade is already scheduled." : undefined}
+            promoCode={promoResults[proPlan.plan]?.valid ? promoInput.trim() : undefined}
+            promoPreview={promoPreviewFor(proPlan)}
             onPurchased={reload}
           />
         )}
