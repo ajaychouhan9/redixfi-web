@@ -39,7 +39,12 @@ export function SignalsExplorer() {
   const [sort, setSort] = useState<string>("name");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [page, setPage] = useState(1);
-  const [columns, setColumns] = useState<VisibleColumns>({ sector: true, marketCap: false, delivery: true, chips: true, eventRisk: true });
+  // Bug fix (2026-08-08): price/day-change/vwap restored as visible-by-
+  // default columns — this is the exact data the founder reported missing
+  // after the UI reframe (marketCap stays opt-in, matching its pre-
+  // existing behavior; vwap has partial coverage — see SignalTableRow's
+  // "—" fallback for symbols outside today's intraday-eligible universe).
+  const [columns, setColumns] = useState<VisibleColumns>({ sector: true, marketCap: false, price: true, vwap: true, delivery: true, chips: true, eventRisk: true });
   const [columnPickerOpen, setColumnPickerOpen] = useState(false);
 
   const [rows, setRows] = useState<SignalRow[]>([]);
@@ -142,6 +147,9 @@ export function SignalsExplorer() {
           symbol: r.symbol,
           company_name: r.company_name,
           sector: r.sector,
+          last_price: r.last_price ?? "",
+          day_change_pct: r.day_change_pct ?? "",
+          vwap: r.vwap ?? "",
           composite_score: r.composite_score ?? "",
           delta_1d: r.delta_1d ?? "",
           delivery_pct: r.delivery_pct ?? "",
@@ -256,7 +264,7 @@ export function SignalsExplorer() {
                       checked={columns[k]}
                       onChange={(e) => setColumns((c) => ({ ...c, [k]: e.target.checked }))}
                     />
-                    {k === "eventRisk" ? "Event risk" : k === "marketCap" ? "Market cap" : k}
+                    {k === "eventRisk" ? "Event risk" : k === "marketCap" ? "Market cap" : k === "vwap" ? "VWAP" : k}
                   </label>
                 ))}
               </div>
@@ -281,6 +289,8 @@ export function SignalsExplorer() {
                 <th className="px-4 py-3">Symbol</th>
                 {columns.sector && <th className="hidden px-3 py-3 md:table-cell">Sector</th>}
                 {columns.marketCap && <th className="px-3 py-3 text-right">Market cap</th>}
+                {columns.price && <th className="px-3 py-3 text-right">Price</th>}
+                {columns.vwap && <th className="px-3 py-3 text-right">VWAP</th>}
                 <th className="px-3 py-3">Score</th>
                 {columns.delivery && <th className="hidden px-3 py-3 sm:table-cell">Delivery</th>}
                 {columns.chips && <th className="hidden px-3 py-3 lg:table-cell">Signals</th>}

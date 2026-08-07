@@ -63,7 +63,10 @@ const QUICK_PROMPTS_GENERAL = [
   "Show me stocks with rising delivery and above-average volume",
 ];
 
-const SCREEN_COLUMNS: VisibleColumns = { sector: true, marketCap: false, delivery: true, chips: true, eventRisk: false };
+// price/vwap kept off here (unlike the main Signals table's new default) —
+// this is a compact in-chat ranking table, out of scope for the 2026-08-08
+// price/VWAP restoration (task explicitly scoped to Signals list + detail).
+const SCREEN_COLUMNS: VisibleColumns = { sector: true, marketCap: false, price: false, vwap: false, delivery: true, chips: true, eventRisk: false };
 
 export function AskRedixFi() {
   const { user, getToken } = useAuth();

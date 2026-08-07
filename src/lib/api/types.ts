@@ -65,6 +65,12 @@ export interface SignalRow {
   company_name: string;
   sector: string;
   market_cap: number | null;
+  // Basic market data (publicly-known, not a derived signal) — same
+  // "identity-level, never masked by B8" category as market_cap above.
+  // Restored 2026-08-08 (bug: dropped from every Signals response).
+  last_price: number | null;
+  day_change_pct: number | null;
+  vwap: number | null;
   has_score: boolean;
   date: string | null;
   composite_score: number | null;
@@ -195,6 +201,10 @@ export interface SignalDetail {
   industry: string | null;
   isin: string;
   date: string;
+  // Same restoration as SignalRow above — never masked when locked.
+  last_price: number | null;
+  day_change_pct: number | null;
+  vwap: number | null;
   composite_score: number;
   delta_1d: number;
   delta_5d: number;

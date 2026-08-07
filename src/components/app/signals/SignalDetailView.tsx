@@ -59,6 +59,24 @@ export function SignalDetailView({
               </ExplainTerm>
               <span className="text-xs text-foreground-faint">5d: <DeltaValue value={detail.delta_5d} /></span>
             </div>
+            {/* Bug fix (2026-08-08): price/day-change/vwap restored — same
+                ₹{last_price} + DeltaValue(pct) pattern research/
+                ResearchDetail.tsx already uses, placed right under the
+                composite score where the founder's bug report said users
+                expect to find it. */}
+            {(detail.last_price !== null || detail.vwap !== null) && (
+              <div className="mt-1 flex flex-wrap items-baseline gap-3 text-sm">
+                {detail.last_price !== null && (
+                  <span className="font-mono font-medium">₹{detail.last_price.toLocaleString("en-IN")}</span>
+                )}
+                {detail.day_change_pct !== null && <DeltaValue value={detail.day_change_pct} kind="pct" className="text-xs" />}
+                {detail.vwap !== null && (
+                  <span className="text-xs text-foreground-faint" title="Intraday VWAP — available for today's intraday-eligible universe">
+                    VWAP ₹{detail.vwap.toLocaleString("en-IN")}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <WatchlistButton symbol={detail.symbol} />

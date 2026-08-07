@@ -18,6 +18,8 @@ import type { SignalRow } from "@/lib/api/types";
 export interface VisibleColumns {
   sector: boolean;
   marketCap: boolean;
+  price: boolean;
+  vwap: boolean;
   delivery: boolean;
   chips: boolean;
   eventRisk: boolean;
@@ -57,6 +59,23 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
       {columns.marketCap && (
         <td className="px-3 py-2.5 text-right font-mono text-xs tabular-nums text-foreground-muted">
           {row.market_cap === null ? "—" : `₹${row.market_cap.toLocaleString("en-IN", { maximumFractionDigits: 0 })} Cr`}
+        </td>
+      )}
+      {columns.price && (
+        <td className="px-3 py-2.5 text-right font-mono text-xs tabular-nums">
+          {row.last_price === null ? (
+            "—"
+          ) : (
+            <div className="flex flex-col items-end gap-0.5">
+              <span>₹{row.last_price.toLocaleString("en-IN")}</span>
+              {row.day_change_pct !== null && <DeltaValue value={row.day_change_pct} kind="pct" className="text-[11px]" />}
+            </div>
+          )}
+        </td>
+      )}
+      {columns.vwap && (
+        <td className="px-3 py-2.5 text-right font-mono text-xs tabular-nums text-foreground-muted" title="VWAP is intraday-only — available for today's intraday-eligible universe">
+          {row.vwap === null ? "—" : `₹${row.vwap.toLocaleString("en-IN")}`}
         </td>
       )}
       <td className="px-3 py-2.5">
