@@ -11,6 +11,7 @@ import { RecordView } from "@/components/app/RecordView";
 import { FundamentalsPanels } from "@/components/app/research/FundamentalsPanels";
 import { ResearchChart } from "@/components/app/research/ResearchChart";
 import { ResearchExportButton } from "@/components/app/research/ResearchExportButton";
+import { AlertCreateButton } from "@/components/app/alerts/AlertCreateButton";
 import { CompareIndicator } from "@/components/app/CompareIndicator";
 import { CurrentSymbolSync } from "@/components/app/CurrentSymbolSync";
 import { formatShortDate } from "@/lib/format";
@@ -50,9 +51,10 @@ export function ResearchDetail({
           <p className="text-sm text-foreground-muted">
             {data.symbol} · {data.sector}
           </p>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             <ResearchExportButton data={data} peers={peers} />
             <CompareIndicator symbol={data.symbol} companyName={data.company_name} />
+            <AlertCreateButton symbol={data.symbol} />
           </div>
         </div>
         <div className="mt-1 flex flex-wrap items-baseline gap-3">

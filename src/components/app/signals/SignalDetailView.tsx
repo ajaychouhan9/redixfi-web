@@ -9,6 +9,7 @@ import { InsightChips } from "@/components/app/education/InsightChips";
 import { CandleChart } from "@/components/app/CandleChart";
 import { NewsList } from "@/components/app/NewsList";
 import { WatchlistButton } from "@/components/app/WatchlistButton";
+import { AlertCreateButton } from "@/components/app/alerts/AlertCreateButton";
 import { RecordView } from "@/components/app/RecordView";
 import { CompareIndicator } from "@/components/app/CompareIndicator";
 import { CurrentSymbolSync } from "@/components/app/CurrentSymbolSync";
@@ -78,9 +79,10 @@ export function SignalDetailView({
               </div>
             )}
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             <WatchlistButton symbol={detail.symbol} />
             <CompareIndicator symbol={detail.symbol} companyName={detail.company_name} />
+            <AlertCreateButton symbol={detail.symbol} />
           </div>
         </div>
         <p className="mt-1 text-xs text-foreground-faint">A measured summary of observed signals. Not a prediction.</p>

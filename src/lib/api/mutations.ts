@@ -20,6 +20,10 @@ import type {
   AnomalyFlagDoc,
   AskResult,
   PromoCodeAdmin,
+  AlertRule,
+  AlertRulesList,
+  AlertMetric,
+  AlertDirection,
 } from "./types";
 
 // ---------- auth ----------
@@ -300,4 +304,33 @@ export async function updatePromoCodeAdmin(token: string, code: string, body: Up
 export async function deactivatePromoCodeAdmin(token: string, code: string): Promise<PromoCodeAdmin> {
   const env = await apiMutate<PromoCodeAdmin>(`/admin/promo-codes/${encodeURIComponent(code)}/deactivate`, "POST", undefined, { token });
   return env.data;
+}
+
+// ---------- threshold alerts (2026-08-08, locked spec) — auth required,
+// zero access for free tier (enforced server-side, not just hidden here) ----------
+
+export async function getAlertRules(token: string): Promise<AlertRulesList> {
+  const env = await apiGet<AlertRulesList>("/alert-rules", { token });
+  return env.data;
+}
+
+export async function createAlertRule(
+  token: string,
+  body: { symbol: string; metric: AlertMetric; direction: AlertDirection; target_value: number }
+): Promise<AlertRule> {
+  const env = await apiMutate<AlertRule>("/alert-rules", "POST", body, { token });
+  return env.data;
+}
+
+export async function updateAlertRule(
+  token: string,
+  ruleId: string,
+  body: { direction?: AlertDirection; target_value?: number; active?: boolean }
+): Promise<AlertRule> {
+  const env = await apiMutate<AlertRule>(`/alert-rules/${encodeURIComponent(ruleId)}`, "PATCH", body, { token });
+  return env.data;
+}
+
+export async function deleteAlertRule(token: string, ruleId: string): Promise<void> {
+  await apiMutate<{ ok: boolean }>(`/alert-rules/${encodeURIComponent(ruleId)}`, "DELETE", undefined, { token });
 }

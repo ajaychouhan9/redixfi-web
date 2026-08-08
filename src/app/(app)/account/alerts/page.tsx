@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AccountTabs } from "@/components/app/account/AccountTabs";
 import { RequireAuth } from "@/components/app/account/RequireAuth";
 import { Card } from "@/components/ui/Card";
+import { AlertRulesSection } from "@/components/app/alerts/AlertRulesSection";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getMe, updateAlertPrefs } from "@/lib/api/mutations";
 import type { AlertPreferences, MeProfile } from "@/lib/api/types";
@@ -74,7 +75,10 @@ export default function AlertsPage() {
       <h1 className="mb-4 text-xl font-semibold">Account</h1>
       <AccountTabs />
       <RequireAuth>
-        <AlertsForm />
+        <div className="space-y-4">
+          <AlertsForm />
+          <AlertRulesSection />
+        </div>
       </RequireAuth>
     </div>
   );

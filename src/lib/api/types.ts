@@ -869,6 +869,41 @@ export interface AlertPreferences {
   daily_brief: boolean;
 }
 
+// ---------- threshold alerts (2026-08-08, locked spec) ----------
+// Distinct from AlertPreferences above (broadcast-style opt-in toggles
+// for the 5 existing B4 triggers) — these are user-DEFINED per-symbol
+// price/score/delivery/volume thresholds, additive, not a replacement.
+
+export type AlertMetric = "price" | "score" | "delivery" | "volume";
+export type AlertDirection = "above" | "below";
+
+export interface AlertRule {
+  rule_id: string;
+  user_id: string;
+  symbol: string;
+  metric: AlertMetric;
+  direction: AlertDirection;
+  target_value: number;
+  active: boolean;
+  armed: boolean;
+  created_at: string;
+  last_fired_at: string | null;
+  /** Latest measured value for this rule's (symbol, metric) — server-computed, for display only. */
+  current_value: number | null;
+}
+
+export interface AlertCapabilities {
+  max_active_alerts: number | null;
+  alertable_metrics: AlertMetric[];
+  delivery_channels: ("inbox" | "email" | "push")[];
+}
+
+export interface AlertRulesList {
+  rules: AlertRule[];
+  active_count: number;
+  capabilities: AlertCapabilities;
+}
+
 export interface MeProfile {
   user_id: string;
   phone: string | null;
