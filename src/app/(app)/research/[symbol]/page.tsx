@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getChart, getResearch, getResearchPeers } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
-import { ResearchDetail } from "@/components/app/research/ResearchDetail";
+import { ResearchViewGate } from "@/components/app/research/ResearchViewGate";
 
 // Task 14 — SSR fix. This page was client-fetching everything (generic
 // homepage meta + a permanent "Loading…" body in the raw server response,
@@ -25,15 +25,11 @@ async function loadResearch(symbol: string) {
     // visitor for 15 minutes, so a personal token would be a genuine
     // privacy bug, not just an omission). getResearch's only tier-
     // dependent behavior is the free-tier 3/day view metering counter
-    // (not masking — every tier gets the identical payload) — this means
-    // that counter never actually fires for a real user browsing this
-    // page normally. KNOWN GAP, flagged in this session's audit
-    // (docs/00_MASTER_CONTEXT.md) rather than fixed here: unlike the
-    // Signals detail page's SignalUnlockGate, there is no client-side
-    // "correction" component here to trigger the metering side-effect
-    // for a real logged-in free user. Founder decision needed on whether
-    // this is worth building (low severity — no data exposure, just an
-    // unintentionally generous view-count limit).
+    // (not masking — every tier gets the identical payload), which is why
+    // this being anonymous is architecturally fine on its own — the fix
+    // (2026-08-08) is ResearchViewGate below firing the metering side
+    // effect client-side, same SignalUnlockGate-style correction-after-
+    // SSR pattern, via the new lightweight POST /research/{symbol}/view.
     return (await getResearch(symbol, { revalidate: 900 })).data;
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) return null;
@@ -71,7 +67,7 @@ export default async function ResearchDetailPage({ params }: { params: Promise<{
 
   return (
     <div className="mx-auto max-w-3xl">
-      <ResearchDetail data={data} dailyCandles={dailyCandles} peers={peers} peersError={peersError} />
+      <ResearchViewGate data={data} dailyCandles={dailyCandles} peers={peers} peersError={peersError} />
     </div>
   );
 }

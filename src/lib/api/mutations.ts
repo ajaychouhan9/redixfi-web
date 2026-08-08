@@ -195,6 +195,23 @@ export async function getWatchlistSummary(token: string): Promise<WatchlistSumma
   return env.data;
 }
 
+// ---------- research view metering (bug fix, 2026-08-08) ----------
+
+// The real Research page (app/(app)/research/[symbol]/page.tsx) is SSR+
+// ISR with a shared anonymous cache, so it can never itself trigger the
+// free-tier 3/day metering check GET /research/{symbol} carries server-
+// side. ResearchViewGate.tsx calls this once per page view, client-side,
+// with the real browser-held token SSR can't reach — same
+// SignalUnlockGate-style "correction after the cached content already
+// rendered" pattern, but deliberately NOT a re-fetch of the full
+// GET /research/{symbol} payload (fundamentals/insider/news/peers can be
+// large; this only needs the metering side effect, see the backend
+// route's own docstring for the full reasoning). A 429 ApiError means
+// today's free-tier cap is hit — the caller shows the gate.
+export async function recordResearchView(token: string, symbol: string): Promise<void> {
+  await apiMutate<{ ok: boolean }>(`/research/${encodeURIComponent(symbol)}/view`, "POST", undefined, { token });
+}
+
 // ---------- portfolio (Task 16 Parts A + B) — auth required, per-user ----------
 
 /** null when data-pipeline/portfolio_brief_builder.py hasn't run for this
