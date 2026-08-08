@@ -18,10 +18,12 @@ import {
 } from "@/lib/comparison-queue";
 import type { SmartScreenResult } from "@/lib/api/types";
 
-// price/vwap kept off here — out of scope for the 2026-08-08 price/VWAP
-// restoration (task explicitly scoped to Signals list + detail), no
-// change to the smart screener's existing visual behavior.
-const COLUMNS: VisibleColumns = { sector: true, marketCap: false, price: false, vwap: false, delivery: true, chips: true, eventRisk: false };
+// volume kept off here — out of scope for the 2026-08-08 Signals column
+// changes (explicitly scoped to the Signals list table), no change to
+// the smart screener's existing visual behavior. Symbol/Price/Score
+// render unconditionally now (VisibleColumns no longer has
+// price/marketCap/vwap fields).
+const COLUMNS: VisibleColumns = { sector: true, delivery: true, volume: false, chips: true, eventRisk: false };
 
 // Exported so Ask-RedixFi (Task 22 Phase 3) can render the same filter-chip
 // summary for a screen-shaped Ask answer without re-deriving this mapping —

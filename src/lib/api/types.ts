@@ -64,13 +64,19 @@ export interface SignalRow {
   symbol: string;
   company_name: string;
   sector: string;
+  // Industry peer-group name (same field GET /signals/{symbol} already
+  // exposes) — added 2026-08-08 so the CSV export can include it without
+  // a second per-symbol fetch. Identity-level, never masked.
+  industry: string | null;
   market_cap: number | null;
   // Basic market data (publicly-known, not a derived signal) — same
   // "identity-level, never masked by B8" category as market_cap above.
   // Restored 2026-08-08 (bug: dropped from every Signals response).
   last_price: number | null;
   day_change_pct: number | null;
-  vwap: number | null;
+  // VWAP removed from the LIST row 2026-08-08 (same-day correction —
+  // intraday-only concept, wrong fit for this evening/post-close list;
+  // still present on SignalDetail below, unaffected).
   has_score: boolean;
   date: string | null;
   composite_score: number | null;

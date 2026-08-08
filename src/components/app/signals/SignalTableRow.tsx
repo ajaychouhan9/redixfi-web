@@ -15,14 +15,68 @@ import {
 } from "@/lib/comparison-queue";
 import type { SignalRow } from "@/lib/api/types";
 
+// Column order (2026-08-08, finalized spec): Symbol | Sector | Price |
+// Score | Delivery | Volume | Signals | Event. Symbol/Price/Score are
+// unconditional (never hidden, no picker entry) — Sector and Signals
+// remain the two user-toggleable + responsive-collapsible columns
+// (Signals collapses first as viewport narrows, then Sector — see the
+// `lg`/`md` breakpoints below). Delivery/Volume/Event stay picker-
+// toggleable but are not part of that responsive collapse sequence
+// (unspecified by the task, left as their pre-existing behavior).
+// VWAP removed entirely — it's an intraday-only concept (core/
+// intraday_scan.py, computed from candles_intraday_15m) and this table
+// runs on evening/post-close measured_signals data (Task 10) — wrong fit,
+// correctly stays on the Intraday Scanner page only. Market cap removed
+// as a table column (was optional/off-by-default already) — still a
+// valid sort option in SignalsExplorer, sorting doesn't require a
+// corresponding visible column.
 export interface VisibleColumns {
   sector: boolean;
-  marketCap: boolean;
-  price: boolean;
-  vwap: boolean;
   delivery: boolean;
+  volume: boolean;
   chips: boolean;
   eventRisk: boolean;
+}
+
+/** The stacked primary-value + faint-context-line cell pattern this table
+ * uses for Score, Delivery, and now Volume/Price — previously each cell
+ * hand-rolled its own near-identical markup (and Price's own addition
+ * last session actually used a DIFFERENT layout, flex-col, from Score/
+ * Delivery's inline one) rather than sharing one real component. Pulled
+ * out here so all four are now genuinely the same component, not just
+ * visually similar. `locked` renders the existing LockedInline blur/lock
+ * treatment (masked measured-signal fields); a `null` primary with
+ * `locked` false renders a plain em-dash (genuinely no data, not masked
+ * — the distinction B8 masking depends on). */
+function StackedCell({
+  locked,
+  lockedFallback = "--",
+  lockedTitle,
+  primary,
+  subtitle,
+}: {
+  locked?: boolean;
+  lockedFallback?: string;
+  lockedTitle?: string;
+  primary: React.ReactNode | null;
+  subtitle?: React.ReactNode;
+}) {
+  if (locked) {
+    return (
+      <LockedInline title={lockedTitle}>
+        <span className="font-mono font-semibold">{lockedFallback}</span>
+      </LockedInline>
+    );
+  }
+  if (primary === null) {
+    return <span className="text-foreground-faint">—</span>;
+  }
+  return (
+    <div className="flex items-baseline gap-1.5">
+      <span className="font-mono font-semibold">{primary}</span>
+      {subtitle != null && <span className="text-[11px] text-foreground-faint">{subtitle}</span>}
+    </div>
+  );
 }
 
 export function SignalTableRow({ row, columns }: { row: SignalRow; columns: VisibleColumns }) {
@@ -56,51 +110,44 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
         <div className="max-w-[16rem] truncate text-[11px] text-foreground-faint">{row.company_name}</div>
       </td>
       {columns.sector && <td className="hidden px-3 py-2.5 text-xs text-foreground-muted md:table-cell">{row.sector}</td>}
-      {columns.marketCap && (
-        <td className="px-3 py-2.5 text-right font-mono text-xs tabular-nums text-foreground-muted">
-          {row.market_cap === null ? "—" : `₹${row.market_cap.toLocaleString("en-IN", { maximumFractionDigits: 0 })} Cr`}
-        </td>
-      )}
-      {columns.price && (
-        <td className="px-3 py-2.5 text-right font-mono text-xs tabular-nums">
-          {row.last_price === null ? (
-            "—"
-          ) : (
-            <div className="flex flex-col items-end gap-0.5">
-              <span>₹{row.last_price.toLocaleString("en-IN")}</span>
-              {row.day_change_pct !== null && <DeltaValue value={row.day_change_pct} kind="pct" className="text-[11px]" />}
-            </div>
-          )}
-        </td>
-      )}
-      {columns.vwap && (
-        <td className="px-3 py-2.5 text-right font-mono text-xs tabular-nums text-foreground-muted" title="VWAP is intraday-only — available for today's intraday-eligible universe">
-          {row.vwap === null ? "—" : `₹${row.vwap.toLocaleString("en-IN")}`}
-        </td>
-      )}
+      {/* Price: always visible (never hidden by the column picker or by
+          viewport width) — last_price/day_change_pct are identity-level
+          basic market data, never B8-masked, so `locked` is never passed
+          here. */}
       <td className="px-3 py-2.5">
-        {locked || row.composite_score === null ? (
-          <LockedInline title="Unlock all 750 measured scores">
-            <span className="font-mono font-semibold">--</span>
-          </LockedInline>
-        ) : (
-          <div className="flex items-center gap-1.5">
-            <span className="font-mono font-semibold">{row.composite_score}</span>
-            {row.delta_1d !== null && <DeltaValue value={row.delta_1d} className="text-[11px]" />}
-          </div>
-        )}
+        <StackedCell
+          primary={row.last_price !== null ? `₹${row.last_price.toLocaleString("en-IN")}` : null}
+          subtitle={row.day_change_pct !== null ? <DeltaValue value={row.day_change_pct} kind="pct" className="text-[11px]" /> : undefined}
+        />
+      </td>
+      {/* Score: always visible — unchanged position/behavior. */}
+      <td className="px-3 py-2.5">
+        <StackedCell
+          locked={locked || row.composite_score === null}
+          lockedFallback="--"
+          lockedTitle="Unlock all 750 measured scores"
+          primary={row.composite_score}
+          subtitle={row.delta_1d !== null ? <DeltaValue value={row.delta_1d} className="text-[11px]" /> : undefined}
+        />
       </td>
       {columns.delivery && (
-        <td className="hidden px-3 py-2.5 font-mono text-xs tabular-nums sm:table-cell">
-          {locked || row.delivery_pct === null ? (
-            <LockedInline>
-              <span>--%</span>
-            </LockedInline>
-          ) : (
-            <>
-              {row.delivery_pct}% <span className="text-foreground-faint">avg {row.delivery_avg20}%</span>
-            </>
-          )}
+        <td className="hidden px-3 py-2.5 sm:table-cell">
+          <StackedCell
+            locked={locked || row.delivery_pct === null}
+            lockedFallback="--%"
+            primary={row.delivery_pct !== null ? `${row.delivery_pct}%` : null}
+            subtitle={row.delivery_avg20 !== null ? `avg ${row.delivery_avg20}%` : undefined}
+          />
+        </td>
+      )}
+      {columns.volume && (
+        <td className="hidden px-3 py-2.5 sm:table-cell">
+          <StackedCell
+            locked={locked || row.volume_ratio_5d === null}
+            lockedFallback="--x"
+            primary={row.volume_ratio_5d !== null ? `${row.volume_ratio_5d}x` : null}
+            subtitle="vs 20d avg"
+          />
         </td>
       )}
       {columns.chips && (

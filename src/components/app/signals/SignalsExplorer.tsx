@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Search, Filter, ArrowUpDown, Download, SlidersHorizontal } from "lucide-react";
+import { Search, Filter, ArrowUpDown, SlidersHorizontal } from "lucide-react";
 import { apiGetPaged } from "@/lib/api/client";
 import type { SignalRow } from "@/lib/api/types";
 import { SIGNAL_SECTORS } from "@/data/sectors";
 import { SignalTableRow, type VisibleColumns } from "./SignalTableRow";
 import { UnlockBanner } from "@/components/ui/Locked";
+import { ExportButton } from "@/components/ui/ExportButton";
 import { downloadCsv } from "@/lib/csv";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getWatchlist } from "@/lib/api/mutations";
@@ -39,19 +40,17 @@ export function SignalsExplorer() {
   const [sort, setSort] = useState<string>("name");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [page, setPage] = useState(1);
-  // Bug fix (2026-08-08): price/day-change/vwap restored as visible-by-
-  // default columns — this is the exact data the founder reported missing
-  // after the UI reframe (marketCap stays opt-in, matching its pre-
-  // existing behavior; vwap has partial coverage — see SignalTableRow's
-  // "—" fallback for symbols outside today's intraday-eligible universe).
-  const [columns, setColumns] = useState<VisibleColumns>({ sector: true, marketCap: false, price: true, vwap: true, delivery: true, chips: true, eventRisk: true });
+  // Column spec (2026-08-08, finalized): Symbol/Price/Score are always on
+  // (not in this picker state at all). VWAP removed — intraday-only,
+  // wrong fit for this evening/post-close table (stays on the Intraday
+  // Scanner page). Volume (5d ratio) added.
+  const [columns, setColumns] = useState<VisibleColumns>({ sector: true, delivery: true, volume: true, chips: true, eventRisk: true });
   const [columnPickerOpen, setColumnPickerOpen] = useState(false);
 
   const [rows, setRows] = useState<SignalRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (!watchlistOnly || !user) return;
@@ -130,38 +129,47 @@ export function SignalsExplorer() {
   const explorerControlsEnabled = user?.tier !== "basic" && user?.tier !== "paid";
 
   const exportCsv = useCallback(async () => {
-    setExporting(true);
-    try {
-      const size = 200;
-      const first = await apiGetPaged<SignalRow>("/signals", { params: { ...params, page: 1, size } });
-      const pages = Math.ceil(first.page_info.total / size);
-      const rest = await Promise.all(
-        Array.from({ length: Math.max(0, pages - 1) }, (_, i) =>
-          apiGetPaged<SignalRow>("/signals", { params: { ...params, page: i + 2, size } })
-        )
-      );
-      const all = [first, ...rest].flatMap((p) => p.data);
-      downloadCsv(
-        `redixfi-signals-${new Date().toISOString().slice(0, 10)}.csv`,
-        all.map((r) => ({
-          symbol: r.symbol,
-          company_name: r.company_name,
-          sector: r.sector,
-          last_price: r.last_price ?? "",
-          day_change_pct: r.day_change_pct ?? "",
-          vwap: r.vwap ?? "",
-          composite_score: r.composite_score ?? "",
-          delta_1d: r.delta_1d ?? "",
-          delivery_pct: r.delivery_pct ?? "",
-          delivery_avg20: r.delivery_avg20 ?? "",
-          sector_rank: r.sector_rank ?? "",
-          event_risk: r.event_risk ?? "",
-        }))
-      );
-    } finally {
-      setExporting(false);
-    }
-  }, [params]);
+    // Bug fix (2026-08-08) — this fetch never sent the caller's auth
+    // token (the 4th occurrence of this project's recurring auth-token
+    // bug pattern, caught during this session's explicit audit): every
+    // export request hit the backend anonymously, so a paying Pro
+    // subscriber's CSV silently came back free-tier-masked (locked rows,
+    // composite_score/etc. nulled outside the fixed unlocked sample) even
+    // though the button itself is gated on `canExport`. Same getToken()
+    // pattern the main list-fetch effect above already uses correctly.
+    const token = await getToken();
+    const size = 200;
+    const first = await apiGetPaged<SignalRow>("/signals", { params: { ...params, page: 1, size }, token });
+    const pages = Math.ceil(first.page_info.total / size);
+    const rest = await Promise.all(
+      Array.from({ length: Math.max(0, pages - 1) }, (_, i) =>
+        apiGetPaged<SignalRow>("/signals", { params: { ...params, page: i + 2, size }, token })
+      )
+    );
+    const all = [first, ...rest].flatMap((p) => p.data);
+    // Column spec (2026-08-08, finalized) — a fuller set than the table's
+    // own 8 visible columns, since a CSV should give more than a
+    // screenshot would. Signal Chips flattened to one comma-separated
+    // field (not one column per possible chip) so the CSV stays tabular.
+    downloadCsv(
+      `redixfi-signals-${new Date().toISOString().slice(0, 10)}.csv`,
+      all.map((r) => ({
+        symbol: r.symbol,
+        company_name: r.company_name,
+        sector: r.sector,
+        industry: r.industry ?? "",
+        price: r.last_price ?? "",
+        day_change_pct: r.day_change_pct ?? "",
+        score: r.composite_score ?? "",
+        score_change_1d: r.delta_1d ?? "",
+        delivery_pct: r.delivery_pct ?? "",
+        delivery_avg20: r.delivery_avg20 ?? "",
+        volume_ratio_5d: r.volume_ratio_5d ?? "",
+        signal_chips: r.signal_states.join(", "),
+        event_risk: r.event_risk ?? "",
+      }))
+    );
+  }, [params, getToken]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -264,20 +272,13 @@ export function SignalsExplorer() {
                       checked={columns[k]}
                       onChange={(e) => setColumns((c) => ({ ...c, [k]: e.target.checked }))}
                     />
-                    {k === "eventRisk" ? "Event risk" : k === "marketCap" ? "Market cap" : k === "vwap" ? "VWAP" : k}
+                    {k === "eventRisk" ? "Event risk" : k}
                   </label>
                 ))}
               </div>
             )}
           </div>
-          <button
-            onClick={exportCsv}
-            disabled={!canExport || exporting}
-            title={canExport ? "Export current filter as CSV" : "Upgrade to export CSV"}
-            className="flex items-center gap-1 rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs text-foreground-muted disabled:opacity-40"
-          >
-            <Download size={11} /> {exporting ? "Exporting…" : "CSV"}
-          </button>
+          <ExportButton onExport={exportCsv} canExport={!!canExport} label="CSV" enabledTitle="Export current filter as CSV" />
         </div>
       </div>
 
@@ -288,11 +289,10 @@ export function SignalsExplorer() {
               <tr className="border-b border-border text-left font-mono text-[10px] uppercase tracking-wider text-foreground-faint">
                 <th className="px-4 py-3">Symbol</th>
                 {columns.sector && <th className="hidden px-3 py-3 md:table-cell">Sector</th>}
-                {columns.marketCap && <th className="px-3 py-3 text-right">Market cap</th>}
-                {columns.price && <th className="px-3 py-3 text-right">Price</th>}
-                {columns.vwap && <th className="px-3 py-3 text-right">VWAP</th>}
+                <th className="px-3 py-3">Price</th>
                 <th className="px-3 py-3">Score</th>
                 {columns.delivery && <th className="hidden px-3 py-3 sm:table-cell">Delivery</th>}
+                {columns.volume && <th className="hidden px-3 py-3 sm:table-cell">Volume</th>}
                 {columns.chips && <th className="hidden px-3 py-3 lg:table-cell">Signals</th>}
                 {columns.eventRisk && <th className="px-3 py-3 text-center">Event</th>}
                 <th className="px-3 py-3" />
