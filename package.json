@@ -4,10 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run check:compliance && next build",
+    "build": "npm run check:compliance && npm run check:auth-fetch && next build",
     "start": "next start",
     "lint": "eslint",
-    "check:compliance": "node scripts/check-compliance.mjs"
+    "check:compliance": "node scripts/check-compliance.mjs",
+    "check:auth-fetch": "node scripts/check-auth-fetch.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

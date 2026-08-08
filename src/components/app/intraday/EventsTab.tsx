@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiGetPaged } from "@/lib/api/client";
+import { getNews } from "@/lib/api/endpoints";
 import type { NewsItem } from "@/lib/api/types";
 import { NewsList } from "@/components/app/NewsList";
 import { AiLabel } from "@/components/ui/AiLabel";
@@ -27,7 +27,7 @@ export function EventsTab() {
     (async () => {
       const token = await getToken();
       if (cancelled) return;
-      apiGetPaged<NewsItem>("/news", { params: { today: true, intraday: true, size: 30 }, token })
+      getNews({ today: true, intraday: true, size: 30 }, { token })
         .then((env) => {
           if (cancelled) return;
           setItems(env.data);

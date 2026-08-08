@@ -18,6 +18,11 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
 
   let detail;
   try {
+    // @auth-ok: SSR fetch, always anonymous by architecture (Server
+    // Components here can't reach the browser's localStorage-held token)
+    // — SignalUnlockGate corrects client-side below whenever `locked` is
+    // true for a real logged-in entitled user. See that component and
+    // the comment just below.
     detail = (await getSignalDetail(symbol)).data;
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) notFound();
@@ -34,6 +39,13 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
     return <SignalUnlockGate symbol={symbol} initialDetail={detail} initialCandles={[]} />;
   }
 
+  // @auth-ok: SSR, same reason as getSignalDetail above. getResearch's
+  // only tier-dependent behavior is free-tier view metering (not
+  // masking, see endpoints.ts) — fetching anonymously here means that
+  // metering never fires for the fundamentals/delivery data pulled in.
+  // Known gap, flagged in this session's audit (docs/00_MASTER_CONTEXT.md),
+  // not fixed here — no client-side "correction" for metering exists yet
+  // anywhere in the app, unlike the masking-correction pattern above.
   const [chartR, deliveryR] = await Promise.allSettled([
     getChart(symbol, { interval: "1d" }),
     getResearch(symbol),

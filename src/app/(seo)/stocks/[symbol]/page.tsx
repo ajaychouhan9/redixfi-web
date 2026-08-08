@@ -16,6 +16,11 @@ export const revalidate = 300;
 
 async function loadCompany(symbol: string) {
   try {
+    // @auth-ok: public SEO snapshot, ISR-cached and crawlable — see the
+    // module docstring above. Anonymous = unmetered (correct per
+    // core/auth.py's own default), never a masking concern here since
+    // getResearch's only tier-dependent behavior is the free-tier
+    // metering counter, not data masking.
     const env = await getResearch(symbol, { revalidate: 300 });
     return env.data;
   } catch (e) {

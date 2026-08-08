@@ -19,6 +19,21 @@ export const revalidate = 900;
 
 async function loadResearch(symbol: string) {
   try {
+    // @auth-ok: SSR + ISR-cached (revalidate: 900) — a token could not be
+    // attached here even if we wanted to (Server Components can't reach
+    // localStorage, AND this response is a SHARED cache entry across every
+    // visitor for 15 minutes, so a personal token would be a genuine
+    // privacy bug, not just an omission). getResearch's only tier-
+    // dependent behavior is the free-tier 3/day view metering counter
+    // (not masking — every tier gets the identical payload) — this means
+    // that counter never actually fires for a real user browsing this
+    // page normally. KNOWN GAP, flagged in this session's audit
+    // (docs/00_MASTER_CONTEXT.md) rather than fixed here: unlike the
+    // Signals detail page's SignalUnlockGate, there is no client-side
+    // "correction" component here to trigger the metering side-effect
+    // for a real logged-in free user. Founder decision needed on whether
+    // this is worth building (low severity — no data exposure, just an
+    // unintentionally generous view-count limit).
     return (await getResearch(symbol, { revalidate: 900 })).data;
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) return null;

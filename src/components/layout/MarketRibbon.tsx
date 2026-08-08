@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell, User } from "lucide-react";
-import { apiGet } from "@/lib/api/client";
+import { getMarketOverview } from "@/lib/api/endpoints";
 import type { MarketOverview } from "@/lib/api/types";
 import { FreshnessDot } from "@/components/ui/FreshnessDot";
 import { DeltaValue } from "@/components/ui/DeltaValue";
@@ -24,7 +24,7 @@ export function MarketRibbon() {
     let cancelled = false;
     async function load() {
       try {
-        const env = await apiGet<MarketOverview>("/market/overview");
+        const env = await getMarketOverview();
         if (!cancelled) {
           setOverview(env.data);
           setFresh(env.meta.data_fresh);

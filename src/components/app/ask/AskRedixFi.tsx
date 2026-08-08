@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Sparkles, X, Send, Search, Globe } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { apiGet, ApiError } from "@/lib/api/client";
+import { ApiError } from "@/lib/api/client";
+import { searchResearch } from "@/lib/api/endpoints";
 import { askRedixfi } from "@/lib/api/mutations";
 import { getCurrentSymbol } from "@/lib/current-symbol";
 import { CompareResultCard } from "@/components/app/signals/CompareResultCard";
@@ -93,7 +94,7 @@ export function AskRedixFi() {
     let cancelled = false;
     setSearching(true);
     const id = setTimeout(() => {
-      apiGet<ResearchSearchRow[]>("/research/search", { params: { q: input.trim(), limit: 6 } })
+      searchResearch(input.trim(), 6)
         .then((env) => !cancelled && setResults(env.data))
         .finally(() => !cancelled && setSearching(false));
     }, 250);

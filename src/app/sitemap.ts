@@ -26,6 +26,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   let stockRoutes: MetadataRoute.Sitemap = [];
   try {
+    // @auth-ok: sitemap generation, always anonymous — a crawler has no
+    // identity to authenticate as.
     const signals = await getAllSignals({ revalidate: 3600 });
     stockRoutes = signals.map((s) => ({
       url: `${SITE_URL}/stocks/${s.symbol}`,

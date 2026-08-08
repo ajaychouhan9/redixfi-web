@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { apiGet } from "@/lib/api/client";
+import { searchResearch } from "@/lib/api/endpoints";
 import type { ResearchSearchRow } from "@/lib/api/types";
 
 export default function ResearchSearchPage() {
@@ -18,7 +18,7 @@ export default function ResearchSearchPage() {
     let cancelled = false;
     setLoading(true);
     const id = setTimeout(() => {
-      apiGet<ResearchSearchRow[]>("/research/search", { params: { q: q.trim(), limit: 15 } })
+      searchResearch(q.trim(), 15)
         .then((env) => !cancelled && setResults(env.data))
         .finally(() => !cancelled && setLoading(false));
     }, 250);

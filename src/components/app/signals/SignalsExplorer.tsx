@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search, Filter, ArrowUpDown, SlidersHorizontal } from "lucide-react";
-import { apiGetPaged } from "@/lib/api/client";
+import { getSignals } from "@/lib/api/endpoints";
 import type { SignalRow } from "@/lib/api/types";
 import { SIGNAL_SECTORS } from "@/data/sectors";
 import { SignalTableRow, type VisibleColumns } from "./SignalTableRow";
@@ -89,7 +89,7 @@ export function SignalsExplorer() {
     // anonymous behavior for that case.
     (async () => {
       const token = await getToken();
-      apiGetPaged<SignalRow>("/signals", { params, token })
+      getSignals(params, { token })
         .then((env) => {
           if (cancelled) return;
           let data = env.data;
@@ -139,11 +139,11 @@ export function SignalsExplorer() {
     // pattern the main list-fetch effect above already uses correctly.
     const token = await getToken();
     const size = 200;
-    const first = await apiGetPaged<SignalRow>("/signals", { params: { ...params, page: 1, size }, token });
+    const first = await getSignals({ ...params, page: 1, size }, { token });
     const pages = Math.ceil(first.page_info.total / size);
     const rest = await Promise.all(
       Array.from({ length: Math.max(0, pages - 1) }, (_, i) =>
-        apiGetPaged<SignalRow>("/signals", { params: { ...params, page: i + 2, size }, token })
+        getSignals({ ...params, page: i + 2, size }, { token })
       )
     );
     const all = [first, ...rest].flatMap((p) => p.data);

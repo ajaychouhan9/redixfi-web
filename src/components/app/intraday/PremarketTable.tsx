@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiGetPaged } from "@/lib/api/client";
+import { getIntradayPremarket } from "@/lib/api/endpoints";
 import type { PremarketRow } from "@/lib/api/types";
 import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
@@ -22,7 +22,7 @@ export function PremarketTable() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    apiGetPaged<PremarketRow>("/intraday/premarket", { params: { direction: direction || undefined, sort, order, size: 30 } })
+    getIntradayPremarket({ direction: direction || undefined, sort, order, size: 30 })
       .then((env) => {
         if (cancelled) return;
         setRows(env.data);

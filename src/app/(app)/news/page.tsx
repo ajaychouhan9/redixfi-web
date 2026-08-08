@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Newspaper, Search } from "lucide-react";
-import { apiGetPaged } from "@/lib/api/client";
+import { getNews } from "@/lib/api/endpoints";
 import type { NewsItem } from "@/lib/api/types";
 import { NewsList } from "@/components/app/NewsList";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -36,7 +36,7 @@ export default function NewsPage() {
     (async () => {
       const token = await getToken();
       if (cancelled) return;
-      apiGetPaged<NewsItem>("/news", { params: { severity: severity || undefined, page, size: 20 }, token })
+      getNews({ severity: severity || undefined, page, size: 20 }, { token })
         .then((env) => {
           if (cancelled) return;
           setItems(env.data);

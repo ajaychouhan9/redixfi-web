@@ -28,8 +28,21 @@ import type {
   ApiMeta,
 } from "./types";
 
+// Every exported fetch function below MUST carry an `@auth public` or
+// `@auth required` tag directly above it (checked by
+// scripts/check-auth-fetch.mjs, run as part of `npm run build`) — this is
+// the single source of truth for "does this endpoint's response depend on
+// the caller's tier/identity", replacing what used to be inconsistent
+// prose comments nobody could grep for. `@auth required` means every call
+// site must pass `token` (or carry an explicit `// @auth-ok: <reason>`
+// marker acknowledging a deliberately-anonymous call, e.g. an SSR fetch
+// with a documented client-side correction, or a public SEO page). See
+// that script's own header comment for the 4-occurrence bug history this
+// exists to structurally prevent.
+
 // ---------- market ----------
 
+// @auth public — market/overview.py never reads `auth`.
 export const getMarketOverview = (opts?: FetchOpts) =>
   apiGet<MarketOverview>("/market/overview", opts);
 
@@ -47,9 +60,15 @@ export interface SignalsListParams {
   size?: number;
 }
 
+// @auth required — B8 masks composite_score/etc. outside the free-tier
+// unlocked sample; a missing token silently under-serves a paying user.
 export const getSignals = (params: SignalsListParams = {}, opts?: FetchOpts) =>
   apiGetPaged<SignalRow>("/signals", { ...opts, params: { ...params, ...opts?.params } });
 
+// @auth required (same as getSignals, which this wraps) —
+// @auth-ok: SEO/export-only (sitemap.ts, /stocks/[symbol]), always
+// anonymous by design — a shared/crawlable page must never carry a
+// visitor's personal token.
 /** Pages through the full universe (~751 symbols) for SEO/export use only — not for live UI lists. */
 export async function getAllSignals(opts?: FetchOpts): Promise<SignalRow[]> {
   const size = 200;
@@ -64,9 +83,12 @@ export async function getAllSignals(opts?: FetchOpts): Promise<SignalRow[]> {
   return [first, ...rest].flatMap((p) => p.data);
 }
 
+// @auth public — signal_movers() accepts `auth` but never reads it;
+// deliberately ungated for every tier (Home shows it to everyone).
 export const getSignalMovers = (direction?: "up" | "down", limit = 20, opts?: FetchOpts) =>
   apiGet<SignalsMovers>("/signals/movers", { ...opts, params: { direction, limit } });
 
+// @auth required — B8 masks the full detail for a locked symbol.
 export const getSignalDetail = (symbol: string, newsLimit = 6, opts?: FetchOpts) =>
   apiGet<SignalDetail>(`/signals/${encodeURIComponent(symbol)}`, {
     ...opts,
@@ -75,14 +97,17 @@ export const getSignalDetail = (symbol: string, newsLimit = 6, opts?: FetchOpts)
 
 // ---------- intraday ----------
 
+// @auth public — session_state() accepts `auth` but never reads it.
 export const getIntradaySession = (opts?: FetchOpts) =>
   apiGet<IntradaySession>("/intraday/session", opts);
 
+// @auth public — premarket() accepts `auth` but never reads it.
 export const getIntradayPremarket = (
   params: { direction?: "up" | "down"; sort?: string; order?: string; page?: number; size?: number } = {},
   opts?: FetchOpts
 ) => apiGetPaged<PremarketRow>("/intraday/premarket", { ...opts, params });
 
+// @auth public — sectors() accepts `auth` but never reads it.
 export const getIntradaySectors = (opts?: FetchOpts) =>
   apiGet<IntradaySectors>("/intraday/sectors", opts);
 
@@ -97,24 +122,34 @@ export interface IntradayScanParams {
   size?: number;
 }
 
+// @auth public — scan() accepts `auth` but never reads it.
 export const getIntradayScan = (params: IntradayScanParams = {}, opts?: FetchOpts) =>
   apiGet<IntradayScan>("/intraday/scan", { ...opts, params });
 
+// @auth public — recap() accepts `auth` but never reads it.
 export const getIntradayRecap = (date?: string, opts?: FetchOpts) =>
   apiGetOptional<IntradayRecap>("/intraday/recap", { ...opts, params: { date } });
 
-// Auth required (free + paid) — caller must pass a token via opts.
+// @auth required — backend route uses require_auth (401 without a real
+// token, free + paid both allowed; watchlist SIZE is what's tier-capped,
+// not this read).
 export const getWatchlistStates = (opts?: FetchOpts) =>
   apiGet<WatchlistBehaviorRow[]>("/intraday/watchlist-states", opts);
 
 // ---------- research ----------
 
+// @auth public — search() accepts `auth` but never reads it (plain
+// symbol/company-name lookup, identical for every caller).
 export const searchResearch = (q: string, limit = 10, opts?: FetchOpts) =>
   apiGet<ResearchSearchRow[]>("/research/search", { ...opts, params: { q, limit } });
 
+// @auth required — NOT data-masking (every tier gets the identical
+// payload) but research() meters logged-in free users at 3 views/day
+// (core/metering.py); an anonymous/no-token call is silently unmetered.
 export const getResearch = (symbol: string, opts?: FetchOpts) =>
   apiGet<ResearchDetail>(`/research/${encodeURIComponent(symbol)}`, opts);
 
+// @auth public — research_peers() accepts `auth` but never reads it.
 export const getResearchPeers = (symbol: string, opts?: FetchOpts) =>
   apiGet<PeersResponse>(`/research/${encodeURIComponent(symbol)}/peers`, opts);
 
@@ -130,11 +165,17 @@ export interface NewsParams {
   size?: number;
 }
 
+// @auth required — is_free_tier(auth.tier) applies a FREE_NEWS_DELAY_HOURS
+// delay for free/anonymous callers (routers/news.py); a missing token
+// silently imposes the free-tier delay on a paying subscriber. THIS IS
+// THE EXACT ROUTE 3 of the 4 known auth-token bugs hit (Signals-paywall's
+// sibling, News/Events staleness, Home's server-side news).
 export const getNews = (params: NewsParams = {}, opts?: FetchOpts) =>
   apiGetPaged<NewsItem>("/news", { ...opts, params });
 
 // ---------- charts ----------
 
+// @auth public — charts.py has no auth dependency on this route at all.
 export const getChart = (
   symbol: string,
   params: { interval?: string; from?: string; to?: string } = {},
@@ -143,23 +184,29 @@ export const getChart = (
 
 // ---------- brief ----------
 
+// @auth public — brief.py has no auth dependency on this route at all.
 export const getLatestBrief = (opts?: FetchOpts) => apiGetOptional<DailyBrief>("/brief/latest", opts);
 
 // ---------- billing (public) ----------
 
+// @auth public — plan list is shown before login (pre-login checkout).
 export const getBillingPlans = (opts?: FetchOpts) => apiGet<BillingPlan[]>("/billing/plans", opts);
 
 // ---------- education (Task 12) — public, fetch-only, zero live LLM calls --
 
+// @auth public — same content for every caller.
 export const getEducation = (metric: string, opts?: FetchOpts) =>
   apiGetOptional<EducationContent>(`/education/${encodeURIComponent(metric)}`, opts);
 
+// @auth public — summary_sectors() accepts `auth` but never reads it.
 export const getSectorSummary = (opts?: FetchOpts) => apiGet<SectorSummary>("/summary/sectors", opts);
 
 // ---------- track record (Task 15) — public, no auth ----------
 
+// @auth public
 export const getTrackRecord = (opts?: FetchOpts) => apiGet<TrackRecordSnapshot>("/track-record", opts);
 
+// @auth public
 export const getTrackRecordSymbol = (symbol: string, opts?: FetchOpts) =>
   apiGet<TrackRecordSymbolHistory>(`/track-record/${encodeURIComponent(symbol)}`, opts);
 
@@ -179,6 +226,9 @@ export interface AnomalyListResult {
   page_info: AnomalyPageInfo;
 }
 
+// @auth public — market_anomalies() accepts `auth` but never reads it
+// (the separate, genuinely tier-gated /anomalies/watchlist route lives in
+// mutations.ts instead, since it requires a mandatory token parameter).
 export async function getAnomalies(params: AnomalyListParams = {}, opts?: FetchOpts): Promise<AnomalyListResult> {
   const env = await apiGetPaged<AnomalyFlagDoc>("/anomalies", { ...opts, params });
   // page_info carries `scan`/`date` at runtime (see routers/anomalies.py) —

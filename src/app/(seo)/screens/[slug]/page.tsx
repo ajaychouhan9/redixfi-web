@@ -23,6 +23,9 @@ export default async function ScreenPage({ params }: { params: Promise<{ slug: s
   const screen = getCannedScreen(slug);
   if (!screen) notFound();
 
+  // @auth-ok: public SEO page, ISR-cached and crawlable — must never carry
+  // a visitor's personal token. Same locked/unlocked view any anonymous
+  // visitor gets on the real Signals list.
   const env = await getSignals({ ...screen.params, size: 10 }, { revalidate: 120 });
 
   return (

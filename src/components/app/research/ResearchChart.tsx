@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiGet } from "@/lib/api/client";
+import { getChart } from "@/lib/api/endpoints";
 import { Card } from "@/components/ui/Card";
 import { CandleChart } from "@/components/app/CandleChart";
 import type { Candle } from "@/lib/api/types";
@@ -28,7 +28,7 @@ export function ResearchChart({ symbol, dailyCandles }: { symbol: string; dailyC
   useEffect(() => {
     if (range !== "1D") return;
     let cancelled = false;
-    apiGet<{ candles: Candle[] }>(`/charts/${encodeURIComponent(symbol)}`, { params: { interval: "15m" } })
+    getChart(symbol, { interval: "15m" })
       .then((env) => !cancelled && setIntradayCandles(env.data.candles))
       .catch(() => !cancelled && setIntradayCandles([]));
     return () => {
