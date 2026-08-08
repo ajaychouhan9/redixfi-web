@@ -13,11 +13,42 @@ import { useAuth } from "@/lib/auth/AuthContext";
 
 const POLL_MS = 60_000;
 
-export function MarketRibbon() {
+/**
+ * CLS fix (2026-08-08) — this ribbon sits directly above `<main>` in
+ * app/(app)/layout.tsx's shared flex column, and used to start every
+ * render with `overview: null` (a small pulse skeleton), fetching
+ * `/market/overview` purely client-side. Once that fetch resolved a few
+ * hundred ms later, the ribbon grew from a slim placeholder to its full
+ * multi-badge width/height, pushing `<main>` down — Lighthouse's
+ * layout-shifts audit attributed essentially the entire measured CLS
+ * (0.249, "needs improvement") to `<main>` itself, even though `<main>`'s
+ * OWN content never changed — it just moved because its sibling above it
+ * grew. Root-caused via Lighthouse's `layout-shifts` audit + reading
+ * layout.tsx to confirm the DOM structure matched the flagged element's
+ * selector exactly (`body > div.flex > div.flex > main.mb-14`).
+ *
+ * Fix: `layout.tsx` now fetches the SAME public, unauthenticated
+ * `/market/overview` (already confirmed `@auth public` — identical for
+ * every tier, no cloaking-relevant branch) server-side, once per request,
+ * and seeds this component with real initial data — same `initial*`-prop
+ * convention already established for EventRiskCard/SignalUnlockGate/
+ * ResearchViewGate. The client-side poll below is UNCHANGED (still
+ * refreshes every 60s for a long-lived tab) — this only removes the
+ * skeleton flash on FIRST paint, which is what was causing the shift.
+ */
+export function MarketRibbon({
+  initialOverview = null,
+  initialFresh = true,
+  initialSignalsAsOf = null,
+}: {
+  initialOverview?: MarketOverview | null;
+  initialFresh?: boolean;
+  initialSignalsAsOf?: string | null;
+}) {
   const { user } = useAuth();
-  const [overview, setOverview] = useState<MarketOverview | null>(null);
-  const [fresh, setFresh] = useState(true);
-  const [signalsAsOf, setSignalsAsOf] = useState<string | null>(null);
+  const [overview, setOverview] = useState<MarketOverview | null>(initialOverview);
+  const [fresh, setFresh] = useState(initialFresh);
+  const [signalsAsOf, setSignalsAsOf] = useState<string | null>(initialSignalsAsOf);
   const [error, setError] = useState(false);
 
   useEffect(() => {
@@ -35,12 +66,16 @@ export function MarketRibbon() {
         if (!cancelled) setError(true);
       }
     }
-    load();
+    // Initial data already came from the server (initialOverview) — the
+    // first client-side call is the 60s-later refresh, not a duplicate
+    // of work layout.tsx already did.
     const id = setInterval(load, POLL_MS);
+    if (!initialOverview) load();
     return () => {
       cancelled = true;
       clearInterval(id);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const volatile = !!overview && overview.india_vix_change_pct > 5;

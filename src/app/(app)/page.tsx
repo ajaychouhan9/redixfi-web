@@ -1,4 +1,4 @@
-import { getMarketOverview, getSignalMovers, getLatestBrief, getIntradaySession, getAnomalies, getNews } from "@/lib/api/endpoints";
+import { getMarketOverview, getSignalMovers, getLatestBrief, getIntradaySession, getAnomalies, getNews, getBillingPlans } from "@/lib/api/endpoints";
 import { MarketPulseCard } from "@/components/app/MarketPulseCard";
 import { TopSignalChangesCard } from "@/components/app/TopSignalChangesCard";
 import { AiDailyBriefCard } from "@/components/app/AiDailyBriefCard";
@@ -7,6 +7,7 @@ import { IntradayNowCard } from "@/components/app/IntradayNowCard";
 import { ContinueResearchCard } from "@/components/app/ContinueResearchCard";
 import { AnomalyCard } from "@/components/app/AnomalyCard";
 import { VisitorIntroStrip } from "@/components/app/VisitorIntroStrip";
+import { HomePricingSection } from "@/components/app/HomePricingSection";
 
 // News IS fetched here now, but only ever with NO token — this is exactly
 // the anonymous/free-tier feed (24h-delayed per B8) any logged-out visitor
@@ -16,7 +17,7 @@ import { VisitorIntroStrip } from "@/components/app/VisitorIntroStrip";
 // docstring) — this fetch never sees a paid user's data, so it can't leak
 // the mistake this pattern originally guarded against.
 export default async function HomePage() {
-  const [overviewR, moversR, briefR, sessionR, anomaliesR, newsR] = await Promise.allSettled([
+  const [overviewR, moversR, briefR, sessionR, anomaliesR, newsR, plansR] = await Promise.allSettled([
     getMarketOverview(),
     getSignalMovers(undefined, 3),
     getLatestBrief(),
@@ -25,6 +26,9 @@ export default async function HomePage() {
     // @auth-ok: SSR, always anonymous — see the module docstring above.
     // Corrected client-side by EventRiskCard once a real token resolves.
     getNews({ severity: "high", size: 3 }),
+    // @auth-ok: public — billing/plans has no auth dependency at all
+    // (same fetch /pricing's own page.tsx already makes server-side).
+    getBillingPlans(),
   ]);
 
   const overview = overviewR.status === "fulfilled" ? overviewR.value.data : null;
@@ -33,6 +37,7 @@ export default async function HomePage() {
   const session = sessionR.status === "fulfilled" ? sessionR.value.data : null;
   const anomalies = anomaliesR.status === "fulfilled" ? anomaliesR.value : null;
   const newsItems = newsR.status === "fulfilled" ? newsR.value.data : null;
+  const plans = plansR.status === "fulfilled" ? plansR.value.data : [];
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
@@ -60,6 +65,7 @@ export default async function HomePage() {
       <EventRiskCard newsToday={overview?.news_today ?? null} initialItems={newsItems} />
       <IntradayNowCard session={session} />
       <ContinueResearchCard />
+      <HomePricingSection plans={plans} />
     </div>
   );
 }
