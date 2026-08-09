@@ -193,6 +193,44 @@ export function ResearchDetail({
       </ErrorBoundary>
 
       <ErrorBoundary>
+        <Card title="Concalls & investor presentations" action={<AiLabel />}>
+          {data.concall_transcripts.length === 0 ? (
+            <p className="text-sm text-foreground-muted">No concall transcripts or investor presentations recorded yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {data.concall_transcripts.map((c, i) => (
+                <div key={i} className={i > 0 ? "border-t border-border pt-4" : ""}>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className="rounded-full bg-neutral-bg px-2 py-0.5 font-semibold uppercase tracking-wide text-foreground-muted">
+                        {c.subject === "EARNINGS_CALL_TRANSCRIPT" ? "Concall transcript" : "Investor presentation"}
+                      </span>
+                      <span className="text-foreground-faint">{formatShortDate(c.filing_date)}</span>
+                      <span className="text-foreground-faint">· Tone (this document): {c.tone_label}</span>
+                    </div>
+                    <a
+                      href={c.source_pdf_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0 text-sm font-medium text-accent"
+                    >
+                      View source filing →
+                    </a>
+                  </div>
+                  <p className="mt-2 text-sm leading-relaxed">{c.summary}</p>
+                  <p className="mt-1 text-sm text-foreground-muted">{c.tone_note}</p>
+                  <p className="mt-2 text-xs text-foreground-faint">
+                    Sourced from an exchange-filed {c.subject === "EARNINGS_CALL_TRANSCRIPT" ? "transcript" : "presentation"}, dated{" "}
+                    {formatShortDate(c.filing_date)}. Summary is RedixFi-generated and distinct from investment advice.
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </ErrorBoundary>
+
+      <ErrorBoundary>
         <Card title="Signal summary" action={data.signal_summary.narrative && <AiLabel />}>
           {data.signal_summary.composite_score === null ? (
             <p className="text-sm text-foreground-muted">Signal score not yet computed for this stock.</p>

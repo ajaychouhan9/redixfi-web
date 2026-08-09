@@ -713,6 +713,21 @@ export interface PeersResponse {
   peers: PeerRow[];
 }
 
+// Task 21 Phase C — recent concall transcript / investor presentation
+// summaries. RedixFi-generated (data-pipeline/concall_summarizer.py);
+// tone_label describes only the language used in that document, never a
+// signal on the stock. No B8 masking on this block — /research/{symbol}'s
+// whole payload is already identical for every tier (see the backend's
+// own research() comment).
+export interface ConcallTranscript {
+  filing_date: string;
+  subject: "EARNINGS_CALL_TRANSCRIPT" | "INVESTOR_PRESENTATION";
+  summary: string;
+  tone_label: "Positive" | "Neutral" | "Negative" | "Mixed";
+  tone_note: string;
+  source_pdf_url: string;
+}
+
 export interface ResearchDetail {
   symbol: string;
   company_name: string;
@@ -728,6 +743,7 @@ export interface ResearchDetail {
   news: NewsItem[];
   signal_summary: ResearchSignalSummary;
   fundamentals: FundamentalsBlock | null;
+  concall_transcripts: ConcallTranscript[];
 }
 
 // ---------- charts ----------
