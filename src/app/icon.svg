@@ -1,0 +1,20 @@
+<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!--
+    Static favicon copy of src/components/brand/LogoMark.tsx (variant="gradient").
+    Browsers fetch this as a standalone document with no access to the app's
+    CSS custom properties, so the dark-theme gold gradient is hardcoded here
+    (--accent #d4a94e / --accent-dim #b8873a / --accent-foreground #0b0f1a)
+    rather than duplicated as editable logic. Keep in sync by hand if the
+    brand gold values in globals.css ever change.
+  -->
+  <rect width="24" height="24" rx="6" fill="#0b0f1a" />
+  <defs>
+    <linearGradient id="g" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#d4a94e" />
+      <stop offset="1" stop-color="#b8873a" />
+    </linearGradient>
+  </defs>
+  <path d="M1.16 4.84 L11.01 12.99 L19.16 22.84 L22.84 19.16 L12.99 11.01 L4.84 1.16 Z" fill="url(#g)" />
+  <path d="M22.84 4.84 L12.99 12.99 L4.84 22.84 L1.16 19.16 L11.01 11.01 L19.16 1.16 Z" fill="url(#g)" />
+  <path d="M12 9.6 L14.4 12 L12 14.4 L9.6 12 Z" fill="#0b0f1a" opacity="0.3" />
+</svg>

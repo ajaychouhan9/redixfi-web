@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { Home, BarChart3, Zap, Search, MoreHorizontal, User, CreditCard, Bookmark } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { LogoMark } from "@/components/brand/LogoMark";
 
 const NAV_ITEMS = [
   { href: "/", label: "Home", icon: Home },
@@ -30,7 +31,7 @@ export function Sidebar() {
           className="flex h-7 w-7 items-center justify-center rounded-md"
           style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dim))" }}
         >
-          <Zap size={15} strokeWidth={2.5} color="var(--accent-foreground)" fill="var(--accent-foreground)" />
+          <LogoMark size={15} variant="solid" className="text-[var(--accent-foreground)]" />
         </span>
         <span className="font-mono text-lg font-semibold tracking-tight">RedixFi</span>
       </div>

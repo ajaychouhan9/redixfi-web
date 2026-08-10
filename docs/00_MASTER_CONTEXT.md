@@ -1725,3 +1725,149 @@ itself prove which one it was. FOUNDER NEXT STEP: after deploying this
 fix, reproduce the same two TATACAP questions live and, if it still
 falls back, check `db.ask_log.find({fallback_reason:{$ne:null}}).sort({_id:-1}).limit(5)`
 on the VM — the reason field now tells you exactly which of the 3 it is.
+
+## Completion note — Session 1: Home redesign + custom logo mark (2026-08-11)
+FRONTEND ONLY (redixfi-web). No backend/API/DB/auth files touched — confirmed
+via `git status` before commit (only redixfi-web paths staged). No real data
+replaced with mock data; no existing functionality removed. Backend repo
+(C:\Redixfi) untouched, not committed/pushed this session.
+
+**Step 0 audit findings (confirmed by reading actual code, not assumed):**
+- Home route: `src/app/(app)/page.tsx`. Actual render order: VisitorIntroStrip
+  → AiDailyBriefCard → MarketPulseCard+TopSignalChangesCard (grid row) →
+  AnomalyCard ("Unusual activity today") → EventRiskCard → IntradayNowCard →
+  ContinueResearchCard → HomePricingSection. NOTE: there is no "Watchlist
+  Alerts" section on Home today (only a marketing-copy bullet elsewhere) —
+  left absent rather than newly built, since the task scoped only the AI
+  Brief + Unusual Activity restructuring and said everything else stays as-is.
+- Theme tokens confirmed in `src/app/globals.css`: `--accent`/`--accent-dim`/
+  `--accent-foreground` (gold; dark `#d4a94e`/light `#b8873a`), `--background`/
+  `--surface`/`--surface-raised`/`--border`, `--foreground`/`-muted`/`-faint`,
+  `--up`/`--down`/`--neutral` (+`-bg`), `--amber`/`--amber-bg`. Extended zero
+  new tokens — the logo and the two restructured cards reuse these exactly.
+- Logo: no dedicated component existed. The only lightning-bolt mark was a
+  `lucide-react` `Zap` icon inlined in `src/components/layout/Sidebar.tsx`
+  (desktop sidebar header, the ONLY place it appeared — not in mobile
+  BottomNav, login page, favicon, or any manifest, none of which existed).
+- Nav: desktop `Sidebar` and mobile `BottomNav` are both defined in the one
+  file `src/components/layout/Sidebar.tsx`, sharing one `NAV_ITEMS` array —
+  not restructured this session (out of scope), only the logo swap inside it.
+
+**Step 1 — Custom logo mark (new, original, not the Twitter/X trademark):**
+- New file `src/components/brand/LogoMark.tsx` — an inline SVG React
+  component, NOT a copy of any existing brand. Two tapered bars crossing
+  into an X, each waisted toward the center (wide at the outer ends, narrow
+  at the crossing) plus a small faceted diamond over the intersection —
+  deliberately un-Twitter-like construction (tapered+gradient+facet vs.
+  Twitter's uniform-width flat strokes).
+  - `variant="gradient"` (default): fills with a `<linearGradient>` whose
+    stops are `var(--accent)` → `var(--accent-dim)` — inherits the live
+    theme automatically, zero light/dark duplication, confirmed by reading
+    the rendered DOM: switching `[data-theme]` re-colors it with no JS.
+  - `variant="solid"`: fills with `currentColor`, for use inside an
+    already-gold-colored badge (e.g. the sidebar's existing gradient square)
+    where the mark itself should just be foreground-colored.
+  - `size` prop scales the `<svg>` directly (viewBox 0 0 24 24) — verified
+    conceptually correct from 15px (sidebar badge) to 56px (login) to
+    32px (favicon); no raster assets, so it holds up to 120px+ with zero
+    quality loss by construction (vector, no bitmap).
+- Replaced everywhere it appeared: `Sidebar.tsx`'s desktop header badge (now
+  `<LogoMark size={15} variant="solid" .../>` inside the same gold-gradient
+  square it always had) — the `Zap` import stays, since it's still used
+  separately as the unrelated "Intraday" nav icon, not the brand mark, so it
+  was NOT touched.
+- Added (didn't exist before, but explicitly requested by name in the task's
+  design spec: "120px (login page)" / "24px (favicon-equivalent)"):
+  - `src/app/(app)/login/page.tsx` — 56px `LogoMark` + wordmark above the
+    login card.
+  - `src/app/icon.svg` — new Next.js App-Router favicon convention file.
+    Static SVG documents can't read the app's CSS custom properties (no DOM
+    cascade when fetched standalone by the browser), so this hardcodes the
+    same dark-theme gold hex values (`#d4a94e`/`#b8873a`/`#0b0f1a`) with a
+    comment flagging it must be updated by hand if the brand gold in
+    globals.css ever changes. Confirmed picked up by `next build`'s route
+    list (`○ /icon.svg`). Did NOT touch the pre-existing `favicon.ico` or
+    add a manifest/OG-image pipeline — neither existed before and neither
+    was named in the task's "everywhere it appears" scope (which audited to
+    exactly one place, Sidebar.tsx).
+- Wordmark "RedixFi" text styling itself was not touched anywhere, per
+  instruction.
+
+**Step 2 — Home page restructure (layout/UX only, zero color-token changes):**
+- `AiDailyBriefCard.tsx`: added `splitSummary()` (regex sentence-split, pure
+  display logic) — renders the first 2-3 sentences always, and if the brief
+  is longer, the remainder is now inside a native `<details>`/`<summary>`
+  disclosure labeled "Read full brief →" / "Show less ↑" (CSS `group-open:`
+  toggle, no client component / no JS state needed — server component
+  status preserved). No data is dropped: the full body is still 100% in the
+  DOM once expanded, just not rendered until then. AI-GENERATED badge and
+  the period subtitle ("Morning session"/"Close session") untouched.
+- `AnomalyCard.tsx` ("Unusual activity today"): restructured from one flat
+  `flex-wrap` row of 7 direction-keyed groups into the summary sentence
+  (unchanged) + labeled category tiles, each showing a real distinct-stock
+  count in its header, with the existing direction-split symbol lists nested
+  inside (still symmetric by construction — every direction bucket present
+  renders, matching compliance rule 4).
+  - ⚠️ REAL API SHAPE FINDING (verified against `src/lib/api/types.ts`
+    before writing any UI, per the task's explicit instruction not to
+    assume field names): `AnomalyType` is exactly 3 values —
+    `volume_extreme` | `pcr_shift` | `insider_cluster`. There is NO fourth
+    "price action" category anywhere in the anomaly data model returned by
+    `GET /anomalies`. The task brief's spec named 4 tiles including "Price
+    Action (N stocks)" — that 4th tile is NOT backed by real data, so this
+    session built exactly 3 tiles (Volume Breakout / Options Activity /
+    Insider Activity) rather than fabricating a category that would always
+    show 0. Per-category counts (`categoryStocks` map, deduped by symbol
+    across all directions of that type) are computed client-side from the
+    already-fetched `results` array — the API itself only exposes
+    `direction_counts` (direction-only, not per-category) on `scan`, not a
+    pre-aggregated per-category count, so nothing here required a backend
+    change; it's a reshape of data already being fetched.
+  - "View all unusual activity →" CTA: the actual existing CTA text/link
+    (`Screen →` to `/signals`) was left completely unchanged — the task
+    doc's literal wording assumed different CTA copy than what's actually
+    in the code; kept the real one rather than renaming to match an
+    assumption, since renaming wasn't itself requested.
+- Everything else on Home (VisitorIntroStrip, MarketPulseCard,
+  TopSignalChangesCard, EventRiskCard, IntradayNowCard, ContinueResearchCard,
+  HomePricingSection) — confirmed untouched, zero diff.
+
+**Mobile reflow (sandbox has no browser — described, not visually verified):**
+- `AnomalyCard` category tiles: `flex flex-wrap gap-3` parent, each tile
+  `min-w-[240px] flex-1` — at a ~375-390px mobile viewport (minus page
+  padding) only one 240px+ tile fits per row, so tiles stack to a single
+  column naturally via wrap, no media query needed. Inside each tile, the
+  direction-group children (`min-w-[140px]`) may still fit 2-up depending on
+  exact tile width — acceptable, doesn't overflow.
+  Everything else on Home was already responsive pre-session and unchanged.
+  **FOUNDER: please verify AnomalyCard's tile stacking and AiDailyBriefCard's
+  `<details>` disclosure live on a real mobile viewport post-deploy** — this
+  could not be visually confirmed from this sandbox.
+
+**Build/compliance result:** `npx tsc --noEmit` clean (exit 0). `npm run
+build` clean: compliance sweep 0 errors (13 pre-existing warnings, all
+negated-word false positives on unrelated pre-existing lines, none touched
+this session — one new one was hit and fixed: `LogoMark.tsx`'s own comment
+used the word "tips" describing the SVG geometry, tripped the forbidden-word
+scanner, reworded to "outer ends"), auth-fetch guard 0 violations, `next
+build` compiled successfully, all 27 routes generated incl. new `/icon.svg`.
+
+**OPEN / carry forward:**
+- Per this doc's own standing rule ("whoever finishes a session pastes the
+  completion note back... for the master file to be updated centrally"),
+  this note is written into `redixfi-web/docs/00_MASTER_CONTEXT.md` only —
+  this session did NOT touch the canonical copy at
+  `C:\Redixfi\api\docs\00_MASTER_CONTEXT.md` (different repo, out of scope
+  for a frontend-only session) — needs to be pasted into the canonical copy
+  in a future session per the existing process.
+- No manifest.json/site.webmanifest or OG-image pipeline was added — logo
+  only appears in the 2 real places found (sidebar) + the 2 places the
+  design spec explicitly named (login page, favicon). If PWA install icons
+  or social-share OG images are wanted, that's new scope, not covered here.
+- "Price Action" anomaly category has no backing field/type in the current
+  API — would need a real backend addition (new anomaly detector +
+  `AnomalyType` value) if the founder wants a literal 4th tile, not just a
+  frontend change.
+- Live authenticated (paid/free tier) rendering and mobile viewport reflow
+  for both restructured cards were not visually verified — sandbox has no
+  browser, per standing constraint noted in every prior session.

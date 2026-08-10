@@ -1,7 +1,25 @@
 import { Sparkles } from "lucide-react";
 import type { DailyBrief } from "@/lib/api/types";
 
+/**
+ * Splits the brief into a 2-3 sentence lead and the remainder. Pure display
+ * restructuring — the full body is still rendered in full once expanded,
+ * nothing is dropped or truncated permanently.
+ */
+function splitSummary(body: string, maxSentences = 3): { summary: string; rest: string } {
+  const sentences = body.match(/[^.!?]+[.!?]+(\s+|$)/g);
+  if (!sentences || sentences.length <= maxSentences) {
+    return { summary: body.trim(), rest: "" };
+  }
+  return {
+    summary: sentences.slice(0, maxSentences).join("").trim(),
+    rest: sentences.slice(maxSentences).join("").trim(),
+  };
+}
+
 export function AiDailyBriefCard({ brief }: { brief: DailyBrief | null }) {
+  const { summary, rest } = brief ? splitSummary(brief.body) : { summary: "", rest: "" };
+
   return (
     <div
       className="relative overflow-hidden rounded-2xl border"
@@ -25,7 +43,18 @@ export function AiDailyBriefCard({ brief }: { brief: DailyBrief | null }) {
           <span className="shrink-0 rounded-md bg-accent/10 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-accent-dim">AI-generated</span>
         </div>
         {brief ? (
-          <p className="text-[15px] leading-[1.75] text-foreground">{brief.body}</p>
+          <>
+            <p className="text-[15px] leading-[1.75] text-foreground">{summary}</p>
+            {rest && (
+              <details className="group mt-2">
+                <summary className="cursor-pointer list-none text-sm font-medium text-accent [&::-webkit-details-marker]:hidden">
+                  <span className="group-open:hidden">Read full brief →</span>
+                  <span className="hidden group-open:inline">Show less ↑</span>
+                </summary>
+                <p className="mt-2 text-[15px] leading-[1.75] text-foreground">{rest}</p>
+              </details>
+            )}
+          </>
         ) : (
           <p className="text-sm text-foreground-muted">No brief generated yet today — check back after market open.</p>
         )}

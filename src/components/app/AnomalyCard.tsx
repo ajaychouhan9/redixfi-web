@@ -1,7 +1,8 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { Activity, ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import type { AnomalyFlagDoc, AnomalyScanMeta } from "@/lib/api/types";
+import type { AnomalyFlagDoc, AnomalyScanMeta, AnomalyType, AnomalyDirection } from "@/lib/api/types";
 
 /**
  * Task 16 Part C — full-universe, disclosed-criteria anomaly scan.
@@ -10,6 +11,13 @@ import type { AnomalyFlagDoc, AnomalyScanMeta } from "@/lib/api/types";
  * "unusual-up and unusual-down equally" rule the master-context symmetry
  * check applies to movers. Default order here is symbol name-ascending
  * within each bucket (the API's own default sort), never re-ranked.
+ *
+ * Category tiles: the API's AnomalyType is exactly 3 values — volume_extreme,
+ * pcr_shift, insider_cluster (src/lib/api/types.ts) — there is no fourth
+ * "price action" category anywhere in the anomaly data model. A 4-tile
+ * "Volume/Options/Insider/Price Action" layout was assumed in the task brief
+ * but isn't backed by real data, so this renders 3 tiles only rather than
+ * inventing a category with a permanently-zero count.
  */
 
 const DIRECTION_LABEL: Record<string, string> = {
@@ -22,13 +30,19 @@ const DIRECTION_LABEL: Record<string, string> = {
   selling: "Net selling",
 };
 
+const CATEGORY_META: { type: AnomalyType; label: string; directions: AnomalyDirection[] }[] = [
+  { type: "volume_extreme", label: "Volume Breakout", directions: ["up", "down", "flat"] },
+  { type: "pcr_shift", label: "Options Activity", directions: ["put_heavy", "call_heavy"] },
+  { type: "insider_cluster", label: "Insider Activity", directions: ["buying", "selling"] },
+];
+
 function AnomalyGroup({ label, rows }: { label: string; rows: AnomalyFlagDoc[] }) {
   if (rows.length === 0) return null;
   return (
     <div className="flex-1 min-w-[140px]">
-      <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-foreground-faint">
+      <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-foreground-faint">
         {label} ({rows.length})
-      </h3>
+      </h4>
       <ul className="space-y-1.5">
         {rows.slice(0, 5).map((r) => (
           <li key={r.symbol}>
@@ -42,6 +56,18 @@ function AnomalyGroup({ label, rows }: { label: string; rows: AnomalyFlagDoc[] }
   );
 }
 
+function CategoryTile({ label, count, children }: { label: string; count: number; children: ReactNode }) {
+  if (count === 0) return null;
+  return (
+    <div className="min-w-[240px] flex-1 rounded-lg border border-border bg-surface-raised p-3">
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-faint">
+        {label} <span className="text-foreground">({count} {count === 1 ? "stock" : "stocks"})</span>
+      </h3>
+      <div className="flex flex-wrap gap-4">{children}</div>
+    </div>
+  );
+}
+
 export function AnomalyCard({ results, scan }: { results: AnomalyFlagDoc[]; scan: AnomalyScanMeta | null }) {
   if (!scan) {
     return (
@@ -51,20 +77,21 @@ export function AnomalyCard({ results, scan }: { results: AnomalyFlagDoc[]; scan
     );
   }
 
-  // Bucket by (type, direction) so up/down/other groups are shown side by
-  // side, mirroring TopSignalChangesCard's gainers/decliners layout —
-  // never one direction alone.
+  // Bucket by (type, direction) for the symbol lists shown inside each tile.
   const buckets = new Map<string, AnomalyFlagDoc[]>();
+  // Distinct stock count per category, regardless of direction, for the tile header.
+  const categoryStocks = new Map<AnomalyType, Set<string>>();
   for (const doc of results) {
     for (const a of doc.anomalies) {
       const key = `${a.type}:${a.anomaly_direction}`;
       if (!buckets.has(key)) buckets.set(key, []);
       const arr = buckets.get(key)!;
       if (!arr.find((d) => d.symbol === doc.symbol)) arr.push(doc);
+
+      if (!categoryStocks.has(a.type)) categoryStocks.set(a.type, new Set());
+      categoryStocks.get(a.type)!.add(doc.symbol);
     }
   }
-
-  const groupOrder = ["volume_extreme:up", "volume_extreme:down", "pcr_shift:put_heavy", "pcr_shift:call_heavy", "insider_cluster:buying", "insider_cluster:selling", "volume_extreme:flat"];
 
   return (
     <Card
@@ -85,14 +112,18 @@ export function AnomalyCard({ results, scan }: { results: AnomalyFlagDoc[]; scan
         {scan.thresholds.pcr_z_anomaly_min} standard deviations from its own norm, or a concentrated insider-filing
         window) — every stock is scanned against the same rule, up and down alike.
       </p>
-      <div className="flex flex-wrap gap-4">
-        {groupOrder.map((key) => {
-          const [type, direction] = key.split(":");
-          const rows = buckets.get(key) ?? [];
-          if (rows.length === 0) return null;
-          const typeLabel = type === "volume_extreme" ? "Volume" : type === "pcr_shift" ? "Options positioning" : "Insider filings";
-          return <AnomalyGroup key={key} label={`${typeLabel} — ${DIRECTION_LABEL[direction] ?? direction}`} rows={rows} />;
-        })}
+      <div className="flex flex-wrap gap-3">
+        {CATEGORY_META.map(({ type, label, directions }) => (
+          <CategoryTile key={type} label={label} count={categoryStocks.get(type)?.size ?? 0}>
+            {directions.map((direction) => (
+              <AnomalyGroup
+                key={`${type}:${direction}`}
+                label={DIRECTION_LABEL[direction] ?? direction}
+                rows={buckets.get(`${type}:${direction}`) ?? []}
+              />
+            ))}
+          </CategoryTile>
+        ))}
         {results.length === 0 && <p className="text-sm text-foreground-faint">Nothing crossed the threshold today.</p>}
       </div>
     </Card>
