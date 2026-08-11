@@ -2929,3 +2929,39 @@ at both the new 15px size and the existing responsive breakpoint
 the new fixed header with no content hidden underneath it, and the
 Concalls "Key takeaway" box on a stock with real concall data (e.g. ABB)
 shows the gold left border + subtle background clearly.**
+
+## Correction — Session 12 follow-up: callout box moved from summary to tone_note (2026-08-11)
+Live founder feedback on Session 12's Fix 2: the callout box had been
+wrapped around the WRONG content. Founder's own example ("Management
+highlighted strong order growth and profitability improvements." on
+ABB) was the key clue — checked the actual generator,
+`data-pipeline/concall_summarizer.py`, before touching anything (its
+own LLM prompt spec, not guessed): `summary` (what `ConcallSummary.tsx`
+renders as "Key takeaway: …") is a **120-180 WORD paragraph** — the
+founder's short example sentence can't be that field. `tone_note` is
+explicitly specced as **"one short neutral sentence explaining the
+tone_label"** — an exact length match for the founder's example, and
+it's the real field rendering directly below the Key takeaway/Show
+more-less toggle and above the source/attribution line, i.e. the "box
+should be for the content below show more/less and above the source"
+the founder described.
+
+**Fix:** `ConcallSummary.tsx`'s box removed — "Key takeaway:" label
+keeps its gold `text-accent` color and the takeaway text keeps
+`text-foreground font-medium`, but plain, unboxed (matching "highlighted
+good" — keep — "but the box should not be around the key takeaway
+content" — remove). The callout box (`border-l-2 border-accent
+bg-accent/10 px-3 py-2`) moved to `ResearchDetail.tsx`'s `tone_note`
+paragraph instead — same real gold-accent tokens, same visual treatment,
+just relocated to the correct field. Text content of both fields
+unchanged.
+
+**Build result:** `npx tsc --noEmit` clean (exit 0). `npm run build`
+clean: compliance sweep 0 errors (same 15 pre-existing warnings, 0 new),
+0 auth-fetch violations, `next build` exit 0, all 29 routes generated.
+
+**OPEN:** no live/browser verification — sandbox has no browser.
+**FOUNDER: please re-confirm on ABB that the box now wraps the tone_note
+sentence ("Management highlighted…") rather than the longer Key
+takeaway summary, and that the Key takeaway line itself now reads plain
+(gold label, bold primary text, no box) as intended.**

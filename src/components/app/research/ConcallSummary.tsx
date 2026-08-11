@@ -18,17 +18,17 @@ import clsx from "clsx";
  * confirmed via grep) per explicit founder direction that this is key
  * content, not secondary/muted text.
  *
- * Callout-box fix (2026-08-11): the whole "Key takeaway: …" line (plus
- * its Show more/less toggle, when present) now sits inside a bordered
- * callout — `border-l-2 border-accent` + `bg-accent/10`, the app's real
- * gold-accent tokens at low opacity (no separate "highlight" token
- * exists; reused the same `--accent`/`--accent-dim` pair every other
- * gold CTA/active-state already uses). Label uses `text-accent` (was
- * `text-foreground-muted` — now the label is what draws the eye, not
- * what recedes); takeaway text stays `text-foreground` + gains
- * `font-medium`. Position unchanged — still renders between the
- * metadata row above and the tone_note/attribution lines below, in
- * ResearchDetail.tsx's concalls block.
+ * Label-color fix (2026-08-11): "Key takeaway:" label uses `text-accent`
+ * (was `text-foreground-muted`) so it draws the eye; takeaway text stays
+ * `text-foreground` (primary tier) + `font-medium`. NOT wrapped in a
+ * callout box — an earlier version of this fix boxed this whole line,
+ * but per direct correction the callout box belongs on `tone_note`
+ * instead (the short one-sentence tone explanation that renders below
+ * this component, confirmed against data-pipeline/concall_summarizer.py:
+ * `summary` here is a 120-180 WORD paragraph — the line-clamped/
+ * expandable content below — while `tone_note` is "one short neutral
+ * sentence" — the actual box-worthy standalone content). See
+ * ResearchDetail.tsx's concalls block for that box.
  */
 export function ConcallSummary({ summary }: { summary: string }) {
   const [expanded, setExpanded] = useState(false);
@@ -39,7 +39,7 @@ export function ConcallSummary({ summary }: { summary: string }) {
   const long = summary.length > 220;
 
   return (
-    <div className="mt-2 border-l-2 border-accent bg-accent/10 px-3 py-2">
+    <div className="mt-2">
       <p className={clsx("text-sm leading-relaxed", long && !expanded && "line-clamp-3")}>
         <span className="font-medium text-accent">Key takeaway: </span>
         <span className="font-medium text-foreground">{summary}</span>

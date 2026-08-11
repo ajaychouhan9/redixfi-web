@@ -302,16 +302,24 @@ export function ResearchDetail({
                   {/* A1: collapsed-by-default summary with a Show more/less
                       toggle — client leaf, see ConcallSummary.tsx. */}
                   <ConcallSummary summary={c.summary} />
-                  <p className="mt-1 text-sm text-foreground-muted">{c.tone_note}</p>
-                  {/* Contrast fix (2026-08-11): reverted from the prior
-                      session's foreground-muted back to foreground-faint —
-                      this project's real "most muted" text tier (no
-                      "text-muted" utility exists; confirmed via grep) — PLUS
-                      a border-t separator, so this line reads as clearly
-                      distinct from ConcallSummary's now-foreground-muted
-                      text above it instead of blending together. Live
-                      visual feedback overriding the earlier A4 change;
-                      text content still byte-for-byte unchanged. */}
+                  {/* Callout-box fix (2026-08-11, corrected placement): the
+                      highlighted box belongs HERE, on tone_note — the
+                      short one-sentence tone explanation (confirmed
+                      against data-pipeline/concall_summarizer.py's own
+                      prompt spec) that sits below the Key takeaway/Show
+                      more-less toggle and above the source/attribution
+                      line, not on the longer summary above. Same real
+                      gold-accent tokens as every other gold CTA/active
+                      state (`border-accent`/`bg-accent`), at low opacity. */}
+                  <div className="mt-2 border-l-2 border-accent bg-accent/10 px-3 py-2">
+                    <p className="text-sm font-medium leading-relaxed text-foreground">{c.tone_note}</p>
+                  </div>
+                  {/* Contrast fix (2026-08-11): text-foreground-faint (this
+                      project's real "most muted" text tier — no "text-muted"
+                      utility exists, confirmed via grep) + a border-t
+                      separator, so this line reads as clearly distinct from
+                      the now-boxed tone_note callout directly above it.
+                      Text content byte-for-byte unchanged throughout. */}
                   <p className="mt-2 border-t border-border pt-2 text-xs text-foreground-faint">
                     Sourced from an exchange-filed {c.subject === "EARNINGS_CALL_TRANSCRIPT" ? "transcript" : "presentation"}, dated{" "}
                     {formatDateIst(c.filing_date)}. Summary is RedixFi-generated and distinct from investment advice.
