@@ -3,6 +3,7 @@ import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth/AuthContext";
 import { ThemeProvider } from "@/lib/theme/ThemeContext";
+import { AskPanelProvider } from "@/lib/ask-panel/AskPanelContext";
 
 // Design system (locked 2026-08 UI reframe): IBM Plex Sans for prose, IBM
 // Plex Mono for every financial figure (scores, prices, deltas, %).
@@ -51,7 +52,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </head>
       <body className="min-h-full bg-background font-sans text-foreground">
         <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <AskPanelProvider>{children}</AskPanelProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

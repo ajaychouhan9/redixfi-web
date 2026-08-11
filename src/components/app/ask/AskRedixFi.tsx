@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Sparkles, X, Send, Search, Globe } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 import { ApiError } from "@/lib/api/client";
 import { searchResearch } from "@/lib/api/endpoints";
 import { askRedixfi } from "@/lib/api/mutations";
@@ -72,7 +73,7 @@ const SCREEN_COLUMNS: VisibleColumns = { sector: true, delivery: true, volume: f
 
 export function AskRedixFi() {
   const { user, getToken } = useAuth();
-  const [open, setOpen] = useState(false);
+  const { open, setOpen } = useAskPanel();
   const [symbol, setSymbol] = useState<string | null>(null);
   const [results, setResults] = useState<ResearchSearchRow[]>([]);
   const [searching, setSearching] = useState(false);
@@ -189,18 +190,23 @@ export function AskRedixFi() {
   const dailyLimitLabel = DAILY_LIMIT_LABEL[user?.tier ?? "free"] ?? "1/symbol/day";
   const quickPrompts = symbol ? QUICK_PROMPTS_SYMBOL : QUICK_PROMPTS_GENERAL;
 
-  function openPanel() {
-    if (!symbol) {
+  // Presets the current page's symbol into a fresh conversation whenever the
+  // panel opens with none chosen yet — runs off `open` itself (not a local
+  // click handler) so this fires the same way for EITHER real trigger: the
+  // header button below, or Sidebar's "AI Assistant" nav item opening the
+  // same shared panel via AskPanelContext.
+  useEffect(() => {
+    if (open && !symbol) {
       const preset = getCurrentSymbol();
       if (preset) pickSymbol(preset);
     }
-    setOpen(true);
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   return (
     <>
       <button
-        onClick={openPanel}
+        onClick={() => setOpen(true)}
         className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-transform hover:scale-105"
         style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dim))", color: "var(--accent-foreground)" }}
       >

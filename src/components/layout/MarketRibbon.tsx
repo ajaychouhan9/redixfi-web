@@ -2,13 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bell, User } from "lucide-react";
+import { Bell } from "lucide-react";
 import { getMarketOverview } from "@/lib/api/endpoints";
+import { getInboxPage } from "@/lib/api/mutations";
 import type { MarketOverview } from "@/lib/api/types";
 import { FreshnessDot } from "@/components/ui/FreshnessDot";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { AskRedixFi } from "@/components/app/ask/AskRedixFi";
+import { HeaderSearch } from "@/components/layout/HeaderSearch";
+import { UserMenu } from "@/components/layout/UserMenu";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 const POLL_MS = 60_000;
@@ -45,11 +48,12 @@ export function MarketRibbon({
   initialFresh?: boolean;
   initialSignalsAsOf?: string | null;
 }) {
-  const { user } = useAuth();
+  const { user, getToken } = useAuth();
   const [overview, setOverview] = useState<MarketOverview | null>(initialOverview);
   const [fresh, setFresh] = useState(initialFresh);
   const [signalsAsOf, setSignalsAsOf] = useState<string | null>(initialSignalsAsOf);
   const [error, setError] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,6 +81,31 @@ export function MarketRibbon({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Notification bell badge — reuses the SAME real inbox
+  // getInboxPage()/InboxAlert data WatchlistAlertsCard already reads (B4's
+  // 5 alert triggers), not a new endpoint. No dedicated unread-count route
+  // exists, so this counts unread within the first page (size 20) rather
+  // than the true all-time total — matches this ribbon's existing
+  // "good-enough at a glance" posture (same as the freshness dot), not a
+  // precise inbox count (the full /account/inbox page remains the source
+  // of truth for that).
+  useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const token = await getToken();
+      if (!token) return;
+      const page = await getInboxPage(token, 1, 20);
+      if (!cancelled) setUnreadCount(page.data.filter((i) => !i.read).length);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, getToken]);
 
   const volatile = !!overview && overview.india_vix_change_pct > 5;
   const eventRisk = !!overview && overview.news_today.items_flagged_high > 0;
@@ -109,6 +138,8 @@ export function MarketRibbon({
         )}
       </div>
 
+      <HeaderSearch />
+
       <div className="flex items-center gap-2 text-foreground-faint sm:gap-3">
         {/* Task 10 A3: signals_as_of tells the user which session's
             composite scores they're looking at (e.g. "Scores as of 21 Jul
@@ -119,23 +150,19 @@ export function MarketRibbon({
 
         <AskRedixFi />
 
-        <Link href="/account/inbox" aria-label="Inbox" className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-hover">
+        <Link href="/account/inbox" aria-label="Inbox" className="relative flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-hover">
           <Bell size={13} />
+          {unreadCount > 0 && (
+            <span
+              className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full px-[3px] font-mono text-[9px] font-semibold leading-none text-white"
+              style={{ background: "var(--amber)" }}
+            >
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
         </Link>
 
-        {user && (
-          <Link
-            href="/account"
-            className="flex items-center gap-1 rounded-md px-2 py-1 font-mono text-[10px] uppercase"
-            style={
-              user.tier === "free"
-                ? { background: "var(--down-bg)", color: "var(--down)" }
-                : { background: "var(--up-bg)", color: "var(--up)" }
-            }
-          >
-            <User size={10} /> {user.tier}
-          </Link>
-        )}
+        <UserMenu />
 
         <ThemeToggle />
       </div>

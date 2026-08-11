@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { Home, BarChart3, Zap, Search, MoreHorizontal, User, CreditCard, Bookmark } from "lucide-react";
+import { Home, BarChart3, Zap, Search, MoreHorizontal, User, CreditCard, Bookmark, Bell, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 import { LogoMark } from "@/components/brand/LogoMark";
 import type { MarketOverview } from "@/lib/api/types";
 
@@ -21,12 +22,31 @@ const TIER_LABEL: Record<string, string> = {
   founding: "Founding",
 };
 
+// Mobile BottomNav's own 4-5 item list — unchanged (this session is scoped
+// to Home/desktop polish; a mobile bottom bar can't fit the 8-item desktop
+// sidebar order below without its own redesign, out of scope here).
 const NAV_ITEMS = [
   { href: "/", label: "Home", icon: Home },
   { href: "/signals", label: "Signals", icon: BarChart3 },
   { href: "/intraday", label: "Intraday", icon: Zap },
   { href: "/research", label: "Research", icon: Search },
   { href: "/more", label: "More", icon: MoreHorizontal },
+] as const;
+
+// Desktop sidebar's full order (task-specified): Home / Signals / Intraday
+// / Research / Alerts / Watchlist / AI Assistant / More. Watchlist used to
+// sit in a separate section below the main nav (its own Link block); Alerts
+// links to the real threshold-alert page (account/alerts/page.tsx, not a
+// new route). "AI Assistant" isn't a route — no fabricated page — it's a
+// second trigger into the SAME persistent AskRedixFi panel already in the
+// header (see AskPanelContext), rendered as its own list item below.
+const SIDEBAR_LINK_ITEMS = [
+  { href: "/", label: "Home", icon: Home },
+  { href: "/signals", label: "Signals", icon: BarChart3 },
+  { href: "/intraday", label: "Intraday", icon: Zap },
+  { href: "/research", label: "Research", icon: Search },
+  { href: "/account/alerts", label: "Alerts", icon: Bell },
+  { href: "/watchlist", label: "Watchlist", icon: Bookmark },
 ] as const;
 
 function isActive(pathname: string, href: string) {
@@ -45,20 +65,24 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { open: askOpen, setOpen: setAskOpen } = useAskPanel();
 
   return (
     <aside className="hidden w-56 shrink-0 flex-col border-r border-border bg-surface md:flex">
-      <div className="flex h-14 items-center gap-2 border-b border-border px-4">
+      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
         <span
-          className="flex h-7 w-7 items-center justify-center rounded-md"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md"
           style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dim))" }}
         >
           <LogoMark size={15} variant="solid" className="text-[var(--accent-foreground)]" />
         </span>
-        <span className="font-mono text-lg font-semibold tracking-tight">RedixFi</span>
+        <div className="flex flex-col leading-tight">
+          <span className="font-mono text-lg font-semibold tracking-tight">RedixFi</span>
+          <span className="text-[10px] text-foreground-faint">Read the market. Understand it.</span>
+        </div>
       </div>
       <nav className="flex flex-1 flex-col gap-1 p-3">
-        {NAV_ITEMS.map((item) => {
+        {SIDEBAR_LINK_ITEMS.map((item) => {
           const active = isActive(pathname, item.href);
           return (
             <Link
@@ -74,18 +98,28 @@ export function Sidebar({
             </Link>
           );
         })}
-      </nav>
-      <div className="border-t border-border p-3">
-        <Link
-          href="/watchlist"
+        <button
+          onClick={() => setAskOpen(true)}
           className={clsx(
-            "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium",
-            isActive(pathname, "/watchlist") ? "text-accent" : "text-foreground-muted hover:bg-hover hover:text-foreground"
+            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",
+            askOpen ? "bg-accent/10 text-accent" : "text-foreground-muted hover:bg-hover hover:text-foreground"
           )}
         >
-          <Bookmark size={16} strokeWidth={2} />
-          Watchlist
+          <Sparkles size={17} strokeWidth={2} />
+          AI Assistant
+        </button>
+        <Link
+          href="/more"
+          className={clsx(
+            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+            isActive(pathname, "/more") ? "bg-accent/10 text-accent" : "text-foreground-muted hover:bg-hover hover:text-foreground"
+          )}
+        >
+          <MoreHorizontal size={17} strokeWidth={2} />
+          More
         </Link>
+      </nav>
+      <div className="border-t border-border p-3">
         {user ? (
           <Link
             href="/account"

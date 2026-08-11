@@ -954,6 +954,11 @@ export interface InboxAlert {
   body: string;
   read: boolean;
   created_at: string;
+  // Real field on the stored doc (users_repo.py::push_inbox_alert) — null
+  // for market/day-level alerts (daily_brief, news_market) that aren't
+  // about one stock; present for the other 3 trigger types (signal_delta,
+  // news_watchlist, behavior_state).
+  symbol?: string | null;
   [key: string]: unknown;
 }
 

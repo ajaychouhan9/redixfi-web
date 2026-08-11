@@ -41,7 +41,13 @@ export default async function HomePage() {
   const plans = plansR.status === "fulfilled" ? plansR.value.data : [];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
+    // Widened from `mx-auto max-w-6xl` (2026-08-11): that cap centered a
+    // 1152px column inside the flex-1 area next to the sidebar, leaving a
+    // large unused gap on wide desktop viewports. The 3-column grid rows
+    // below are unchanged — this only lets them use the real available
+    // width up to the sidebar's edge on one side and the viewport edge on
+    // the other, instead of floating centered with dead space either side.
+    <div className="w-full max-w-[1800px] space-y-5">
       {/* Server-rendered for every visitor by default (no session cookie in
           this app to branch on — see VisitorIntroStrip's own docstring for
           why that's the correct, non-cloaking default). Hides itself

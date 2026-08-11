@@ -2064,3 +2064,134 @@ this request arrived, so folding these into that commit would require an
 amend + force-push over already-shared history — not done without explicit
 confirmation, per this session's standing git-safety rules. Delivered as a
 new, separate commit immediately after instead.
+
+## Completion note — Session 3: Home page final desktop polish (2026-08-11)
+FRONTEND ONLY (redixfi-web). No backend/API/DB/auth files touched (confirmed
+via `git status` before commit — only redixfi-web paths). No mock data
+introduced; every element below reads real existing data/endpoints, no new
+API endpoints added.
+
+**Items already correct on audit, confirmed not fixed-because-broken:**
+- Row 1 proportions (AI Daily Brief ~60% / Market Pulse ~40%, `grid-cols-5`
+  with `lg:col-span-3`/`lg:col-span-2`): already exactly this shape from the
+  prior session's grid rebuild (`page.tsx`) — re-verified, no change.
+- AI Daily Brief "Show less" position: the task brief described a bug
+  ("Show less" appears below the expanded content, needs scrolling) that
+  doesn't match the actual code — `AiDailyBriefCard.tsx` already uses a
+  native `<details>/<summary>` where the summary/toggle line is BY HTML
+  SPEC always the first rendered child of `<details>`, with expanded
+  content flowing below it. "Show less ↑" already sits immediately after
+  the 2-3 sentence lead, before the expanded paragraph — confirmed by
+  reading the DOM structure and HTML `<details>` semantics (deterministic,
+  not something that needed live-browser verification). No code change.
+- Intraday card state-awareness: `IntradayNowCard.tsx` already renders
+  Live/Pre-market/"Closed — recap available" from the real
+  `getIntradaySession()` session state (`STATE_LABEL` map), same source
+  `/intraday` itself uses. No change needed.
+
+**1. Header — added the 3 missing elements:**
+- New `components/layout/HeaderSearch.tsx` — typeahead search
+  ("Search stocks, sectors, news..." placeholder), navigates to
+  `/research/{symbol}` on pick. DEVIATION FROM THE LITERAL BRIEF (flagged,
+  reasoned): wired to `searchResearch()` (GET /research/search), NOT
+  Signals page's own `q` state — that state is local to
+  `SignalsExplorer.tsx`, filters an already-loaded table, isn't exported,
+  and has no typeahead-to-navigate shape. `searchResearch` is the actual
+  shared cross-page symbol/company lookup already doing this exact job
+  (Research search page, AskRedixFi's symbol picker) — reused that
+  instead of the literally-named-but-wrong source, same
+  "verify before trusting the brief" discipline this doc has established
+  repeatedly (Task 15's predictions_snapshot catch, Phase 3's Data Sources
+  fact-check).
+- Notification bell: added an unread-count badge, reusing the SAME
+  `getInboxPage()`/`InboxAlert` data `WatchlistAlertsCard` already reads
+  (B4's 5 triggers) — no new endpoint. No dedicated unread-count route
+  exists on the backend, so the badge counts unread within the first page
+  (size 20) rather than a true all-time total; flagged as an
+  approximation, not exact.
+- User avatar/profile menu: new `components/layout/UserMenu.tsx` —
+  "AC"-style initials computed from the real `AuthUser.name`/`.email`
+  (mutations.ts), dropdown with Account/Watchlist/Upgrade-or-Manage-plan/
+  Log out, all real existing routes and the real `useAuth().logout()`.
+  Replaced the old plain tier-chip in `MarketRibbon.tsx`.
+- Market status strip and the persistent RedixFi AI button: untouched,
+  confirmed via diff.
+
+**2. Sidebar — nav reorder + tagline:**
+- Desktop `Sidebar.tsx` now renders Home / Signals / Intraday / Research /
+  Alerts / Watchlist / AI Assistant / More in the main nav, in that order.
+  Watchlist moved up from its old separate section-below-nav Link block
+  (deleted, not duplicated). Alerts links to the real
+  `account/alerts/page.tsx` (threshold-alert creation/management,
+  2026-08-11 addition) — not a new route.
+- "AI Assistant" is NOT a page (none exists, and the locked design
+  decision is ONE persistent AI entry point, not a page) — it's a second
+  trigger into the SAME AskRedixFi panel already living in the header.
+  New `lib/ask-panel/AskPanelContext.tsx` lifts that panel's open/close
+  state out of `AskRedixFi.tsx` into a small shared context (provided in
+  root `layout.tsx`, alongside `AuthProvider`) so both the header button
+  and this sidebar item open the identical panel instance — not a second
+  chat UI. FLAGGED DEVIATION: the master context's locked pattern says the
+  AI button "lives ONLY in the top ribbon" (a prior floating-bubble was
+  removed as redundant) — this adds a second click target, but into the
+  same panel, not a duplicate floating UI; implemented because explicitly
+  named in this session's instructions, called out here for founder
+  awareness rather than silently overriding the earlier decision.
+- Mobile `BottomNav` deliberately UNCHANGED — still the original 5-item
+  list (Home/Signals/Intraday/Research/More). Fitting 8 items in a mobile
+  bottom bar is its own redesign, out of this session's desktop-only scope
+  (`NAV_ITEMS` kept separate from the new `SIDEBAR_LINK_ITEMS`, not shared
+  anymore).
+- Tagline "Read the market. Understand it." added under the RedixFi
+  wordmark in the sidebar header block (logo mark + wordmark untouched).
+- Subscription card + data status card at the sidebar bottom: confirmed
+  untouched (diff shows no changes to that block).
+
+**3. Content width:** `page.tsx`'s outer container changed from
+`mx-auto max-w-6xl` (centered, capped at 1152px — left a large unused gap
+on wide desktop viewports between the sidebar and the real content) to
+`w-full max-w-[1800px]` (fills the available width up to the sidebar on
+one side and the viewport edge on the other, with a generous cap kept only
+for ultra-wide-monitor readability). The 3-column grid rows themselves are
+unchanged, per the explicit "don't restructure the grid" instruction.
+
+**7. Watchlist Alerts clickable items:** `WatchlistAlertsCard.tsx` items
+were NOT clickable before this session — confirmed by reading the code,
+not assumed. Added `Link` to `/signals/{symbol}` for the 3 trigger types
+that carry a real symbol (signal_delta, news_watchlist, behavior_state —
+confirmed against the real stored doc shape in
+`C:\Redixfi\api\app\core\users_repo.py::push_inbox_alert`); daily_brief/
+news_market alerts have no single relevant stock (`symbol: null` on the
+real doc) and render as plain non-clickable rows, unchanged — not
+fabricating a link target that doesn't correspond to real data. Added
+`symbol?: string | null` to the `InboxAlert` type (was previously only
+reachable via the untyped index signature) since this is a real,
+now-confirmed field. `/account/inbox`'s own list has the identical
+non-clickable gap — NOT fixed this session (out of the literal
+"Watchlist Alerts card" scope), flagged here for a future session.
+
+**Build/compliance result:** `npx tsc --noEmit` clean (exit 0). `npm run
+build` clean: compliance sweep 0 new errors (14 warnings, all pre-existing
+negated-word false positives except 2 new ones on this session's own
+comments using the word "call" in a non-forbidden sense — same
+false-positive class as 12 of the pre-existing 13, not suppressed, left as
+the compliance script's own accepted noise), 0 auth-fetch violations,
+`next build` exit 0, all 29 routes generated.
+
+**OPEN / carry forward:**
+- Per the standing rule, this note lives in `redixfi-web/docs/` only — not
+  yet pasted into the canonical `C:\Redixfi\api\docs\00_MASTER_CONTEXT.md`
+  copy.
+- No live/browser verification of the new header search dropdown, unread
+  badge, avatar menu, or sidebar reorder — sandbox has no browser, same
+  standing constraint as every prior session. **FOUNDER: please click
+  through the new header search, notification badge (with an account that
+  has unread alerts), avatar dropdown, and the reordered sidebar
+  (including the AI Assistant nav item opening the same panel) live
+  post-deploy.**
+- The "AI Assistant" sidebar entry point is a flagged deviation from the
+  locked "single entry point" design note above — founder should confirm
+  this is wanted, not just accepted by default.
+- Notification badge count is an approximation (first 20 inbox items, not
+  a true total) — would need a real backend unread-count endpoint for
+  exactness; not built here (no new API endpoints, per standing rules).
