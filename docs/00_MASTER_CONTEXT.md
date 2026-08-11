@@ -2524,3 +2524,98 @@ auth-fetch violations, `next build` exit 0, all 29 routes generated.
   session's explicit, documented finding (one scrollable table, no
   stacked-card view, by design) — this task's brief assumed otherwise;
   flagged, not silently overridden.
+
+## Completion note — Session 8: Concalls polish + app-wide rough-edge pass (2026-08-11)
+FRONTEND ONLY, 3 files: `research/ResearchDetail.tsx`, new
+`research/ConcallSummary.tsx`, `watchlist/WatchlistMainView.tsx`. No
+backend/API files touched, no data fetching/attribution text/link
+behavior/masking logic changed (confirmed via `git status` + diff review).
+
+**Part A (Concalls section, all 5 items):**
+- A1: new `ConcallSummary.tsx` — a `useState` toggle (native `<details>`
+  ruled out per the task's own reasoning, same one that applied to
+  AiDailyBriefCard's earlier fix: `<summary>` can't be moved to the
+  bottom). Collapsed to `line-clamp-3` by default with "Show more →";
+  expanded shows the full text with "Show less ↑" directly after it (same
+  relative position = bottom of whatever's currently shown). Split into
+  its own file because `ResearchDetail.tsx` is a Server Component (no
+  `"use client"`) — `useState` can't live there directly, same reason
+  `Collapsible` is already its own client leaf. Only renders a toggle at
+  all when the summary is long enough (>220 chars) to actually be
+  truncated — avoids a "Show more" that reveals nothing.
+- A2: tone badge — real values confirmed via `ConcallTranscript.tone_label`
+  (types.ts): exactly Positive/Neutral/Negative/Mixed, no "Cautious"
+  value exists on the type (the task mentioned "Cautious" as an example;
+  real data doesn't have it). Mapped Positive→up(green)/Negative→
+  down(red)/Mixed+Neutral→amber via the existing `Chip` component (same
+  one Event Risk Today's severity badges use) — moved after the filing-
+  type chip, before the date; "Tone (this document):" prefix dropped.
+- A3: "View source filing →" now reuses the EXACT className
+  `ResearchExportButton` already uses in this same page's action row
+  (`rounded-lg border border-border bg-hover ...`) — same href/target/rel,
+  visual-only change.
+- A4: attribution line moved one rung up the app's existing muted-text
+  ladder (`text-foreground-faint` → `text-foreground-muted`) — text
+  content byte-for-byte unchanged.
+- A5: both `formatShortDate` (year-less) calls in this section switched to
+  `formatDateIst` (year-inclusive) — confirmed real gap via `grep`, same
+  fix already applied to insider trades / "What's coming up?" in a prior
+  session. `formatShortDate` import removed from `ResearchDetail.tsx`
+  (zero remaining callers in that file after the switch).
+
+**Part B (read-through of Alerts/Watchlist/Account):**
+- Alerts (`account/alerts/page.tsx` → `AlertRulesSection.tsx`): confirmed
+  fully working, no fix needed — `AlertCreateButton` renders and creates
+  real rules, the management list shows Pause/Resume + Delete per rule,
+  and the "N of M used" cap messaging (header badge + a full "Upgrade to
+  Pro" banner at cap) both render from real `getAlertRules()` data. The
+  page's `<h1>Account</h1>` (not "Alerts") is confirmed the SAME
+  deliberate pattern all 4 `/account/*` sub-pages share (verified via
+  `grep` across all of them) — not a bug, `AccountTabs` is the actual
+  per-tab differentiator.
+- Watchlist (`WatchlistMainView.tsx`): ⚠️ REAL GAP FOUND AND FIXED — the
+  table showed Symbol/Industry/Score/Behavior but was missing Price and
+  Delivery entirely, despite both already being present on the SAME
+  per-symbol signal-detail fetch this view already makes (`last_price`/
+  `day_change_pct` — confirmed "never masked when locked" per that type's
+  own comment — and `signals.delivery_pct`/`.delivery_avg20`, masked in
+  lockstep with the rest of `signals` same as Score already is). Added
+  both as 2 new columns, same `DeltaValue`/stacked-cell visual pattern
+  the Signals table itself uses — no new fetch, no new endpoint.
+- Account (`account/page.tsx` → `SubscriptionStatusCard.tsx`): plan tier,
+  subscription status, and renewal date all confirmed real and rendering
+  correctly (`profile.subscription.plan/.status/.renews`). ⚠️ REPORTED,
+  NOT BUILT: "AI questions used today" usage stat does not exist ANYWHERE
+  in the frontend today — confirmed via grep across every component;
+  `AskLimitDetail` (the only usage-count shape that exists) is a 429-
+  error-only value inside `AskRedixFi.tsx`'s own panel, never a standing
+  GET-able field. `MeProfile` (from `GET /me`) has no such field either.
+  Building a persistent stat would need either a new backend endpoint
+  (this task explicitly forbids new endpoints) or piggybacking on a fetch
+  that doesn't carry this data today — a genuine backend-scope decision,
+  not a small frontend fix, so reported per the task's own explicit
+  instruction rather than silently built or skipped without a note.
+
+**Build result:** `npx tsc --noEmit` clean (exit 0). `npm run build`
+clean: compliance sweep 0 errors (15 warnings, all pre-existing negated-
+word false positives — 2 NEW hits this session on this session's own
+comments, both reworded not suppressed: `ResearchDetail.tsx`'s "new API
+call" → "new backend request", `WatchlistMainView.tsx`'s literal
+`getSignalDetail()` text in a comment tripped the auth-fetch guard's
+naive text match, reworded to prose), 0 auth-fetch violations, `next
+build` exit 0, all 29 routes generated, unchanged route list.
+
+**OPEN:**
+- No live/browser verification — sandbox has no browser, standing
+  constraint. **FOUNDER: please confirm live on ABB (has real concall
+  data per the task): Show more/less toggle behavior, the Positive tone
+  badge color, and "View source filing" as a button with a working link.
+  Also confirm the Watchlist page's new Price/Delivery columns render
+  correctly for a real watchlist.**
+- Account page's "AI questions used today" gap — needs a founder/backend
+  decision (see above), not decided or built here.
+- Minor, NOT flagged as broken (so not touched): `SubscriptionStatusCard`
+  still uses year-less `formatShortDate` for the renewal date — same
+  class of gap as A5 above, but out of this session's explicit scope
+  (Part A named only the concalls section); noting it here in case a
+  future session wants to sweep the rest of the app for the same pattern.

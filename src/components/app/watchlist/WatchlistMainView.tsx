@@ -22,6 +22,15 @@ interface WatchlistRow {
   symbol: string;
   company_name: string | null;
   industry: string | null;
+  // Price polish (2026-08-11): last_price/day_change_pct are NEVER masked
+  // by tier (types.ts's own comment on SignalDetail — "never masked when
+  // locked"), same as delivery below is masked in lockstep with the rest
+  // of `signals` — both already came back on the same per-symbol signal
+  // detail fetch this view already makes below, just weren't rendered.
+  last_price: number | null;
+  day_change_pct: number | null;
+  delivery_pct: number | null;
+  delivery_avg20: number | null;
   composite_score: number | null;
   delta_1d: number | null;
   locked: boolean;
@@ -97,6 +106,10 @@ export function WatchlistMainView() {
           symbol: sym,
           company_name: detail?.company_name ?? null,
           industry: detail?.industry ?? null,
+          last_price: detail?.last_price ?? null,
+          day_change_pct: detail?.day_change_pct ?? null,
+          delivery_pct: detail?.locked ? null : detail?.signals.delivery_pct ?? null,
+          delivery_avg20: detail?.locked ? null : detail?.signals.delivery_avg20 ?? null,
           composite_score: detail?.locked ? null : detail?.composite_score ?? null,
           delta_1d: detail?.locked ? null : detail?.delta_1d ?? null,
           locked: detail?.locked ?? false,
@@ -198,7 +211,9 @@ export function WatchlistMainView() {
               <tr className="border-b border-border text-left font-mono text-[10px] uppercase tracking-wider text-foreground-faint">
                 <th className="px-4 py-3">Symbol</th>
                 <th className="hidden px-3 py-3 sm:table-cell">Industry</th>
+                <th className="px-3 py-3">Price</th>
                 <th className="px-3 py-3">Score</th>
+                <th className="hidden px-3 py-3 sm:table-cell">Delivery</th>
                 <th className="px-3 py-3">Behavior</th>
                 <th className="px-4 py-3" />
               </tr>
@@ -206,13 +221,13 @@ export function WatchlistMainView() {
             <tbody>
               {symbols === null || rowsLoading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-sm text-foreground-muted">
+                  <td colSpan={7} className="px-4 py-6 text-center text-sm text-foreground-muted">
                     Loading…
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-sm text-foreground-muted">
+                  <td colSpan={7} className="px-4 py-6 text-center text-sm text-foreground-muted">
                     No stocks yet.{" "}
                     <Link href="/signals" className="font-medium text-accent">
                       Browse the Signal Dashboard
@@ -233,6 +248,16 @@ export function WatchlistMainView() {
                       </td>
                       <td className="hidden px-3 py-3 text-xs text-foreground-muted sm:table-cell">{r.industry ?? "—"}</td>
                       <td className="px-3 py-3">
+                        {r.last_price === null ? (
+                          <span className="text-xs text-foreground-faint">—</span>
+                        ) : (
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono font-semibold">₹{r.last_price.toLocaleString("en-IN")}</span>
+                            {r.day_change_pct !== null && <DeltaValue value={r.day_change_pct} kind="pct" className="text-[11px]" />}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-3">
                         {r.locked ? (
                           <span className="text-xs text-foreground-faint">Locked</span>
                         ) : r.composite_score === null ? (
@@ -241,6 +266,18 @@ export function WatchlistMainView() {
                           <div className="flex items-center gap-1.5">
                             <span className="font-mono font-semibold">{r.composite_score}</span>
                             {r.delta_1d !== null && <DeltaValue value={r.delta_1d} className="text-[11px]" />}
+                          </div>
+                        )}
+                      </td>
+                      <td className="hidden px-3 py-3 sm:table-cell">
+                        {r.locked ? (
+                          <span className="text-xs text-foreground-faint">Locked</span>
+                        ) : r.delivery_pct === null ? (
+                          <span className="text-xs text-foreground-faint">—</span>
+                        ) : (
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="font-mono font-semibold">{r.delivery_pct}%</span>
+                            {r.delivery_avg20 !== null && <span className="text-[11px] text-foreground-faint">avg {r.delivery_avg20}%</span>}
                           </div>
                         )}
                       </td>

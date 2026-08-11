@@ -7,6 +7,7 @@ import { DeltaValue } from "@/components/ui/DeltaValue";
 import { Sparkline } from "@/components/ui/Sparkline";
 import { GenericRecordTable } from "@/components/ui/GenericRecordTable";
 import { Collapsible } from "@/components/ui/Collapsible";
+import { Chip } from "@/components/ui/Chip";
 import { NewsList } from "@/components/app/NewsList";
 import { RecordView } from "@/components/app/RecordView";
 import { FundamentalsPanels } from "@/components/app/research/FundamentalsPanels";
@@ -16,7 +17,20 @@ import { AlertCreateButton } from "@/components/app/alerts/AlertCreateButton";
 import { CompareIndicator } from "@/components/app/CompareIndicator";
 import { WatchlistButton } from "@/components/app/WatchlistButton";
 import { CurrentSymbolSync } from "@/components/app/CurrentSymbolSync";
-import { formatShortDate, formatDateIst } from "@/lib/format";
+import { ConcallSummary } from "@/components/app/research/ConcallSummary";
+import { formatDateIst } from "@/lib/format";
+
+// Concall tone -> the app's existing semantic color tones (Chip component),
+// same palette Event Risk Today's severity badges use. Real values per
+// ConcallTranscript.tone_label (types.ts) are exactly Positive/Neutral/
+// Negative/Mixed — no "Cautious"/"Unknown" value exists on the type, but a
+// defensive fallback (no badge) is kept per the task's own spec anyway.
+const TONE_CHIP_TONE: Record<string, "up" | "down" | "amber"> = {
+  Positive: "up",
+  Negative: "down",
+  Mixed: "amber",
+  Neutral: "amber",
+};
 
 /**
  * Task 14 — pure presentational component: every prop here is already
@@ -240,27 +254,41 @@ export function ResearchDetail({
               {data.concall_transcripts.map((c, i) => (
                 <div key={i} className={i > 0 ? "border-t border-border pt-4" : ""}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
+                    {/* A2: tone badge moved right after the filing-type
+                        chip, before the date; "Tone (this document):"
+                        prefix dropped — the badge label IS the tone now. */}
                     <div className="flex flex-wrap items-center gap-2 text-xs">
                       <span className="rounded-full bg-neutral-bg px-2 py-0.5 font-semibold uppercase tracking-wide text-foreground-muted">
                         {c.subject === "EARNINGS_CALL_TRANSCRIPT" ? "Concall transcript" : "Investor presentation"}
                       </span>
-                      <span className="text-foreground-faint">{formatShortDate(c.filing_date)}</span>
-                      <span className="text-foreground-faint">· Tone (this document): {c.tone_label}</span>
+                      {TONE_CHIP_TONE[c.tone_label] && <Chip tone={TONE_CHIP_TONE[c.tone_label]}>{c.tone_label}</Chip>}
+                      {/* A5: formatDateIst (year-inclusive) — was formatShortDate
+                          (year-less), same fix already applied to insider
+                          trades / "What's coming up?" in a prior session. */}
+                      <span className="text-foreground-faint">{formatDateIst(c.filing_date)}</span>
                     </div>
+                    {/* A3: secondary-button treatment, reusing the EXACT
+                        className ResearchExportButton already uses in this
+                        same page's action row — same href/target/rel. */}
                     <a
                       href={c.source_pdf_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="shrink-0 text-sm font-medium text-accent"
+                      className="flex shrink-0 items-center gap-1 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs font-medium text-foreground-muted hover:text-foreground"
                     >
                       View source filing →
                     </a>
                   </div>
-                  <p className="mt-2 text-sm leading-relaxed">{c.summary}</p>
+                  {/* A1: collapsed-by-default summary with a Show more/less
+                      toggle — client leaf, see ConcallSummary.tsx. */}
+                  <ConcallSummary summary={c.summary} />
                   <p className="mt-1 text-sm text-foreground-muted">{c.tone_note}</p>
-                  <p className="mt-2 text-xs text-foreground-faint">
+                  {/* A4: one tier up the app's existing muted-text ladder
+                      (foreground-faint -> foreground-muted) — still clearly
+                      secondary, slightly more readable. Text unchanged. */}
+                  <p className="mt-2 text-xs text-foreground-muted">
                     Sourced from an exchange-filed {c.subject === "EARNINGS_CALL_TRANSCRIPT" ? "transcript" : "presentation"}, dated{" "}
-                    {formatShortDate(c.filing_date)}. Summary is RedixFi-generated and distinct from investment advice.
+                    {formatDateIst(c.filing_date)}. Summary is RedixFi-generated and distinct from investment advice.
                   </p>
                 </div>
               ))}
