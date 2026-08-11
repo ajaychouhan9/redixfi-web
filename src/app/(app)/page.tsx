@@ -6,6 +6,7 @@ import { EventRiskCard } from "@/components/app/EventRiskCard";
 import { IntradayNowCard } from "@/components/app/IntradayNowCard";
 import { ContinueResearchCard } from "@/components/app/ContinueResearchCard";
 import { AnomalyCard } from "@/components/app/AnomalyCard";
+import { WatchlistAlertsCard } from "@/components/app/WatchlistAlertsCard";
 import { VisitorIntroStrip } from "@/components/app/VisitorIntroStrip";
 import { HomePricingSection } from "@/components/app/HomePricingSection";
 
@@ -40,31 +41,46 @@ export default async function HomePage() {
   const plans = plansR.status === "fulfilled" ? plansR.value.data : [];
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <div className="mx-auto max-w-6xl space-y-5">
       {/* Server-rendered for every visitor by default (no session cookie in
           this app to branch on — see VisitorIntroStrip's own docstring for
           why that's the correct, non-cloaking default). Hides itself
           client-side once a REAL logged-in token resolves. */}
       <VisitorIntroStrip />
 
-      {/* Founder decision: AI Daily Brief is the strongest differentiator —
-          moved to the top, above Market Pulse, so it's the first thing
-          users see. */}
-      <AiDailyBriefCard brief={brief} />
-
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-5">
-        <div className="md:col-span-2">
-          <MarketPulseCard overview={overview} />
+      {/* Row 1 — AI Daily Brief (wider) + Market Pulse. Founder decision:
+          the Brief is the strongest differentiator, so it leads. 1 column
+          mobile, even 2-up tablet, 60/40 desktop. */}
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-5">
+        <div className="lg:col-span-3">
+          <AiDailyBriefCard brief={brief} />
         </div>
-        <div className="md:col-span-3">
-          <TopSignalChangesCard movers={movers} />
+        <div className="lg:col-span-2">
+          <MarketPulseCard overview={overview} />
         </div>
       </div>
 
-      <AnomalyCard results={anomalies?.data ?? []} scan={anomalies?.page_info.scan ?? null} />
-      <EventRiskCard newsToday={overview?.news_today ?? null} initialItems={newsItems} />
-      <IntradayNowCard session={session} />
-      <ContinueResearchCard />
+      {/* Row 2 — Top Signal Changes / Unusual Activity / Event Risk, 3-across
+          desktop, 2-up tablet, 1 column mobile. Unusual Activity is the
+          compact (tiles + counts only, no expanded stock lists) variant —
+          the full per-stock breakdown lives on /unusual-activity. */}
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <TopSignalChangesCard movers={movers} />
+        <AnomalyCard compact results={anomalies?.data ?? []} scan={anomalies?.page_info.scan ?? null} />
+        <EventRiskCard newsToday={overview?.news_today ?? null} initialItems={newsItems} />
+      </div>
+
+      {/* Row 3 — Intraday / Continue Research / Watchlist Alerts, same
+          3-across/2-up/1-col responsive pattern. The latter two are
+          client components that render nothing when there's no real data
+          (no recently-viewed stocks, no logged-in user, no alerts) — the
+          grid reflows naturally around whichever of the three are present. */}
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <IntradayNowCard session={session} />
+        <ContinueResearchCard />
+        <WatchlistAlertsCard />
+      </div>
+
       <HomePricingSection plans={plans} />
     </div>
   );

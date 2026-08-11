@@ -18,6 +18,13 @@ import type { AnomalyFlagDoc, AnomalyScanMeta, AnomalyType, AnomalyDirection } f
  * "Volume/Options/Insider/Price Action" layout was assumed in the task brief
  * but isn't backed by real data, so this renders 3 tiles only rather than
  * inventing a category with a permanently-zero count.
+ *
+ * `compact` (Home page): counts-only tiles, no nested per-stock symbol
+ * lists, with a "View all unusual activity" link to the dedicated
+ * /unusual-activity page instead of the tile lists themselves. Full mode
+ * (the /unusual-activity page itself) renders the same tiles WITH the
+ * nested direction-split symbol lists — same data, same component, just
+ * more of it, so the two views can never drift out of sync with each other.
  */
 
 const DIRECTION_LABEL: Record<string, string> = {
@@ -56,19 +63,27 @@ function AnomalyGroup({ label, rows }: { label: string; rows: AnomalyFlagDoc[] }
   );
 }
 
-function CategoryTile({ label, count, children }: { label: string; count: number; children: ReactNode }) {
+function CategoryTile({ label, count, children }: { label: string; count: number; children?: ReactNode }) {
   if (count === 0) return null;
   return (
-    <div className="min-w-[240px] flex-1 rounded-lg border border-border bg-surface-raised p-3">
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-faint">
+    <div className="min-w-[180px] flex-1 rounded-lg border border-border bg-surface-raised p-3">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-foreground-faint">
         {label} <span className="text-foreground">({count} {count === 1 ? "stock" : "stocks"})</span>
       </h3>
-      <div className="flex flex-wrap gap-4">{children}</div>
+      {children && <div className="mt-2 flex flex-wrap gap-4">{children}</div>}
     </div>
   );
 }
 
-export function AnomalyCard({ results, scan }: { results: AnomalyFlagDoc[]; scan: AnomalyScanMeta | null }) {
+export function AnomalyCard({
+  results,
+  scan,
+  compact = false,
+}: {
+  results: AnomalyFlagDoc[];
+  scan: AnomalyScanMeta | null;
+  compact?: boolean;
+}) {
   if (!scan) {
     return (
       <Card title="Unusual activity today">
@@ -77,7 +92,8 @@ export function AnomalyCard({ results, scan }: { results: AnomalyFlagDoc[]; scan
     );
   }
 
-  // Bucket by (type, direction) for the symbol lists shown inside each tile.
+  // Bucket by (type, direction) for the symbol lists shown inside each tile
+  // (full mode only — compact mode never reads `buckets`).
   const buckets = new Map<string, AnomalyFlagDoc[]>();
   // Distinct stock count per category, regardless of direction, for the tile header.
   const categoryStocks = new Map<AnomalyType, Set<string>>();
@@ -115,17 +131,23 @@ export function AnomalyCard({ results, scan }: { results: AnomalyFlagDoc[]; scan
       <div className="flex flex-wrap gap-3">
         {CATEGORY_META.map(({ type, label, directions }) => (
           <CategoryTile key={type} label={label} count={categoryStocks.get(type)?.size ?? 0}>
-            {directions.map((direction) => (
-              <AnomalyGroup
-                key={`${type}:${direction}`}
-                label={DIRECTION_LABEL[direction] ?? direction}
-                rows={buckets.get(`${type}:${direction}`) ?? []}
-              />
-            ))}
+            {!compact &&
+              directions.map((direction) => (
+                <AnomalyGroup
+                  key={`${type}:${direction}`}
+                  label={DIRECTION_LABEL[direction] ?? direction}
+                  rows={buckets.get(`${type}:${direction}`) ?? []}
+                />
+              ))}
           </CategoryTile>
         ))}
         {results.length === 0 && <p className="text-sm text-foreground-faint">Nothing crossed the threshold today.</p>}
       </div>
+      {compact && results.length > 0 && (
+        <Link href="/unusual-activity" className="mt-3 flex items-center gap-0.5 text-xs font-medium text-accent">
+          View all unusual activity <ArrowRight size={12} />
+        </Link>
+      )}
     </Card>
   );
 }

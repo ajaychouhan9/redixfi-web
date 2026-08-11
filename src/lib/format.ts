@@ -53,3 +53,15 @@ export function formatShortDate(iso: string): string {
     new Date(iso)
   );
 }
+
+/**
+ * ₹ amount already expressed in crore. ≥1 Cr rounds to a whole number (no
+ * decimals); sub-crore (lakhs-level) figures keep up to 2 decimal places so
+ * small values don't round away to "0". ₹ first, comma-grouped digits, "Cr"
+ * last — e.g. "₹2,921 Cr" / "₹-2,921 Cr" / "₹0.35 Cr".
+ */
+export function formatCr(value: number | null): string {
+  if (value === null) return "—";
+  const digits = Math.abs(value) >= 1 ? 0 : 2;
+  return `₹${value.toLocaleString("en-IN", { maximumFractionDigits: digits })} Cr`;
+}

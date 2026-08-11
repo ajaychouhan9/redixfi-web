@@ -6,6 +6,20 @@ import clsx from "clsx";
 import { Home, BarChart3, Zap, Search, MoreHorizontal, User, CreditCard, Bookmark } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { LogoMark } from "@/components/brand/LogoMark";
+import type { MarketOverview } from "@/lib/api/types";
+
+// Real tier buckets returned by the backend (src/lib/api/types.ts's
+// AuthUser.tier union) — NOT the specific Razorpay plan IDs PlanCard's
+// PLAN_LABEL maps (basic_249/pro_399/...). "pro"/"founding" are treated as
+// the top tiers (same two values ResearchExportButton/SignalsExplorer's
+// existing paid-feature gates already use) — no further upgrade CTA there.
+const TIER_LABEL: Record<string, string> = {
+  free: "Free",
+  basic: "Basic",
+  pro: "Pro",
+  paid: "Paid",
+  founding: "Founding",
+};
 
 const NAV_ITEMS = [
   { href: "/", label: "Home", icon: Home },
@@ -20,7 +34,15 @@ function isActive(pathname: string, href: string) {
   return pathname.startsWith(href);
 }
 
-export function Sidebar() {
+export function Sidebar({
+  initialOverview = null,
+  initialFresh = true,
+  initialSignalsAsOf = null,
+}: {
+  initialOverview?: MarketOverview | null;
+  initialFresh?: boolean;
+  initialSignalsAsOf?: string | null;
+}) {
   const pathname = usePathname();
   const { user } = useAuth();
 
@@ -87,6 +109,34 @@ export function Sidebar() {
           <CreditCard size={16} strokeWidth={2} />
           Checkout
         </Link>
+      </div>
+      <div className="space-y-2 border-t border-border p-3">
+        {user && (
+          <div className="rounded-lg border border-border bg-surface p-2.5 text-xs">
+            <p className="text-foreground-faint">You are on</p>
+            <div className="mt-0.5 flex items-center justify-between gap-2">
+              <span className="font-semibold uppercase tracking-wide">{TIER_LABEL[user.tier] ?? user.tier} Plan</span>
+              {user.tier !== "pro" && user.tier !== "founding" && (
+                <Link href="/pricing" className="shrink-0 font-medium text-accent">
+                  Upgrade Plan
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+        <div className="rounded-lg border border-border bg-surface p-2.5 text-xs">
+          <div className="flex items-center justify-between gap-2">
+            <span className={initialFresh ? "font-medium text-up" : "font-medium text-amber"}>
+              {initialFresh ? "Live" : "Data delayed"}
+            </span>
+            {initialOverview && (
+              <span className="text-foreground-faint">
+                {initialOverview.market_state === "OPEN" ? "Market open" : initialOverview.market_state === "PRE-OPEN" ? "Pre-open" : "Market closed"}
+              </span>
+            )}
+          </div>
+          {initialSignalsAsOf && <p className="mt-0.5 text-foreground-faint">{initialSignalsAsOf}</p>}
+        </div>
       </div>
     </aside>
   );

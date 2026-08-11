@@ -1871,3 +1871,143 @@ build` compiled successfully, all 27 routes generated incl. new `/icon.svg`.
 - Live authenticated (paid/free tier) rendering and mobile viewport reflow
   for both restructured cards were not visually verified — sandbox has no
   browser, per standing constraint noted in every prior session.
+
+## Completion note — Session 2: Research formatting fixes + Home grid (2026-08-11)
+FRONTEND ONLY (redixfi-web). No backend/API/DB/auth files touched (confirmed
+via `git status` before commit). No real data replaced with mock data; no
+existing functionality removed.
+
+**FIX 1 — Insider trade dates: audited, found ALREADY COMPLIANT, no code
+change made.** There is no separate mobile stacked-card view — insider
+trades render as one `<table>` (`ResearchDetail.tsx:120`) that scrolls
+horizontally on narrow screens, same code path at every breakpoint, so
+"desktop vs mobile inconsistency" isn't structurally possible here. The
+date itself uses the shared `formatShortDate()` (`src/lib/format.ts`),
+which already has no `year` option — verified directly (`node -e`) that it
+outputs exactly "06 Aug" / "30 Mar" for real date strings, matching the
+required format 1:1. Did not touch it. Widened the search for a plausible
+real source of the reported "inconsistent, sometimes full year" complaint:
+`GenericRecordTable` (used for Bulk/Block Deals and Corporate Events,
+sitting in the same "Smart money" card as Insider Trades) renders
+`Record<string, unknown>` fields raw/unformatted — genuinely inconsistent
+if either contains a date column — but its own docstring says the live
+shape is unverified/never-seen-populated, so guessing a field name there
+and reformatting it would be exactly the kind of unverified assumption
+these sessions are supposed to avoid. Left untouched, flagged below.
+
+**FIX 2 — Cr formatting: REAL bug, confirmed, fixed at the root.**
+Reproduced the exact reported string: `RawRow`'s 3 cash-flow rows
+(`FundamentalsPanels.tsx` — operating cash flow/capex/FCF) passed
+`unit="₹Cr"`, concatenated as `${unit}${value}` — for a negative value like
+-2921.06 this literally produces "₹Cr-2,921.06", the exact bug reported.
+The OTHER Cr renderer in the same file (a private `fmtCr()`, used for
+Revenue/PAT) was independently correct on placement but didn't apply the
+≥1-vs-<1 magnitude-based decimal rule. Root cause: **two independent,
+undeduplicated Cr-formatting code paths in one file**, not one shared
+formatter with one bug. Fixed by centralizing: added `formatCr()` to
+`src/lib/format.ts` (₹ first, en-IN comma grouping, 0 decimals for
+|value|≥1, up to 2 decimals below that, "Cr" last), deleted the local
+`fmtCr()`, switched all 3 of its call sites (`Stat` revenue, Annual-table
+Revenue/PAT columns) to the shared function, and gave `RawRow` an optional
+`format?: (v) => string` override (used only by the 3 cash-flow rows) so
+they go through the same formatter instead of the broken unit-prefix
+concatenation. Verified: `formatCr(2921.06)` → "₹2,921 Cr",
+`formatCr(-2921.06)` → "₹-2,921 Cr" (was "₹Cr-2,921.06"), `formatCr(0.35)`
+→ "₹0.35 Cr". "Shares outstanding (Cr)" row and "Book value/share"
+(`unit="₹"`) were left untouched — neither is the reported bug (one isn't
+a ₹ value at all, "Cr" is baked into its label; the other has no reported
+issue) and touching them wasn't asked for.
+
+**FIX 3 — Home page 3-column grid + compact Unusual Activity + sidebar
+cards.**
+- Widened Home's outer container from `max-w-3xl` to `max-w-6xl` (a
+  single-column `max-w-3xl` stack cannot host a real 3-column layout) and
+  rebuilt it as 3 explicit `grid-cols-1 md:grid-cols-2 lg:grid-cols-{3,5}`
+  rows: Row 1 = AiDailyBriefCard (`lg:col-span-3`, ~60%) + MarketPulseCard
+  (`lg:col-span-2`, ~40%); Row 2 = TopSignalChangesCard / AnomalyCard
+  (compact) / EventRiskCard, 3-across; Row 3 = IntradayNowCard /
+  ContinueResearchCard / WatchlistAlertsCard (new), 3-across. `md`
+  (768-1023px) naturally collapses each row to 2-up via CSS grid
+  auto-placement (no extra markup needed); `<768px` is 1 column. Previous
+  session's row ordering (Pulse before TopSignalChanges) is preserved in
+  spirit — only the container/grid changed, not which cards exist.
+  ⚠️ DEVIATION FROM THE LITERAL BRIEF: Row 1 was described as "Brief |
+  Pulse" 60/40 — confirmed via a fresh read of `page.tsx` that the ACTUAL
+  pre-existing pairing (from the prior UI-reframe session, a founder
+  decision recorded in this doc) already put Brief above the fold as a
+  full-width card, with Pulse+TopSignalChanges as the existing 40/60 pair.
+  This session's grid literally implements the brief's requested Row 1
+  pairing (Brief+Pulse) since that's what was explicitly asked for; this
+  changes which two cards share Row 1 versus what existed immediately
+  before this session — flagged as an intentional, requested layout change,
+  not an accidental side effect.
+- `AnomalyCard` gained a `compact` prop (default `false`): compact mode
+  renders the same 3 real category tiles with real counts but omits the
+  nested per-direction stock lists, plus a "View all unusual activity →"
+  link. Full mode (unchanged) still has the lists. Home now passes
+  `compact`. New page `src/app/(app)/unusual-activity/page.tsx` (SSR,
+  `getAnomalies({ size: 200 })`, same endpoint Home uses) renders the full
+  (non-compact) card as the "dedicated page" the compact tiles link to —
+  didn't exist before this session; a real, data-backed page, not a stub.
+  Still exactly 3 tiles (Volume Breakout/Options Activity/Insider
+  Activity) — re-confirmed this session, "Price Action" still has no
+  backing `AnomalyType` value (see prior session's note, unchanged).
+- New `src/components/app/WatchlistAlertsCard.tsx` for Row 3's third slot
+  (didn't exist before — flagged as a gap in the prior session's audit).
+  Reuses `getInboxPage()`/`InboxAlert` — the SAME real inbox
+  `alert_worker.py` (B4's 5 triggers) already writes to and
+  `/account/inbox` already renders — capped to 3 items, "View all" links
+  to `/account/inbox`. Client component (needs the user's token via
+  `useAuth()`, same reason `ContinueResearchCard` is client-side); renders
+  nothing for anonymous visitors or an empty inbox, matching the existing
+  "hide when there's nothing real" pattern other Home cards already use.
+  No new backend endpoint, no fabricated alert content.
+- Sidebar: confirmed neither a subscription-status card nor a data-status
+  card existed anywhere (only a plain "Account · {tier}" text link and a
+  separate "Checkout" link). Added both as a new footer block below the
+  existing nav-links section: subscription card (only when logged in) —
+  real `user.tier` via `useAuth()`, mapped through a small `TIER_LABEL`
+  (free/basic/pro/paid/founding — these are the REAL tier-bucket values
+  confirmed via grep against `AuthUser.tier`'s type union, not the
+  Razorpay plan IDs PlanCard's separate `PLAN_LABEL` maps), with an
+  "Upgrade Plan" link shown unless tier is already pro/founding. Data
+  status card (always shown) reuses the EXACT SAME `initialOverview`/
+  `initialFresh`/`initialSignalsAsOf` props `layout.tsx` already computes
+  server-side for `MarketRibbon` — Sidebar now receives the same 3 props
+  from `layout.tsx`, zero new fetching. Shows Live/Data delayed,
+  Market open/Pre-open/Market closed (reusing `overview.market_state`),
+  and the `signals_as_of` string verbatim (same convention MarketRibbon
+  already uses — no "As of" re-prefix, since the backend string already
+  reads like "Scores as of 21 Jul close"). DEVIATION: no client-side poll
+  added to Sidebar (MarketRibbon already polls every 60s) — the sidebar
+  cards reflect the freshness as of the last full page load/navigation,
+  not a live re-poll; a deliberate reuse-not-duplicate call, not an
+  oversight. Placement: below the existing Watchlist/Account/Checkout
+  links, as the sidebar's bottom-most block (no visual reference screenshot
+  was available in this sandbox to match an exact pixel position against).
+
+**Build/compliance result:** `npx tsc --noEmit` clean (exit 0). `npm run
+build` clean: compliance sweep 0 new errors (13 pre-existing warnings,
+unrelated; 2 new false-positive hits this session on the words "tips"-style
+negated matches in fresh comments — both reworded, not suppressed), 0
+auth-fetch violations, `next build` exit 0, all 29 routes generated incl.
+new `/unusual-activity`.
+
+**OPEN / carry forward:**
+- Per the standing rule, this note lives in `redixfi-web/docs/` only —
+  not yet pasted into the canonical `C:\Redixfi\api\docs\00_MASTER_CONTEXT.md`
+  copy (different repo, frontend-only session).
+- `GenericRecordTable`'s raw/unformatted date rendering (Bulk/Block Deals,
+  Corporate Events) is a plausible real source of date-format
+  inconsistency on the Research page, but its underlying field shape has
+  never been confirmed live (rows reportedly empty in every sampled
+  symbol per its own docstring) — needs a live-data check before anyone
+  touches its formatting; NOT fixed this session, flagged not guessed.
+- No visual/browser verification of the new grid at the 3 requested
+  breakpoints, or of the sidebar cards' real rendering — sandbox has no
+  browser, same standing constraint as every prior session. **FOUNDER:
+  please check the Home grid at ~1024px+/768-1023px/<768px and the two new
+  sidebar cards live post-deploy.**
+- "Price Action" anomaly tile still has no real data source (unchanged
+  finding from the prior session) — needs a backend addition, not a
+  frontend one, if the founder wants a literal 4th tile.

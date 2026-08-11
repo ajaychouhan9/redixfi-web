@@ -2,7 +2,7 @@ import { Collapsible } from "@/components/ui/Collapsible";
 import { ExplainTerm } from "@/components/ui/ExplainTerm";
 import { Chip } from "@/components/ui/Chip";
 import { Sparkline } from "@/components/ui/Sparkline";
-import { formatShortDate } from "@/lib/format";
+import { formatShortDate, formatCr } from "@/lib/format";
 import type { FundamentalsBlock, FundamentalsShareholding, PeerRow } from "@/lib/api/types";
 
 // Factual, symmetric labels only — no "good"/"bad" framing (compliance
@@ -25,10 +25,6 @@ function fmtPct(v: number | null, digits = 1): string {
   if (v === null) return "—";
   const sign = v > 0 ? "+" : "";
   return `${sign}${v.toFixed(digits)}%`;
-}
-
-function fmtCr(v: number | null): string {
-  return v === null ? "—" : `₹${v.toLocaleString("en-IN", { maximumFractionDigits: 0 })} Cr`;
 }
 
 /**
@@ -86,7 +82,7 @@ export function FundamentalsPanels({
         ) : (
           <div className="space-y-3 text-sm">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Stat label="Revenue (latest Q)" value={quarterly.revenue !== null ? fmtCr(quarterly.revenue) : "—"} />
+              <Stat label="Revenue (latest Q)" value={quarterly.revenue !== null ? formatCr(quarterly.revenue) : "—"} />
               <Stat
                 label="Revenue YoY"
                 value={
@@ -325,9 +321,9 @@ export function FundamentalsPanels({
           <div>
             <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground-faint">Cash flow (latest filed)</p>
             <dl className="space-y-1">
-              <RawRow label="Operating cash flow" value={fundamentals.cashflow.ocf_latest} unit="₹Cr" />
-              <RawRow label="Capital expenditure" value={fundamentals.cashflow.capex_latest} unit="₹Cr" />
-              <RawRow label="Free cash flow" value={fundamentals.cashflow.fcf_latest} unit="₹Cr" />
+              <RawRow label="Operating cash flow" value={fundamentals.cashflow.ocf_latest} format={formatCr} />
+              <RawRow label="Capital expenditure" value={fundamentals.cashflow.capex_latest} format={formatCr} />
+              <RawRow label="Free cash flow" value={fundamentals.cashflow.fcf_latest} format={formatCr} />
               <RawRow label="FCF-positive years (last 5)" value={fundamentals.cashflow.fcf_positive_years_5} />
             </dl>
           </div>
@@ -349,8 +345,8 @@ export function FundamentalsPanels({
                     {fundamentals.annual.series_5y.map((y, i) => (
                       <tr key={i} className="border-t border-border">
                         <td className="py-1 pr-3">{y.fiscal_year}</td>
-                        <td className="py-1 pr-3">{fmtCr(y.revenue)}</td>
-                        <td className="py-1 pr-3">{fmtCr(y.pat)}</td>
+                        <td className="py-1 pr-3">{formatCr(y.revenue)}</td>
+                        <td className="py-1 pr-3">{formatCr(y.pat)}</td>
                         <td className="py-1 pr-3">{y.opm_pct !== null ? `${y.opm_pct.toFixed(1)}%` : "—"}</td>
                         <td className="py-1 pr-3">{fmtNum(y.eps, 2)}</td>
                       </tr>
@@ -375,11 +371,24 @@ function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-function RawRow({ label, value, unit }: { label: string; value: number | null; unit?: string }) {
+function RawRow({
+  label,
+  value,
+  unit,
+  format,
+}: {
+  label: string;
+  value: number | null;
+  unit?: string;
+  /** Overrides the default unit-prefixed rendering — use for values that need their own layout rule (e.g. formatCr's ₹-first/Cr-last, magnitude-based decimals). */
+  format?: (v: number) => string;
+}) {
   return (
     <div className="flex justify-between">
       <dt className="text-foreground-muted">{label}</dt>
-      <dd className="tabular-nums">{value === null ? "—" : `${unit ?? ""}${value.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`}</dd>
+      <dd className="tabular-nums">
+        {value === null ? "—" : format ? format(value) : `${unit ?? ""}${value.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`}
+      </dd>
     </div>
   );
 }
