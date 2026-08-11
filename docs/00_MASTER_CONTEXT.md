@@ -2671,3 +2671,82 @@ constraint. **FOUNDER: please confirm live on a stock with concall data
 (e.g. ABB) that the summary and attribution lines now read as clearly
 distinct tiers, and that the separator line + extra gap between cards
 look right, not just technically correct per the token math above.**
+
+## Completion note — Session 10: Concalls primary text + label + font-size audit (2026-08-11)
+FRONTEND ONLY, CSS/text-only, 3 files: `research/ConcallSummary.tsx`,
+`research/ResearchDetail.tsx`, `ui/Card.tsx`. No logic or data changes.
+
+**1. Summary → primary text:** reverted `ConcallSummary.tsx`'s summary
+paragraph from the prior session's `text-foreground-muted` to
+`text-foreground` (this project's real primary/full-strength tier — no
+literal "white" or `text-primary` utility exists, confirmed via grep;
+`--foreground` is `#e8eaf2`, near-white in dark mode). This directly
+supersedes last session's own contrast fix — flagged explicitly in the
+component's docstring so it doesn't read as an accidental revert; the
+contrast problem that fix was solving is now handled by the new label
+(below) instead of by muting the summary itself.
+
+**2. "Key takeaway:" label:** added as a `text-foreground-muted` inline
+`<span>` (same `text-sm` size as the summary, per the task) immediately
+before the summary text, inside the same `<p>` — reads exactly as
+specified: "Key takeaway: Management highlighted...". Applied in both
+branches (short-summary early return and the line-clamped/expandable
+version) so it's present whether or not the Show more/less toggle is
+active.
+
+**3. Font-size audit — actual sizes found, reported as requested:**
+- Summary paragraph (main body text): `text-sm` = 14px. Already AT the
+  task's 14px minimum — no size change needed (color was the issue, see
+  #1 above).
+- Concalls row (filing-type badge / tone chip / date — "secondary text,
+  dates, labels"): was `text-xs` = 12px, below the 13px minimum. FIXED to
+  `text-[13px]` (Tailwind has no named 13px step) on the wrapping div —
+  the filing-type badge and date spans inherit it. ⚠️ The tone `Chip`
+  itself sets its OWN internal `text-xs` (12px) regardless of its
+  parent's size — `Chip` is a shared component used for every badge
+  sitewide (Signals table chips, Home cards, etc.); resizing it globally
+  is out of this session's minimal-footprint scope, so it stays 12px,
+  flagged here rather than silently left unmentioned.
+- "View source filing" button: was `text-xs` = 12px, below 13px. FIXED to
+  `text-[13px]`, same audit as the row above.
+- Attribution/disclaimer line: `text-xs` = 12px. Already exactly at the
+  task's stated floor ("minimum 12px, never smaller") — correct, no
+  change.
+- Section headings — "Concalls & investor presentations" / "Signal
+  summary": both render via the shared `Card` component's title, which
+  was `text-sm` = 14px, below the 15-16px minimum. FIXED via a new
+  optional `titleClassName` prop on `Card` (backward-compatible, default
+  unchanged — every other `Card` usage sitewide, e.g. Home/Signals/
+  Watchlist, keeps its exact current 14px look) — applied `text-base`
+  (16px) to ONLY these 2 named headings rather than changing `Card`'s
+  shared default, which would have rippled across every Card on every
+  page. ⚠️ Two OTHER headings on this same Research page were found at
+  the same 14px ("News timeline" Card, and every `Collapsible` section
+  question in `FundamentalsPanels.tsx`/`ResearchDetail.tsx` — "Is it
+  growing?", "Smart Money & Activity", etc., `text-sm` in
+  `Collapsible.tsx`) — NOT resized, since the task named only "Concalls…"
+  and "Signal summary" specifically; reported here since the task asked
+  to "check font sizes... throughout... the Research page generally."
+
+**Build result:** `npx tsc --noEmit` clean (exit 0). `npm run build`
+clean: compliance sweep 0 errors (same 15 pre-existing warnings, 0 net
+new — 1 new hit on this session's own `Card.tsx` comment using "call" in
+a non-forbidden sense, reworded not suppressed, same handling as every
+prior session), 0 auth-fetch violations, `next build` exit 0, all 29
+routes generated, unchanged route list.
+
+**OPEN:**
+- No live/browser verification — sandbox has no browser, standing
+  constraint. **FOUNDER: please confirm live on a stock with concall
+  data (e.g. ABB): the summary now reads in full-brightness primary
+  text with a "Key takeaway:" label ahead of it, the concalls metadata
+  row/button text is visibly a touch larger, and the two bumped section
+  headings look right at 16px (not oversized relative to the rest of
+  the page).**
+- Two flagged-not-fixed items above (the tone `Chip`'s 12px, and the
+  "News timeline"/`Collapsible` headings' 14px) are real, confirmed
+  sub-minimum sizes per the task's own stated floors — left alone only
+  because they're shared sitewide components / not explicitly named in
+  this task. A future session should decide whether to extend `Chip`
+  and `Collapsible` the same `titleClassName`-style opt-in size override
+  `Card` just got, if the founder wants those bumped too.

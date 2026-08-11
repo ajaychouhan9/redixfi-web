@@ -246,7 +246,12 @@ export function ResearchDetail({
       </ErrorBoundary>
 
       <ErrorBoundary>
-        <Card title="Concalls & investor presentations" action={<AiLabel />}>
+        {/* Font-size audit (2026-08-11): Card's shared default title is
+            text-sm (14px) — below the task's 15-16px minimum for section
+            headings. Bumped ONLY these 2 named headings via the new
+            titleClassName prop rather than changing Card's sitewide
+            default (would ripple across every Card on every page). */}
+        <Card title="Concalls & investor presentations" titleClassName="text-base" action={<AiLabel />}>
           {data.concall_transcripts.length === 0 ? (
             <p className="text-sm text-foreground-muted">No concall transcripts or investor presentations recorded yet.</p>
           ) : (
@@ -260,8 +265,18 @@ export function ResearchDetail({
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     {/* A2: tone badge moved right after the filing-type
                         chip, before the date; "Tone (this document):"
-                        prefix dropped — the badge label IS the tone now. */}
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                        prefix dropped — the badge label IS the tone now.
+                        Font-size audit (2026-08-11): this row was text-xs
+                        (12px) — below the task's 13px "secondary text
+                        (dates, labels)" minimum. Bumped to text-[13px]
+                        (Tailwind has no named 13px step). The tone `Chip`
+                        keeps its own internal text-xs (it sets its own
+                        size regardless of the parent, and is a shared
+                        sitewide component used for every badge across the
+                        app — out of this session's minimal-footprint
+                        scope to resize globally; flagged in the
+                        completion note). */}
+                    <div className="flex flex-wrap items-center gap-2 text-[13px]">
                       <span className="rounded-full bg-neutral-bg px-2 py-0.5 font-semibold uppercase tracking-wide text-foreground-muted">
                         {c.subject === "EARNINGS_CALL_TRANSCRIPT" ? "Concall transcript" : "Investor presentation"}
                       </span>
@@ -273,12 +288,13 @@ export function ResearchDetail({
                     </div>
                     {/* A3: secondary-button treatment, reusing the EXACT
                         className ResearchExportButton already uses in this
-                        same page's action row — same href/target/rel. */}
+                        same page's action row — same href/target/rel.
+                        Font size bumped 12px -> 13px, same audit as above. */}
                     <a
                       href={c.source_pdf_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex shrink-0 items-center gap-1 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs font-medium text-foreground-muted hover:text-foreground"
+                      className="flex shrink-0 items-center gap-1 rounded-lg border border-border bg-hover px-3 py-1.5 text-[13px] font-medium text-foreground-muted hover:text-foreground"
                     >
                       View source filing →
                     </a>
@@ -308,7 +324,7 @@ export function ResearchDetail({
       </ErrorBoundary>
 
       <ErrorBoundary>
-        <Card title="Signal summary" action={data.signal_summary.narrative && <AiLabel />}>
+        <Card title="Signal summary" titleClassName="text-base" action={data.signal_summary.narrative && <AiLabel />}>
           {data.signal_summary.composite_score === null ? (
             <p className="text-sm text-foreground-muted">Signal score not yet computed for this stock.</p>
           ) : (

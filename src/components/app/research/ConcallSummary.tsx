@@ -12,14 +12,15 @@ import clsx from "clsx";
  * content". Client leaf — ResearchDetail.tsx itself stays a Server
  * Component, same reason Collapsible is split out on its own.
  *
- * Contrast fix (2026-08-11): explicit `text-foreground-muted` — this
- * project's real mid-tier text token (foreground > foreground-muted >
- * foreground-faint; no "text-secondary" utility exists anywhere in this
- * codebase, confirmed via grep). Previously unstyled, so it inherited the
- * body's full-strength `text-foreground` — now a real "content line, not
- * a legal disclaimer" tier that's still clearly readable but visually
- * distinct from the attribution line below (foreground-faint, the
- * faintest tier — see ResearchDetail.tsx's own concalls block).
+ * Primary-text fix (2026-08-11, supersedes the prior session's contrast
+ * fix): summary reverted to `text-foreground` (this project's real
+ * primary/full-strength text tier — same one the main body text uses; no
+ * "white"/"text-primary" utility exists, confirmed via grep) per explicit
+ * founder direction that this is key content, not secondary/muted text.
+ * A new "Key takeaway:" label (text-foreground-muted, same text-sm size)
+ * now sits in front of it instead, so the summary/attribution contrast
+ * problem the prior session was fixing is solved by the label boundary
+ * instead of by muting the summary itself.
  */
 export function ConcallSummary({ summary }: { summary: string }) {
   const [expanded, setExpanded] = useState(false);
@@ -28,12 +29,20 @@ export function ConcallSummary({ summary }: { summary: string }) {
   // truncated by line-clamp-3 at this card's typical width — avoids a
   // "Show more" link that would reveal nothing new.
   if (summary.length <= 220) {
-    return <p className="mt-2 text-sm leading-relaxed text-foreground-muted">{summary}</p>;
+    return (
+      <p className="mt-2 text-sm leading-relaxed text-foreground">
+        <span className="font-medium text-foreground-muted">Key takeaway: </span>
+        {summary}
+      </p>
+    );
   }
 
   return (
     <>
-      <p className={clsx("mt-2 text-sm leading-relaxed text-foreground-muted", !expanded && "line-clamp-3")}>{summary}</p>
+      <p className={clsx("mt-2 text-sm leading-relaxed text-foreground", !expanded && "line-clamp-3")}>
+        <span className="font-medium text-foreground-muted">Key takeaway: </span>
+        {summary}
+      </p>
       <button type="button" onClick={() => setExpanded((e) => !e)} className="mt-1 text-sm font-medium text-accent">
         {expanded ? "Show less ↑" : "Show more →"}
       </button>
