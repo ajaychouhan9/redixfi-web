@@ -252,7 +252,11 @@ export function ResearchDetail({
           ) : (
             <div className="space-y-4">
               {data.concall_transcripts.map((c, i) => (
-                <div key={i} className={i > 0 ? "border-t border-border pt-4" : ""}>
+                // Extra `mt-3` on every card after the first (2026-08-11
+                // contrast fix) — widens the gap between the previous
+                // card's attribution line and this card's own top border,
+                // per the task's explicit ask.
+                <div key={i} className={i > 0 ? "mt-3 border-t border-border pt-4" : ""}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     {/* A2: tone badge moved right after the filing-type
                         chip, before the date; "Tone (this document):"
@@ -283,10 +287,16 @@ export function ResearchDetail({
                       toggle — client leaf, see ConcallSummary.tsx. */}
                   <ConcallSummary summary={c.summary} />
                   <p className="mt-1 text-sm text-foreground-muted">{c.tone_note}</p>
-                  {/* A4: one tier up the app's existing muted-text ladder
-                      (foreground-faint -> foreground-muted) — still clearly
-                      secondary, slightly more readable. Text unchanged. */}
-                  <p className="mt-2 text-xs text-foreground-muted">
+                  {/* Contrast fix (2026-08-11): reverted from the prior
+                      session's foreground-muted back to foreground-faint —
+                      this project's real "most muted" text tier (no
+                      "text-muted" utility exists; confirmed via grep) — PLUS
+                      a border-t separator, so this line reads as clearly
+                      distinct from ConcallSummary's now-foreground-muted
+                      text above it instead of blending together. Live
+                      visual feedback overriding the earlier A4 change;
+                      text content still byte-for-byte unchanged. */}
+                  <p className="mt-2 border-t border-border pt-2 text-xs text-foreground-faint">
                     Sourced from an exchange-filed {c.subject === "EARNINGS_CALL_TRANSCRIPT" ? "transcript" : "presentation"}, dated{" "}
                     {formatDateIst(c.filing_date)}. Summary is RedixFi-generated and distinct from investment advice.
                   </p>

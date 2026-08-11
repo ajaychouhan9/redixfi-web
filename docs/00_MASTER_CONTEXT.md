@@ -2619,3 +2619,55 @@ build` exit 0, all 29 routes generated, unchanged route list.
   class of gap as A5 above, but out of this session's explicit scope
   (Part A named only the concalls section); noting it here in case a
   future session wants to sweep the rest of the app for the same pattern.
+
+## Completion note — Session 9: Concalls contrast fix (2026-08-11)
+FRONTEND ONLY, CSS-only, 2 files: `research/ConcallSummary.tsx`,
+`research/ResearchDetail.tsx`. No logic or data changes (confirmed via
+diff — only className additions/changes and 2 explanatory comments).
+
+**Component confirmed:** the summary line lives in `ConcallSummary.tsx`
+(the client-leaf toggle component from the prior session's A1 fix), the
+attribution line lives in `ResearchDetail.tsx`'s own concalls block —
+there is no `ConcallCard.tsx` (the task's guess) anywhere in the repo,
+confirmed via `find`.
+
+**⚠️ Token names in the task didn't exist — mapped to this project's real
+ones, confirmed via `grep` against `globals.css` before applying anything:**
+`text-secondary`, `text-muted`, and `border-subtle` appear nowhere in
+this codebase's CSS or components. The real 3-tier text ladder is
+`text-foreground` > `text-foreground-muted` > `text-foreground-faint`
+(mapped from `--foreground`/`--foreground-muted`/`--foreground-faint` in
+`globals.css`), and there is a single `border-border` token, not a
+separate "subtle" variant. Applied the task's literal INTENT onto these
+real tokens:
+1. Summary → `text-foreground-muted` (the real mid tier — "slightly more
+   readable than fully muted" maps to this, not the top tier). It was
+   previously unstyled entirely (silently inheriting the page body's
+   full-strength `text-foreground`), not actually "very muted" as the
+   task described — this is a genuine, confirmed styling gap, not a
+   misreading.
+2. Attribution → `text-foreground-faint` (the real faintest/"most muted"
+   tier) + `border-t border-border pt-2` separator above it. NOTE: this
+   deliberately REVERSES the prior session's own A4 change (which had
+   moved this line from faint→muted for readability) — that direction
+   is now wrong given the founder's live visual feedback that the two
+   lines blend together; the faint tier is what actually distinguishes
+   them from the summary's new muted tier. Flagging the reversal
+   explicitly so it doesn't read as an accidental undo.
+3. Added `mt-3` to each subsequent concall card's wrapper (alongside its
+   existing `border-t pt-4`) — widens the gap between one card's
+   attribution line and the next card's top border.
+
+**Build result:** `npx tsc --noEmit` clean (exit 0) — one real syntax
+error caught and fixed during this session (a JSX `{/* comment */}`
+placed directly before the returned element inside `.map()`'s implicit-
+return parens isn't valid JSX-child syntax there; switched to a plain
+`//` comment). `npm run build` clean: compliance sweep 0 errors (same 15
+pre-existing warnings, 0 new), 0 auth-fetch violations, `next build` exit
+0, all 29 routes generated, unchanged route list.
+
+**OPEN:** no live/browser verification — sandbox has no browser, standing
+constraint. **FOUNDER: please confirm live on a stock with concall data
+(e.g. ABB) that the summary and attribution lines now read as clearly
+distinct tiers, and that the separator line + extra gap between cards
+look right, not just technically correct per the token math above.**

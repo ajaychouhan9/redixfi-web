@@ -11,6 +11,15 @@ import clsx from "clsx";
  * spec, which can't produce "toggle link at the bottom of expanded
  * content". Client leaf — ResearchDetail.tsx itself stays a Server
  * Component, same reason Collapsible is split out on its own.
+ *
+ * Contrast fix (2026-08-11): explicit `text-foreground-muted` — this
+ * project's real mid-tier text token (foreground > foreground-muted >
+ * foreground-faint; no "text-secondary" utility exists anywhere in this
+ * codebase, confirmed via grep). Previously unstyled, so it inherited the
+ * body's full-strength `text-foreground` — now a real "content line, not
+ * a legal disclaimer" tier that's still clearly readable but visually
+ * distinct from the attribution line below (foreground-faint, the
+ * faintest tier — see ResearchDetail.tsx's own concalls block).
  */
 export function ConcallSummary({ summary }: { summary: string }) {
   const [expanded, setExpanded] = useState(false);
@@ -19,12 +28,12 @@ export function ConcallSummary({ summary }: { summary: string }) {
   // truncated by line-clamp-3 at this card's typical width — avoids a
   // "Show more" link that would reveal nothing new.
   if (summary.length <= 220) {
-    return <p className="mt-2 text-sm leading-relaxed">{summary}</p>;
+    return <p className="mt-2 text-sm leading-relaxed text-foreground-muted">{summary}</p>;
   }
 
   return (
     <>
-      <p className={clsx("mt-2 text-sm leading-relaxed", !expanded && "line-clamp-3")}>{summary}</p>
+      <p className={clsx("mt-2 text-sm leading-relaxed text-foreground-muted", !expanded && "line-clamp-3")}>{summary}</p>
       <button type="button" onClick={() => setExpanded((e) => !e)} className="mt-1 text-sm font-medium text-accent">
         {expanded ? "Show less ↑" : "Show more →"}
       </button>
