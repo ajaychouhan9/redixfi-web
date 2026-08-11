@@ -2849,3 +2849,83 @@ Smart Screener) read clearly at the new header size without looking
 oversized relative to their compact row heights.** Also confirms/denies
 whether the founder wants a follow-up pass on the flagged-not-fixed
 items above (12px table-header group, MarketRibbon, Chip, Collapsible).
+
+## Completion note — Session 12: Full-width fixed header + Concalls callout box (2026-08-11)
+FRONTEND ONLY, CSS/layout-only, 6 files: `app/(app)/layout.tsx`,
+`layout/MarketRibbon.tsx`, `layout/Sidebar.tsx`, `layout/HeaderSearch.tsx`,
+`app/ask/AskRedixFi.tsx`, `research/ConcallSummary.tsx`. No logic/data
+changes.
+
+**FIX 1 — header full-width + alignment:**
+`MarketRibbon.tsx` restructured from an in-flow element inside
+`layout.tsx`'s `md:ml-56` column (starting AFTER the sidebar, the
+reported misalignment) to `fixed inset-x-0 top-0 h-16 w-full`, spanning
+the entire viewport including the sidebar's x-range. Its own left
+section is now exactly `w-56` (224px, matching the sidebar's width
+precisely, `hidden md:flex`) and shows the RedixFi logo/wordmark/tagline
+— content MOVED here verbatim from `Sidebar.tsx`'s old header block, not
+duplicated: `Sidebar.tsx` no longer renders its own copy (would
+otherwise sit in the exact same screen rectangle, one z-layer under this
+one, wastefully rendering twice). `Sidebar.tsx`'s own `top-0`/`h-screen`
+shifted to `top-16`/`h-[calc(100vh-4rem)]` so its nav items start
+exactly where the header's left section ends — reads as one continuous
+left column, per the task's own description, rather than two stacked
+copies. `layout.tsx`'s main-content column gained `pt-16` (unconditional,
+not `md:pt-16` — the header is fixed-height at every breakpoint, only
+its LEFT section hides below `md`) to reserve the vertical space the now-
+fixed ribbon no longer occupies in-flow — same `md:ml-56`-for-the-sidebar
+pattern applied to the header's own dimension.
+
+Font-size bumps applied exactly as specified: NIFTY/BANKNIFTY value
+spans → `text-[15px]` (label/delta unchanged, task named only "values");
+market status badge (`StateChip`) → `text-[13px]` (was inheriting the
+ribbon's `text-xs`/12px); `HeaderSearch` input → `text-sm` (14px, was
+`text-xs`); `AskRedixFi`'s floating trigger button → `text-sm` (14px,
+was `text-xs`). "Scores as of…" (`signalsAsOf`) confirmed already
+`text-xs` = 12px, exactly the task's stated floor — no change made.
+
+**FIX 2 — Concalls "Key takeaway" callout box:**
+`ConcallSummary.tsx`'s whole "Key takeaway: …" line (and its Show
+more/less toggle, when the summary is long enough to have one) now
+renders inside one `border-l-2 border-accent bg-accent/10 px-3 py-2`
+callout div — this project's real gold-accent tokens at low opacity (no
+separate "highlight" CSS variable exists; confirmed via grep, reused the
+same `--accent` pair every other gold CTA/active-state already uses).
+Label switched from `text-foreground-muted` to `text-accent` (now draws
+the eye, matching the task's "not muted" instruction); takeaway text
+stays `text-foreground` (primary tier, from the prior session's fix)
+plus a new `font-medium`. Position unchanged — still renders in
+`ResearchDetail.tsx`'s concalls block between the metadata row and the
+tone_note/attribution lines, per the task's explicit "same position, just
+visually elevated" instruction. Simplified the component's internal
+branching (`long` computed once, single return path) while making this
+change — same behavior, less duplicated JSX.
+
+**Build result:** `npx tsc --noEmit` clean (exit 0). `npm run build`
+clean: compliance sweep 0 errors (same 15 pre-existing warnings, 0 net
+new — 1 new hit on this session's own `layout.tsx` comment using "call"
+in a non-forbidden sense, reworded not suppressed, same handling as
+every prior session), 0 auth-fetch violations, `next build` exit 0, all
+29 routes generated, unchanged route list.
+
+**Reasoned-through, not visually verified (no browser in this sandbox):**
+- z-index: header is `z-40`; `HeaderSearch`/`UserMenu` dropdowns
+  (`z-30`) are DESCENDANTS of the header, so they still layer correctly
+  above the header's own siblings within its local stacking context —
+  confirmed no conflict with `BottomNav` (`z-30`, mobile-only, bottom of
+  screen, no y-overlap with the header) or `AskRedixFi`'s panel (`z-50`,
+  correctly above everything).
+- Signals page/table: this session touched NO Signals-specific files —
+  the only shared risk surface is the header's own height change, which
+  every page already absorbs identically via `layout.tsx`'s new `pt-16`.
+
+**OPEN:** no live/browser verification — sandbox has no browser, standing
+constraint, especially load-bearing for a layout-restructuring session
+like this one. **FOUNDER: please confirm live: the header's left 224px
+section visually lines up with the sidebar's left edge/nav items below
+it (no gap, no double-logo flash), NIFTY/BANKNIFTY still fit on one line
+at both the new 15px size and the existing responsive breakpoint
+(BANKNIFTY hides below `sm`), the Signals page renders correctly below
+the new fixed header with no content hidden underneath it, and the
+Concalls "Key takeaway" box on a stock with real concall data (e.g. ABB)
+shows the gold left border + subtle background clearly.**

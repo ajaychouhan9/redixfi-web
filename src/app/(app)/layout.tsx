@@ -45,8 +45,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           that it's `md:fixed` (see Sidebar.tsx) — matches its `w-56`
           exactly so content starts right at the sidebar's edge, not under
           or away from it. No margin below md, where Sidebar is `hidden`
-          and BottomNav (fixed, bottom) is the nav instead. */}
-      <div className="flex min-w-0 flex-1 flex-col md:ml-56">
+          and BottomNav (fixed, bottom) is the nav instead.
+          `MarketRibbon` is still rendered HERE (unchanged) even though the
+          component itself now renders `fixed` — pt-16 below reserves the
+          vertical space it no longer occupies in-flow, same pattern as
+          `md:ml-56` does for the now-fixed Sidebar. Applies at every
+          breakpoint (not `md:pt-16`) since the header is fixed-height at
+          every breakpoint, only its left logo section hides below md. */}
+      <div className="flex min-w-0 flex-1 flex-col pt-16 md:ml-56">
         <MarketRibbon initialOverview={initialOverview} initialFresh={initialFresh} initialSignalsAsOf={initialSignalsAsOf} />
         <main className="mb-14 flex-1 px-4 py-4 md:mb-0 md:px-6 md:py-6">{children}</main>
         <FooterDisclaimer />

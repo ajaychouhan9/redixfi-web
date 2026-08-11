@@ -6,7 +6,6 @@ import clsx from "clsx";
 import { Home, BarChart3, Zap, Search, MoreHorizontal, User, CreditCard, Bookmark, Bell, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
-import { LogoMark } from "@/components/brand/LogoMark";
 import type { MarketOverview } from "@/lib/api/types";
 
 // Real tier buckets returned by the backend (src/lib/api/types.ts's
@@ -71,27 +70,25 @@ export function Sidebar({
     // Fixed/sticky sidebar (2026-08-11): previously a normal in-flow flex
     // child of layout.tsx's `flex min-h-screen` row, stretched tall by
     // flex's default align-items:stretch — meaning it scrolled away with
-    // the page instead of staying put. `md:fixed` + `md:h-screen` pins it
-    // to the viewport at the md breakpoint (matching where it's shown at
-    // all — `hidden`/`md:flex` unchanged below); `overflow-y-auto` lets its
-    // OWN content scroll independently if it's ever taller than the
-    // viewport (short screens). `shrink-0` dropped — meaningless once the
-    // element is taken out of flow by `fixed`. layout.tsx's main-content
+    // the page instead of staying put. `md:fixed` + `md:h-[calc(100vh-4rem)]`
+    // pins it to the viewport at the md breakpoint (matching where it's
+    // shown at all — `hidden`/`md:flex` unchanged below); `overflow-y-auto`
+    // lets its OWN content scroll independently if it's ever taller than
+    // the viewport (short screens). `shrink-0` dropped — meaningless once
+    // the element is taken out of flow by `fixed`. layout.tsx's main-content
     // wrapper gets a matching `md:ml-56` to reserve the space this no
     // longer occupies in-flow.
-    <aside className="hidden w-56 flex-col overflow-y-auto border-r border-border bg-surface md:fixed md:left-0 md:top-0 md:flex md:h-screen">
-      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-        <span
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md"
-          style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dim))" }}
-        >
-          <LogoMark size={15} variant="solid" className="text-[var(--accent-foreground)]" />
-        </span>
-        <div className="flex flex-col leading-tight">
-          <span className="font-mono text-lg font-semibold tracking-tight">RedixFi</span>
-          <span className="text-[10px] text-foreground-faint">Read the market. Understand it.</span>
-        </div>
-      </div>
+    //
+    // Header-alignment fix (2026-08-11): `top-0`/`h-screen` -> `top-16`/
+    // `h-[calc(100vh-4rem)]` — MarketRibbon.tsx is now a full-width fixed
+    // header (h-16) spanning across this sidebar's x-range too, with its
+    // OWN left section showing the logo/wordmark/tagline block that used
+    // to live here (moved there verbatim, not duplicated — see that
+    // component's docstring). Shifting the sidebar down by the header's
+    // height means its nav items start exactly where the header's left
+    // section ends, reading as one continuous left column instead of the
+    // header covering this sidebar's own top content.
+    <aside className="hidden w-56 flex-col overflow-y-auto border-r border-border bg-surface md:fixed md:left-0 md:top-16 md:flex md:h-[calc(100vh-4rem)]">
       <nav className="flex flex-1 flex-col gap-1 p-3">
         {SIDEBAR_LINK_ITEMS.map((item) => {
           const active = isActive(pathname, item.href);

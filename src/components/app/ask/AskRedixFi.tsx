@@ -205,9 +205,10 @@ export function AskRedixFi() {
 
   return (
     <>
+      {/* Font-size fix (2026-08-11): was text-xs (12px), task wants 14px. */}
       <button
         onClick={() => setOpen(true)}
-        className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-transform hover:scale-105"
+        className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition-transform hover:scale-105"
         style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dim))", color: "var(--accent-foreground)" }}
       >
         <Sparkles size={12} /> RedixFi AI

@@ -67,7 +67,8 @@ export function HeaderSearch() {
         onKeyDown={(e) => e.key === "Enter" && results[0] && select(results[0].canonicalSymbol)}
         placeholder="Search stocks, sectors, news..."
         aria-label="Search stocks, sectors, news"
-        className="w-full rounded-lg border border-border bg-hover py-1.5 pl-8 pr-3 text-xs outline-none focus:border-accent"
+        // Font-size fix (2026-08-11): was text-xs (12px), task wants 14px.
+        className="w-full rounded-lg border border-border bg-hover py-1.5 pl-8 pr-3 text-sm outline-none focus:border-accent"
       />
       {open && q.trim().length >= 2 && results.length > 0 && (
         <ul className="absolute left-0 top-full z-30 mt-1 w-full min-w-[260px] divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface-raised shadow-lg">
