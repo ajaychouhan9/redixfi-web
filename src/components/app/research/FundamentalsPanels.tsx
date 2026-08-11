@@ -2,7 +2,7 @@ import { Collapsible } from "@/components/ui/Collapsible";
 import { ExplainTerm } from "@/components/ui/ExplainTerm";
 import { Chip } from "@/components/ui/Chip";
 import { Sparkline } from "@/components/ui/Sparkline";
-import { formatShortDate, formatCr } from "@/lib/format";
+import { formatDateIst, formatCr } from "@/lib/format";
 import type { FundamentalsBlock, FundamentalsShareholding, PeerRow } from "@/lib/api/types";
 
 // Factual, symmetric labels only — no "good"/"bad" framing (compliance
@@ -251,8 +251,8 @@ export function FundamentalsPanels({
             label="Results"
             value={
               events.next_results_date ? (
-                <ExplainTerm metricKey="next_results_date" symbol={symbol} ctx={{ symbol, next_results_date: formatShortDate(events.next_results_date) }}>
-                  Last reported {formatShortDate(events.next_results_date)}
+                <ExplainTerm metricKey="next_results_date" symbol={symbol} ctx={{ symbol, next_results_date: formatDateIst(events.next_results_date) }}>
+                  Last reported {formatDateIst(events.next_results_date)}
                 </ExplainTerm>
               ) : (
                 "—"
@@ -267,7 +267,7 @@ export function FundamentalsPanels({
               <ul className="space-y-1">
                 {events.recent_dividends.map((d, i) => (
                   <li key={i} className="flex justify-between">
-                    <span className="text-foreground-muted">{d.record_date ? formatShortDate(d.record_date) : "—"}</span>
+                    <span className="text-foreground-muted">{d.record_date ? formatDateIst(d.record_date) : "—"}</span>
                     <span>
                       ₹{fmtNum(d.value, 2)} ({fmtNum(d.percentage, 0)}%)
                     </span>
@@ -282,7 +282,7 @@ export function FundamentalsPanels({
               <ul className="space-y-1">
                 {events.recent_bonus.map((b, i) => (
                   <li key={i} className="flex justify-between">
-                    <span className="text-foreground-muted">{b.record_date ? formatShortDate(b.record_date) : "—"}</span>
+                    <span className="text-foreground-muted">{b.record_date ? formatDateIst(b.record_date) : "—"}</span>
                     <span>{b.remarks}</span>
                   </li>
                 ))}

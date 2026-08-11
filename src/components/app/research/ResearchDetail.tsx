@@ -14,7 +14,7 @@ import { ResearchExportButton } from "@/components/app/research/ResearchExportBu
 import { AlertCreateButton } from "@/components/app/alerts/AlertCreateButton";
 import { CompareIndicator } from "@/components/app/CompareIndicator";
 import { CurrentSymbolSync } from "@/components/app/CurrentSymbolSync";
-import { formatShortDate } from "@/lib/format";
+import { formatShortDate, formatDateIst } from "@/lib/format";
 
 /**
  * Task 14 — pure presentational component: every prop here is already
@@ -117,7 +117,7 @@ export function ResearchDetail({
                     <tbody>
                       {data.insider_trades.slice(0, 10).map((t) => (
                         <tr key={t.filing_id} className="border-t border-border">
-                          <td className="py-1.5 pr-3">{formatShortDate(t.trade_date)}</td>
+                          <td className="py-1.5 pr-3">{formatDateIst(t.trade_date)}</td>
                           <td className="py-1.5 pr-3">{t.insider_name || "—"}</td>
                           <td className="py-1.5 pr-3">{t.transaction_type}</td>
                           <td className="py-1.5 pr-3 tabular-nums">{t.quantity.toLocaleString("en-IN")}</td>

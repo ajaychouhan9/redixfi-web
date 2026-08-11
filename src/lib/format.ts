@@ -35,6 +35,13 @@ const IST_TIME = new Intl.DateTimeFormat("en-IN", {
   hour12: true,
 });
 
+/**
+ * e.g. "28 Mar 2026" — the year-inclusive counterpart to formatShortDate().
+ * Use wherever the year is load-bearing (financial transaction dates like
+ * insider trades/dividends, where "18 Jan" alone is ambiguous across
+ * years) — everywhere else on the site intentionally uses the shorter,
+ * year-less formatShortDate().
+ */
 export function formatDateIst(iso: string): string {
   return IST_DATE.format(new Date(iso));
 }

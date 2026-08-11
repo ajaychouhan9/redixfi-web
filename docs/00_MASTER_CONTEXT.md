@@ -2011,3 +2011,56 @@ new `/unusual-activity`.
 - "Price Action" anomaly tile still has no real data source (unchanged
   finding from the prior session) — needs a backend addition, not a
   frontend one, if the founder wants a literal 4th tile.
+
+## Completion note — Session 2 continued: Fixes 5+6, dates that need a year (2026-08-11)
+FRONTEND ONLY, same session as the note directly above (delivered as a
+separate commit rather than amended into the already-pushed Fix 1-3 commit
+— see OPEN item below). Two more date-format fixes, opposite direction from
+Fix 1: those callers need the year AFTER ALL, since they're financial
+transaction dates where "18 Jan" alone is ambiguous across years.
+
+**Discovery:** `src/lib/format.ts` already had a year-inclusive formatter —
+`formatDateIst()` — but it had ZERO direct callers anywhere in the app
+(it existed only as `formatDateTimeIst()`'s internal date half). Verified
+via `node -e` that it already outputs exactly "28 Mar 2026" / "18 Jan 2026"
+/ "09 Jul 2026" — the exact target format. So no new function was written;
+the "formatShortDateWithYear()" the task brief suggested already existed
+under a different name, just unused for this purpose. Added a doc comment
+to it clarifying this dual role (year-inclusive counterpart to
+`formatShortDate()`) so the next session doesn't miss it and duplicate it.
+
+**FIX 5 — Insider trades DATE column only:** `ResearchDetail.tsx:120`
+switched from `formatShortDate` to `formatDateIst`. The table's OTHER two
+`formatShortDate` calls in the same file (concall/investor-presentation
+filing dates, lines ~208/224) were deliberately left untouched — not part
+of this fix, not reported as broken.
+
+**FIX 6 — "What's coming up?" section (`FundamentalsPanels.tsx`):** all 4
+`formatShortDate` calls in this file (results date × 2 — the explainer's
+`ctx` value and the visible "Last reported" text — dividend record dates,
+bonus record dates) switched to `formatDateIst`; `formatShortDate` import
+dropped entirely from this file since nothing else in it used it. Bonus
+issue dates weren't explicitly named in the task brief but sit in the same
+section rendering the identical `record_date` pattern as dividends right
+above them — fixed for consistency (leaving them year-less next to
+now-year-ful dividend dates in the same list would itself be a new
+inconsistency), not scope creep into an unrelated area.
+
+Everywhere else (Home page tiles, track-record pages, `WatchlistAlertsCard`,
+`SubscriptionStatusCard`, `PlanCard`'s scheduled-annual date, concall
+dates) still correctly uses the year-less `formatShortDate` — confirmed via
+grep, none of these were touched.
+
+**Build/compliance result:** `npx tsc --noEmit` clean (exit 0). `npm run
+build` clean: compliance sweep 0 errors (13 pre-existing warnings,
+unchanged), 0 auth-fetch violations, `next build` exit 0, all 29 routes.
+Verified `formatDateIst` output directly (`node -e`) against 3 real dates
+before committing.
+
+**OPEN:** the task asked for Fixes 5+6 to land in "the same commit as
+Fixes 1-4" from the prior message — Fixes 1-3 (there was no separate
+"Fix 4") were ALREADY COMMITTED AND PUSHED to `origin/main` by the time
+this request arrived, so folding these into that commit would require an
+amend + force-push over already-shared history — not done without explicit
+confirmation, per this session's standing git-safety rules. Delivered as a
+new, separate commit immediately after instead.
