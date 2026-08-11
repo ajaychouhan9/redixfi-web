@@ -4,7 +4,7 @@ import { getIntradaySession, getIntradaySectors, getIntradayRecap } from "@/lib/
 import type { IntradaySession, IntradaySectors, IntradayRecap } from "@/lib/api/types";
 
 export const metadata: Metadata = {
-  title: "Intraday Live",
+  title: "Intraday Monitor",
   description: "Pre-market movers, a live user-filtered scanner, AI-classified event feed and post-market recap — factual, not trade calls.",
 };
 
@@ -36,7 +36,7 @@ export default async function IntradayPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-xl font-semibold">Intraday Live</h1>
+      <h1 className="mb-4 text-xl font-semibold">Intraday Monitor</h1>
       <IntradayScreen initialSession={session} initialSectors={sectors} initialRecap={recap} />
     </div>
   );

@@ -2407,3 +2407,120 @@ clean: compliance sweep 0 errors (same 14 pre-existing warnings, 0 new),
   flagged for founder confirmation this interpretation (prominent
   indicator inside the existing merged component) is the intended one,
   not a silent scope-narrowing.
+
+## Completion note — Session 7: Intraday + Research Pro redesign (2026-08-11)
+FRONTEND ONLY, 4 files: `intraday/page.tsx`, `intraday/PostmarketRecap.tsx`,
+`research/FundamentalsPanels.tsx`, `research/ResearchDetail.tsx`. No
+backend/API/auth files touched. No fundamentals data, CSV export, or B8
+masking logic changed. No other page touched (confirmed via `git status`).
+
+**STEP 0 AUDIT (done before any edits, reported to the user first):**
+- Intraday: session badge (LIVE/PRE-MARKET/CLOSED, green pulse for live,
+  muted otherwise) + high-severity event count already real, wired to
+  `getIntradaySession()`. **A5 Active Universe disclosure already existed,
+  verbatim-correct** — `ScannerTab.tsx` already renders "Active Universe:
+  N stocks meeting minimum liquidity and price criteria today (criteria)"
+  from real `getIntradayScan()` fields. Scanned all Intraday components for
+  predictive/curated language (A3) — found none, only the existing
+  compliant "factual, not a prediction" disclaimer.
+- Research: confirmed 2 of 3 action buttons work (Compare, Set Alert) but
+  **"Add to Watchlist" was genuinely missing** — the nearby `RecordView`
+  component is unrelated (recently-viewed tracking, not a watchlist
+  toggle); the real `WatchlistButton` component already exists and is
+  used on the Signal detail page. Confirmed `FundamentalsPanels.tsx`
+  Collapsible defaults had drifted: "Is it growing?" was `defaultOpen`
+  correctly, but "Is it expensive versus peers?" and "Who owns it?" were
+  NOT `defaultOpen` despite the task's (and their own content's) intent —
+  a real, confirmed bug, not assumed. "Smart Money & Activity" and
+  "Corporate events" were plain always-open `Card`s, not `Collapsible` at
+  all, despite the task listing them as expected-collapsed sections.
+  Confirmed concalls section (Task 21) renders correctly with real data —
+  no change needed. Confirmed news timeline hierarchy (severity badge,
+  category, headline vs. muted source/date) already correct — no change.
+  ⚠️ Confirmed Research's fetched data (`ResearchSignalSummary`:
+  composite_score/delta_1d/narrative only) has NO Price Momentum/Volume/
+  Trend/News/Ownership breakdown — that lives behind `/signals/{symbol}`
+  (`SignalDetail.signals`, used by `AnalystChecklist.tsx` on the Signals
+  page), a different endpoint Research doesn't call. Per the task's own
+  explicit instruction, reported rather than guessed/fabricated.
+  ⚠️ Found the task's own B6 premise didn't match reality NOR a prior
+  session's own documented finding: insider trades has never had a
+  mobile stacked-card view — a prior completion note explicitly concluded
+  it's one horizontally-scrolling `<table>` at every breakpoint, by
+  design. Re-verified directly in the current code — still true, not
+  fixed (would be new component work contradicting that prior finding).
+
+**Part A (Intraday):**
+- A1: `<h1>` and page `<Metadata>` title changed "Intraday Live" →
+  "Intraday Monitor". Session badge/event count: kept the existing
+  richer 3-state LIVE/PRE-MARKET/CLOSED badge (green for live, muted
+  otherwise — already matches the task's literal "OPEN(green)/
+  CLOSED(muted)" color split) rather than collapsing to a literal 2-state
+  label, which would lose real, meaningful pre-market-vs-live information
+  — a deliberate, reasoned deviation, flagged here rather than silently
+  applied.
+- A2: `PostmarketRecap.tsx`'s advancers/decliners/unchanged line now
+  prefixed "NIFTY 500:" — confirmed accurate, not fabricated, against
+  `data-pipeline/intraday_recap_builder.py`'s own
+  `build_market_line()` comment ("NIFTY 500 preferred anchor"). The
+  underlying numbers are unchanged.
+- A3: confirmed compliant, no predictive language found, no fix needed.
+- A4: `MoverTable`/`SectorTable` in `PostmarketRecap.tsx` switched from
+  hand-rolled `+`/color logic to the shared `DeltaValue` component (used
+  everywhere else — Signals table, Home cards) — genuinely more
+  consistent (adds the arrow glyph too), same underlying `pct` data.
+- A5: confirmed already correct and accurate, no change.
+
+**Part B (Research Pro):**
+- B1: added a compact "Signal snapshot" block (Score/100 + `DeltaValue`
+  delta + a link to the full Signal Dashboard page) right after the
+  52-week range bar, near the top — sourced entirely from
+  `data.signal_summary`, already fetched, no new request. The 5-row
+  Positive/Negative/Neutral breakdown was NOT built (see Step 0 finding)
+  — building it would require either a new backend request (forbidden
+  this session) or inventing categorizations not backed by real
+  measured_signals data, a real compliance risk this codebase has
+  avoided elsewhere. The existing fuller "Signal summary" card
+  (narrative + link) lower on the page is unchanged, not duplicated away.
+- B2: added `<WatchlistButton symbol={data.symbol} />` to the action row
+  (Export/Compare/Watchlist/Alert) — the real, existing component
+  already used on the Signal detail page, not a new one. Compare and Set
+  Alert confirmed already working, untouched.
+- B3: fixed the 2 drifted `Collapsible` defaults in
+  `FundamentalsPanels.tsx` ("Is it expensive versus peers?", "Who owns
+  it?" now both `defaultOpen`). Converted "Smart Money & Activity"
+  (renamed from "Smart money" per the task's literal wording) and
+  "Corporate events" from plain `Card`s to the same `Collapsible`
+  component `FundamentalsPanels.tsx` already uses — reuse, not a new
+  component — both collapsed by default, matching the task's spec.
+- B4: confirmed already correct, no change.
+- B5: confirmed already correct, no change.
+- B6: NOT fixed — see Step 0 finding above (task premise didn't match a
+  prior session's own documented audit).
+
+**Build result:** `npx tsc --noEmit` clean (exit 0). `npm run build`
+clean: compliance sweep 0 errors (15 warnings — the pre-existing 14 plus
+1 new false-positive hit on this session's own comment using "call" in
+a non-forbidden sense, reworded to "backend request" rather than
+suppressed, same as prior sessions' handling of this class of hit), 0
+auth-fetch violations, `next build` exit 0, all 29 routes generated.
+
+**OPEN:**
+- No live/browser verification — sandbox has no browser, standing
+  constraint. **FOUNDER: please confirm live: the Intraday header/badge/
+  recap line with a real closed-session recap, the Signal Snapshot block
+  rendering with real data on a real stock (task suggested TCS), the new
+  Watchlist button actually toggling, and the 3 Collapsible sections'
+  new default open/closed states.**
+- B1's 5-row breakdown gap: if the founder wants the literal Price
+  Momentum/Volume/Trend/News/Ownership panel, it needs either a new
+  Research-page backend fetch (of `/signals/{symbol}` or an equivalent)
+  or a product decision on which of Research's own fields may
+  legitimately stand in for each row — flagged, not decided here.
+- A1's OPEN/CLOSED vs. the existing LIVE/PRE-MARKET/CLOSED 3-state badge:
+  flagged deviation, founder should confirm the richer version is
+  preferred (recommended) over literally collapsing to 2 states.
+- B6: insider trades mobile behavior — confirmed unchanged from a prior
+  session's explicit, documented finding (one scrollable table, no
+  stacked-card view, by design) — this task's brief assumed otherwise;
+  flagged, not silently overridden.

@@ -140,7 +140,9 @@ export function FundamentalsPanels({
       </Collapsible>
 
       {/* ---- Is it expensive versus peers? ---- */}
-      <Collapsible question="Is it expensive versus peers?">
+      {/* B3 fix (2026-08-11): drifted from the locked default-open spec —
+          was missing defaultOpen entirely (rendered collapsed). */}
+      <Collapsible question="Is it expensive versus peers?" defaultOpen>
         <div className="space-y-3 text-sm">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <Stat
@@ -209,7 +211,8 @@ export function FundamentalsPanels({
       </Collapsible>
 
       {/* ---- Who owns it, and did that change? ---- */}
-      <Collapsible question="Who owns it, and did that change?">
+      {/* B3 fix (2026-08-11): same drift as above — was missing defaultOpen. */}
+      <Collapsible question="Who owns it, and did that change?" defaultOpen>
         {!coverage.has_shareholding ? (
           <p className="text-sm text-foreground-muted">Shareholding data not available yet.</p>
         ) : (

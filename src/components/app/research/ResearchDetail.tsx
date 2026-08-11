@@ -6,6 +6,7 @@ import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { Sparkline } from "@/components/ui/Sparkline";
 import { GenericRecordTable } from "@/components/ui/GenericRecordTable";
+import { Collapsible } from "@/components/ui/Collapsible";
 import { NewsList } from "@/components/app/NewsList";
 import { RecordView } from "@/components/app/RecordView";
 import { FundamentalsPanels } from "@/components/app/research/FundamentalsPanels";
@@ -13,6 +14,7 @@ import { ResearchChart } from "@/components/app/research/ResearchChart";
 import { ResearchExportButton } from "@/components/app/research/ResearchExportButton";
 import { AlertCreateButton } from "@/components/app/alerts/AlertCreateButton";
 import { CompareIndicator } from "@/components/app/CompareIndicator";
+import { WatchlistButton } from "@/components/app/WatchlistButton";
 import { CurrentSymbolSync } from "@/components/app/CurrentSymbolSync";
 import { formatShortDate, formatDateIst } from "@/lib/format";
 
@@ -51,9 +53,15 @@ export function ResearchDetail({
           <p className="text-sm text-foreground-muted">
             {data.symbol} · {data.sector}
           </p>
+          {/* B2: task's 3 buttons are Compare / Add to Watchlist / Set Alert
+              — audit found "Add to Watchlist" genuinely missing here (the
+              nearby RecordView is unrelated, recently-viewed tracking, not
+              a watchlist toggle). Added the same real WatchlistButton the
+              Signal detail page already uses — not a new component. */}
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <ResearchExportButton data={data} peers={peers} />
             <CompareIndicator symbol={data.symbol} companyName={data.company_name} />
+            <WatchlistButton symbol={data.symbol} />
             <AlertCreateButton symbol={data.symbol} />
           </div>
         </div>
@@ -70,6 +78,32 @@ export function ResearchDetail({
             <span>52wk high ₹{data.price.week52_high}</span>
           </div>
         </div>
+
+        {/* B1 Signal Snapshot (2026-08-11) — compact, near the top, per the
+            task. Uses ONLY data already fetched for this page
+            (signal_summary: composite_score/delta_1d — ResearchSignalSummary,
+            confirmed via types.ts), no new API call. The task's fuller
+            mockup also asked for a Price Momentum/Volume/Trend/News/
+            Ownership Positive/Negative/Neutral breakdown — audited and
+            REPORTED rather than guessed: that breakdown doesn't exist in
+            this page's fetched data at all (it lives behind /signals/
+            {symbol}'s SignalDetail.signals, a different endpoint
+            AnalystChecklist.tsx uses on the Signals page) — building it
+            here would mean either a new backend request (not allowed this session) or inventing
+            thresholds not backed by real measured_signals categorization,
+            so it was deliberately left out rather than fabricated. The
+            fuller "Signal summary" card lower on this page (narrative +
+            link to the full Signal Dashboard) is unchanged. */}
+        {data.signal_summary.composite_score !== null && (
+          <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface-raised px-3 py-2">
+            <span className="font-mono text-[10px] uppercase tracking-wide text-foreground-faint">Signal snapshot</span>
+            <span className="text-lg font-semibold">{data.signal_summary.composite_score}/100</span>
+            {data.signal_summary.delta_1d !== null && <DeltaValue value={data.signal_summary.delta_1d} />}
+            <Link href={`/signals/${data.symbol}`} className="ml-auto text-xs font-medium text-accent">
+              Full signal detail →
+            </Link>
+          </div>
+        )}
       </div>
 
       <ErrorBoundary>
@@ -80,7 +114,12 @@ export function ResearchDetail({
         <FundamentalsPanels symbol={data.symbol} fundamentals={data.fundamentals} peers={peers} peersError={peersError} />
       </ErrorBoundary>
 
-      <Card title="Smart money">
+      {/* B3 (2026-08-11): was a plain always-open Card — task expects this
+          collapsed by default alongside Corporate events below. Converted
+          to the same Collapsible component FundamentalsPanels already uses
+          (reuse, not a new component), title updated to the task's literal
+          "Smart Money & Activity" wording. */}
+      <Collapsible question="Smart Money & Activity">
         <div className="space-y-4">
           <ErrorBoundary>
             <div>
@@ -178,12 +217,12 @@ export function ResearchDetail({
             </div>
           </ErrorBoundary>
         </div>
-      </Card>
+      </Collapsible>
 
       <ErrorBoundary>
-        <Card title="Corporate events">
+        <Collapsible question="Corporate events">
           <GenericRecordTable rows={data.corporate_events} emptyText="No upcoming corporate events recorded." />
-        </Card>
+        </Collapsible>
       </ErrorBoundary>
 
       <ErrorBoundary>
