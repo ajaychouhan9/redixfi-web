@@ -2287,3 +2287,123 @@ constraint). **FOUNDER: please confirm live that expanding the brief shows
 summary → full text → "Show less ↑" at the very bottom, with no toggle
 line in the middle, and that collapsing scrolls/reflows correctly (no
 layout jump).**
+
+## Completion note — Session 6: Signals page redesign (2026-08-11)
+FRONTEND ONLY, 5 files, all under Signals: `signals/page.tsx`,
+`education/SummaryCard.tsx`, `signals/SignalTableRow.tsx`,
+`signals/SignalsExplorer.tsx`, `signals/SmartScreenerBox.tsx`. No
+backend/API/auth files touched (confirmed via `git status`). No filter/
+sort/search/CSV/watchlist/compare logic changed — verified by diffing:
+every edit is either a className, a copy string, a new purely-additive
+prop, or a `useState`-backed split of an already-fetched array.
+
+**STEP 0 AUDIT (done before any edits, findings reported to the user
+first):** confirmed table column order (Symbol/Sector/Price/Score/
+Delivery/Volume/Signals/Event) matches the task's stated order exactly,
+no reorder needed. Confirmed AI Smart Screener is real (`POST
+/signals/smart-screen` via `smartScreen()`, backend's B9
+`run_smart_screen`), not UI-only. Confirmed the compare tray is a single
+shared `comparison-queue.ts` localStorage queue (MAX 5), genuinely
+bidirectional across `SignalTableRow`'s "+Compare" button,
+`CompareIndicator` (detail pages), and `SmartScreenerBox`'s embedded
+chip tray — verified by reading all 3 call sites. Confirmed all 4
+filters + sort + column picker + CSV export are wired to the real
+`/signals` endpoint, no stubs.
+⚠️ REAL BUG FOUND (not assumed — read `core/summary_cards.py`):
+`SectorSummaryCard`'s own docstring claimed "strongest AND weakest
+sector always shown," but the code only ever sliced the first N of a
+strongest-to-weakest sorted list — the weakest sector was NEVER actually
+rendered by default. This is exactly what Step 2 asked to build, so it
+doubled as a genuine fix, not just new UI.
+
+**Step 1 (header):** added a subtitle "Measured market signals across
+{N} tracked stocks" — N is a REAL live count, `getSignals({ size: 1 })`
+server-side reading `page_info.total` (same `/signals` endpoint the
+table itself lists from), not hardcoded. `@auth-ok` marker added since
+`getSignals` is `@auth required` — the anonymous SSR call is safe
+because universe SIZE doesn't vary by tier (only which rows are masked
+does, per B8), same precedent as `sitemap.ts`'s existing anonymous
+`getAllSignals` call.
+
+**Step 2 (sector standing):** `SectorSummaryCard` rewritten to
+genuinely split `data.ranked` (confirmed sorted strongest→weakest by
+`core/summary_cards.py::sector_summary`) into a STRONGEST (top ~4) |
+WEAKEST (bottom ~3, reversed to read worst-first) two-column grid
+(`grid-cols-1 sm:grid-cols-2`), caps shrinking to avoid overlap when the
+sector count is small. Each row still shows name/count/color-coded
+`DeltaValue` exactly as before. "View all sectors →" expands to the
+full ranked list (unchanged full-list render path); "Show less ↑" to
+collapse — literal copy strings per the task, matching
+`AiDailyBriefCard`'s established toggle-string convention from the
+prior session.
+
+**Step 3 (AI Smart Screener):** heading + `AiLabel` badge unchanged
+(already present). Description copy replaced verbatim with the task's
+literal text. Added two clickable example pills — the task's literal
+two example queries — that prefill + immediately run the query through
+the EXACT existing `setQuery`/`runQuery` path (not a new submit path).
+Card visually promoted: accent-tinted gradient background + a 1px
+accent gradient top bar, same visual language `AiDailyBriefCard` already
+established for "this is an AI feature" framing — reused, not invented.
+
+**Step 4 (table):** confirmed "+Compare" already visible/working, chips
+already using the shared `SignalStateChip`/`Chip` components (no change
+needed — already consistent). Confirmed B8 masking is visually correct
+(`LockedInline`/`UnlockBanner` blur+lock pattern) — read, not changed.
+Mobile: found the table uses responsive column-hiding (Tailwind
+`hidden .. sm/md/lg:table-cell`), NOT a tap-to-expand stacked card — no
+such card pattern exists elsewhere in the repo to reuse, and building one
+fresh would be new component work, not "polish." Treated the existing
+tap-through-to-`/signals/{symbol}` (via the Symbol link) as the "rest on
+tap" mechanism and tightened the one inconsistency found: the Event
+column had NO responsive hide at all (every other optional column did),
+so the smallest viewports showed Symbol+Price+Score+Event instead of
+just Symbol+Price+Score. Added `hidden ... sm:table-cell` to match
+Delivery/Volume's existing treatment — now the mobile view matches the
+task's literal "Symbol + Price + Score visible" requirement.
+
+**Step 5 (filter bar):** wrapped the filter row in a
+`rounded-xl border border-border bg-surface-raised p-3` card (previously
+a bare flex row with no outer card treatment) — matches the design
+system's card convention used by `SectorSummaryCard`/`SmartScreenerBox`.
+Individual controls switched from `bg-surface-raised` to `bg-hover` so
+they read with depth against the new card background rather than
+flattening into it (same layering `SmartScreenerBox`'s own input row
+already uses) — column-picker's floating dropdown deliberately LEFT on
+`bg-surface-raised` (a popup should read as elevated, not flattened).
+`ExportButton` given an explicit `className` override (the component
+already supports this prop) to match, rather than changing its shared
+default (used elsewhere, e.g. Research page). CSV export logic, column
+picker logic, sort logic: unchanged, confirmed via diff.
+
+**Step 6 (compare tray):** the compare tray is deliberately MERGED into
+`SmartScreenerBox`, not a separate UI — a prior session's explicit,
+documented architecture decision ("one real component ... not two
+disconnected UIs"). The task's Step 6 offered "a sticky bottom bar OR a
+prominent indicator" — read as an either/or, chose "prominent
+indicator" to honor the existing architecture rather than silently
+re-splitting it into two UIs the prior session deliberately merged.
+Added a real "Compare (N): SYM1, SYM2…" readout in the box's own header
+(previously a static, non-dynamic help sentence) as that prominent
+indicator; the existing chip row + "Compare now"/"Clear all" buttons are
+unchanged. Re-confirmed (Step 0) the bidirectional shared state with the
+Signal detail page's `CompareIndicator` — still true, same
+`comparison-queue.ts` singleton.
+
+**Build result:** `npx tsc --noEmit` clean (exit 0). `npm run build`
+clean: compliance sweep 0 errors (same 14 pre-existing warnings, 0 new),
+0 auth-fetch violations, `next build` exit 0, all 29 routes generated
+(`/signals` still dynamic `ƒ`, unchanged).
+
+**OPEN:**
+- No live/browser verification — sandbox has no browser, standing
+  constraint every session flags. **FOUNDER: please confirm live: the
+  strongest/weakest two-column sector view with real data, the AI Smart
+  Screener's example-pill prefill actually submitting, the table's
+  mobile column collapse at a real narrow viewport, "+Compare" updating
+  the tray, CSV export downloading a real file, and free-tier masking
+  rendering correctly.**
+- The Step 6 "sticky bottom bar" reading was NOT built (see above) —
+  flagged for founder confirmation this interpretation (prominent
+  indicator inside the existing merged component) is the intended one,
+  not a silent scope-narrowing.

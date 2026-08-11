@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Layers, ChevronDown, ChevronUp } from "lucide-react";
+import { Layers } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { DeltaValue } from "@/components/ui/DeltaValue";
-import type { SectorSummary, WatchlistSummary } from "@/lib/api/types";
+import type { SectorSummary, SectorSummaryRow, WatchlistSummary } from "@/lib/api/types";
 
 /**
  * Surface 3 (Task 12) — summary cards, extending the B11/B12 narrative
@@ -49,15 +49,38 @@ function SymbolGroup({ label, symbols, tone }: { label: string; symbols: string[
   );
 }
 
-const SECTOR_CAP = 4;
+const STRONG_CAP = 4;
+const WEAK_CAP = 3;
 
-/** Ranked symmetrically — both the strongest AND weakest sector are always
+function SectorRow({ row }: { row: SectorSummaryRow }) {
+  return (
+    <div className="flex items-center justify-between px-5 py-2">
+      <span className="text-sm">{row.sector}</span>
+      <span className="flex items-center gap-3">
+        <span className="font-mono text-[11px] text-foreground-faint">{row.count} stocks</span>
+        <DeltaValue value={row.avg_delta} className="w-16 justify-end" />
+      </span>
+    </div>
+  );
+}
+
+/** Ranked symmetrically — both the strongest AND weakest sectors are always
  * shown, matching the master-context symmetry rule (a movers-style display
- * must never show only the up side). Capped to 4 by default, expandable —
- * same pattern as the approved Signals mockup. */
+ * must never show only the up side). BUG FIX (2026-08-11): the previous
+ * version's `slice(0, SECTOR_CAP)` on `data.ranked` (which
+ * core/summary_cards.py sorts strongest-to-weakest) only ever rendered the
+ * strongest end — despite this same docstring already claiming symmetry —
+ * the weakest sector was never actually shown by default. Now genuinely
+ * splits into a compact STRONGEST | WEAKEST two-column view (top ~4 /
+ * bottom ~3, shrinking either side so they never overlap when the sector
+ * count is small); "View all sectors →" expands to the full ranked list. */
 export function SectorSummaryCard({ data }: { data: SectorSummary }) {
   const [expanded, setExpanded] = useState(false);
-  const visible = expanded ? data.ranked : data.ranked.slice(0, SECTOR_CAP);
+  const total = data.ranked.length;
+  const weakCap = Math.min(WEAK_CAP, Math.floor(total / 2));
+  const strongCap = Math.min(STRONG_CAP, total - weakCap);
+  const strongest = data.ranked.slice(0, strongCap);
+  const weakest = data.ranked.slice(total - weakCap).reverse();
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-surface-raised">
@@ -68,33 +91,40 @@ export function SectorSummaryCard({ data }: { data: SectorSummary }) {
           <p className="text-[11px] text-foreground-faint">{data.summary}</p>
         </div>
       </div>
-      {visible.length > 0 && (
+
+      {!expanded && total > 0 && (
+        <div className="grid grid-cols-1 border-t border-border sm:grid-cols-2">
+          <div className="divide-y divide-border border-b border-border sm:border-b-0 sm:border-r">
+            <p className="px-5 pt-2.5 pb-1 font-mono text-[10px] uppercase tracking-wide text-foreground-faint">Strongest</p>
+            {strongest.map((r) => (
+              <SectorRow key={r.sector} row={r} />
+            ))}
+          </div>
+          <div className="divide-y divide-border">
+            <p className="px-5 pt-2.5 pb-1 font-mono text-[10px] uppercase tracking-wide text-foreground-faint">Weakest</p>
+            {weakest.length > 0 ? (
+              weakest.map((r) => <SectorRow key={r.sector} row={r} />)
+            ) : (
+              <p className="px-5 pb-2.5 text-xs text-foreground-faint">No distinct weakest sector today.</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {expanded && (
         <div className="divide-y divide-border border-t border-border">
-          {visible.map((r) => (
-            <div key={r.sector} className="flex items-center justify-between px-5 py-2.5">
-              <span className="text-sm">{r.sector}</span>
-              <span className="flex items-center gap-3">
-                <span className="font-mono text-[11px] text-foreground-faint">{r.count} stocks</span>
-                <DeltaValue value={r.avg_delta} className="w-16 justify-end" />
-              </span>
-            </div>
+          {data.ranked.map((r) => (
+            <SectorRow key={r.sector} row={r} />
           ))}
         </div>
       )}
-      {data.ranked.length > SECTOR_CAP && (
+
+      {total > 0 && (
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="flex w-full items-center justify-center gap-1 border-t border-border py-2.5 text-xs font-medium text-accent"
+          className="block w-full border-t border-border py-2.5 text-center text-xs font-medium text-accent"
         >
-          {expanded ? (
-            <>
-              Show less <ChevronUp size={13} />
-            </>
-          ) : (
-            <>
-              View all {data.ranked.length} sectors <ChevronDown size={13} />
-            </>
-          )}
+          {expanded ? "Show less ↑" : "View all sectors →"}
         </button>
       )}
     </div>

@@ -181,104 +181,118 @@ export function SignalsExplorer() {
           &quot;highest composite score today&quot; or &quot;IT sector stocks with high delivery&quot;.
         </p>
       )}
-      <div className="mb-3 flex flex-wrap items-center gap-2 overflow-x-auto pb-1">
-        {explorerControlsEnabled && (
-          <>
-            <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-xs text-foreground-muted">
-              <Search size={12} />
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search company or symbol"
-                className="w-36 bg-transparent outline-none sm:w-44"
-              />
-            </label>
-            <select
-              value={sector}
-              onChange={(e) => setSector(e.target.value)}
-              className="shrink-0 rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs text-foreground-muted"
-            >
-              <option value="">All sectors</option>
-              {SIGNAL_SECTORS.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-            <input
-              value={scoreMin}
-              onChange={(e) => setScoreMin(e.target.value)}
-              placeholder="Score min"
-              type="number"
-              className="w-20 shrink-0 rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs"
-            />
-            <input
-              value={scoreMax}
-              onChange={(e) => setScoreMax(e.target.value)}
-              placeholder="Score max"
-              type="number"
-              className="w-20 shrink-0 rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs"
-            />
-            <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-xs text-foreground-muted">
-              <Filter size={12} />
-              <input type="checkbox" checked={eventRiskOnly} onChange={(e) => setEventRiskOnly(e.target.checked)} />
-              Event risk
-            </label>
-          </>
-        )}
-        {user && (
-          <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-xs text-foreground-muted">
-            <input type="checkbox" checked={watchlistOnly} onChange={(e) => setWatchlistOnly(e.target.checked)} />
-            Watchlist only
-          </label>
-        )}
-
-        <div className="ml-auto flex shrink-0 items-center gap-2">
+      {/* Step 5 polish (2026-08-11): wrapped in a card (border+background+
+          padding) so the filter bar reads as one cohesive design-system
+          element instead of a bare row of pills — each control keeps its
+          own border but now sits on `bg-hover` for depth against the
+          card's `bg-surface-raised`, same layering SmartScreenerBox's own
+          input row already uses. All filter logic below is unchanged. */}
+      <div className="mb-3 rounded-xl border border-border bg-surface-raised p-3">
+        <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1">
           {explorerControlsEnabled && (
             <>
+              <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs text-foreground-muted">
+                <Search size={12} />
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Search company or symbol"
+                  className="w-36 bg-transparent outline-none sm:w-44"
+                />
+              </label>
               <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-                className="rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs text-foreground-muted"
+                value={sector}
+                onChange={(e) => setSector(e.target.value)}
+                className="shrink-0 rounded-lg border border-border bg-hover px-2 py-1.5 text-xs text-foreground-muted"
               >
-                {SORT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    Sort: {o.label}
+                <option value="">All sectors</option>
+                {SIGNAL_SECTORS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
                   </option>
                 ))}
               </select>
-              <button
-                onClick={() => setOrder((o) => (o === "asc" ? "desc" : "asc"))}
-                className="flex items-center gap-1 rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs text-foreground-muted"
-                title="Toggle sort order"
-              >
-                <ArrowUpDown size={11} /> {order === "asc" ? "↑" : "↓"}
-              </button>
+              <input
+                value={scoreMin}
+                onChange={(e) => setScoreMin(e.target.value)}
+                placeholder="Score min"
+                type="number"
+                className="w-20 shrink-0 rounded-lg border border-border bg-hover px-2 py-1.5 text-xs"
+              />
+              <input
+                value={scoreMax}
+                onChange={(e) => setScoreMax(e.target.value)}
+                placeholder="Score max"
+                type="number"
+                className="w-20 shrink-0 rounded-lg border border-border bg-hover px-2 py-1.5 text-xs"
+              />
+              <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs text-foreground-muted">
+                <Filter size={12} />
+                <input type="checkbox" checked={eventRiskOnly} onChange={(e) => setEventRiskOnly(e.target.checked)} />
+                Event risk
+              </label>
             </>
           )}
-          <div className="relative">
-            <button
-              onClick={() => setColumnPickerOpen((o) => !o)}
-              className="flex items-center gap-1 rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-xs text-foreground-muted"
-            >
-              <SlidersHorizontal size={11} /> Columns
-            </button>
-            {columnPickerOpen && (
-              <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-border bg-surface-raised p-2 text-sm shadow-lg">
-                {(Object.keys(columns) as (keyof VisibleColumns)[]).map((k) => (
-                  <label key={k} className="flex items-center gap-2 py-1 capitalize">
-                    <input
-                      type="checkbox"
-                      checked={columns[k]}
-                      onChange={(e) => setColumns((c) => ({ ...c, [k]: e.target.checked }))}
-                    />
-                    {k === "eventRisk" ? "Event risk" : k}
-                  </label>
-                ))}
-              </div>
+          {user && (
+            <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs text-foreground-muted">
+              <input type="checkbox" checked={watchlistOnly} onChange={(e) => setWatchlistOnly(e.target.checked)} />
+              Watchlist only
+            </label>
+          )}
+
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            {explorerControlsEnabled && (
+              <>
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                  className="rounded-lg border border-border bg-hover px-2 py-1.5 text-xs text-foreground-muted"
+                >
+                  {SORT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      Sort: {o.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => setOrder((o) => (o === "asc" ? "desc" : "asc"))}
+                  className="flex items-center gap-1 rounded-lg border border-border bg-hover px-2 py-1.5 text-xs text-foreground-muted"
+                  title="Toggle sort order"
+                >
+                  <ArrowUpDown size={11} /> {order === "asc" ? "↑" : "↓"}
+                </button>
+              </>
             )}
+            <div className="relative">
+              <button
+                onClick={() => setColumnPickerOpen((o) => !o)}
+                className="flex items-center gap-1 rounded-lg border border-border bg-hover px-2 py-1.5 text-xs text-foreground-muted"
+              >
+                <SlidersHorizontal size={11} /> Columns
+              </button>
+              {columnPickerOpen && (
+                <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-border bg-surface-raised p-2 text-sm shadow-lg">
+                  {(Object.keys(columns) as (keyof VisibleColumns)[]).map((k) => (
+                    <label key={k} className="flex items-center gap-2 py-1 capitalize">
+                      <input
+                        type="checkbox"
+                        checked={columns[k]}
+                        onChange={(e) => setColumns((c) => ({ ...c, [k]: e.target.checked }))}
+                      />
+                      {k === "eventRisk" ? "Event risk" : k}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+            <ExportButton
+              onExport={exportCsv}
+              canExport={!!canExport}
+              label="CSV"
+              enabledTitle="Export current filter as CSV"
+              className="flex items-center gap-1 rounded-lg border border-border bg-hover px-2 py-1.5 text-xs text-foreground-muted disabled:opacity-40"
+            />
           </div>
-          <ExportButton onExport={exportCsv} canExport={!!canExport} label="CSV" enabledTitle="Export current filter as CSV" />
         </div>
       </div>
 
@@ -294,7 +308,7 @@ export function SignalsExplorer() {
                 {columns.delivery && <th className="hidden px-3 py-3 sm:table-cell">Delivery</th>}
                 {columns.volume && <th className="hidden px-3 py-3 sm:table-cell">Volume</th>}
                 {columns.chips && <th className="hidden px-3 py-3 lg:table-cell">Signals</th>}
-                {columns.eventRisk && <th className="px-3 py-3 text-center">Event</th>}
+                {columns.eventRisk && <th className="hidden px-3 py-3 text-center sm:table-cell">Event</th>}
                 <th className="px-3 py-3" />
               </tr>
             </thead>

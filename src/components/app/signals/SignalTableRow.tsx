@@ -161,8 +161,14 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
           )}
         </td>
       )}
+      {/* Step 4 mobile polish (2026-08-11): hidden below `sm` so the
+          smallest viewports show exactly Symbol + Price + Score (+ the
+          always-visible Compare action) — matches Delivery/Volume's own
+          `sm:table-cell` treatment, was previously the one column with no
+          responsive hide at all. Tapping a row's Symbol still opens the
+          full stock detail page for everything hidden here. */}
       {columns.eventRisk && (
-        <td className="px-3 py-2.5 text-center">{row.event_risk ? <span title="Event risk">⚠️</span> : ""}</td>
+        <td className="hidden px-3 py-2.5 text-center sm:table-cell">{row.event_risk ? <span title="Event risk">⚠️</span> : ""}</td>
       )}
       <td className="px-3 py-2.5 text-right">
         <button

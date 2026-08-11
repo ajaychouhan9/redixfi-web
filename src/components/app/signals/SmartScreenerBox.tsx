@@ -91,29 +91,66 @@ export function SmartScreenerBox() {
     void runQuery(q);
   }
 
+  // Step 3 polish (2026-08-11) — visual-only "try an example" prefills;
+  // reuses the exact same setQuery + run() path a typed query already goes
+  // through, so submit behavior is unchanged, just a convenience shortcut.
+  const EXAMPLE_QUERIES = ["energy stocks with rising delivery and above-average volume", "Compare TCS, INFY and WIPRO"];
+
   return (
-    <div className="mb-5 overflow-hidden rounded-xl border border-border bg-surface-raised">
+    <div
+      className="relative mb-5 overflow-hidden rounded-2xl border"
+      style={{
+        background: "linear-gradient(135deg, color-mix(in srgb, var(--surface-raised) 88%, var(--accent) 12%), var(--surface-raised))",
+        borderColor: "color-mix(in srgb, var(--accent) 30%, transparent)",
+      }}
+    >
+      <div className="absolute inset-x-0 top-0 h-1" style={{ background: "linear-gradient(90deg, var(--accent), var(--accent-dim))" }} />
       <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
-        <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/10">
-            <GitCompare size={14} className="text-accent" />
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15">
+            <GitCompare size={15} className="text-accent" />
           </span>
           <div>
             <h3 className="flex items-center gap-2 text-sm font-semibold">
               AI Smart Screener <AiLabel />
             </h3>
-            <p className="text-[11px] text-foreground-faint">Add up to {COMPARISON_QUEUE_MAX} · tap &ldquo;+ Compare&rdquo; on any row, or describe what to filter by below</p>
+            {/* Step 6 polish: a prominent "Compare (N): SYM1, SYM2…" readout
+                once stocks are queued — the compare tray is deliberately
+                merged into this box (see the module docstring above), not a
+                separate sticky bar, so this IS the "prominent indicator" the
+                task asks for rather than a second floating UI. */}
+            {queue.length > 0 ? (
+              <p className="text-[11px] font-medium text-accent">
+                Compare ({queue.length}): {queue.map((e) => e.symbol).join(", ")}
+              </p>
+            ) : (
+              <p className="text-[11px] text-foreground-faint">Add up to {COMPARISON_QUEUE_MAX} · tap &ldquo;+ Compare&rdquo; on any row, or describe what to filter by below</p>
+            )}
           </div>
         </div>
         {queue.length > 0 && <span className="shrink-0 rounded-full bg-accent/10 px-2 py-1 font-mono text-[10px] text-accent">{queue.length}/{COMPARISON_QUEUE_MAX}</span>}
       </div>
 
       <div className="p-5">
-        <p className="mb-3 text-xs text-foreground-muted">
-          Describe what to filter by — e.g. &ldquo;energy stocks with rising delivery, above VWAP, no negative news this
-          week&rdquo; — or ask to compare stocks, e.g. &ldquo;Compare TCS, INFY and WIPRO&rdquo;. The AI only translates
-          your query into filters or a comparison; you author it.
+        <p className="mb-3 text-sm leading-relaxed text-foreground">
+          Describe what you want to find. RedixFi converts your request into measurable filters — the AI translates,
+          you author it.
         </p>
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          {EXAMPLE_QUERIES.map((ex) => (
+            <button
+              key={ex}
+              type="button"
+              onClick={() => {
+                setQuery(ex);
+                void runQuery(ex);
+              }}
+              className="rounded-full border border-border bg-hover px-2.5 py-1 text-left text-[11.5px] text-foreground-muted transition-colors hover:border-accent/40 hover:text-foreground"
+            >
+              &ldquo;{ex}&rdquo;
+            </button>
+          ))}
+        </div>
 
         {queue.length > 0 && (
           <div className="mb-4 flex flex-wrap items-center gap-2">
