@@ -1130,9 +1130,23 @@ export interface ScoreHistoryPoint {
   composite_score: number;
 }
 
+/** Ask-panel-upgrade session — per-source citation metadata (core/ask.py::
+ * compute_source_citations/generic_source_citations), the richer sibling
+ * of `sources_used` (bare category names). `investor_calls` produces one
+ * entry per concall document (own filing_date/url each); every other
+ * source type is a single aggregate entry for that fact-packet section. */
+export interface SourceCitation {
+  type: string;
+  label: string;
+  detail: string | null;
+  url?: string | null;
+  subject?: string | null;
+}
+
 export interface AskResult {
   answer: string;
   sources_used: string[];
+  source_citations: SourceCitation[];
   refused: boolean;
   conversation_id: string;
   // Task 22 Phase 1/2/3 — additive. Every pre-existing caller (explicit
@@ -1170,6 +1184,35 @@ export interface AskLimitDetail {
   cta: "subscribe" | "topup";
   topup_questions?: number;
   topup_price_paise?: number;
+}
+
+/** Ask-panel-upgrade session, Phase 3 — one persisted turn from
+ * GET /ask/history (users_repo.ASK_CONVERSATIONS), same shape
+ * append_conversation_turn writes. `source_citations`/`follow_ups` are
+ * only ever present on an assistant message. */
+export interface AskConversationMessage {
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+  source_citations?: SourceCitation[];
+  follow_ups?: string[];
+}
+
+export interface AskConversation {
+  conversation_id: string;
+  user_id: string;
+  symbol: string;
+  messages: AskConversationMessage[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AskHistoryResult {
+  conversation: AskConversation | null;
+  // Context-tailored empty-state chips for symbol mode (core/ask.py::
+  // compute_initial_suggestions) — [] for the general/no-symbol panel or
+  // a locked symbol.
+  initial_suggestions: string[];
 }
 
 // ---------- Task 16 Part C: anomaly / unusual-activity detection ----------

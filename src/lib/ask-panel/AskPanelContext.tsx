@@ -13,13 +13,26 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from "re
 interface AskPanelContextValue {
   open: boolean;
   setOpen: (open: boolean) => void;
+  // Ask-panel-upgrade session, Phase 5 — full-page/expanded overlay mode
+  // (task brief: sidebar's "AI Assistant" should feel like a real
+  // destination, not just the small floating sheet). Shared here, not
+  // local state in AskRedixFi, so a trigger OTHER than the panel itself
+  // (Sidebar) can request the expanded view directly on open.
+  expanded: boolean;
+  setExpanded: (expanded: boolean) => void;
+  openExpanded: () => void;
 }
 
 const AskPanelContext = createContext<AskPanelContextValue | null>(null);
 
 export function AskPanelProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
-  const value = useMemo(() => ({ open, setOpen }), [open]);
+  const [expanded, setExpanded] = useState(false);
+  const openExpanded = () => {
+    setExpanded(true);
+    setOpen(true);
+  };
+  const value = useMemo(() => ({ open, setOpen, expanded, setExpanded, openExpanded }), [open, expanded]);
   return <AskPanelContext.Provider value={value}>{children}</AskPanelContext.Provider>;
 }
 

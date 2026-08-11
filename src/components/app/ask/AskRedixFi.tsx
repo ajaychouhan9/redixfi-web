@@ -2,19 +2,28 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Sparkles, X, Send, Search, Globe } from "lucide-react";
+import { Sparkles, X, Send, Search, Globe, Maximize2, Minimize2, RotateCcw } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 import { ApiError } from "@/lib/api/client";
 import { searchResearch } from "@/lib/api/endpoints";
-import { askRedixfi } from "@/lib/api/mutations";
+import { askRedixfi, getAskHistory } from "@/lib/api/mutations";
 import { getCurrentSymbol } from "@/lib/current-symbol";
 import { CompareResultCard } from "@/components/app/signals/CompareResultCard";
 import { ScoreHistoryChart } from "@/components/app/ask/ScoreHistoryChart";
+import { MarkdownAnswer } from "@/components/app/ask/MarkdownAnswer";
+import { SourcesSection } from "@/components/app/ask/SourcesSection";
 import { SignalTableRow, type VisibleColumns } from "@/components/app/signals/SignalTableRow";
 import { filterChips } from "@/components/app/signals/SmartScreenerBox";
 import { Chip } from "@/components/ui/Chip";
-import type { AskLimitDetail, AskScreenResult, CompareResult, ResearchSearchRow, ScoreHistoryPoint } from "@/lib/api/types";
+import type {
+  AskLimitDetail,
+  AskScreenResult,
+  CompareResult,
+  ResearchSearchRow,
+  ScoreHistoryPoint,
+  SourceCitation,
+} from "@/lib/api/types";
 
 /**
  * Persistent "RedixFi AI" entry point, per the locked design system: lives
@@ -35,7 +44,8 @@ import type { AskLimitDetail, AskScreenResult, CompareResult, ResearchSearchRow,
 interface AskMessage {
   role: "user" | "ai";
   text: string;
-  sources?: string[];
+  sourceCitations?: SourceCitation[];
+  createdAt?: string;
   compare?: CompareResult | null;
   screen?: AskScreenResult | null;
   // Task 22 Phase 4 — narrow web fallback (company-profile facts read from
@@ -73,7 +83,7 @@ const SCREEN_COLUMNS: VisibleColumns = { sector: true, delivery: true, volume: f
 
 export function AskRedixFi() {
   const { user, getToken } = useAuth();
-  const { open, setOpen } = useAskPanel();
+  const { open, setOpen, expanded, setExpanded } = useAskPanel();
   const [symbol, setSymbol] = useState<string | null>(null);
   const [results, setResults] = useState<ResearchSearchRow[]>([]);
   const [searching, setSearching] = useState(false);
@@ -82,7 +92,15 @@ export function AskRedixFi() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [limit, setLimit] = useState<AskLimitDetail | null>(null);
+  // Phase 3 — persistent chat history. `initialSuggestions` are the
+  // context-tailored empty-state chips for THIS symbol (core/ask.py::
+  // compute_initial_suggestions, via GET /ask/history) — falls back to
+  // the generic QUICK_PROMPTS_SYMBOL set until/unless the server returns
+  // something more specific.
+  const [initialSuggestions, setInitialSuggestions] = useState<string[]>([]);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const historyFetchKey = useRef<string | null>(null);
 
   // Symbol-search suggestions — only relevant while no symbol context is set
   // yet; the same box doubles as "ask anything" once ≥2 chars are typed, so
@@ -116,10 +134,14 @@ export function AskRedixFi() {
     setConversationId(null);
     setInput("");
     setLimit(null);
+    setInitialSuggestions([]);
+    setHistoryLoaded(false);
+    historyFetchKey.current = null;
   }
 
   function close() {
     setOpen(false);
+    setExpanded(false);
   }
 
   function pickSymbol(sym: string) {
@@ -129,6 +151,53 @@ export function AskRedixFi() {
     setMessages([]);
     setConversationId(null);
     setLimit(null);
+    setInitialSuggestions([]);
+    setHistoryLoaded(false);
+    historyFetchKey.current = null;
+  }
+
+  // Phase 3 — resumable history. Loads the caller's most recent
+  // conversation for the current symbol (or "_general" server-side) and,
+  // for symbol mode, the context-tailored initial suggestion chips —
+  // fired once per distinct symbol context per panel-open, not on every
+  // render (historyFetchKey guards that).
+  async function loadHistory(sym: string | null) {
+    const key = sym ?? "_general";
+    if (historyFetchKey.current === key) return;
+    historyFetchKey.current = key;
+    try {
+      const token = await getToken();
+      if (!token) return;
+      const history = await getAskHistory(token, sym);
+      setInitialSuggestions(history.initial_suggestions ?? []);
+      const convo = history.conversation;
+      if (convo && convo.messages.length > 0) {
+        setConversationId(convo.conversation_id);
+        setMessages(
+          convo.messages.map((m) => ({
+            role: m.role === "user" ? "user" : "ai",
+            text: m.content,
+            createdAt: m.created_at,
+            sourceCitations: m.source_citations,
+            followUps: m.role === "assistant" ? m.follow_ups : undefined,
+            resolvedSymbol: sym,
+          }))
+        );
+      }
+    } finally {
+      setHistoryLoaded(true);
+    }
+  }
+
+  // "New conversation" — starts fresh WITHOUT losing the current symbol
+  // context (unlike reset(), which also clears the symbol/"Change stock").
+  function startNewConversation() {
+    setMessages([]);
+    setConversationId(null);
+    setLimit(null);
+    // A fresh key lets the NEXT loadHistory (e.g. a later reopen) run
+    // again — but this conversation itself starts empty immediately.
+    historyFetchKey.current = symbol ?? "_general";
   }
 
   async function send(text: string) {
@@ -151,7 +220,8 @@ export function AskRedixFi() {
       setMessages((prev) => [
         ...prev,
         {
-          role: "ai", text: result.answer, sources: result.sources_used, compare: result.compare, screen: result.screen,
+          role: "ai", text: result.answer, sourceCitations: result.source_citations,
+          compare: result.compare, screen: result.screen,
           webSourced: result.web_sourced, webSourceLabel: result.web_source_label, webSourceUrl: result.web_source_url,
           scoreHistory: result.score_history, resolvedSymbol: result.resolved_symbol, followUps: result.follow_ups,
         },
@@ -188,7 +258,16 @@ export function AskRedixFi() {
     paid: "10/day",
   };
   const dailyLimitLabel = DAILY_LIMIT_LABEL[user?.tier ?? "free"] ?? "1/symbol/day";
-  const quickPrompts = symbol ? QUICK_PROMPTS_SYMBOL : QUICK_PROMPTS_GENERAL;
+  // Context-tailored suggestions (Phase 3/GET /ask/history) win over the
+  // generic per-mode fallback whenever the server had something specific
+  // to say about this symbol; the generic set still covers open/general
+  // mode (no per-symbol tailoring there) and the loading window before
+  // history has resolved.
+  const quickPrompts = symbol
+    ? initialSuggestions.length > 0
+      ? initialSuggestions
+      : QUICK_PROMPTS_SYMBOL
+    : QUICK_PROMPTS_GENERAL;
 
   // Presets the current page's symbol into a fresh conversation whenever the
   // panel opens with none chosen yet — runs off `open` itself (not a local
@@ -203,6 +282,18 @@ export function AskRedixFi() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  // Phase 3 — load resumable history (and, in symbol mode, the tailored
+  // initial suggestions) once per distinct symbol context, whenever the
+  // panel is open. Fires after the preset-symbol effect above so a page's
+  // own current symbol is already resolved before history is fetched for
+  // it, not for the stale "no symbol yet" state.
+  useEffect(() => {
+    if (open && user) {
+      loadHistory(symbol);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, symbol, user]);
+
   return (
     <>
       {/* Font-size fix (2026-08-11): was text-xs (12px), task wants 14px. */}
@@ -214,9 +305,21 @@ export function AskRedixFi() {
         <Sparkles size={12} /> RedixFi AI
       </button>
 
+      {/* Phase 5 — expanded mode dims the page behind it, same overlay
+          posture as any modal in this codebase, but stays a dialog on TOP
+          of the current page rather than navigating to a new route (task
+          brief's explicit "not a new page/route" requirement). */}
+      {open && expanded && (
+        <div className="fixed inset-0 z-40 bg-black/40" onClick={close} aria-hidden />
+      )}
+
       {open && (
         <div
-          className="fixed inset-x-0 bottom-0 z-50 flex max-h-[85vh] w-full flex-col overflow-hidden border border-border bg-surface-raised shadow-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:w-[460px] sm:rounded-2xl lg:w-[560px]"
+          className={
+            expanded
+              ? "fixed inset-x-3 top-3 bottom-3 z-50 mx-auto flex max-w-3xl flex-col overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-2xl sm:inset-x-6 sm:top-6 sm:bottom-6"
+              : "fixed inset-x-0 bottom-0 z-50 flex max-h-[85vh] w-full flex-col overflow-hidden border border-border bg-surface-raised shadow-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:w-[460px] sm:rounded-2xl lg:w-[560px]"
+          }
           role="dialog"
           aria-label="Ask RedixFi AI"
         >
@@ -232,11 +335,27 @@ export function AskRedixFi() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {messages.length > 0 && (
+                <button
+                  onClick={startNewConversation}
+                  title="New conversation"
+                  className="flex items-center gap-1 text-[11px] text-foreground-faint hover:text-foreground"
+                >
+                  <RotateCcw size={11} /> New
+                </button>
+              )}
               {symbol && (
                 <button onClick={reset} className="text-[11px] text-foreground-faint hover:text-foreground">
                   Change stock
                 </button>
               )}
+              <button
+                onClick={() => setExpanded(!expanded)}
+                aria-label={expanded ? "Collapse" : "Expand"}
+                className="text-foreground-faint hover:text-foreground"
+              >
+                {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+              </button>
               <button onClick={close} aria-label="Close" className="text-foreground-faint hover:text-foreground">
                 <X size={16} />
               </button>
@@ -256,7 +375,11 @@ export function AskRedixFi() {
             </div>
           ) : (
             <>
-              <div ref={scrollRef} className="space-y-3 overflow-y-auto px-4 py-3" style={{ maxHeight: "58vh", minHeight: messages.length ? 200 : undefined }}>
+              <div
+                ref={scrollRef}
+                className={expanded ? "flex-1 space-y-3 overflow-y-auto px-4 py-3" : "space-y-3 overflow-y-auto px-4 py-3"}
+                style={expanded ? undefined : { maxHeight: "58vh", minHeight: messages.length ? 200 : undefined }}
+              >
                 {!symbol && results.length > 0 && (
                   <ul className="max-h-48 divide-y divide-border overflow-y-auto rounded-lg border border-border">
                     {results.map((r) => (
@@ -276,7 +399,10 @@ export function AskRedixFi() {
                 )}
                 {!symbol && searching && <p className="px-1 text-xs text-foreground-faint">Searching…</p>}
 
-                {messages.length === 0 && (
+                {messages.length === 0 && !historyLoaded && (
+                  <p className="px-1 text-xs text-foreground-faint">Loading…</p>
+                )}
+                {messages.length === 0 && historyLoaded && (
                   <div>
                     <p className="mb-2 text-xs text-foreground-faint">Try asking:</p>
                     <div className="space-y-1.5">
@@ -303,10 +429,13 @@ export function AskRedixFi() {
                             : { background: "var(--hover)", color: "var(--foreground-muted)", border: "1px solid var(--border)" }
                         }
                       >
-                        {m.text}
+                        {/* Phase 2 — structured markdown rendering for AI answers
+                            (headers/bold/bullets, core/ask.py's ASK_SYSTEM_TEMPLATE
+                            rule 7); a user's own question stays plain text. */}
+                        {m.role === "ai" ? <MarkdownAnswer text={m.text} /> : m.text}
                         {/* Task 22 Phase 4 — MUST be visibly labeled, not just a backend
                             flag (task doc's explicit requirement): a distinct badge, never
-                            folded into the sources_used chips below (those imply RedixFi's
+                            folded into the source citations below (those imply RedixFi's
                             own measured data; this wasn't LLM-generated or RedixFi-sourced
                             at all — a structured fact read from an external source). */}
                         {m.webSourced && (
@@ -321,13 +450,14 @@ export function AskRedixFi() {
                             )}
                           </div>
                         )}
-                        {m.sources && m.sources.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-1 border-t border-border pt-2">
-                            {m.sources.map((s) => (
-                              <span key={s} className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-[9px] uppercase text-accent-dim">
-                                {s}
-                              </span>
-                            ))}
+                        {/* Phase 1 — collapsible per-source citations, replaces the
+                            old bare sources_used category chips entirely. */}
+                        {m.role === "ai" && m.sourceCitations && <SourcesSection citations={m.sourceCitations} />}
+                        {m.createdAt && (
+                          <div className="mt-1.5 text-[10px] text-foreground-faint opacity-70">
+                            {new Date(m.createdAt).toLocaleString(undefined, {
+                              month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+                            })}
                           </div>
                         )}
                       </div>

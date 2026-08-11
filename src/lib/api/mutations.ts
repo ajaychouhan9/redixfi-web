@@ -19,6 +19,7 @@ import type {
   PortfolioAnalytics,
   AnomalyFlagDoc,
   AskResult,
+  AskHistoryResult,
   PromoCodeAdmin,
   AlertRule,
   AlertRulesList,
@@ -253,6 +254,16 @@ export async function askRedixfi(
   body: { symbol?: string | null; question: string; conversation_id?: string | null }
 ): Promise<AskResult> {
   const env = await apiMutate<AskResult>("/ask", "POST", body, { token });
+  return env.data;
+}
+
+// Ask-panel-upgrade session, Phase 3 — most recent resumable conversation
+// for this symbol (or "_general" server-side default when omitted), read-
+// only (GET /ask/history, core/routers/ask.py). `symbol` omitted for the
+// open/general-mode panel, matching start_conversation's own "_general"
+// bucket.
+export async function getAskHistory(token: string, symbol?: string | null): Promise<AskHistoryResult> {
+  const env = await apiGet<AskHistoryResult>("/ask/history", { token, params: symbol ? { symbol } : undefined });
   return env.data;
 }
 

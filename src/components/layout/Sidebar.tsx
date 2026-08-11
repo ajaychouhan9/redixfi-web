@@ -64,7 +64,7 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const { user } = useAuth();
-  const { open: askOpen, setOpen: setAskOpen } = useAskPanel();
+  const { open: askOpen, openExpanded: openAskExpanded } = useAskPanel();
 
   return (
     // Fixed/sticky sidebar (2026-08-11): previously a normal in-flow flex
@@ -107,7 +107,7 @@ export function Sidebar({
           );
         })}
         <button
-          onClick={() => setAskOpen(true)}
+          onClick={openAskExpanded}
           className={clsx(
             "flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",
             askOpen ? "bg-accent/10 text-accent" : "text-foreground-muted hover:bg-hover hover:text-foreground"
