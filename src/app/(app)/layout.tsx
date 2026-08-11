@@ -41,7 +41,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-screen">
       <Sidebar initialOverview={initialOverview} initialFresh={initialFresh} initialSignalsAsOf={initialSignalsAsOf} />
-      <div className="flex min-w-0 flex-1 flex-col">
+      {/* md:ml-56 reserves the width Sidebar no longer occupies in-flow now
+          that it's `md:fixed` (see Sidebar.tsx) — matches its `w-56`
+          exactly so content starts right at the sidebar's edge, not under
+          or away from it. No margin below md, where Sidebar is `hidden`
+          and BottomNav (fixed, bottom) is the nav instead. */}
+      <div className="flex min-w-0 flex-1 flex-col md:ml-56">
         <MarketRibbon initialOverview={initialOverview} initialFresh={initialFresh} initialSignalsAsOf={initialSignalsAsOf} />
         <main className="mb-14 flex-1 px-4 py-4 md:mb-0 md:px-6 md:py-6">{children}</main>
         <FooterDisclaimer />

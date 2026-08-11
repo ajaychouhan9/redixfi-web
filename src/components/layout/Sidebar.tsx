@@ -68,7 +68,18 @@ export function Sidebar({
   const { open: askOpen, setOpen: setAskOpen } = useAskPanel();
 
   return (
-    <aside className="hidden w-56 shrink-0 flex-col border-r border-border bg-surface md:flex">
+    // Fixed/sticky sidebar (2026-08-11): previously a normal in-flow flex
+    // child of layout.tsx's `flex min-h-screen` row, stretched tall by
+    // flex's default align-items:stretch — meaning it scrolled away with
+    // the page instead of staying put. `md:fixed` + `md:h-screen` pins it
+    // to the viewport at the md breakpoint (matching where it's shown at
+    // all — `hidden`/`md:flex` unchanged below); `overflow-y-auto` lets its
+    // OWN content scroll independently if it's ever taller than the
+    // viewport (short screens). `shrink-0` dropped — meaningless once the
+    // element is taken out of flow by `fixed`. layout.tsx's main-content
+    // wrapper gets a matching `md:ml-56` to reserve the space this no
+    // longer occupies in-flow.
+    <aside className="hidden w-56 flex-col overflow-y-auto border-r border-border bg-surface md:fixed md:left-0 md:top-0 md:flex md:h-screen">
       <div className="flex items-center gap-2 border-b border-border px-4 py-3">
         <span
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md"

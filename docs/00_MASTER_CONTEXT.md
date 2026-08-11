@@ -2195,3 +2195,59 @@ the compliance script's own accepted noise), 0 auth-fetch violations,
 - Notification badge count is an approximation (first 20 inbox items, not
   a true total) — would need a real backend unread-count endpoint for
   exactness; not built here (no new API endpoints, per standing rules).
+
+## Completion note — Session 4: Fixed/sticky sidebar (2026-08-11)
+FRONTEND ONLY, pure CSS/layout — no logic, no data, no component
+restructuring, no backend files touched (confirmed via `git status` before
+commit — only 2 files changed).
+
+**Root cause confirmed by reading the actual code (not guessed):**
+`Sidebar.tsx`'s `<aside>` (the ONLY sidebar component — no `AppSidebar.tsx`
+exists) was a normal in-flow flex child of `app/(app)/layout.tsx`'s
+`<div className="flex min-h-screen">` row, with `shrink-0` but no
+positioning — flex's default `align-items: stretch` made it as tall as the
+row, which grows with page content, so it scrolled away with the rest of
+the page exactly as reported.
+
+**Fix (2 files, minimal diff):**
+- `Sidebar.tsx`: `<aside>` className changed from
+  `hidden w-56 shrink-0 flex-col border-r border-border bg-surface md:flex`
+  to `hidden w-56 flex-col overflow-y-auto border-r border-border bg-surface
+  md:fixed md:left-0 md:top-0 md:flex md:h-screen` — `md:fixed`/`md:h-screen`
+  pin it to the viewport at the same `md` breakpoint it's already shown at
+  (mobile stays `hidden`, unaffected); `overflow-y-auto` lets the sidebar's
+  OWN content scroll independently if it's ever taller than the viewport.
+  `shrink-0` dropped (a flex-sizing hint, meaningless once `fixed` removes
+  the element from flex flow). The existing `flex-1` on the inner `<nav>`
+  already pushes the bottom Account/Checkout links + subscription/data-
+  status cards to the bottom of the sidebar's own box — now that the box is
+  a real `h-screen` instead of stretched-to-page-content, this already
+  achieves the requested "bottom cards pinned to the bottom of the
+  viewport" result with zero new `mt-auto`, so none was added (would have
+  been redundant with the existing `flex-1`).
+- `app/(app)/layout.tsx`: main-content wrapper (`MarketRibbon` + `main` +
+  `FooterDisclaimer`) gets `md:ml-56` added — reserves the exact width
+  (`w-56`) the sidebar no longer occupies in-flow now that it's `fixed`,
+  so content starts at the sidebar's edge instead of hiding underneath it.
+  `MarketRibbon` needed no change — it already lives inside this now-offset
+  wrapper, confirmed by reading the JSX tree, not assumed.
+- `BottomNav` (mobile) and `AppLayout`'s outer `flex min-h-screen` row:
+  confirmed untouched — `BottomNav` was already independently `fixed
+  ... md:hidden`, no interaction with this change.
+
+**Build result:** `npx tsc --noEmit` clean (exit 0). `npm run build` clean:
+compliance sweep 0 errors (same 14 pre-existing warnings, zero new — this
+change touched no user-facing copy), 0 auth-fetch violations, `next build`
+exit 0, all 29 routes generated, identical route list to the prior session
+(confirms no routes broke).
+
+**OPEN:**
+- No live/browser verification — sandbox has no browser, standing
+  constraint every session flags. **FOUNDER: please confirm live that
+  scrolling the Home (or any) page's main content leaves the sidebar
+  completely stationary with all nav items visible, and that a short
+  viewport (sidebar content taller than the window) scrolls the sidebar
+  independently rather than clipping it.**
+- Per the standing rule, this note lives in `redixfi-web/docs/` only — not
+  yet pasted into the canonical `C:\Redixfi\api\docs\00_MASTER_CONTEXT.md`
+  copy.
