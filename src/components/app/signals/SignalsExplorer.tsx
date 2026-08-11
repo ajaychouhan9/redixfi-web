@@ -299,8 +299,15 @@ export function SignalsExplorer() {
       <div className="overflow-hidden rounded-xl border border-border bg-surface-raised">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[680px] text-sm">
+            {/* Font-size audit (2026-08-11): header row was text-[10px] —
+                well below the task's 13px "secondary labels" floor, and
+                the most layout-sensitive spot in the app (7 columns).
+                Bumped to text-[13px]; verified reasoning in the session's
+                completion note that single-word headers + this table's
+                existing overflow-x-auto/min-w-[680px] safety net absorb
+                the extra width without breaking at 1280px. */}
             <thead>
-              <tr className="border-b border-border text-left font-mono text-[10px] uppercase tracking-wider text-foreground-faint">
+              <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wider text-foreground-faint">
                 <th className="px-4 py-3">Symbol</th>
                 {columns.sector && <th className="hidden px-3 py-3 md:table-cell">Sector</th>}
                 <th className="px-3 py-3">Price</th>

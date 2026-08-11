@@ -2750,3 +2750,102 @@ routes generated, unchanged route list.
   this task. A future session should decide whether to extend `Chip`
   and `Collapsible` the same `titleClassName`-style opt-in size override
   `Card` just got, if the founder wants those bumped too.
+
+## Completion note — Session 11: Global font-size audit (2026-08-11)
+FRONTEND ONLY, CSS-only, 5 files, all table `<thead>` rows. No logic or
+data changes.
+
+**STEP 0 AUDIT (reported to the user before any edits):**
+- Base font size: confirmed UNSET anywhere — no `font-size` rule on
+  `html`/`body` in `globals.css`, no override in the `@theme inline`
+  block (which only remaps colors/fonts, not the size scale). Relies on
+  the browser default, 16px.
+- Class usage counts (grep, all `.tsx`): `text-xs` 194, `text-sm` 277
+  (already the dominant class), `text-base` 2, `text-lg` 11, `text-xl`
+  19, `text-2xl` 2.
+- ~55 hardcoded `text-[Npx]` values (9-15px) across ~30 files, mostly
+  badges/timestamps/tiny labels; zero `text-[Nrem]` anywhere.
+- Table cells: EVERY real data table (`SignalsExplorer`,
+  `WatchlistMainView`, insider trades, `GenericRecordTable`, fundamentals
+  peer/annual tables) sets `text-sm` on the `<table>` itself, so cell
+  VALUES already render at exactly 14px — already matching the task's
+  target. Table HEADER rows were the one confirmed, systemic gap: 5
+  tables hardcoded at `text-[10px]` (SignalsExplorer, WatchlistMainView,
+  and 3 inline result tables in AskRedixFi/SmartScreenerBox/
+  PromoCodeAdminView), well below the 13px "secondary labels" floor. A
+  second, less severe group (ScannerTab, PremarketTable,
+  GenericRecordTable, insider trades, fundamentals peer/annual tables)
+  sits at `text-xs` (12px) — close to but technically below 13px.
+
+**DECISION — Option B, narrowly scoped, NOT Option A:** since `text-sm`
+already renders at exactly 14px (the task's own body-text target) and is
+already used 277 times as the dominant body/table class, setting
+`html{font-size:14px}` (Option A) would DEMOTE every one of those 277
+already-correctly-sized elements to 12.25px, requiring a systemic
+text-sm→text-base rewrite across the entire app to compensate — the
+opposite of "cleanest." Sampled all 65 `text-xs`-on-`<p>` instances
+app-wide before deciding Option B's scope: confirmed every one is a
+legitimate caption/label/disclaimer/timestamp/loading-state (matching
+the task's own "do not change labels/captions" exclusion), not
+misapplied body content — so no bulk `text-xs`→`text-sm` rewrite either.
+Also checked (all unchanged, already correct, confirmed via grep):
+Sidebar nav items (`text-sm`, exactly matches the 14px nav target),
+large numbers (price/score: `text-lg`-`text-2xl`, 18-24px, within/above
+target), page titles (`text-xl`, 20px, matches the 20-22px target).
+
+**FIX APPLIED — the one confirmed, systemic gap:** all 5 `text-[10px]`
+table header rows bumped to `text-[13px]` (Tailwind has no named 13px
+step): `SignalsExplorer.tsx`, `WatchlistMainView.tsx`, `AskRedixFi.tsx`
+(inline compare/screen result table), `SmartScreenerBox.tsx` (inline
+screen result table), `PromoCodeAdminView.tsx`.
+
+**NOT fixed, reported per the task's own instruction:**
+- The 12px-header table group (ScannerTab, PremarketTable,
+  GenericRecordTable, insider trades, fundamentals peer/annual tables) —
+  only 1px below target, left alone to control scope/risk; a future pass
+  could bump these too if the founder wants full literal compliance.
+- `MarketRibbon`'s base `text-xs` (12px) — the NIFTY/BANKNIFTY/market-
+  status single-line header the task itself flags as an overflow-risk
+  area; deliberately NOT touched given its density (many elements already
+  competing for one line) without a live-tested follow-up.
+- `BottomNav`'s mobile nav labels (`text-[11px]`) — deliberately kept;
+  bumping toward the 14px desktop-nav target risks exactly the "5 items
+  overflow" failure Step 2 itself warns about, and 10-11px tab labels are
+  a standard, appropriate mobile convention (matches iOS/Android tab
+  bars), not an oversight.
+- `Chip` component's internal `text-xs` (signal chips like "Trend up")
+  and `Collapsible`'s question heading (`text-sm`) — both already flagged
+  as shared-component gaps in the prior session's completion note, still
+  open, still out of this session's scope for the same reason (sitewide
+  blast radius).
+
+**STEP 2 — breakage check:** this session's ONLY changes were the 5
+table header rows above — Sidebar, MarketRibbon, `Chip`, and `BottomNav`
+were never touched, so items 2 ("Sidebar nav — 8 items"), 3 ("Market
+ribbon"), 4 ("Signal chips"), and 5 ("Mobile bottom nav — 5 items") carry
+ZERO regression risk from this session by construction, not just by
+inspection. Item 1 ("Signals table — 7 columns at 1280px", the only area
+actually modified) reasoned through carefully since the sandbox has no
+browser: all 5 changed headers are single uppercase words ("Symbol",
+"Score", "Delivery", etc.) inside `<th>` cells with no fixed width;
+`SignalsExplorer`'s table already has `min-w-[680px]` + `overflow-x-auto`
+as a fallback, and at 1280px the available content width (viewport minus
+the 224px fixed sidebar minus page padding) leaves roughly 1000px of
+room — comfortably more than needed to absorb single-word headers
+growing 10px→13px. Reasoned as low-risk, not visually confirmed.
+
+**Build result:** `npx tsc --noEmit` clean (exit 0). `npm run build`
+clean: compliance sweep 0 errors (same 15 pre-existing warnings, 0 new),
+0 auth-fetch violations, `next build` exit 0, all 29 routes generated,
+unchanged route list.
+
+**OPEN:** no live/browser verification — sandbox has no browser, standing
+constraint every session flags, but especially load-bearing this session
+given the task's own emphasis on visual verification. **FOUNDER: please
+confirm live at 1280px desktop width: the Signals table's 7 columns
+still fit without wrapping/overflow with the larger header text, and
+that the Watchlist table and the 3 inline AI-result tables (Ask panel,
+Smart Screener) read clearly at the new header size without looking
+oversized relative to their compact row heights.** Also confirms/denies
+whether the founder wants a follow-up pass on the flagged-not-fixed
+items above (12px table-header group, MarketRibbon, Chip, Collapsible).

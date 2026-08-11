@@ -207,8 +207,11 @@ export function WatchlistMainView() {
       <div className="overflow-hidden rounded-xl border border-border bg-surface-raised">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
+            {/* Font-size audit (2026-08-11): was text-[10px], bumped to
+                text-[13px] per the task's 13px "secondary labels" floor —
+                same fix as SignalsExplorer.tsx's header row. */}
             <thead>
-              <tr className="border-b border-border text-left font-mono text-[10px] uppercase tracking-wider text-foreground-faint">
+              <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wider text-foreground-faint">
                 <th className="px-4 py-3">Symbol</th>
                 <th className="hidden px-3 py-3 sm:table-cell">Industry</th>
                 <th className="px-3 py-3">Price</th>

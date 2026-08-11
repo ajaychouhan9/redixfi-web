@@ -350,8 +350,11 @@ export function AskRedixFi() {
                         )}
                         <div className="overflow-x-auto rounded-lg border border-border">
                           <table className="w-full min-w-[560px] text-sm">
+                            {/* Font-size audit (2026-08-11): was text-[10px],
+                                bumped to text-[13px] per the task's 13px
+                                "secondary labels" floor. */}
                             <thead>
-                              <tr className="border-b border-border text-left font-mono text-[10px] uppercase tracking-wide text-foreground-faint">
+                              <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wide text-foreground-faint">
                                 <th className="px-3 py-2">Symbol</th>
                                 <th className="px-3 py-2">Sector</th>
                                 <th className="px-3 py-2">Score</th>

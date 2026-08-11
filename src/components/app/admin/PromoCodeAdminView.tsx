@@ -368,8 +368,10 @@ export function PromoCodeAdminView() {
       <Card title={`All codes (${codes.length})`}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[820px] text-sm">
+            {/* Font-size audit (2026-08-11): was text-[10px], bumped to
+                text-[13px] per the task's 13px "secondary labels" floor. */}
             <thead>
-              <tr className="border-b border-border text-left font-mono text-[10px] uppercase tracking-wide text-foreground-faint">
+              <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wide text-foreground-faint">
                 <th className="px-2 py-2">Code</th>
                 <th className="px-2 py-2">Type</th>
                 <th className="px-2 py-2">Value</th>
