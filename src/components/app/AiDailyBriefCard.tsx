@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import type { DailyBrief } from "@/lib/api/types";
 
@@ -19,6 +22,7 @@ function splitSummary(body: string, maxSentences = 3): { summary: string; rest: 
 
 export function AiDailyBriefCard({ brief }: { brief: DailyBrief | null }) {
   const { summary, rest } = brief ? splitSummary(brief.body) : { summary: "", rest: "" };
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <div
@@ -45,14 +49,15 @@ export function AiDailyBriefCard({ brief }: { brief: DailyBrief | null }) {
         {brief ? (
           <>
             <p className="text-[15px] leading-[1.75] text-foreground">{summary}</p>
+            {rest && expanded && <p className="mt-2 text-[15px] leading-[1.75] text-foreground">{rest}</p>}
             {rest && (
-              <details className="group mt-2">
-                <summary className="cursor-pointer list-none text-sm font-medium text-accent [&::-webkit-details-marker]:hidden">
-                  <span className="group-open:hidden">Read full brief →</span>
-                  <span className="hidden group-open:inline">Show less ↑</span>
-                </summary>
-                <p className="mt-2 text-[15px] leading-[1.75] text-foreground">{rest}</p>
-              </details>
+              <button
+                type="button"
+                onClick={() => setExpanded((e) => !e)}
+                className="mt-2 block cursor-pointer text-left text-sm font-medium text-accent"
+              >
+                {expanded ? "Show less ↑" : "Read full brief →"}
+              </button>
             )}
           </>
         ) : (

@@ -2251,3 +2251,39 @@ exit 0, all 29 routes generated, identical route list to the prior session
 - Per the standing rule, this note lives in `redixfi-web/docs/` only — not
   yet pasted into the canonical `C:\Redixfi\api\docs\00_MASTER_CONTEXT.md`
   copy.
+
+## Completion note — Session 5: AI Daily Brief "Show less" to the bottom (2026-08-11)
+FRONTEND ONLY, single file. `AiDailyBriefCard.tsx` was confirmed (not
+guessed) to use a native `<details>/<summary>` — by HTML spec, `<summary>`
+always renders as the FIRST child of `<details>`, so the toggle line sat
+between the summary paragraph and the expanded content, matching exactly
+what this session reported (a prior session's completion note had reasoned
+this placement was already "correct" on the assumption bottom-placement
+wasn't the actual ask — this session's literal requirement supersedes
+that: expanded state must read summary → full content → toggle, with the
+toggle last).
+
+**Fix:** replaced `<details>/<summary>` with a `useState` toggle (the
+task doc's own prescribed pattern for this exact situation, since a native
+`<summary>` structurally cannot be moved to the bottom). File promoted to
+`"use client"` (a new requirement — `useState` needs it; the only caller,
+Home's `page.tsx`, is a server component rendering this as a child, which
+composes fine, no other change needed there). Render order now: summary
+paragraph → (`rest` block, only when `expanded`) → toggle button (always
+last when `rest` exists), text switching between "Read full brief →" and
+"Show less ↑" the same way the old `<summary>` spans did. Header block
+(icon, "AI Daily Brief" label, session label, "AI-generated" badge) is
+untouched — confirmed via diff, only the body section changed. No
+gainers/decliners table exists in this component today (checked — nothing
+to preserve there).
+
+**Build result:** `npx tsc --noEmit` clean (exit 0). `npm run build`
+clean: compliance sweep 0 errors (same 14 pre-existing warnings, 0 new),
+0 auth-fetch violations, `next build` exit 0, all 29 routes generated,
+unchanged route list.
+
+**OPEN:** no live/browser verification (sandbox has no browser, standing
+constraint). **FOUNDER: please confirm live that expanding the brief shows
+summary → full text → "Show less ↑" at the very bottom, with no toggle
+line in the middle, and that collapsing scrolls/reflows correctly (no
+layout jump).**
