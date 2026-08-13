@@ -17,7 +17,7 @@ const FILTER_CHIPS: { key: string; label: string; params: IntradayScanParams }[]
 export function ScannerTab() {
   const [active, setActive] = useState<Set<string>>(new Set());
   const [rows, setRows] = useState<ScanRow[]>([]);
-  const [meta, setMeta] = useState<{ universe_count: number; criteria: string } | null>(null);
+  const [meta, setMeta] = useState<{ universe_count: number; criteria: string; has_candle_data: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const params: IntradayScanParams = FILTER_CHIPS.filter((c) => active.has(c.key)).reduce(
@@ -32,7 +32,7 @@ export function ScannerTab() {
       .then((env) => {
         if (cancelled) return;
         setRows(env.data.results);
-        setMeta({ universe_count: env.data.universe_count, criteria: env.data.criteria });
+        setMeta({ universe_count: env.data.universe_count, criteria: env.data.criteria, has_candle_data: env.data.has_candle_data });
       })
       .finally(() => !cancelled && setLoading(false));
     return () => {
@@ -104,7 +104,14 @@ export function ScannerTab() {
           </tbody>
         </table>
         {loading && <p className="p-3 text-center text-sm text-foreground-muted">Loading…</p>}
-        {!loading && rows.length === 0 && <p className="p-3 text-center text-sm text-foreground-muted">No stocks match these filters.</p>}
+        {!loading && rows.length === 0 && meta && !meta.has_candle_data && (
+          <p className="p-3 text-center text-sm text-foreground-muted">
+            Today&apos;s intraday scan data is still being compiled — check back shortly once the session has a few completed candles.
+          </p>
+        )}
+        {!loading && rows.length === 0 && meta && meta.has_candle_data && (
+          <p className="p-3 text-center text-sm text-foreground-muted">No stocks match these filters.</p>
+        )}
       </div>
     </div>
   );

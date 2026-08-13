@@ -55,7 +55,18 @@ export function HeaderSearch() {
   }
 
   return (
-    <div ref={rootRef} className="relative hidden w-full max-w-xs md:block">
+    // Mobile/tablet-header-overlap fix (2026-08-16): this box's own
+    // max-width used to jump straight to max-w-xs (320px) the instant it
+    // appears at md (768px) — exactly where MarketRibbon has the LEAST
+    // spare room (the w-56 logo section reappears at the same breakpoint,
+    // and the icon cluster on the right doesn't shrink), so the search
+    // box's un-shrinkable width was a real contributor to the row not
+    // fitting and wrapping onto a second line that then overlapped <main>
+    // (see MarketRibbon.tsx's own fixed h-16 vs. flex-wrap comment for why
+    // a wrapped row overlaps rather than pushing content down). Narrower
+    // at md, full max-w-xs only from lg (1024px) up where there's
+    // genuinely enough room.
+    <div ref={rootRef} className="relative hidden w-full min-w-0 max-w-[160px] md:block lg:max-w-xs">
       <Search size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground-faint" />
       <input
         value={q}

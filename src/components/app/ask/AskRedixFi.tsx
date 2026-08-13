@@ -296,13 +296,21 @@ export function AskRedixFi() {
 
   return (
     <>
-      {/* Font-size fix (2026-08-11): was text-xs (12px), task wants 14px. */}
+      {/* Font-size fix (2026-08-11): was text-xs (12px), task wants 14px.
+          Mobile-header-overlap fix (2026-08-16): the "RedixFi AI" text
+          label never collapsed at any width, contributing fixed
+          non-shrinkable content to MarketRibbon's flex-wrap row on narrow
+          phones — text hidden below sm (640px, this codebase's own
+          breakpoint convention), icon-only trigger there; padding also
+          tightens to square-ish at that width so the button reads as a
+          compact icon button, not a wide pill with invisible label space. */}
       <button
         onClick={() => setOpen(true)}
-        className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition-transform hover:scale-105"
+        aria-label="Ask RedixFi AI"
+        className="flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1.5 text-sm font-semibold transition-transform hover:scale-105 sm:px-3"
         style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dim))", color: "var(--accent-foreground)" }}
       >
-        <Sparkles size={12} /> RedixFi AI
+        <Sparkles size={12} /> <span className="hidden sm:inline">RedixFi AI</span>
       </button>
 
       {/* Phase 5 — expanded mode dims the page behind it, same overlay

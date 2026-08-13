@@ -46,13 +46,22 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           exactly so content starts right at the sidebar's edge, not under
           or away from it. No margin below md, where Sidebar is `hidden`
           and BottomNav (fixed, bottom) is the nav instead.
-          `MarketRibbon` is still rendered HERE (unchanged) even though the
-          component itself now renders `fixed` — pt-16 below reserves the
-          vertical space it no longer occupies in-flow, same pattern as
-          `md:ml-56` does for the now-fixed Sidebar. Applies at every
-          breakpoint (not `md:pt-16`) since the header is fixed-height at
-          every breakpoint, only its left logo section hides below md. */}
-      <div className="flex min-w-0 flex-1 flex-col pt-16 md:ml-56">
+          `MarketRibbon` is still rendered HERE (unchanged) — `md:pt-16`
+          reserves the vertical space it no longer occupies in-flow once it
+          goes `md:fixed`, same pattern as `md:ml-56` does for the now-fixed
+          Sidebar. 2026-08-16 mobile-overlap fix: this used to be a bare
+          `pt-16` applied at every breakpoint, on the assumption the header
+          is always exactly 64px tall — but below md the ribbon is now
+          `relative` or `md:fixed` (see MarketRibbon.tsx's own comment) and
+          can genuinely grow taller than 64px if its content wraps to 2
+          lines on a narrow phone, so a fixed mobile padding would either
+          under-reserve (overlap) or over-reserve (a dead gap) depending on
+          how tall it actually rendered that load. `md:pt-16` reserves
+          space ONLY once the ribbon is actually `fixed` (md+, where its
+          height is reliably 64px) — below md it's in-flow, so it pushes
+          this content down by however tall it actually is, no padding
+          guess needed at all. */}
+      <div className="flex min-w-0 flex-1 flex-col md:pt-16 md:ml-56">
         <MarketRibbon initialOverview={initialOverview} initialFresh={initialFresh} initialSignalsAsOf={initialSignalsAsOf} />
         <main className="mb-14 flex-1 px-4 py-4 md:mb-0 md:px-6 md:py-6">{children}</main>
         <FooterDisclaimer />

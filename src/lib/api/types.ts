@@ -396,6 +396,7 @@ export interface IntradayScan {
   universe_count: number;
   criteria: string;
   scan_date: string;
+  has_candle_data: boolean;
   results: ScanRow[];
 }
 

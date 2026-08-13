@@ -126,7 +126,25 @@ export function MarketRibbon({
   const eventRisk = !!overview && overview.news_today.items_flagged_high > 0;
 
   return (
-    <div className="fixed inset-x-0 top-0 z-40 flex h-16 w-full border-b border-border bg-surface">
+    // Mobile-overlap fix (2026-08-16): this was UNCONDITIONALLY `fixed`
+    // with a hard `h-16`, while its own content row uses `flex-wrap` —
+    // internally inconsistent below md, where the search box is hidden but
+    // the remaining content (state chip, NIFTY, conditional volatility/
+    // event-risk badges, ask/bell/avatar/theme icons) can still exceed one
+    // row's width on a real phone (especially the event-risk badge's full
+    // sentence, e.g. "1 high-severity event(s) today") — a wrapped second
+    // row then rendered OUTSIDE the fixed 64px box, overlapping <main>
+    // (whose `pt-16` in layout.tsx assumes the header is always exactly
+    // 64px). Fixed the same way this file's own docstring says Sidebar.tsx
+    // already handles the identical fixed-vs-mobile tension: `fixed` +
+    // fixed height only from `md:` up; below md the ribbon is `relative`
+    // (normal document flow) with `min-h-16` (not `h-16`) so a wrapped
+    // second row simply grows the header in-flow and pushes <main> down —
+    // overlap becomes structurally impossible below md, not merely rarer.
+    // `layout.tsx`'s `pt-16` companion spacer is now `md:pt-16`
+    // only, matching (no longer double-reserving space the in-flow ribbon
+    // already occupies on mobile).
+    <div className="relative z-40 flex min-h-16 w-full flex-wrap border-b border-border bg-surface md:fixed md:inset-x-0 md:top-0 md:h-16 md:flex-nowrap">
       {/* Left section — exactly the sidebar's width (w-56), hidden below
           md where Sidebar itself is hidden (BottomNav is the mobile nav
           instead). Content moved verbatim from Sidebar.tsx's old header
@@ -164,10 +182,21 @@ export function MarketRibbon({
                 <DeltaValue value={overview.banknifty.change_pct} kind="pct" />
               </span>
               {volatile && <span className="rounded-full bg-amber-bg px-2 py-0.5 font-medium text-amber">Volatility elevated</span>}
+              {/* 2026-08-16: was static text — now a link to the same "See
+                  all news" destination EventRiskCard.tsx already uses
+                  (/news), reusing that existing full-list page rather than
+                  building a new one. Only clickable/link-styled when count
+                  > 0 — a 0-count badge never rendered here anyway (eventRisk
+                  is only true when items_flagged_high > 0), so there's no
+                  0-count case to special-case; kept as a plain span if that
+                  ever changes rather than a Link with nothing to navigate to. */}
               {eventRisk && (
-                <span className="rounded-full bg-amber-bg px-2 py-0.5 font-medium text-amber">
+                <Link
+                  href="/news"
+                  className="rounded-full bg-amber-bg px-2 py-0.5 font-medium text-amber underline decoration-dotted underline-offset-2 hover:decoration-solid"
+                >
                   {overview.news_today.items_flagged_high} high-severity event(s) today
-                </span>
+                </Link>
               )}
             </>
           )}
