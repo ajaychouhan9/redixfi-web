@@ -26,6 +26,10 @@ import type {
   AnomalyType,
   AnomalyDirection,
   ApiMeta,
+  MarketActivityRow,
+  MarketActivityPageInfo,
+  MarketActivityType,
+  MarketActivitySummary,
 } from "./types";
 
 // Every exported fetch function below MUST carry an `@auth public` or
@@ -236,3 +240,37 @@ export async function getAnomalies(params: AnomalyListParams = {}, opts?: FetchO
   // keys, so this cast reflects the real, verified response shape.
   return env as unknown as AnomalyListResult;
 }
+
+// ---------- market activity hub (2026-08-15) — cross-stock aggregation of
+// concalls/insider trades/corporate events/bulk-block deals, all already
+// visible per-stock on /research/{symbol} for every tier ----------
+
+export interface MarketActivityListParams {
+  type?: MarketActivityType;
+  symbol?: string;
+  date_from?: string;
+  date_to?: string;
+}
+
+export interface MarketActivityListResult {
+  meta: ApiMeta;
+  data: MarketActivityRow[];
+  page_info: MarketActivityPageInfo;
+}
+
+// @auth required — capabilities_for(auth.tier) determines the row cap
+// (Free 5 / Basic 20 / Pro full history) AND whether symbol/date filters
+// are honored server-side (Pro-only, silently ignored otherwise); a
+// missing token silently caps a paying user at the free-tier 5-row limit
+// exactly like the getSignals/getResearch auth-token bug class this
+// project has hit 4 times before.
+export async function getMarketActivity(params: MarketActivityListParams = {}, opts?: FetchOpts): Promise<MarketActivityListResult> {
+  const env = await apiGetPaged<MarketActivityRow>("/market-activity", { ...opts, params });
+  return env as unknown as MarketActivityListResult;
+}
+
+// @auth public — market_activity_summary() accepts auth but the rollup
+// counts are identical for every tier (same no-B8-masking posture as
+// research()'s own 4 data blocks) — used for Home's compact card.
+export const getMarketActivitySummary = (opts?: FetchOpts) =>
+  apiGet<MarketActivitySummary>("/market-activity/summary", opts);

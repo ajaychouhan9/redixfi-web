@@ -1260,3 +1260,66 @@ export interface AnomalyPageInfo extends PageInfo {
   scan: AnomalyScanMeta | null;
   date: string;
 }
+
+// ---------- Market Activity hub (2026-08-15) — cross-stock aggregation
+// of the 4 data types that already render per-stock, unmasked, on
+// ResearchDetail (concalls, insider trades, corporate events, bulk/block
+// deals). No new fields invented server-side — each row is the SAME
+// shape its per-stock counterpart already has (InsiderTrade,
+// ConcallTranscript, GenericRecord), plus `type`/`date` (a normalized
+// alias of each category's own date field, for chronological merge in
+// the "All" tab) and `company_name` (joined from symbols_master server-
+// side for collections — bulk_block_deals, corporate_events — that don't
+// reliably carry it themselves). ----------
+
+export type MarketActivityType = "concall" | "insider" | "corporate_event" | "bulk_block";
+
+interface MarketActivityBase {
+  type: MarketActivityType;
+  symbol: string;
+  company_name: string | null;
+  /** Normalized alias of the category's own date field (filing_date/trade_date/event_date/date) — used for the "All" tab's chronological sort. */
+  date: string;
+}
+
+export type MarketActivityConcallRow = MarketActivityBase & ConcallTranscript & { type: "concall"; symbol: string };
+
+// Omit + re-add company_name from Base: InsiderTrade's own company_name is
+// non-nullable, but the server-side fallback (name_map join) can legitimately
+// be null if a symbol is somehow missing from symbols_master — Base's
+// `string | null` is the accurate type for the field actually returned here.
+export type MarketActivityInsiderRow = Omit<InsiderTrade, "company_name"> & MarketActivityBase & { type: "insider" };
+
+// corporate_events' live field shape is unverified beyond symbol/event_date
+// (see GenericRecordTable's own docstring) — same GenericRecord escape
+// hatch ResearchDetail.tsx already uses for this collection.
+export type MarketActivityCorporateEventRow = MarketActivityBase & GenericRecord & { type: "corporate_event" };
+
+export type MarketActivityBulkBlockRow = MarketActivityBase & GenericRecord & { type: "bulk_block" };
+
+export type MarketActivityRow =
+  | MarketActivityConcallRow
+  | MarketActivityInsiderRow
+  | MarketActivityCorporateEventRow
+  | MarketActivityBulkBlockRow;
+
+// Deliberately NOT `extends PageInfo` — this endpoint isn't page/size/total
+// paginated (see routers/market_activity.py's own comment: a single-shot,
+// tier-capped feed, not true cross-collection pagination). Mirrors
+// AnomalyListResult's own cast-through-unknown pattern in endpoints.ts.
+export interface MarketActivityPageInfo {
+  tier: string;
+  max_rows: number;
+  filters_enabled: boolean;
+  csv_export_enabled: boolean;
+  type: MarketActivityType | null;
+}
+
+export interface MarketActivitySummary {
+  date: string;
+  insider_trades_today: number;
+  bulk_block_deals_today: number;
+  concalls_today: number;
+  corporate_events_today: number;
+  total_today: number;
+}

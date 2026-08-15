@@ -1,4 +1,4 @@
-import { getMarketOverview, getSignalMovers, getLatestBrief, getIntradaySession, getAnomalies, getNews, getBillingPlans } from "@/lib/api/endpoints";
+import { getMarketOverview, getSignalMovers, getLatestBrief, getIntradaySession, getAnomalies, getNews, getBillingPlans, getMarketActivitySummary } from "@/lib/api/endpoints";
 import { MarketPulseCard } from "@/components/app/MarketPulseCard";
 import { TopSignalChangesCard } from "@/components/app/TopSignalChangesCard";
 import { AiDailyBriefCard } from "@/components/app/AiDailyBriefCard";
@@ -7,6 +7,7 @@ import { IntradayNowCard } from "@/components/app/IntradayNowCard";
 import { ContinueResearchCard } from "@/components/app/ContinueResearchCard";
 import { AnomalyCard } from "@/components/app/AnomalyCard";
 import { WatchlistAlertsCard } from "@/components/app/WatchlistAlertsCard";
+import { MarketActivityCard } from "@/components/app/MarketActivityCard";
 import { VisitorIntroStrip } from "@/components/app/VisitorIntroStrip";
 import { HomePricingSection } from "@/components/app/HomePricingSection";
 
@@ -18,7 +19,7 @@ import { HomePricingSection } from "@/components/app/HomePricingSection";
 // docstring) — this fetch never sees a paid user's data, so it can't leak
 // the mistake this pattern originally guarded against.
 export default async function HomePage() {
-  const [overviewR, moversR, briefR, sessionR, anomaliesR, newsR, plansR] = await Promise.allSettled([
+  const [overviewR, moversR, briefR, sessionR, anomaliesR, newsR, plansR, marketActivityR] = await Promise.allSettled([
     getMarketOverview(),
     getSignalMovers(undefined, 3),
     getLatestBrief(),
@@ -30,6 +31,9 @@ export default async function HomePage() {
     // @auth-ok: public — billing/plans has no auth dependency at all
     // (same fetch /pricing's own page.tsx already makes server-side).
     getBillingPlans(),
+    // @auth-ok: public — market_activity_summary()'s rollup counts are
+    // identical for every tier (no B8 masking on these 4 data types).
+    getMarketActivitySummary(),
   ]);
 
   const overview = overviewR.status === "fulfilled" ? overviewR.value.data : null;
@@ -39,6 +43,7 @@ export default async function HomePage() {
   const anomalies = anomaliesR.status === "fulfilled" ? anomaliesR.value : null;
   const newsItems = newsR.status === "fulfilled" ? newsR.value.data : null;
   const plans = plansR.status === "fulfilled" ? plansR.value.data : [];
+  const marketActivity = marketActivityR.status === "fulfilled" ? marketActivityR.value.data : null;
 
   return (
     // Widened from `mx-auto max-w-6xl` (2026-08-11): that cap centered a
@@ -76,15 +81,21 @@ export default async function HomePage() {
         <EventRiskCard newsToday={overview?.news_today ?? null} initialItems={newsItems} />
       </div>
 
-      {/* Row 3 — Intraday / Continue Research / Watchlist Alerts, same
-          3-across/2-up/1-col responsive pattern. The latter two are
-          client components that render nothing when there's no real data
-          (no recently-viewed stocks, no logged-in user, no alerts) — the
-          grid reflows naturally around whichever of the three are present. */}
+      {/* Row 3 — Intraday / Continue Research / Watchlist Alerts / Market
+          Activity, same 3-across/2-up/1-col responsive pattern (4th card
+          reflows onto its own row on desktop). The middle two are client
+          components that render nothing when there's no real data (no
+          recently-viewed stocks, no logged-in user, no alerts) — the grid
+          reflows naturally around whichever are present. Market Activity
+          (2026-08-15) is the one new Home card this hub adds — a compact
+          rollup of concalls/insider trades/corporate events/bulk-block
+          deals with a single "View all" link to /market-activity, per the
+          locked spec (no individual per-category links from Home). */}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
         <IntradayNowCard session={session} />
         <ContinueResearchCard />
         <WatchlistAlertsCard />
+        <MarketActivityCard summary={marketActivity} />
       </div>
 
       <HomePricingSection plans={plans} />
