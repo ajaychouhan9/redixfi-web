@@ -181,7 +181,26 @@ export function MarketRibbon({
                 <span className="text-[15px] tabular-nums">{overview.banknifty.close.toLocaleString("en-IN")}</span>
                 <DeltaValue value={overview.banknifty.change_pct} kind="pct" />
               </span>
-              {volatile && <span className="rounded-full bg-amber-bg px-2 py-0.5 font-medium text-amber">Volatility elevated</span>}
+              {/* 2026-08-17 mobile-header fix: at 375-390px, StateChip +
+                  NIFTY alone already run ~280px against ~343px of usable
+                  width (px-4 padding both sides) — these 2 optional badges'
+                  FULL sentence text (~140-200px each) were the single
+                  biggest remaining width contributors once the search box/
+                  AI-button-label/BANKNIFTY were already hidden or shrunk
+                  (2026-08-16 fix). The row was still guaranteed to wrap
+                  (structurally safe, not overlapping <main>, since that
+                  fix), but a badge alone often forced its own extra wrapped
+                  line, reading as cramped/"attached" rather than a clean
+                  2-line layout. Shortened below `sm` (640px) to a compact
+                  "Volatile"/"N event(s)" form — full sentence restored from
+                  `sm:` up, where there's room for it on its own line even
+                  if the row as a whole still wraps. */}
+              {volatile && (
+                <span className="rounded-full bg-amber-bg px-2 py-0.5 font-medium text-amber">
+                  <span className="sm:hidden">Volatile</span>
+                  <span className="hidden sm:inline">Volatility elevated</span>
+                </span>
+              )}
               {/* 2026-08-16: was static text — now a link to the same "See
                   all news" destination EventRiskCard.tsx already uses
                   (/news), reusing that existing full-list page rather than
@@ -195,7 +214,8 @@ export function MarketRibbon({
                   href="/news"
                   className="rounded-full bg-amber-bg px-2 py-0.5 font-medium text-amber underline decoration-dotted underline-offset-2 hover:decoration-solid"
                 >
-                  {overview.news_today.items_flagged_high} high-severity event(s) today
+                  <span className="sm:hidden">{overview.news_today.items_flagged_high} event(s)</span>
+                  <span className="hidden sm:inline">{overview.news_today.items_flagged_high} high-severity event(s) today</span>
                 </Link>
               )}
             </>
