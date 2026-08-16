@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Filter } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getMarketActivity } from "@/lib/api/endpoints";
+import { SymbolTypeahead } from "@/components/ui/SymbolTypeahead";
 import type {
   MarketActivityRow,
   MarketActivityType,
@@ -13,6 +13,7 @@ import type {
   MarketActivityBulkBlockRow,
 } from "@/lib/api/types";
 import { downloadCsv } from "@/lib/csv";
+import { formatDateIst } from "@/lib/format";
 import { ExportButton } from "@/components/ui/ExportButton";
 import { UnlockBanner } from "@/components/ui/Locked";
 import { MarketActivityTabs, type MarketActivityTabDef } from "./MarketActivityTabs";
@@ -110,16 +111,19 @@ export function MarketActivityHub() {
             relation: row.relation ?? "",
           };
         case "bulk_block":
+          // Real bulk_block_deals field shape (BUG 7 fix, 2026-08-16) —
+          // a per-symbol-per-day aggregate, not a per-deal row.
           return {
             type: row.type,
             symbol: row.symbol,
             company_name: row.company_name ?? "",
             date: row.date,
-            deal_type: String(row.dealType ?? ""),
-            buy_sell: String(row.buySell ?? ""),
-            quantity: row.quantity != null ? Number(row.quantity) : "",
-            price: row.price != null ? Number(row.price) : "",
-            client_name: String(row.clientName ?? ""),
+            deal_types_present: row.deal_types_present ? row.deal_types_present.join("/") : "",
+            net_direction: row.net_direction ?? "",
+            net_quantity: row.net_quantity != null ? Number(row.net_quantity) : "",
+            total_value: row.total_value != null ? Number(row.total_value) : "",
+            participation_pct: row.participation_pct != null ? Number(row.participation_pct) : "",
+            deal_strength: row.deal_strength ?? "",
           };
         case "corporate_event":
           return {
@@ -127,50 +131,94 @@ export function MarketActivityHub() {
             symbol: row.symbol,
             company_name: row.company_name ?? "",
             date: row.date,
-            event_type: String(row.event_type ?? ""),
+            event_type: row.event_type ?? "",
+            headline: row.headline ?? row.summary ?? "",
           };
       }
     });
     downloadCsv(`redixfi-market-activity-${tab}-${new Date().toISOString().slice(0, 10)}.csv`, flat);
   }, [rows, tab]);
 
+  // BUG 3 fix (2026-08-16): these 4 data types are NOT daily events —
+  // the hub itself never hard-required "today" (rows already come back
+  // most-recent-first from the API regardless of date), but it also
+  // never told the caller HOW recent what they're looking at is. Rows
+  // are already sorted most-recent-first (backend BUG 8 fix), so the
+  // first row's date is the honest "as of" date for whatever's
+  // currently on screen — surfaced explicitly rather than left implicit.
+  const latestDate = rows[0]?.date;
+
   return (
     <div>
       <MarketActivityTabs active={tab} onChange={setTab} />
+      {!loading && !error && latestDate && (
+        <p className="mb-3 text-xs text-foreground-faint">Last updated: {formatDateIst(latestDate)}</p>
+      )}
 
+      {/* BUG 5 fix (2026-08-16): re-uses SignalsExplorer.tsx's own filter-bar
+          structure/sizing verbatim (2-tier wrapper — outer bg-surface-raised
+          card, inner overflow-x-auto row — border-border/bg-hover/px-3
+          py-1.5/text-xs on every control) instead of the previous
+          ad-hoc-sized inline row. The symbol input is now SymbolTypeahead
+          (BUG 4) instead of a bare <input>, and the date inputs get
+          explicit text-xs/min-w sizing (previously bare, so they fell back
+          to the browser's default ~16px control size — visibly smaller/
+          larger than everything else in the bar and easy to misread as
+          "too small"). Native <input type="date">'s calendar icon
+          contrast is fixed globally in globals.css (`color-scheme`), not
+          per-input, since it's a browser rendering default with no
+          per-element color/size API. */}
       {filtersEnabled && (
-        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-raised p-3">
-          <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs text-foreground-muted">
-            <Filter size={12} />
-            <input
+        <div className="mb-3 rounded-xl border border-border bg-surface-raised p-3">
+          <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1">
+            <SymbolTypeahead
               value={symbolFilter}
-              onChange={(e) => setSymbolFilter(e.target.value)}
+              onChange={setSymbolFilter}
+              onSelect={(row) => setSymbolFilter(row.canonicalSymbol)}
               placeholder="Symbol"
-              className="w-28 bg-transparent outline-none"
+              ariaLabel="Filter by symbol"
+              wrapperClassName="relative shrink-0"
+              showIcon={false}
+              inputClassName="w-28 shrink-0 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs text-foreground-muted outline-none focus:border-accent"
             />
-          </label>
-          <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs text-foreground-muted">
-            From
-            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="bg-transparent outline-none" />
-          </label>
-          <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs text-foreground-muted">
-            To
-            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="bg-transparent outline-none" />
-          </label>
-          <div className="ml-auto">
-            <ExportButton
-              onExport={exportCsv}
-              canExport={csvExportEnabled && !!user}
-              label="Export CSV"
-              enabledTitle="Export current view as CSV"
-              className="flex items-center gap-1 rounded-lg border border-border bg-hover px-2 py-1.5 text-xs text-foreground-muted disabled:opacity-40"
-            />
+            <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs text-foreground-muted">
+              From
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="min-w-[120px] bg-transparent text-xs text-foreground outline-none"
+              />
+            </label>
+            <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs text-foreground-muted">
+              To
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="min-w-[120px] bg-transparent text-xs text-foreground outline-none"
+              />
+            </label>
+            <div className="ml-auto shrink-0">
+              <ExportButton
+                onExport={exportCsv}
+                canExport={csvExportEnabled && !!user}
+                label="Export CSV"
+                enabledTitle="Export current view as CSV"
+                className="flex items-center gap-1 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs text-foreground-muted disabled:opacity-40"
+              />
+            </div>
           </div>
         </div>
       )}
       {!filtersEnabled && csvExportEnabled && (
         <div className="mb-3 flex justify-end">
-          <ExportButton onExport={exportCsv} canExport={!!user} label="Export CSV" className="flex items-center gap-1 rounded-lg border border-border bg-hover px-2 py-1.5 text-xs text-foreground-muted disabled:opacity-40" />
+          <ExportButton
+            onExport={exportCsv}
+            canExport={!!user}
+            label="Export CSV"
+            className="flex items-center gap-1 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs text-foreground-muted disabled:opacity-40"
+          />
         </div>
       )}
 

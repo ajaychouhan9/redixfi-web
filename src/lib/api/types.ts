@@ -1311,12 +1311,57 @@ export type MarketActivityConcallRow = MarketActivityBase & ConcallTranscript & 
 // `string | null` is the accurate type for the field actually returned here.
 export type MarketActivityInsiderRow = Omit<InsiderTrade, "company_name"> & MarketActivityBase & { type: "insider" };
 
-// corporate_events' live field shape is unverified beyond symbol/event_date
-// (see GenericRecordTable's own docstring) — same GenericRecord escape
-// hatch ResearchDetail.tsx already uses for this collection.
-export type MarketActivityCorporateEventRow = MarketActivityBase & GenericRecord & { type: "corporate_event" };
+// corporate_events' live field shape (BUG 6 fix, 2026-08-16 — verified
+// against data-pipeline/corprate_event.py's CorporateEvent dataclass,
+// which is the ONLY writer of this collection): symbol, event_date,
+// event_type, event_subtype (often null), headline, summary, source,
+// is_pre_event/is_post_event, valid_from/valid_till, and `meta` — a
+// NESTED OBJECT (e.g. {source_section, bse_code, company_name, ...}),
+// never a scalar. event_impact/impact_strength/expected_direction/
+// expected_volatility/confidence are real fields on the stored Mongo
+// doc but are stripped server-side by ra_mode.FORBIDDEN_FIELDS before
+// this API ever returns them (same choke point every other route uses)
+// — intentionally NOT modeled here since the API contract never
+// includes them. `meta` stays typed as `Record<string, unknown> | undefined`
+// specifically so CategoryTables.tsx's generic-column fallback can be
+// guarded against ever String()-rendering it directly (that was BUG 6's
+// root cause: a nested object rendered as literal "[object Object]").
+export type MarketActivityCorporateEventRow = MarketActivityBase &
+  GenericRecord & {
+    type: "corporate_event";
+    event_type?: string | null;
+    event_subtype?: string | null;
+    headline?: string | null;
+    summary?: string | null;
+    source?: string | null;
+    meta?: Record<string, unknown> | null;
+  };
 
-export type MarketActivityBulkBlockRow = MarketActivityBase & GenericRecord & { type: "bulk_block" };
+// bulk_block_deals' live field shape (BUG 7 fix, 2026-08-16 — verified
+// against data-pipeline/nse_bulk_block_deal.py, the ONLY writer of this
+// collection): it upserts a PER-SYMBOL-PER-DAY AGGREGATE summary doc,
+// NOT a per-deal row. There is no single deal-level dealType/buySell/
+// quantity/price/clientName on the stored document (those only ever
+// existed as an in-memory intermediate the writer itself discards —
+// "No separate raw collection is used" per that script's own module
+// docstring) — the hub's original column mapping guessed a per-deal
+// shape that never matched what's actually persisted, which is why
+// every column but Date/Symbol (both synthesized server-side in
+// market_activity.py, not read from these fields) came back blank.
+export type MarketActivityBulkBlockRow = MarketActivityBase &
+  GenericRecord & {
+    type: "bulk_block";
+    net_direction?: "BUY" | "SELL" | "NEUTRAL" | null;
+    net_quantity?: number | null;
+    buy_quantity?: number | null;
+    sell_quantity?: number | null;
+    buyer_count?: number | null;
+    seller_count?: number | null;
+    total_value?: number | null;
+    deal_types_present?: string[] | null;
+    participation_pct?: number | null;
+    deal_strength?: string | null;
+  };
 
 export type MarketActivityRow =
   | MarketActivityConcallRow

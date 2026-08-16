@@ -10,6 +10,15 @@
 
 :root,
 :root[data-theme="light"] {
+  /* BUG 5 fix (2026-08-16): native form controls (the Market Activity
+     hub's <input type="date"> calendar icon, checkboxes, etc.) render
+     using the browser's OS-default light palette unless told otherwise
+     — with no `color-scheme`, Chrome/Edge draw a dark-gray calendar
+     glyph that's nearly invisible against this theme's dark surfaces.
+     Set per theme-block, same 3-selector pattern (root/light,
+     prefers-color-scheme dark, explicit data-theme="dark") this file
+     already uses for every other themed value below. */
+  color-scheme: light;
   --background: #f7f8fb;
   --surface: #ffffff;
   --surface-raised: #ffffff;
@@ -52,6 +61,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    color-scheme: dark;
     --background: #0b0f1a;
     --surface: #0d1220;
     --surface-raised: #12172a;
@@ -89,6 +99,7 @@
 }
 
 :root[data-theme="dark"] {
+  color-scheme: dark;
   --background: #0b0f1a;
   --surface: #0d1220;
   --surface-raised: #12172a;

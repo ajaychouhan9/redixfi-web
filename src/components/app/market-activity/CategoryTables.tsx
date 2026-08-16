@@ -101,14 +101,37 @@ export function InsiderTable({ rows }: { rows: MarketActivityInsiderRow[] }) {
   );
 }
 
+/** Renders a generic-fallback cell value defensively: never String()s an
+ * object/array directly (that was BUG 6's exact root cause — a nested
+ * "meta" object on corporate_events docs rendering as literal
+ * "[object Object]"). Arrays render as a comma-joined list (still
+ * meaningful, e.g. deal_types_present); plain objects render as "—"
+ * since there's no single scalar to show. */
+function safeCell(value: unknown): string {
+  if (value === null || value === undefined) return "—";
+  if (Array.isArray(value)) return value.length ? value.join(", ") : "—";
+  if (typeof value === "object") return "—";
+  return String(value);
+}
+
 export function CorporateEventsTable({ rows }: { rows: MarketActivityCorporateEventRow[] }) {
   if (rows.length === 0) return <EmptyState text="No upcoming corporate events recorded." />;
-  // corporate_events' live shape beyond symbol/event_date/event_type is
-  // unverified (same reason ResearchDetail.tsx falls back to
-  // GenericRecordTable for this collection) — derive any additional
-  // columns from whatever's actually present, same escape hatch.
-  const knownKeys = new Set(["type", "symbol", "company_name", "date", "event_date", "valid_till"]);
-  const extraCols = Array.from(new Set(rows.flatMap((r) => Object.keys(r)))).filter((k) => !knownKeys.has(k)).slice(0, 3);
+  // corporate_events' real field shape (verified against data-pipeline/
+  // corprate_event.py's CorporateEvent dataclass, BUG 6 fix 2026-08-16):
+  // event_type/headline are reliable, known columns — shown explicitly
+  // instead of guessed generic ones. `meta` (a nested object) and any
+  // other non-scalar field are explicitly excluded from the generic
+  // fallback columns below, and safeCell() guards every cell as
+  // defense-in-depth against any other object-valued field this
+  // collection's live shape might still surprise us with.
+  const knownKeys = new Set([
+    "type", "symbol", "company_name", "date", "event_date", "valid_till",
+    "event_type", "headline", "meta",
+  ]);
+  const extraCols = Array.from(new Set(rows.flatMap((r) => Object.keys(r))))
+    .filter((k) => !knownKeys.has(k))
+    .filter((k) => rows.every((r) => typeof r[k] !== "object" || r[k] === null))
+    .slice(0, 2);
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[520px] text-sm">
@@ -116,6 +139,8 @@ export function CorporateEventsTable({ rows }: { rows: MarketActivityCorporateEv
           <tr>
             <th className="py-1.5 pr-3">Date</th>
             <th className="py-1.5 pr-3">Symbol</th>
+            <th className="py-1.5 pr-3">Event type</th>
+            <th className="py-1.5 pr-3">Headline</th>
             {extraCols.map((c) => (
               <th key={c} className="py-1.5 pr-3">
                 {c.replace(/_/g, " ")}
@@ -130,9 +155,11 @@ export function CorporateEventsTable({ rows }: { rows: MarketActivityCorporateEv
               <td className="py-1.5 pr-3">
                 <SymbolLink symbol={r.symbol} companyName={r.company_name} />
               </td>
+              <td className="py-1.5 pr-3">{safeCell(r.event_type)}</td>
+              <td className="py-1.5 pr-3 text-foreground-muted">{safeCell(r.headline ?? r.summary)}</td>
               {extraCols.map((c) => (
                 <td key={c} className="py-1.5 pr-3">
-                  {String(r[c] ?? "")}
+                  {safeCell(r[c])}
                 </td>
               ))}
             </tr>
@@ -145,18 +172,25 @@ export function CorporateEventsTable({ rows }: { rows: MarketActivityCorporateEv
 
 export function BulkBlockTable({ rows }: { rows: MarketActivityBulkBlockRow[] }) {
   if (rows.length === 0) return <EmptyState text="No bulk/block deals recorded recently." />;
+  // bulk_block_deals real field shape (verified against data-pipeline/
+  // nse_bulk_block_deal.py, BUG 7 fix 2026-08-16): a per-symbol-per-day
+  // AGGREGATE summary doc — net_direction/net_quantity/buy_quantity/
+  // sell_quantity/total_value/deal_types_present/participation_pct/
+  // deal_strength — NOT a per-deal dealType/buySell/clientName/quantity/
+  // price row (that shape never existed on the stored document, which
+  // is why those columns were always blank).
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[620px] text-sm">
+      <table className="w-full min-w-[720px] text-sm">
         <thead className="text-left text-xs font-semibold uppercase tracking-wide text-foreground-faint">
           <tr>
             <th className="py-1.5 pr-3">Date</th>
             <th className="py-1.5 pr-3">Symbol</th>
             <th className="py-1.5 pr-3">Type</th>
-            <th className="py-1.5 pr-3">Buy/Sell{/* compliance-ignore: exchange-reported deal side (bulk/block filing field), not an instruction */}</th>
-            <th className="py-1.5 pr-3">Client</th>
-            <th className="py-1.5 pr-3">Qty</th>
-            <th className="py-1.5 pr-3">Price</th>
+            <th className="py-1.5 pr-3">Net direction{/* compliance-ignore: exchange-derived net buy/sell direction (aggregate field), not an instruction */}</th>
+            <th className="py-1.5 pr-3">Net qty</th>
+            <th className="py-1.5 pr-3">Value</th>
+            <th className="py-1.5 pr-3">Strength</th>
           </tr>
         </thead>
         <tbody>
@@ -166,11 +200,11 @@ export function BulkBlockTable({ rows }: { rows: MarketActivityBulkBlockRow[] })
               <td className="py-1.5 pr-3">
                 <SymbolLink symbol={r.symbol} companyName={r.company_name} />
               </td>
-              <td className="py-1.5 pr-3">{String(r.dealType ?? "")}</td>
-              <td className="py-1.5 pr-3">{String(r.buySell ?? "")}</td>
-              <td className="py-1.5 pr-3">{String(r.clientName ?? "")}</td>
-              <td className="py-1.5 pr-3 tabular-nums">{r.quantity != null ? Number(r.quantity).toLocaleString("en-IN") : "—"}</td>
-              <td className="py-1.5 pr-3 tabular-nums">{r.price != null ? `₹${Number(r.price).toLocaleString("en-IN")}` : "—"}</td>
+              <td className="py-1.5 pr-3">{r.deal_types_present && r.deal_types_present.length ? r.deal_types_present.join(", ") : "—"}</td>
+              <td className="py-1.5 pr-3">{r.net_direction ?? "—"}</td>
+              <td className="py-1.5 pr-3 tabular-nums">{r.net_quantity != null ? Number(r.net_quantity).toLocaleString("en-IN") : "—"}</td>
+              <td className="py-1.5 pr-3 tabular-nums">{r.total_value != null ? `₹${Number(r.total_value).toLocaleString("en-IN")}` : "—"}</td>
+              <td className="py-1.5 pr-3">{r.deal_strength ?? "—"}</td>
             </tr>
           ))}
         </tbody>
@@ -192,10 +226,12 @@ function summaryLine(row: MarketActivityRow): string {
       return row.subject === "EARNINGS_CALL_TRANSCRIPT" ? "Concall transcript" : "Investor presentation";
     case "insider":
       return `${row.transaction_type} · ${row.quantity.toLocaleString("en-IN")} shares · ₹${row.value_amount.toLocaleString("en-IN")}`;
-    case "bulk_block":
-      return `${String(row.dealType ?? "")} ${String(row.buySell ?? "")} · ${row.quantity != null ? Number(row.quantity).toLocaleString("en-IN") : "—"} shares`;
+    case "bulk_block": {
+      const types = row.deal_types_present && row.deal_types_present.length ? row.deal_types_present.join("/") : "Deal";
+      return `${types} · ${row.net_direction ?? "—"} · ${row.net_quantity != null ? Number(row.net_quantity).toLocaleString("en-IN") : "—"} shares`;
+    }
     case "corporate_event":
-      return String(row.event_type ?? "Corporate event");
+      return safeCell(row.event_type) !== "—" ? String(row.event_type) : "Corporate event";
   }
 }
 

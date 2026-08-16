@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
-import { searchResearch } from "@/lib/api/endpoints";
-import type { ResearchSearchRow } from "@/lib/api/types";
+import { SymbolTypeahead } from "@/components/ui/SymbolTypeahead";
 
 /**
  * Header global search — reuses the same `searchResearch()` typeahead the
@@ -16,43 +14,16 @@ import type { ResearchSearchRow } from "@/lib/api/types";
  * has no typeahead-to-navigate shape. `searchResearch` is the actual
  * cross-page symbol/company lookup already doing that job elsewhere, so
  * this reuses THAT, not a duplicate.
+ *
+ * 2026-08-16: the debounce/dropdown/outside-click logic that used to live
+ * directly in this component was extracted into SymbolTypeahead.tsx so the
+ * Market Activity hub's symbol filter (BUG 4) reuses the exact same
+ * autocomplete instead of a new implementation. This component's own
+ * markup/styling/behavior (navigate-on-select) is unchanged.
  */
 export function HeaderSearch() {
   const router = useRouter();
   const [q, setQ] = useState("");
-  const [results, setResults] = useState<ResearchSearchRow[]>([]);
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (q.trim().length < 2) {
-      setResults([]);
-      return;
-    }
-    let cancelled = false;
-    const id = setTimeout(() => {
-      searchResearch(q.trim(), 8).then((env) => !cancelled && setResults(env.data));
-    }, 250);
-    return () => {
-      cancelled = true;
-      clearTimeout(id);
-    };
-  }, [q]);
-
-  useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
-
-  function select(symbol: string) {
-    setQ("");
-    setResults([]);
-    setOpen(false);
-    router.push(`/research/${symbol}`);
-  }
 
   return (
     // Mobile/tablet-header-overlap fix (2026-08-16): this box's own
@@ -66,44 +37,20 @@ export function HeaderSearch() {
     // a wrapped row overlaps rather than pushing content down). Narrower
     // at md, full max-w-xs only from lg (1024px) up where there's
     // genuinely enough room.
-    <div ref={rootRef} className="relative hidden w-full min-w-0 max-w-[160px] md:block lg:max-w-xs">
-      <Search size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground-faint" />
-      <input
+    <div className="hidden w-full min-w-0 max-w-[160px] md:block lg:max-w-xs">
+      <SymbolTypeahead
         value={q}
-        onChange={(e) => {
-          setQ(e.target.value);
-          setOpen(true);
+        onChange={setQ}
+        onSelect={(row) => {
+          setQ("");
+          router.push(`/research/${row.canonicalSymbol}`);
         }}
-        onFocus={() => setOpen(true)}
-        onKeyDown={(e) => e.key === "Enter" && results[0] && select(results[0].canonicalSymbol)}
         placeholder="Search stocks, sectors, news..."
-        aria-label="Search stocks, sectors, news"
+        ariaLabel="Search stocks, sectors, news"
+        wrapperClassName="relative w-full"
         // Font-size fix (2026-08-11): was text-xs (12px), task wants 14px.
-        className="w-full rounded-lg border border-border bg-hover py-1.5 pl-8 pr-3 text-sm outline-none focus:border-accent"
+        inputClassName="w-full rounded-lg border border-border bg-hover py-1.5 pl-8 pr-3 text-sm outline-none focus:border-accent"
       />
-      {open && q.trim().length >= 2 && results.length > 0 && (
-        <ul className="absolute left-0 top-full z-30 mt-1 w-full min-w-[260px] divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface-raised shadow-lg">
-          {results.map((r) => (
-            <li key={r.canonicalSymbol}>
-              <button
-                onClick={() => select(r.canonicalSymbol)}
-                className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs hover:bg-hover"
-              >
-                <span>
-                  <span className="font-semibold">{r.canonicalSymbol}</span>{" "}
-                  <span className="text-foreground-faint">{r.company_name}</span>
-                </span>
-                <span className="shrink-0 text-foreground-faint">{r.sector_index}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      {open && q.trim().length >= 2 && results.length === 0 && (
-        <div className="absolute left-0 top-full z-30 mt-1 w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-faint shadow-lg">
-          No stocks matched &ldquo;{q}&rdquo;.
-        </div>
-      )}
     </div>
   );
 }
