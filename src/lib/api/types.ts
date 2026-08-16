@@ -729,6 +729,26 @@ export interface ConcallTranscript {
   source_pdf_url: string;
 }
 
+// Annual report AI summary card (mirrors ConcallTranscript above — same
+// category of exchange-filed qualitative disclosure, same "no B8 masking"
+// posture: /research/{symbol}'s whole payload is identical for every
+// tier). One per symbol (annual_report_api.py's unique index on `symbol`),
+// so the backend returns a single object or null, not an array.
+// `compliance_note` is the backend's own ANNUAL_REPORT_COMPLIANCE_NOTE
+// constant (core/document_retrieval.py) passed through verbatim — reused,
+// not re-authored client-side, so the disclaimer can never drift from the
+// wording already established for the RAG prompt path.
+export interface AnnualReportSummary {
+  fiscal_year: string;
+  page_count: number;
+  filing_date: string;
+  source_pdf_url: string;
+  summary: string;
+  bullets: string[];
+  key_takeaway: string;
+  compliance_note: string;
+}
+
 export interface ResearchDetail {
   symbol: string;
   company_name: string;
@@ -745,6 +765,7 @@ export interface ResearchDetail {
   signal_summary: ResearchSignalSummary;
   fundamentals: FundamentalsBlock | null;
   concall_transcripts: ConcallTranscript[];
+  annual_report_summary: AnnualReportSummary | null;
 }
 
 // ---------- charts ----------

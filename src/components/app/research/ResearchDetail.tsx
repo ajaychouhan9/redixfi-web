@@ -18,6 +18,7 @@ import { CompareIndicator } from "@/components/app/CompareIndicator";
 import { WatchlistButton } from "@/components/app/WatchlistButton";
 import { CurrentSymbolSync } from "@/components/app/CurrentSymbolSync";
 import { ConcallSummary } from "@/components/app/research/ConcallSummary";
+import { AnnualReportSummaryCard } from "@/components/app/research/AnnualReportSummaryCard";
 import { formatDateIst } from "@/lib/format";
 
 // Concall tone -> the app's existing semantic color tones (Chip component),
@@ -330,6 +331,19 @@ export function ResearchDetail({
           )}
         </Card>
       </ErrorBoundary>
+
+      {/* Annual Report AI Summary — placed directly below Concalls, same
+          category of exchange-filed qualitative disclosure (kept visually
+          adjacent per the task's own framing), only rendered when a
+          summarized annual_reports doc exists for this symbol (one per
+          symbol; a doc pending summarization or with none filed yet
+          renders nothing here, same "exclude by query" posture
+          _concall_block already uses). */}
+      {data.annual_report_summary && (
+        <ErrorBoundary>
+          <AnnualReportSummaryCard data={data.annual_report_summary} />
+        </ErrorBoundary>
+      )}
 
       <ErrorBoundary>
         <Card title="Signal summary" titleClassName="text-base" action={data.signal_summary.narrative && <AiLabel />}>
