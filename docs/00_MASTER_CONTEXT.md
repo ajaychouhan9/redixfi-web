@@ -2965,3 +2965,30 @@ clean: compliance sweep 0 errors (same 15 pre-existing warnings, 0 new),
 sentence ("Management highlighted…") rather than the longer Key
 takeaway summary, and that the Key takeaway line itself now reads plain
 (gold label, bold primary text, no box) as intended.**
+
+## 2026-08-17 — BUG 1: Daily Brief decimal percentage render corruption
+
+**Proven root cause:** backend and production API data were correct. The
+production `GET /api/v1/brief/latest` body contained `the Nikkei 225 fell
+0.03%. The market closed...`; it did not contain a bare `03%.` fragment.
+`src/components/app/AiDailyBriefCard.tsx` used the decimal-unsafe regex
+`/[^.!?]+[.!?]+(\s+|$)/g`. That regex interpreted the decimal point in
+`0.03%` as a sentence boundary, discarded the unmatched prefix, and made
+the visible summary start at `03%. The market closed...`.
+
+**Fix:** moved the summary parser to
+`src/lib/dailyBriefSplit.ts`. It scans punctuation and treats `.` between
+two digits as part of a decimal; sentence-ending punctuation is split only
+at an actual boundary. `AiDailyBriefCard` otherwise retains its exact
+summary/rest, expanded-state, and empty-body rendering behavior.
+
+**Regression:** `scripts/test-daily-brief-split.mjs` passes **10/10**,
+covering the real production `0.03%` shape, arbitrary decimal percentages
+(`0.5%`, `12.5%`, `99.99%`, `3.14%`), plain decimal and currency values,
+and ordinary sentence splitting. TypeScript is clean. The production
+Next build completed successfully (the same two transient local `.next`
+cache-lock warnings occurred while prerendering; all 29 routes generated).
+
+**LIVE UI VERIFICATION PENDING:** deploy this frontend commit, refresh the
+Home page, and confirm the rendered lead begins `The Nikkei 225 fell
+0.03%. The market closed...`, never `03%.`.

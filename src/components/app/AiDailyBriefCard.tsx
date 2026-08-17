@@ -3,25 +3,15 @@
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import type { DailyBrief } from "@/lib/api/types";
+import { splitDailyBriefSummary } from "@/lib/dailyBriefSplit";
 
 /**
  * Splits the brief into a 2-3 sentence lead and the remainder. Pure display
  * restructuring — the full body is still rendered in full once expanded,
  * nothing is dropped or truncated permanently.
  */
-function splitSummary(body: string, maxSentences = 3): { summary: string; rest: string } {
-  const sentences = body.match(/[^.!?]+[.!?]+(\s+|$)/g);
-  if (!sentences || sentences.length <= maxSentences) {
-    return { summary: body.trim(), rest: "" };
-  }
-  return {
-    summary: sentences.slice(0, maxSentences).join("").trim(),
-    rest: sentences.slice(maxSentences).join("").trim(),
-  };
-}
-
 export function AiDailyBriefCard({ brief }: { brief: DailyBrief | null }) {
-  const { summary, rest } = brief ? splitSummary(brief.body) : { summary: "", rest: "" };
+  const { summary, rest } = brief ? splitDailyBriefSummary(brief.body) : { summary: "", rest: "" };
   const [expanded, setExpanded] = useState(false);
 
   return (
