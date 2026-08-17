@@ -1381,8 +1381,27 @@ export interface MarketActivityPageInfo {
   type: MarketActivityType | null;
 }
 
+// BUG 11 fix (2026-08-17): each category now reports its OWN latest
+// date + count independently (routers/market_activity.py::
+// market_activity_summary()) instead of all 4 being counted on a single
+// shared "most recent across all 4" date — that old design zeroed out
+// sparser categories (corporate events, bulk/block deals) whenever their
+// own latest activity fell on a different day than insider trades'
+// (which file most often and so usually "won" the shared date).
+export interface MarketActivityCategorySummary {
+  count: number;
+  date: string | null;
+}
+
 export interface MarketActivitySummary {
   date: string;
+  last_updated: string;
+  insider_trades: MarketActivityCategorySummary;
+  bulk_block_deals: MarketActivityCategorySummary;
+  concalls: MarketActivityCategorySummary;
+  corporate_events: MarketActivityCategorySummary;
+  // Legacy flat fields, kept for back-compat — each is now that
+  // category's OWN latest-date count (not "count on one shared date").
   insider_trades_today: number;
   bulk_block_deals_today: number;
   concalls_today: number;
