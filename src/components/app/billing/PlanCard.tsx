@@ -172,7 +172,7 @@ export function PlanCard({
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       {highlighted && badge && (
         <span
-          className="absolute -top-3 left-5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent-foreground"
+          className="absolute -top-3 left-5 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-accent-foreground"
           style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dim))" }}
         >
           {badge}

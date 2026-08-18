@@ -298,7 +298,7 @@ export function PromoCodeAdminView() {
                   {o.label}
                 </label>
               ))}
-              <p className="mt-1 text-[11px] text-foreground-faint">
+              <p className="mt-1 text-[12px] text-foreground-faint">
                 Founding Annual is never discountable — price-lock only, enforced server-side.
               </p>
             </div>
@@ -368,7 +368,7 @@ export function PromoCodeAdminView() {
       <Card title={`All codes (${codes.length})`}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[820px] text-sm">
-            {/* Font-size audit (2026-08-11): was text-[10px], bumped to
+            {/* Font-size audit (2026-08-11): was text-[11px], bumped to
                 text-[13px] per the task's 13px "secondary labels" floor. */}
             <thead>
               <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wide text-foreground-faint">

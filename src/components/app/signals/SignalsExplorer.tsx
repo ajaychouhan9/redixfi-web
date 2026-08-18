@@ -299,7 +299,7 @@ export function SignalsExplorer() {
       <div className="overflow-hidden rounded-xl border border-border bg-surface-raised">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[680px] text-sm">
-            {/* Font-size audit (2026-08-11): header row was text-[10px] —
+            {/* Font-size audit (2026-08-11): header row was text-[11px] —
                 well below the task's 13px "secondary labels" floor, and
                 the most layout-sensitive spot in the app (7 columns).
                 Bumped to text-[13px]; verified reasoning in the session's

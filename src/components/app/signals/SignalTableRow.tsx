@@ -74,7 +74,7 @@ function StackedCell({
   return (
     <div className="flex items-baseline gap-1.5">
       <span className="font-mono font-semibold">{primary}</span>
-      {subtitle != null && <span className="text-[11px] text-foreground-faint">{subtitle}</span>}
+      {subtitle != null && <span className="text-[12px] text-foreground-faint">{subtitle}</span>}
     </div>
   );
 }
@@ -107,7 +107,7 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
         <Link href={`/signals/${row.symbol}`} className="font-mono font-semibold hover:text-accent">
           {row.symbol}
         </Link>
-        <div className="max-w-[16rem] truncate text-[11px] text-foreground-faint">{row.company_name}</div>
+        <div className="max-w-[16rem] truncate text-[12px] text-foreground-faint">{row.company_name}</div>
       </td>
       {columns.sector && <td className="hidden px-3 py-2.5 text-xs text-foreground-muted md:table-cell">{row.sector}</td>}
       {/* Price: always visible (never hidden by the column picker or by
@@ -117,7 +117,7 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
       <td className="px-3 py-2.5">
         <StackedCell
           primary={row.last_price !== null ? `₹${row.last_price.toLocaleString("en-IN")}` : null}
-          subtitle={row.day_change_pct !== null ? <DeltaValue value={row.day_change_pct} kind="pct" className="text-[11px]" /> : undefined}
+          subtitle={row.day_change_pct !== null ? <DeltaValue value={row.day_change_pct} kind="pct" className="text-[12px]" /> : undefined}
         />
       </td>
       {/* Score: always visible — unchanged position/behavior. */}
@@ -127,7 +127,7 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
           lockedFallback="--"
           lockedTitle="Unlock all 750 measured scores"
           primary={row.composite_score}
-          subtitle={row.delta_1d !== null ? <DeltaValue value={row.delta_1d} className="text-[11px]" /> : undefined}
+          subtitle={row.delta_1d !== null ? <DeltaValue value={row.delta_1d} className="text-[12px]" /> : undefined}
         />
       </td>
       {columns.delivery && (
@@ -174,7 +174,7 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
         <button
           onClick={toggleCompare}
           disabled={!queued && full}
-          className="ml-auto flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+          className="ml-auto flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[12px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40"
           style={
             queued
               ? { background: "var(--hover)", color: "var(--accent)", border: "1px solid color-mix(in srgb, var(--accent) 30%, transparent)" }

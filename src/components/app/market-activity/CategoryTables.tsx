@@ -163,7 +163,7 @@ export function CorporateEventsTable({ rows }: { rows: MarketActivityCorporateEv
                  * muted so the original identifier stays traceable without
                  * competing with the resolved symbol for attention. */}
                 {r.source_symbol && (
-                  <span className="ml-1 text-[11px] text-foreground-faint" title={`Original BSE code: ${r.source_symbol}`}>
+                  <span className="ml-1 text-[12px] text-foreground-faint" title={`Original BSE code: ${r.source_symbol}`}>
                     ({r.source_symbol})
                   </span>
                 )}

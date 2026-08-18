@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell } from "lucide-react";
 import { getMarketOverview } from "@/lib/api/endpoints";
@@ -69,6 +69,27 @@ export function MarketRibbon({
   const [signalsAsOf, setSignalsAsOf] = useState<string | null>(initialSignalsAsOf);
   const [error, setError] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const ribbonRef = useRef<HTMLDivElement>(null);
+
+  // Dynamic header-height fix (2026-08-18) — see globals.css's
+  // `--header-height` docstring for the full root-cause writeup. Measures
+  // this ribbon's OWN real rendered height (whatever it actually is —
+  // one line, wrapped, larger font scale, any zoom level) and republishes
+  // it as a CSS var layout.tsx/Sidebar.tsx read for their top offset/
+  // padding, instead of those files guessing a fixed 64px. ResizeObserver
+  // (not a resize listener) because it fires on the ribbon's OWN box-size
+  // changes directly, including ones caused by its content wrapping —
+  // a window `resize` event wouldn't fire for that case at all.
+  useEffect(() => {
+    const el = ribbonRef.current;
+    if (!el) return;
+    const root = document.documentElement;
+    const setHeight = () => root.style.setProperty("--header-height", `${el.offsetHeight}px`);
+    setHeight();
+    const observer = new ResizeObserver(setHeight);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -144,7 +165,23 @@ export function MarketRibbon({
     // `layout.tsx`'s `pt-16` companion spacer is now `md:pt-16`
     // only, matching (no longer double-reserving space the in-flow ribbon
     // already occupies on mobile).
-    <div className="relative z-40 flex min-h-16 w-full flex-wrap border-b border-border bg-surface md:fixed md:inset-x-0 md:top-0 md:h-16 md:flex-nowrap">
+    //
+    // Zoom/overlap fix (2026-08-18): `md:h-16` (a hard fixed height) had
+    // the SAME failure mode this comment just described for mobile, just
+    // with a narrower trigger — at some browser-zoom levels / with the
+    // larger type scale (globals.css), text inside an individual badge
+    // can wrap to 2 lines even while `flex-nowrap` keeps the ROW itself
+    // from wrapping, which grows that item taller than the fixed 64px box
+    // and overflows past its bottom border into <main>. Now `min-h-16`
+    // at every breakpoint (the fixed-vs-relative split above is
+    // unchanged) so the ribbon can grow taller if it genuinely needs to,
+    // and the ResizeObserver effect above keeps `--header-height` (what
+    // layout.tsx/Sidebar.tsx actually reserve) in sync with however tall
+    // it really renders — see globals.css's `--header-height` docstring.
+    <div
+      ref={ribbonRef}
+      className="relative z-40 flex min-h-16 w-full flex-wrap border-b border-border bg-surface md:fixed md:inset-x-0 md:top-0 md:flex-nowrap"
+    >
       {/* Left section — exactly the sidebar's width (w-56), hidden below
           md where Sidebar itself is hidden (BottomNav is the mobile nav
           instead). Content moved verbatim from Sidebar.tsx's old header
@@ -158,7 +195,7 @@ export function MarketRibbon({
         </span>
         <div className="flex flex-col leading-tight">
           <span className="font-mono text-lg font-semibold tracking-tight">RedixFi</span>
-          <span className="text-[10px] text-foreground-faint">Read the market. Understand it.</span>
+          <span className="text-[11px] text-foreground-faint">Read the market. Understand it.</span>
         </div>
       </div>
 
@@ -240,7 +277,7 @@ export function MarketRibbon({
             <Bell size={13} />
             {unreadCount > 0 && (
               <span
-                className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full px-[3px] font-mono text-[9px] font-semibold leading-none text-white"
+                className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full px-[3px] font-mono text-[10px] font-semibold leading-none text-white"
                 style={{ background: "var(--amber)" }}
               >
                 {unreadCount > 9 ? "9+" : unreadCount}

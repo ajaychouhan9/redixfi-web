@@ -57,7 +57,7 @@ function SectorRow({ row }: { row: SectorSummaryRow }) {
     <div className="flex items-center justify-between px-5 py-2">
       <span className="text-sm">{row.sector}</span>
       <span className="flex items-center gap-3">
-        <span className="font-mono text-[11px] text-foreground-faint">{row.count} stocks</span>
+        <span className="font-mono text-[12px] text-foreground-faint">{row.count} stocks</span>
         <DeltaValue value={row.avg_delta} className="w-16 justify-end" />
       </span>
     </div>
@@ -88,20 +88,20 @@ export function SectorSummaryCard({ data }: { data: SectorSummary }) {
         <Layers size={14} className="text-accent" />
         <div>
           <h3 className="text-sm font-semibold">Sector standing today</h3>
-          <p className="text-[11px] text-foreground-faint">{data.summary}</p>
+          <p className="text-[12px] text-foreground-faint">{data.summary}</p>
         </div>
       </div>
 
       {!expanded && total > 0 && (
         <div className="grid grid-cols-1 border-t border-border sm:grid-cols-2">
           <div className="divide-y divide-border border-b border-border sm:border-b-0 sm:border-r">
-            <p className="px-5 pt-2.5 pb-1 font-mono text-[10px] uppercase tracking-wide text-foreground-faint">Strongest</p>
+            <p className="px-5 pt-2.5 pb-1 font-mono text-[11px] uppercase tracking-wide text-foreground-faint">Strongest</p>
             {strongest.map((r) => (
               <SectorRow key={r.sector} row={r} />
             ))}
           </div>
           <div className="divide-y divide-border">
-            <p className="px-5 pt-2.5 pb-1 font-mono text-[10px] uppercase tracking-wide text-foreground-faint">Weakest</p>
+            <p className="px-5 pt-2.5 pb-1 font-mono text-[11px] uppercase tracking-wide text-foreground-faint">Weakest</p>
             {weakest.length > 0 ? (
               weakest.map((r) => <SectorRow key={r.sector} row={r} />)
             ) : (

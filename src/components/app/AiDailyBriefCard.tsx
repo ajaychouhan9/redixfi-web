@@ -30,11 +30,11 @@ export function AiDailyBriefCard({ brief }: { brief: DailyBrief | null }) {
               <Sparkles size={14} className="text-accent" />
             </span>
             <div>
-              <div className="font-mono text-[10px] uppercase tracking-widest text-accent">AI Daily Brief</div>
-              {brief && <div className="font-mono text-[11px] text-foreground-faint">{brief.period === "close" ? "Close session" : "Morning session"}</div>}
+              <div className="font-mono text-[11px] uppercase tracking-widest text-accent">AI Daily Brief</div>
+              {brief && <div className="font-mono text-[12px] text-foreground-faint">{brief.period === "close" ? "Close session" : "Morning session"}</div>}
             </div>
           </div>
-          <span className="shrink-0 rounded-md bg-accent/10 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-accent-dim">AI-generated</span>
+          <span className="shrink-0 rounded-md bg-accent/10 px-2 py-1 font-mono text-[11px] uppercase tracking-wider text-accent-dim">AI-generated</span>
         </div>
         {brief ? (
           <>

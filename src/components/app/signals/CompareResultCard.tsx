@@ -58,7 +58,7 @@ export function CompareResultCard({ compare }: { compare: CompareResult }) {
                         {sym}
                       </Link>
                       {companies[sym]?.company_name && (
-                        <span className="block text-[11px] font-normal normal-case text-foreground-faint">
+                        <span className="block text-[12px] font-normal normal-case text-foreground-faint">
                           {companies[sym].company_name}
                         </span>
                       )}

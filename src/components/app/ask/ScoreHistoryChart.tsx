@@ -40,7 +40,7 @@ export function ScoreHistoryChart({
     const s = withData[0];
     return (
       <div className="mt-2 rounded-lg border border-border bg-surface-raised p-3">
-        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-foreground-faint">
+        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-foreground-faint">
           {s.symbol} composite score — last {s.points.length} sessions
         </p>
         <div className="text-accent">
@@ -59,7 +59,7 @@ export function ScoreHistoryChart({
 
   return (
     <div className="mt-2 rounded-lg border border-border bg-surface-raised p-3">
-      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-foreground-faint">
+      <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-foreground-faint">
         Composite score — recent sessions
       </p>
       <svg viewBox={`0 0 ${width} ${height}`} width="100%" height={height} preserveAspectRatio="none" role="img" aria-label="Composite score comparison over recent sessions">
@@ -85,7 +85,7 @@ export function ScoreHistoryChart({
       </svg>
       <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
         {withData.map((s, i) => (
-          <span key={s.symbol} className="flex items-center gap-1 text-[11px] text-foreground-muted">
+          <span key={s.symbol} className="flex items-center gap-1 text-[12px] text-foreground-muted">
             <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: `var(--series-${(i % 5) + 1})` }} aria-hidden />
             {s.symbol}
           </span>

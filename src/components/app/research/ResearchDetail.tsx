@@ -111,7 +111,7 @@ export function ResearchDetail({
             link to the full Signal Dashboard) is unchanged. */}
         {data.signal_summary.composite_score !== null && (
           <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface-raised px-3 py-2">
-            <span className="font-mono text-[10px] uppercase tracking-wide text-foreground-faint">Signal snapshot</span>
+            <span className="font-mono text-[11px] uppercase tracking-wide text-foreground-faint">Signal snapshot</span>
             <span className="text-lg font-semibold">{data.signal_summary.composite_score}/100</span>
             {data.signal_summary.delta_1d !== null && <DeltaValue value={data.signal_summary.delta_1d} />}
             <Link href={`/signals/${data.symbol}`} className="ml-auto text-xs font-medium text-accent">

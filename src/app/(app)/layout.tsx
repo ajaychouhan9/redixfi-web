@@ -60,8 +60,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           space ONLY once the ribbon is actually `fixed` (md+, where its
           height is reliably 64px) — below md it's in-flow, so it pushes
           this content down by however tall it actually is, no padding
-          guess needed at all. */}
-      <div className="flex min-w-0 flex-1 flex-col md:pt-16 md:ml-56">
+          guess needed at all.
+          Zoom/overlap fix (2026-08-18): "reliably 64px" turned out not to
+          hold at every zoom level/font size — see MarketRibbon.tsx's
+          ResizeObserver effect and globals.css's `--header-height`
+          docstring. `md:pt-16` (a hardcoded guess) is now
+          `md:pt-[var(--header-height)]`, which MarketRibbon keeps synced
+          to its own real rendered height, so this reservation can never
+          fall short of reality — the `md:` gate is unchanged, still only
+          reserving space once the ribbon is actually fixed. */}
+      <div className="flex min-w-0 flex-1 flex-col md:pt-[var(--header-height)] md:ml-56">
         <MarketRibbon initialOverview={initialOverview} initialFresh={initialFresh} initialSignalsAsOf={initialSignalsAsOf} />
         <main className="mb-14 flex-1 px-4 py-4 md:mb-0 md:px-6 md:py-6">{children}</main>
         <FooterDisclaimer />

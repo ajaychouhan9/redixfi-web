@@ -60,9 +60,9 @@ export function CompareIndicator({ symbol, companyName }: { symbol: string; comp
             </span>
           </div>
           <div className="flex flex-wrap gap-1.5 px-4 py-3">
-            {queue.length === 0 && <span className="text-[11px] text-foreground-faint">No stocks added yet</span>}
+            {queue.length === 0 && <span className="text-[12px] text-foreground-faint">No stocks added yet</span>}
             {queue.map((e) => (
-              <span key={e.symbol} className="flex items-center gap-1 rounded-full bg-hover px-2 py-1 font-mono text-[11px]">
+              <span key={e.symbol} className="flex items-center gap-1 rounded-full bg-hover px-2 py-1 font-mono text-[12px]">
                 {e.symbol}
                 <button type="button" aria-label={`Remove ${e.symbol} from comparison`} onClick={() => removeFromComparisonQueue(e.symbol)}>
                   <X size={10} className="opacity-60 hover:opacity-100" />

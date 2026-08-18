@@ -88,7 +88,14 @@ export function Sidebar({
     // height means its nav items start exactly where the header's left
     // section ends, reading as one continuous left column instead of the
     // header covering this sidebar's own top content.
-    <aside className="hidden w-56 flex-col overflow-y-auto border-r border-border bg-surface md:fixed md:left-0 md:top-16 md:flex md:h-[calc(100vh-4rem)]">
+    //
+    // Zoom/overlap fix (2026-08-18): `top-16`/`h-[calc(100vh-4rem)]` had
+    // the same "header is always exactly 64px" assumption as layout.tsx's
+    // old `pt-16` (see that file's matching comment) — now driven by the
+    // same `--header-height` var MarketRibbon.tsx keeps in sync with its
+    // real rendered height, so this sidebar's top edge/height can never
+    // drift out of alignment with however tall the header actually is.
+    <aside className="hidden w-56 flex-col overflow-y-auto border-r border-border bg-surface md:fixed md:left-0 md:top-[var(--header-height)] md:flex md:h-[calc(100vh-var(--header-height))]">
       <nav className="flex flex-1 flex-col gap-1 p-3">
         {SIDEBAR_LINK_ITEMS.map((item) => {
           const active = isActive(pathname, item.href);
@@ -194,7 +201,7 @@ export function BottomNav() {
           <Link
             key={item.href}
             href={item.href}
-            className={clsx("flex flex-1 flex-col items-center gap-0.5 text-[11px] font-medium", active ? "text-accent" : "text-foreground-faint")}
+            className={clsx("flex flex-1 flex-col items-center gap-0.5 text-[12px] font-medium", active ? "text-accent" : "text-foreground-faint")}
           >
             <item.icon size={19} strokeWidth={active ? 2.4 : 2} />
             {item.label}

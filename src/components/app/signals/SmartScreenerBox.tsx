@@ -120,15 +120,15 @@ export function SmartScreenerBox() {
                 separate sticky bar, so this IS the "prominent indicator" the
                 task asks for rather than a second floating UI. */}
             {queue.length > 0 ? (
-              <p className="text-[11px] font-medium text-accent">
+              <p className="text-[12px] font-medium text-accent">
                 Compare ({queue.length}): {queue.map((e) => e.symbol).join(", ")}
               </p>
             ) : (
-              <p className="text-[11px] text-foreground-faint">Add up to {COMPARISON_QUEUE_MAX} · tap &ldquo;+ Compare&rdquo; on any row, or describe what to filter by below</p>
+              <p className="text-[12px] text-foreground-faint">Add up to {COMPARISON_QUEUE_MAX} · tap &ldquo;+ Compare&rdquo; on any row, or describe what to filter by below</p>
             )}
           </div>
         </div>
-        {queue.length > 0 && <span className="shrink-0 rounded-full bg-accent/10 px-2 py-1 font-mono text-[10px] text-accent">{queue.length}/{COMPARISON_QUEUE_MAX}</span>}
+        {queue.length > 0 && <span className="shrink-0 rounded-full bg-accent/10 px-2 py-1 font-mono text-[11px] text-accent">{queue.length}/{COMPARISON_QUEUE_MAX}</span>}
       </div>
 
       <div className="p-5">
@@ -223,7 +223,7 @@ export function SmartScreenerBox() {
             {result.results.length > 0 ? (
               <div className="overflow-x-auto rounded-lg border border-border">
                 <table className="w-full min-w-[600px] text-sm">
-                  {/* Font-size audit (2026-08-11): was text-[10px], bumped to
+                  {/* Font-size audit (2026-08-11): was text-[11px], bumped to
                       text-[13px] per the task's 13px "secondary labels"
                       floor. */}
                   <thead>

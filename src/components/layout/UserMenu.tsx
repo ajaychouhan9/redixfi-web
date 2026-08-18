@@ -52,7 +52,7 @@ export function UserMenu() {
       <button
         onClick={() => setOpen((o) => !o)}
         aria-label="Account menu"
-        className="flex h-7 w-7 items-center justify-center rounded-full font-mono text-[10px] font-semibold"
+        className="flex h-7 w-7 items-center justify-center rounded-full font-mono text-[11px] font-semibold"
         style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dim))", color: "var(--accent-foreground)" }}
       >
         {initialsFor(user.name, user.email)}

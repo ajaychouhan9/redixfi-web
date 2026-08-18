@@ -14,7 +14,7 @@ export function MarketPulseCard({ overview }: { overview: MarketOverview | null 
   const volState = overview.india_vix_change_pct > 5 ? "VOLATILE" : overview.india_vix_change_pct < -5 ? "CALM" : "NORMAL";
 
   return (
-    <Card title="Market Pulse" action={<span className="rounded bg-hover px-2 py-0.5 font-mono text-[10px] text-foreground-muted">{volState}</span>}>
+    <Card title="Market Pulse" action={<span className="rounded bg-hover px-2 py-0.5 font-mono text-[11px] text-foreground-muted">{volState}</span>}>
       <div className="space-y-3">
         <Row label="FII net">
           <DeltaValue value={overview.fii_net} />

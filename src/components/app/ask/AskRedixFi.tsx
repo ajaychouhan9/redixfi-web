@@ -336,7 +336,7 @@ export function AskRedixFi() {
               <Sparkles size={14} className="text-accent" />
               <div>
                 <div className="text-sm font-semibold">{symbol ? `Ask about ${symbol}` : "Ask RedixFi AI"}</div>
-                <div className="text-[10px] text-foreground-faint">
+                <div className="text-[11px] text-foreground-faint">
                   Grounded in measured data only · {dailyLimitLabel}
                   {!symbol && " · name a stock, a sector, or ask in general"}
                 </div>
@@ -347,13 +347,13 @@ export function AskRedixFi() {
                 <button
                   onClick={startNewConversation}
                   title="New conversation"
-                  className="flex items-center gap-1 text-[11px] text-foreground-faint hover:text-foreground"
+                  className="flex items-center gap-1 text-[12px] text-foreground-faint hover:text-foreground"
                 >
                   <RotateCcw size={11} /> New
                 </button>
               )}
               {symbol && (
-                <button onClick={reset} className="text-[11px] text-foreground-faint hover:text-foreground">
+                <button onClick={reset} className="text-[12px] text-foreground-faint hover:text-foreground">
                   Change stock
                 </button>
               )}
@@ -447,7 +447,7 @@ export function AskRedixFi() {
                             own measured data; this wasn't LLM-generated or RedixFi-sourced
                             at all — a structured fact read from an external source). */}
                         {m.webSourced && (
-                          <div className="mt-2 flex items-center gap-1.5 border-t border-border pt-2 text-[11px] text-foreground-faint">
+                          <div className="mt-2 flex items-center gap-1.5 border-t border-border pt-2 text-[12px] text-foreground-faint">
                             <Globe size={11} className="shrink-0" />
                             {m.webSourceUrl ? (
                               <a href={m.webSourceUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
@@ -462,7 +462,7 @@ export function AskRedixFi() {
                             old bare sources_used category chips entirely. */}
                         {m.role === "ai" && m.sourceCitations && <SourcesSection citations={m.sourceCitations} />}
                         {m.createdAt && (
-                          <div className="mt-1.5 text-[10px] text-foreground-faint opacity-70">
+                          <div className="mt-1.5 text-[11px] text-foreground-faint opacity-70">
                             {new Date(m.createdAt).toLocaleString(undefined, {
                               month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
                             })}
@@ -489,7 +489,7 @@ export function AskRedixFi() {
                         )}
                         <div className="overflow-x-auto rounded-lg border border-border">
                           <table className="w-full min-w-[560px] text-sm">
-                            {/* Font-size audit (2026-08-11): was text-[10px],
+                            {/* Font-size audit (2026-08-11): was text-[11px],
                                 bumped to text-[13px] per the task's 13px
                                 "secondary labels" floor. */}
                             <thead>

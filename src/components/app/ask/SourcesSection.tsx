@@ -25,7 +25,7 @@ export function SourcesSection({ citations }: { citations: SourceCitation[] }) {
     <div className="mt-2 border-t border-border pt-2">
       <button
         onClick={() => setExpanded((v) => !v)}
-        className="flex w-full items-center gap-1.5 text-[11px] font-medium text-foreground-faint hover:text-foreground"
+        className="flex w-full items-center gap-1.5 text-[12px] font-medium text-foreground-faint hover:text-foreground"
       >
         <span>
           Sources <span className="text-accent-dim">[{citations.length} {noun}]</span>
@@ -48,7 +48,7 @@ export function SourcesSection({ citations }: { citations: SourceCitation[] }) {
                   href={c.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="shrink-0 text-[11px] font-medium text-accent-dim hover:text-accent"
+                  className="shrink-0 text-[12px] font-medium text-accent-dim hover:text-accent"
                 >
                   View source filing →
                 </a>

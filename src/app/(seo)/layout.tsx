@@ -20,7 +20,7 @@ export default function SeoLayout({ children }: { children: React.ReactNode }) {
         </nav>
       </header>
       <main className="flex-1 px-4 py-6 sm:px-6">{children}</main>
-      <footer className="border-t border-border px-4 py-3 text-center text-[11px] text-foreground-faint sm:px-6">
+      <footer className="border-t border-border px-4 py-3 text-center text-[12px] text-foreground-faint sm:px-6">
         RedixFi provides measured market data and analytics only — not investment advice, recommendations, or
         predictions. We are not yet SEBI-registered as a Research Analyst.{" "}
         <Link href="/more/disclaimer" className="underline">

@@ -25,7 +25,14 @@
   --border: #e6e9f2;
   --foreground: #1a2036;
   --foreground-muted: #5c6584;
-  --foreground-faint: #9aa2b8;
+  /* Contrast fix (2026-08-18): was #9aa2b8, 2.55:1 against --surface
+     (#ffffff) — well under WCAG AA's 4.5:1 floor for normal-size text and
+     the actual complaint behind this text reading as illegibly faint
+     (timestamps, secondary company names, small labels). #6e7690 measures
+     4.51:1 against #ffffff (WCAG-contrast-checker formula) while staying
+     visibly lighter than --foreground-muted (5.75:1) so the two still read
+     as a clear hierarchy step apart, not identical. */
+  --foreground-faint: #6e7690;
   --hover: rgba(0, 0, 0, 0.03);
 
   --accent: #b8873a;
@@ -68,7 +75,11 @@
     --border: #1e2438;
     --foreground: #e8eaf2;
     --foreground-muted: #8891a8;
-    --foreground-faint: #5c6584;
+    /* Contrast fix (2026-08-18): was #5c6584, 3.25:1 against --surface
+       (#0d1220) — under the 4.5:1 AA floor. #75809d measures 4.74:1 while
+       staying dimmer than --foreground-muted (5.92:1), preserving the
+       hierarchy. Same reasoning as the light-theme step above. */
+    --foreground-faint: #75809d;
     --hover: rgba(255, 255, 255, 0.03);
 
     --accent: #d4a94e;
@@ -106,7 +117,10 @@
   --border: #1e2438;
   --foreground: #e8eaf2;
   --foreground-muted: #8891a8;
-  --foreground-faint: #5c6584;
+  /* Contrast fix (2026-08-18) — same value/reasoning as the
+     prefers-color-scheme dark step above, kept in sync for the explicit
+     [data-theme="dark"] override. */
+  --foreground-faint: #75809d;
   --hover: rgba(255, 255, 255, 0.03);
 
   --accent: #d4a94e;
@@ -132,6 +146,23 @@
   --series-5: #d55181;
 }
 
+/* Typography readability pass (2026-08-18): the task-wide floor was
+   text-xs (12px)/text-sm (14px) used for the bulk of body/description
+   copy and muted/meta text across every card — comfortable at 100%
+   browser zoom but the reported complaint was specifically about small
+   text at zoomed-out levels (67-75%). Overriding the two smallest steps
+   of Tailwind's generated type scale here bumps every `text-xs`/`text-sm`
+   utility in one place (no per-component edits, no visual redesign) while
+   leaving `text-base`/headings/card titles untouched, so proportions and
+   information density are preserved. Line-heights scaled with the same
+   ratio Tailwind's own defaults use. */
+@theme {
+  --text-xs: 0.8125rem; /* 13px, was 12px */
+  --text-xs--line-height: calc(1.15 / 0.8125);
+  --text-sm: 0.9375rem; /* 15px, was 14px */
+  --text-sm--line-height: calc(1.4 / 0.9375);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
@@ -154,6 +185,24 @@
   --color-amber-bg: var(--amber-bg);
   --font-sans: var(--font-plex-sans);
   --font-mono: var(--font-plex-mono);
+}
+
+:root {
+  /* Dynamic header-height fix (2026-08-18): layout.tsx / Sidebar.tsx used
+     to hardcode `pt-16` / `top-16` / `h-[calc(100vh-4rem)]`, all assuming
+     MarketRibbon is always exactly 64px tall once `md:fixed`. That's only
+     true when its content fits one line at that width/font-size — at
+     certain zoom levels (browser zoom changes the effective CSS-px
+     viewport width, which can shift what wraps) or with the larger type
+     scale above, the ribbon can genuinely render taller, and a hardcoded
+     64px reservation then overlaps <main>/the sidebar with whatever
+     doesn't fit. MarketRibbon.tsx now measures its own real height via
+     ResizeObserver and writes it here; layout.tsx/Sidebar.tsx consume it
+     via `var(--header-height)` instead of a fixed number, so the reserved
+     space always matches reality. This default (4rem = the old hardcoded
+     value) is only what's used for the very first paint, before that
+     effect runs. */
+  --header-height: 4rem;
 }
 
 * {

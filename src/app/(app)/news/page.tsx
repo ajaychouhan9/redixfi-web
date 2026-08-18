@@ -57,7 +57,7 @@ export default function NewsPage() {
       <div className="mb-1 flex items-center gap-2">
         <Newspaper size={16} className="text-accent" />
         <h1 className="text-lg font-semibold">News</h1>
-        <span className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wide text-accent-dim">AI-Classified</span>
+        <span className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-accent-dim">AI-Classified</span>
       </div>
       <p className="mb-4 text-xs text-foreground-faint">Every headline read and classified by severity, category and scope.</p>
 

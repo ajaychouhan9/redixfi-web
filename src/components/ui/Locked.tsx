@@ -36,8 +36,8 @@ export function LockedRow({ children, title = "Unlock with Analytics Pro" }: { c
 export function UnlockBanner({ label, cta = "Unlock all 750 measured scores" }: { label: string; cta?: string }) {
   return (
     <div className="flex items-center justify-between gap-3 border-t border-border px-5 py-3">
-      <span className="text-[11px] text-foreground-faint">{label}</span>
-      <Link href="/pricing" className="shrink-0 rounded-md bg-accent px-3 py-1.5 text-[11px] font-medium text-accent-foreground">
+      <span className="text-[12px] text-foreground-faint">{label}</span>
+      <Link href="/pricing" className="shrink-0 rounded-md bg-accent px-3 py-1.5 text-[12px] font-medium text-accent-foreground">
         {cta}
       </Link>
     </div>

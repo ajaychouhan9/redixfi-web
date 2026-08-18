@@ -7,7 +7,7 @@ function MoverList({ rows, label, tone }: { rows: MoverRow[]; label: string; ton
   const Icon = tone === "up" ? TrendingUp : TrendingDown;
   return (
     <div className="flex-1">
-      <h3 className={`mb-2 font-mono text-[10px] uppercase tracking-wider ${tone === "up" ? "text-up" : "text-down"}`}>{label}</h3>
+      <h3 className={`mb-2 font-mono text-[11px] uppercase tracking-wider ${tone === "up" ? "text-up" : "text-down"}`}>{label}</h3>
       <ul className="space-y-2.5">
         {rows.map((r) => (
           <li key={r.symbol}>

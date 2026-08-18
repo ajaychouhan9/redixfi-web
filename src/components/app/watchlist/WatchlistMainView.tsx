@@ -207,7 +207,7 @@ export function WatchlistMainView() {
       <div className="overflow-hidden rounded-xl border border-border bg-surface-raised">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            {/* Font-size audit (2026-08-11): was text-[10px], bumped to
+            {/* Font-size audit (2026-08-11): was text-[11px], bumped to
                 text-[13px] per the task's 13px "secondary labels" floor —
                 same fix as SignalsExplorer.tsx's header row. */}
             <thead>
@@ -256,7 +256,7 @@ export function WatchlistMainView() {
                         ) : (
                           <div className="flex items-center gap-1.5">
                             <span className="font-mono font-semibold">₹{r.last_price.toLocaleString("en-IN")}</span>
-                            {r.day_change_pct !== null && <DeltaValue value={r.day_change_pct} kind="pct" className="text-[11px]" />}
+                            {r.day_change_pct !== null && <DeltaValue value={r.day_change_pct} kind="pct" className="text-[12px]" />}
                           </div>
                         )}
                       </td>
@@ -268,7 +268,7 @@ export function WatchlistMainView() {
                         ) : (
                           <div className="flex items-center gap-1.5">
                             <span className="font-mono font-semibold">{r.composite_score}</span>
-                            {r.delta_1d !== null && <DeltaValue value={r.delta_1d} className="text-[11px]" />}
+                            {r.delta_1d !== null && <DeltaValue value={r.delta_1d} className="text-[12px]" />}
                           </div>
                         )}
                       </td>
@@ -280,7 +280,7 @@ export function WatchlistMainView() {
                         ) : (
                           <div className="flex items-baseline gap-1.5">
                             <span className="font-mono font-semibold">{r.delivery_pct}%</span>
-                            {r.delivery_avg20 !== null && <span className="text-[11px] text-foreground-faint">avg {r.delivery_avg20}%</span>}
+                            {r.delivery_avg20 !== null && <span className="text-[12px] text-foreground-faint">avg {r.delivery_avg20}%</span>}
                           </div>
                         )}
                       </td>
