@@ -87,7 +87,7 @@ export function SymbolTypeahead({
         className={inputClassName}
       />
       {open && value.trim().length >= minChars && results.length > 0 && (
-        <ul className="absolute left-0 top-full z-30 mt-1 w-full min-w-[260px] divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface-raised shadow-lg">
+        <ul className="absolute left-0 top-full z-50 mt-1 w-full min-w-[260px] divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface-raised shadow-lg">
           {results.map((r) => (
             <li key={r.canonicalSymbol}>
               <button
@@ -105,7 +105,7 @@ export function SymbolTypeahead({
         </ul>
       )}
       {open && value.trim().length >= minChars && results.length === 0 && (
-        <div className="absolute left-0 top-full z-30 mt-1 w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-faint shadow-lg">
+        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[260px] rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-faint shadow-lg">
           No stocks matched &ldquo;{value}&rdquo;.
         </div>
       )}

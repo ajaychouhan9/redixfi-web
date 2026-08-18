@@ -157,7 +157,7 @@ export function MarketActivityHub() {
 
       {/* BUG 5 fix (2026-08-16): re-uses SignalsExplorer.tsx's own filter-bar
           structure/sizing verbatim (2-tier wrapper — outer bg-surface-raised
-          card, inner overflow-x-auto row — border-border/bg-hover/px-3
+          card, inner filter row — border-border/bg-hover/px-3
           py-1.5/text-xs on every control) instead of the previous
           ad-hoc-sized inline row. The symbol input is now SymbolTypeahead
           (BUG 4) instead of a bare <input>, and the date inputs get
@@ -167,10 +167,18 @@ export function MarketActivityHub() {
           "too small"). Native <input type="date">'s calendar icon
           contrast is fixed globally in globals.css (`color-scheme`), not
           per-input, since it's a browser rendering default with no
-          per-element color/size API. */}
+          per-element color/size API.
+
+          BUG 4 fix (2026-08-18): this row used `overflow-x-auto`, which
+          clips SymbolTypeahead's absolutely positioned suggestion dropdown
+          instead of letting it float below the Symbol field — the dropdown
+          rendered but was invisible past the row's own scroll boundary.
+          Swapped for `overflow-visible`: the row already wraps via
+          `flex-wrap` when controls don't fit, so horizontal scrolling was
+          never actually needed here. */}
       {filtersEnabled && (
         <div className="mb-3 rounded-xl border border-border bg-surface-raised p-3">
-          <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1">
+          <div className="flex flex-wrap items-center gap-2 overflow-visible pb-1">
             <SymbolTypeahead
               value={symbolFilter}
               onChange={setSymbolFilter}
