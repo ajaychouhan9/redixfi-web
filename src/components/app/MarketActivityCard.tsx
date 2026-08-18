@@ -23,13 +23,15 @@ import { formatDateIst } from "@/lib/format";
  * own count and its own date, so freshness is never misrepresented for
  * a category that's actually staler (or fresher) than the others.
  */
+type CategoryKey = "insider_trades" | "concalls" | "corporate_events" | "bulk_block_deals";
+
 const CATEGORIES: Array<{
-  key: keyof Pick<MarketActivitySummary, "insider_trades" | "concalls" | "corporate_events" | "bulk_block_deals">;
+  key: CategoryKey;
   label: string;
   unit: (n: number) => string;
 }> = [
   { key: "insider_trades", label: "Insider Trading", unit: (n) => `trade${n === 1 ? "" : "s"}` },
-  { key: "concalls", label: "Concalls", unit: (n) => `call${n === 1 ? "" : "s"}` },
+  { key: "concalls", label: "Concalls", unit: (n) => `concall${n === 1 ? "" : "s"}` },
   { key: "corporate_events", label: "Corporate Events", unit: (n) => `event${n === 1 ? "" : "s"}` },
   { key: "bulk_block_deals", label: "Bulk/Block Deals", unit: (n) => `deal${n === 1 ? "" : "s"}` },
 ];
