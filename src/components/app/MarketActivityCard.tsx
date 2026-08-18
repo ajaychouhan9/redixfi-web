@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { LineChart, ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import type { MarketActivitySummary } from "@/lib/api/types";
+import type { MarketActivityCategorySummary, MarketActivitySummary } from "@/lib/api/types";
 import { formatDateIst } from "@/lib/format";
 
 /**
@@ -11,33 +11,60 @@ import { formatDateIst } from "@/lib/format";
  * "identical for every tier" posture as the underlying 4 data types on
  * ResearchDetail — this card renders the same for every visitor.
  *
- * BUG 11 fix (2026-08-17): each of the 4 categories now reports its OWN
- * latest date + count independently (routers/market_activity.py::
- * market_activity_summary()), not a count gated against a single
- * "most recent across all 4" shared date. The prior (BUG 3) design
- * zeroed out sparser categories — corporate events and bulk/block deals
- * happen far less often than insider trades, so their own latest
- * activity almost never fell on insider's latest date, and the card
- * showed e.g. "1 insider trade" with concalls/bulk-block/corporate-
- * events all silently at 0 despite real recent data existing for them.
- * This card now sums each category's own count and shows
- * `summary.last_updated` (max of the 4 per-category dates) as the
- * single "as of" label — never implying same-day-only data, and a
- * genuinely empty response still only means the underlying collections
- * are completely empty.
+ * BUG 11 (2026-08-18, per-category rows): the backend has reported each
+ * category's OWN latest date + count independently since the 2026-08-17
+ * fix (routers/market_activity.py::market_activity_summary()), but this
+ * card was still collapsing all 4 into one combined sentence with a
+ * single "Last updated" line — which is misleading whenever the 4
+ * categories have different freshness (e.g. insider trades updated
+ * today, corporate events 3 days ago, concalls a week ago all showing
+ * one shared "Last updated" date implies a single-day snapshot that
+ * never actually happened). Each category now gets its own row with its
+ * own count and its own date, so freshness is never misrepresented for
+ * a category that's actually staler (or fresher) than the others.
  */
+const CATEGORIES: Array<{
+  key: keyof Pick<MarketActivitySummary, "insider_trades" | "concalls" | "corporate_events" | "bulk_block_deals">;
+  label: string;
+  unit: (n: number) => string;
+}> = [
+  { key: "insider_trades", label: "Insider Trading", unit: (n) => `trade${n === 1 ? "" : "s"}` },
+  { key: "concalls", label: "Concalls", unit: (n) => `call${n === 1 ? "" : "s"}` },
+  { key: "corporate_events", label: "Corporate Events", unit: (n) => `event${n === 1 ? "" : "s"}` },
+  { key: "bulk_block_deals", label: "Bulk/Block Deals", unit: (n) => `deal${n === 1 ? "" : "s"}` },
+];
+
+function CategoryRow({
+  label,
+  category,
+  unit,
+}: {
+  label: string;
+  category: MarketActivityCategorySummary;
+  unit: (n: number) => string;
+}) {
+  const hasActivity = category.count > 0 && !!category.date;
+  return (
+    <div className="flex items-center justify-between gap-3 py-1.5">
+      <span className="text-sm text-foreground">{label}</span>
+      {hasActivity ? (
+        <span className="text-right text-xs text-foreground-faint">
+          {category.count} {unit(category.count)} · Updated {formatDateIst(category.date as string)}
+        </span>
+      ) : (
+        <span className="text-right text-xs text-foreground-faint">No recent activity</span>
+      )}
+    </div>
+  );
+}
+
 export function MarketActivityCard({ summary }: { summary: MarketActivitySummary | null }) {
-  const parts: string[] = [];
-  if (summary) {
-    const insiderCount = summary.insider_trades.count;
-    const bulkBlockCount = summary.bulk_block_deals.count;
-    const concallsCount = summary.concalls.count;
-    const corporateEventsCount = summary.corporate_events.count;
-    if (insiderCount > 0) parts.push(`${insiderCount} insider trade${insiderCount === 1 ? "" : "s"}`);
-    if (bulkBlockCount > 0) parts.push(`${bulkBlockCount} bulk/block deal${bulkBlockCount === 1 ? "" : "s"}`);
-    if (concallsCount > 0) parts.push(`${concallsCount} concall${concallsCount === 1 ? "" : "s"}`);
-    if (corporateEventsCount > 0) parts.push(`${corporateEventsCount} corporate event${corporateEventsCount === 1 ? "" : "s"}`);
-  }
+  const allEmpty =
+    !summary ||
+    (summary.insider_trades.count === 0 &&
+      summary.bulk_block_deals.count === 0 &&
+      summary.concalls.count === 0 &&
+      summary.corporate_events.count === 0);
 
   return (
     <Card
@@ -49,13 +76,14 @@ export function MarketActivityCard({ summary }: { summary: MarketActivitySummary
     >
       {!summary ? (
         <p className="text-sm text-foreground-muted">Not available right now.</p>
-      ) : parts.length === 0 ? (
+      ) : allEmpty ? (
         <p className="text-sm text-foreground-muted">No insider trades, bulk/block deals, concalls, or corporate events recorded yet.</p>
       ) : (
-        <>
-          <p className="text-sm text-foreground-muted">{parts.join(" · ")}.</p>
-          <p className="mt-1 text-xs text-foreground-faint">Last updated: {formatDateIst(summary.last_updated)}</p>
-        </>
+        <div className="divide-y divide-border">
+          {CATEGORIES.map(({ key, label, unit }) => (
+            <CategoryRow key={key} label={label} category={summary[key]} unit={unit} />
+          ))}
+        </div>
       )}
       <Link href="/market-activity" className="mt-3 flex items-center gap-0.5 text-xs font-medium text-accent">
         View all <ArrowRight size={12} />
