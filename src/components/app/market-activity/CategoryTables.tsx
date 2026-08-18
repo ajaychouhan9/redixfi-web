@@ -126,7 +126,7 @@ export function CorporateEventsTable({ rows }: { rows: MarketActivityCorporateEv
   // collection's live shape might still surprise us with.
   const knownKeys = new Set([
     "type", "symbol", "company_name", "date", "event_date", "valid_till",
-    "event_type", "headline", "meta",
+    "event_type", "headline", "meta", "source_symbol",
   ]);
   const extraCols = Array.from(new Set(rows.flatMap((r) => Object.keys(r))))
     .filter((k) => !knownKeys.has(k))
@@ -134,12 +134,16 @@ export function CorporateEventsTable({ rows }: { rows: MarketActivityCorporateEv
     .slice(0, 2);
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[520px] text-sm">
+      {/* table-fixed + an explicit Date width stop the date from being
+       * squeezed/wrapped by the variable-width Headline column — Date's
+       * content ("28 Mar 2026") is short but fixed-width, so it gets a
+       * fixed column instead of competing for space like the rest. */}
+      <table className="w-full min-w-[560px] table-fixed text-sm">
         <thead className="text-left text-xs font-semibold uppercase tracking-wide text-foreground-faint">
           <tr>
-            <th className="py-1.5 pr-3">Date</th>
-            <th className="py-1.5 pr-3">Symbol</th>
-            <th className="py-1.5 pr-3">Event type</th>
+            <th className="w-24 py-1.5 pr-3 sm:w-28">Date</th>
+            <th className="w-24 py-1.5 pr-3 sm:w-28">Symbol</th>
+            <th className="w-28 py-1.5 pr-3 sm:w-32">Event type</th>
             <th className="py-1.5 pr-3">Headline</th>
             {extraCols.map((c) => (
               <th key={c} className="py-1.5 pr-3">
@@ -151,9 +155,18 @@ export function CorporateEventsTable({ rows }: { rows: MarketActivityCorporateEv
         <tbody>
           {rows.map((r, i) => (
             <tr key={`${r.symbol}-${i}`} className="border-t border-border">
-              <td className="py-1.5 pr-3">{formatDateIst(r.date)}</td>
-              <td className="py-1.5 pr-3">
+              <td className="whitespace-nowrap py-1.5 pr-3">{formatDateIst(r.date)}</td>
+              <td className="truncate py-1.5 pr-3">
                 <SymbolLink symbol={r.symbol} companyName={r.company_name} />
+                {/* source_symbol only appears when the server resolved a raw
+                 * BSE scrip code to this canonical symbol — shown small and
+                 * muted so the original identifier stays traceable without
+                 * competing with the resolved symbol for attention. */}
+                {r.source_symbol && (
+                  <span className="ml-1 text-[11px] text-foreground-faint" title={`Original BSE code: ${r.source_symbol}`}>
+                    ({r.source_symbol})
+                  </span>
+                )}
               </td>
               <td className="py-1.5 pr-3">{safeCell(r.event_type)}</td>
               <td className="py-1.5 pr-3 text-foreground-muted">{safeCell(r.headline ?? r.summary)}</td>

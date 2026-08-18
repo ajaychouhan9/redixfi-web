@@ -1335,6 +1335,11 @@ export type MarketActivityCorporateEventRow = MarketActivityBase &
     summary?: string | null;
     source?: string | null;
     meta?: Record<string, unknown> | null;
+    /** Present only when the server resolved `symbol` from a raw BSE
+     * scrip code (e.g. "544634") to a known canonical NSE symbol — the
+     * original code, kept for traceability. Absent when `symbol` is
+     * already the original identifier (nothing was resolved). */
+    source_symbol?: string | null;
   };
 
 // bulk_block_deals' live field shape (BUG 7 fix, 2026-08-16 — verified
