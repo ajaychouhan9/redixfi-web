@@ -1194,7 +1194,13 @@ export interface AskResult {
   // Task 22 Phase 1/2/3 — additive. Every pre-existing caller (explicit
   // `symbol`, non-comparative/non-screen question) gets mode="symbol" and
   // both compare/screen null, so nothing about the old contract changes.
-  mode: "symbol" | "compare" | "screen" | "general" | "tabular";
+  // "clarify" — Ask AI symbol-resolution session, locked spec rule 2d:
+  // the question needs a specific stock's data but none is resolvable
+  // (no page context, no established session symbol, none named) —
+  // `answer` is a plain clarifying question ("Which stock are you
+  // asking about?"), NOT a compliance refusal (`refused` is false) and
+  // not charged against the caller's daily quota (core/routers/ask.py).
+  mode: "symbol" | "compare" | "screen" | "general" | "tabular" | "clarify";
   resolved_symbol: string | null;
   compare: CompareResult | null;
   screen: AskScreenResult | null;

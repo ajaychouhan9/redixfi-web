@@ -210,19 +210,6 @@ export function AskRedixFi() {
     return () => timers.forEach(clearTimeout);
   }, [busy, hasConcallSignal]);
 
-  function reset() {
-    setSymbol(null);
-    setResults([]);
-    setMessages([]);
-    setConversationId(null);
-    setInput("");
-    setLimit(null);
-    setInitialSuggestions([]);
-    setHistoryLoaded(false);
-    setShowHistoryList(false);
-    historyFetchKey.current = null;
-  }
-
   function close() {
     setOpen(false);
     setExpanded(false);
@@ -247,6 +234,20 @@ export function AskRedixFi() {
   // for symbol mode, the context-tailored initial suggestion chips —
   // fired once per distinct symbol context per panel-open, not on every
   // render (historyFetchKey guards that).
+  //
+  // Ask AI symbol-resolution session, locked spec rule 2b — `sym` here is
+  // ONLY ever a real value when a page (Research/Signal detail) preset it
+  // (rule 2a); a Home/no-page-context open calls this with `sym=null`, in
+  // which case the backend now resumes the single most-recently-active
+  // conversation across EVERY symbol (core/users_repo.py::get_most_
+  // recent_conversation), not one bucketed under "_general" — that
+  // resumed conversation's OWN `symbol` field (silently, never displayed
+  // — see this file's top docstring) becomes this session's implicit
+  // context for the next symbol-less question, per the locked spec's own
+  // example (a session that drifted from TCS to INFY mid-thread must
+  // resume as INFY, not its starting symbol). Never overrides a REAL
+  // page-context `sym` — rule 2a's page-context priority always wins
+  // over whatever a resumed conversation says.
   async function loadHistory(sym: string | null) {
     const key = sym ?? "_general";
     if (historyFetchKey.current === key) return;
@@ -259,6 +260,8 @@ export function AskRedixFi() {
       const convo = history.conversation;
       if (convo && convo.messages.length > 0) {
         setConversationId(convo.conversation_id);
+        const resumedSymbol = !sym && convo.symbol && convo.symbol !== "_general" ? convo.symbol : sym;
+        if (!sym && resumedSymbol) setSymbol(resumedSymbol);
         setMessages(
           convo.messages.map((m) => ({
             role: m.role === "user" ? "user" : "ai",
@@ -266,7 +269,7 @@ export function AskRedixFi() {
             createdAt: m.created_at,
             sourceCitations: m.source_citations,
             followUps: m.role === "assistant" ? m.follow_ups : undefined,
-            resolvedSymbol: sym,
+            resolvedSymbol: resumedSymbol,
           }))
         );
       }
@@ -275,16 +278,22 @@ export function AskRedixFi() {
     }
   }
 
-  // "New conversation" — starts fresh WITHOUT losing the current symbol
-  // context (unlike reset(), which also clears the symbol/"Change stock").
+  // "New conversation" — starts fresh. Re-derives the symbol from PAGE
+  // context only (rule 2a — a fresh session opened/continued from a
+  // stock's page always starts on that stock again), dropping whatever
+  // the previous conversation may have silently drifted to via an
+  // explicit mid-thread mention (rule 2c) — that drift belongs to the
+  // conversation that's being left behind, not carried into a new one.
   function startNewConversation() {
     setMessages([]);
     setConversationId(null);
     setLimit(null);
     setShowHistoryList(false);
+    const pageSymbol = getCurrentSymbol();
+    setSymbol(pageSymbol);
     // A fresh key lets the NEXT loadHistory (e.g. a later reopen) run
     // again — but this conversation itself starts empty immediately.
-    historyFetchKey.current = symbol ?? "_general";
+    historyFetchKey.current = pageSymbol ?? "_general";
   }
 
   // Ask panel UI redesign session — real chat-history list. Reuses
@@ -353,10 +362,20 @@ export function AskRedixFi() {
       if (!token) return;
       const result = await askRedixfi(token, { symbol, question: text, conversation_id: conversationId });
       setConversationId(result.conversation_id);
-      // Adopt a server-resolved symbol as this panel's context ONLY for a
-      // plain single-stock answer — a compare/screen/general answer must
-      // not lock the panel into one symbol's header for the next turn.
-      if (!symbol && result.mode === "symbol" && result.resolved_symbol) {
+      // Locked spec rule 2c — a symbol NAMED in this question always
+      // overrides whatever was current (page context or a prior resolved
+      // symbol) AND becomes the new current symbol for the rest of this
+      // session going forward, until overridden again. Unconditional now
+      // (previously gated on `!symbol`, which meant an explicit mid-
+      // session mention while a page-context/prior symbol was already
+      // set never actually updated anything — the real gap behind the
+      // locked spec's "session must reflect the MOST RECENT stock, not
+      // just the one it started with"). A compare/screen/general answer
+      // (`resolved_symbol` null) correctly leaves whatever was current
+      // unchanged — those don't establish a new single-stock context,
+      // same reasoning core/users_repo.py::start_conversation's own
+      // evolving-symbol fix uses server-side.
+      if (result.mode === "symbol" && result.resolved_symbol) {
         setSymbol(result.resolved_symbol);
       }
       setMessages((prev) => [
@@ -514,11 +533,12 @@ export function AskRedixFi() {
                   <RotateCcw size={11} /> New
                 </button>
               )}
-              {!showHistoryList && symbol && (
-                <button onClick={reset} className="text-[12px] text-foreground-faint hover:text-foreground">
-                  Change stock
-                </button>
-              )}
+              {/* Ask AI symbol-resolution session, locked spec rule 1 —
+                  NO "Change stock" UI anywhere, unconditionally. Stock
+                  context is 100% backend-resolved (page context / session
+                  drift / explicit mention, see this file's top docstring
+                  and core/ask.py's priority order) — there is nothing
+                  left for the user to manually toggle. */}
               <button
                 onClick={() => setExpanded(!expanded)}
                 aria-label={expanded ? "Collapse" : "Expand"}
