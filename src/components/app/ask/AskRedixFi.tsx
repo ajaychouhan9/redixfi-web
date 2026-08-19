@@ -16,9 +16,12 @@ import { SourcesSection } from "@/components/app/ask/SourcesSection";
 import { SignalTableRow, type VisibleColumns } from "@/components/app/signals/SignalTableRow";
 import { filterChips } from "@/components/app/signals/SmartScreenerBox";
 import { Chip } from "@/components/ui/Chip";
+import { ExportButton } from "@/components/ui/ExportButton";
+import { downloadCsv } from "@/lib/csv";
 import type {
   AskLimitDetail,
   AskScreenResult,
+  AskTableResult,
   CompareResult,
   ResearchSearchRow,
   ScoreHistoryPoint,
@@ -61,6 +64,9 @@ interface AskMessage {
   scoreHistory?: ScoreHistoryPoint[] | null;
   resolvedSymbol?: string | null;
   followUps?: string[];
+  // RedixFi AI backend upgrade — multi-day/multi-field tabular answer
+  // (mode="tabular"), Pro tier only. Null for every other answer shape.
+  table?: AskTableResult | null;
 }
 
 const QUICK_PROMPTS_SYMBOL = [
@@ -221,7 +227,7 @@ export function AskRedixFi() {
         ...prev,
         {
           role: "ai", text: result.answer, sourceCitations: result.source_citations,
-          compare: result.compare, screen: result.screen,
+          compare: result.compare, screen: result.screen, table: result.table,
           webSourced: result.web_sourced, webSourceLabel: result.web_source_label, webSourceUrl: result.web_source_url,
           scoreHistory: result.score_history, resolvedSymbol: result.resolved_symbol, followUps: result.follow_ups,
         },
@@ -505,6 +511,64 @@ export function AskRedixFi() {
                             <tbody>
                               {m.screen.results.map((row) => (
                                 <SignalTableRow key={row.symbol} row={row} columns={SCREEN_COLUMNS} />
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* RedixFi AI backend upgrade — multi-day/multi-field
+                        tabular answer (mode="tabular", Pro tier only).
+                        Same table markup/styling as the screen-result table
+                        just above (border/overflow-x-auto wrapper, mono
+                        uppercase header) — no existing component already
+                        renders an arbitrary date x symbol×field grid
+                        (SignalTableRow/CompareResultCard both have fixed,
+                        signal-specific column shapes), so this reuses the
+                        established VISUAL pattern rather than introducing a
+                        new one, plus the shared ExportButton/downloadCsv
+                        utilities already used by Signals/Research/Market
+                        Activity exports for the CSV download. */}
+                    {m.table && m.table.rows.length > 0 && (
+                      <div className="mt-2">
+                        <div className="mb-1.5 flex justify-end">
+                          <ExportButton
+                            canExport
+                            onExport={() =>
+                              downloadCsv(
+                                "redixfi-ask-table.csv",
+                                m.table!.rows.map((row) => {
+                                  const out: Record<string, unknown> = { Date: row.date };
+                                  for (const col of m.table!.columns) out[col.label] = row[col.key];
+                                  return out;
+                                })
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="overflow-x-auto rounded-lg border border-border">
+                          <table className="w-full min-w-[560px] text-sm">
+                            <thead>
+                              <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wide text-foreground-faint">
+                                <th className="px-3 py-2">Date</th>
+                                {m.table.columns.map((col) => (
+                                  <th key={col.key} className="px-3 py-2">
+                                    {col.label}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {m.table.rows.map((row) => (
+                                <tr key={String(row.date)} className="border-b border-border last:border-0">
+                                  <td className="px-3 py-2 text-foreground-muted">{row.date}</td>
+                                  {m.table!.columns.map((col) => (
+                                    <td key={col.key} className="px-3 py-2">
+                                      {row[col.key] ?? "—"}
+                                    </td>
+                                  ))}
+                                </tr>
                               ))}
                             </tbody>
                           </table>

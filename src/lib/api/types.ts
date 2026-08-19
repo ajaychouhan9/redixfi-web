@@ -1165,6 +1165,26 @@ export interface SourceCitation {
   subject?: string | null;
 }
 
+/** RedixFi AI backend upgrade — multi-day/multi-field tabular answer
+ * (core/tabular_ask.py::build_tabular_answer), Pro tier only. `columns[].key`
+ * is the exact property name to read off each row (symbol-prefixed, e.g.
+ * "TCS_close", when 2+ symbols are compared; bare, e.g. "close", for a
+ * single symbol). `rows` is one object per calendar date with real data for
+ * at least one column — a date with no data anywhere is simply absent, not
+ * padded with nulls, so `row_count` is always an honest coverage count. */
+export interface AskTableColumn {
+  key: string;
+  label: string;
+  symbol: string;
+  field: string;
+}
+
+export interface AskTableResult {
+  columns: AskTableColumn[];
+  rows: Record<string, string | number | null>[];
+  row_count: number;
+}
+
 export interface AskResult {
   answer: string;
   sources_used: string[];
@@ -1174,10 +1194,13 @@ export interface AskResult {
   // Task 22 Phase 1/2/3 — additive. Every pre-existing caller (explicit
   // `symbol`, non-comparative/non-screen question) gets mode="symbol" and
   // both compare/screen null, so nothing about the old contract changes.
-  mode: "symbol" | "compare" | "screen" | "general";
+  mode: "symbol" | "compare" | "screen" | "general" | "tabular";
   resolved_symbol: string | null;
   compare: CompareResult | null;
   screen: AskScreenResult | null;
+  // RedixFi AI backend upgrade — present only for mode="tabular", null
+  // everywhere else (same additive/null-elsewhere pattern as compare/screen).
+  table: AskTableResult | null;
   // Task 22 Phase 4 — narrow whitelist-only web fallback (company-profile
   // facts: sector/industry, incorporation date, HQ, promoters/management,
   // listing date, ISIN) for a fact not in RedixFi's own DB. MUST be shown
