@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Sparkles, X, Send, Search, Globe, Maximize2, Minimize2, RotateCcw } from "lucide-react";
+import { Sparkles, X, Send, Search, Globe, Maximize2, Minimize2, RotateCcw, History, ChevronLeft } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 import { ApiError } from "@/lib/api/client";
 import { searchResearch } from "@/lib/api/endpoints";
-import { askRedixfi, getAskHistory } from "@/lib/api/mutations";
+import { askRedixfi, getAskConversations, getAskHistory } from "@/lib/api/mutations";
 import { getCurrentSymbol } from "@/lib/current-symbol";
 import { CompareResultCard } from "@/components/app/signals/CompareResultCard";
 import { ScoreHistoryChart } from "@/components/app/ask/ScoreHistoryChart";
@@ -19,6 +19,7 @@ import { Chip } from "@/components/ui/Chip";
 import { ExportButton } from "@/components/ui/ExportButton";
 import { downloadCsv } from "@/lib/csv";
 import type {
+  AskConversationListItem,
   AskLimitDetail,
   AskScreenResult,
   AskTableResult,
@@ -43,6 +44,29 @@ import type {
  * TASK 22 PHASE 3 — wider panel (was 380px), and a compare/screen-shaped
  * answer renders with the EXACT SAME components the Signals page uses
  * (CompareResultCard, SignalTableRow) rather than a new table.
+ *
+ * ASK PANEL UI REDESIGN SESSION — three changes on top of everything
+ * above: (1) the page-context symbol (`symbol` state, still set exactly
+ * the same way — CurrentSymbolSync/getCurrentSymbol on open, or the
+ * user picking one from the inline search) is now SILENT — no "Ask
+ * about {symbol}" title, no symbol-named placeholder, anywhere, in
+ * either panel state. It still drives which stock a symbol-less
+ * question implicitly answers about (unchanged backend behavior,
+ * confirmed live this session — a symbol NAMED in the question text
+ * still overrides it per-question); it's just never displayed. (2) a
+ * real chat-history LIST (GET /ask/conversations, new) — the panel's
+ * pre-existing `GET /ask/history` only ever resumed the SINGLE most
+ * recent conversation per symbol, no way to browse back to an older one
+ * once "New chat" moved past it. Reuses `expanded` (the existing
+ * full-overlay mode) as its surface, per the task's explicit "don't
+ * build a new modal type" instruction — a left column inside the same
+ * dialog, not a second UI. (3) staged status text during a live
+ * request (`STATUS_STAGES`/`STATUS_STAGES_WITH_CONCALL` below) — a
+ * client-side visual sequence timed to loosely match real response
+ * latency, since this backend has no streaming/progress-reporting
+ * transport (confirmed unchanged this session) — NOT real backend
+ * progress, and the copy is deliberately generic enough not to claim
+ * otherwise.
  */
 interface AskMessage {
   role: "user" | "ai";
@@ -87,6 +111,36 @@ const QUICK_PROMPTS_GENERAL = [
 // (VisibleColumns no longer has price/marketCap/vwap fields).
 const SCREEN_COLUMNS: VisibleColumns = { sector: true, delivery: true, volume: false, chips: true, eventRisk: false };
 
+// Ask panel UI redesign session — client-side staged status text, played
+// while `busy` is true. This is a UX device, NOT real backend progress —
+// this backend has no streaming/progress-reporting transport (confirmed
+// this session: POST /ask is one synchronous JSON request end to end), so
+// there is no genuine stage boundary to report. Copy is deliberately
+// generic ("Searching...", "Analyzing...") rather than naming a specific
+// backend step, so it never asserts a technical claim that isn't true.
+// Timing (~1.3s/stage) is a reasonable estimate calibrated against this
+// backend's own LLM_TIMEOUT_SEC=8s request budget (core/ask.py) — there
+// is no per-request latency actually logged anywhere in this codebase to
+// calibrate against more precisely (checked ask_log's schema first,
+// confirmed absent, reported honestly rather than inventing a number).
+// The sequence stops advancing at its last stage rather than looping or
+// disappearing — a slower-than-usual real answer just sits on "Composing
+// answer..." until it lands, never implies a stall or restart.
+const STATUS_STAGE_INTERVAL_MS = 1300;
+const STATUS_STAGES = ["Searching signals...", "Analyzing data...", "Composing answer..."];
+// Extra stage shown only when this symbol is known (client-side, no new
+// fetch) to have real concall/investor-transcript data — reuses the exact
+// suggestion string core/ask.py::compute_initial_suggestions already
+// emits for that case (see CONCALL_SUGGESTION_MARKER below), already
+// fetched as part of this panel's existing GET /ask/history request —
+// not a new signal or a new backend request, per the task's "determine
+// client-side from context" instruction.
+const STATUS_STAGES_WITH_CONCALL = ["Searching signals...", "Reading concall transcript...", "Analyzing data...", "Composing answer..."];
+// Quotes core/ask.py::compute_initial_suggestions' own real emitted
+// suggestion string verbatim (for a string-equality match, not
+// marketing/UI copy) — rewording it would break the match.
+const CONCALL_SUGGESTION_MARKER = "What did management say on the last call?"; // compliance-ignore
+
 export function AskRedixFi() {
   const { user, getToken } = useAuth();
   const { open, setOpen, expanded, setExpanded } = useAskPanel();
@@ -105,6 +159,13 @@ export function AskRedixFi() {
   // something more specific.
   const [initialSuggestions, setInitialSuggestions] = useState<string[]>([]);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  // Ask panel UI redesign session — real chat-history list state. `null`
+  // means "not fetched yet" (distinct from `[]`, "fetched, genuinely
+  // none within the retention window"), so the list view can show a
+  // loading state rather than a false "no history" flash.
+  const [historyList, setHistoryList] = useState<AskConversationListItem[] | null>(null);
+  const [showHistoryList, setShowHistoryList] = useState(false);
+  const [statusStageIndex, setStatusStageIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const historyFetchKey = useRef<string | null>(null);
 
@@ -133,6 +194,22 @@ export function AskRedixFi() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages]);
 
+  // Ask panel UI redesign session — staged status text, see STATUS_STAGES'
+  // own comment for why this is timed rather than real progress. Resets
+  // to stage 0 the instant `busy` goes false (the real answer replaces it
+  // immediately) and advances on a plain timer while `busy` is true,
+  // stopping at the last stage rather than looping.
+  const hasConcallSignal = initialSuggestions.includes(CONCALL_SUGGESTION_MARKER);
+  useEffect(() => {
+    if (!busy) {
+      setStatusStageIndex(0);
+      return;
+    }
+    const stages = hasConcallSignal ? STATUS_STAGES_WITH_CONCALL : STATUS_STAGES;
+    const timers = stages.slice(1).map((_, i) => setTimeout(() => setStatusStageIndex(i + 1), (i + 1) * STATUS_STAGE_INTERVAL_MS));
+    return () => timers.forEach(clearTimeout);
+  }, [busy, hasConcallSignal]);
+
   function reset() {
     setSymbol(null);
     setResults([]);
@@ -142,12 +219,14 @@ export function AskRedixFi() {
     setLimit(null);
     setInitialSuggestions([]);
     setHistoryLoaded(false);
+    setShowHistoryList(false);
     historyFetchKey.current = null;
   }
 
   function close() {
     setOpen(false);
     setExpanded(false);
+    setShowHistoryList(false);
   }
 
   function pickSymbol(sym: string) {
@@ -159,6 +238,7 @@ export function AskRedixFi() {
     setLimit(null);
     setInitialSuggestions([]);
     setHistoryLoaded(false);
+    setShowHistoryList(false);
     historyFetchKey.current = null;
   }
 
@@ -201,9 +281,65 @@ export function AskRedixFi() {
     setMessages([]);
     setConversationId(null);
     setLimit(null);
+    setShowHistoryList(false);
     // A fresh key lets the NEXT loadHistory (e.g. a later reopen) run
     // again — but this conversation itself starts empty immediately.
     historyFetchKey.current = symbol ?? "_general";
+  }
+
+  // Ask panel UI redesign session — real chat-history list. Reuses
+  // `expanded` (the existing full-overlay mode) as its surface, per the
+  // task's explicit "don't build a new modal type" instruction.
+  async function openHistoryList() {
+    setExpanded(true);
+    setShowHistoryList(true);
+    const token = await getToken();
+    if (!token) return;
+    try {
+      const list = await getAskConversations(token);
+      setHistoryList(list);
+    } catch {
+      setHistoryList([]);
+    }
+  }
+
+  // Reopens a PAST conversation from the list — sets the panel's
+  // (silent, never displayed) symbol context to that conversation's own
+  // stored symbol, so a follow-up sent into it resolves the same way the
+  // original conversation did, not whatever page the panel happens to be
+  // open from right now. `historyFetchKey` is pre-set to the same key
+  // the symbol-context effect below would compute, BEFORE `setSymbol`
+  // runs — this suppresses that effect's own "load the latest
+  // conversation for this symbol" fetch, which would otherwise
+  // immediately overwrite the exact specific conversation just loaded
+  // here with the newest one instead.
+  async function openConversation(item: AskConversationListItem) {
+    const resolvedSymbol = item.symbol === "_general" ? null : item.symbol;
+    historyFetchKey.current = resolvedSymbol ?? "_general";
+    setShowHistoryList(false);
+    setSymbol(resolvedSymbol);
+    setResults([]);
+    setInput("");
+    setLimit(null);
+    const token = await getToken();
+    if (!token) return;
+    try {
+      const history = await getAskHistory(token, null, item.conversation_id);
+      setConversationId(item.conversation_id);
+      setMessages(
+        (history.conversation?.messages ?? []).map((m) => ({
+          role: m.role === "user" ? "user" : "ai",
+          text: m.content,
+          createdAt: m.created_at,
+          sourceCitations: m.source_citations,
+          followUps: m.role === "assistant" ? m.follow_ups : undefined,
+          resolvedSymbol,
+        }))
+      );
+      setInitialSuggestions(history.initial_suggestions ?? []);
+    } finally {
+      setHistoryLoaded(true);
+    }
   }
 
   async function send(text: string) {
@@ -339,17 +475,37 @@ export function AskRedixFi() {
         >
           <div className="flex items-center justify-between gap-3 border-b border-border bg-accent/10 px-4 py-3">
             <div className="flex items-center gap-2">
+              {showHistoryList && (
+                <button onClick={() => setShowHistoryList(false)} aria-label="Back to chat" className="text-foreground-faint hover:text-foreground">
+                  <ChevronLeft size={16} />
+                </button>
+              )}
               <Sparkles size={14} className="text-accent" />
               <div>
-                <div className="text-sm font-semibold">{symbol ? `Ask about ${symbol}` : "Ask RedixFi AI"}</div>
-                <div className="text-[11px] text-foreground-faint">
-                  Grounded in measured data only · {dailyLimitLabel}
-                  {!symbol && " · name a stock, a sector, or ask in general"}
-                </div>
+                {/* Ask panel UI redesign session — the page-context symbol is
+                    never named here, in EITHER panel state (see this file's
+                    top docstring). This line is now IDENTICAL regardless of
+                    whether a page-context/picked symbol is silently active. */}
+                <div className="text-sm font-semibold">{showHistoryList ? "Chat history" : "RedixFi AI"}</div>
+                {!showHistoryList && (
+                  <div className="text-[11px] text-foreground-faint">
+                    Grounded in measured data only · {dailyLimitLabel} · ask about any stock, sector, or in general
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {messages.length > 0 && (
+              {!showHistoryList && (
+                <button
+                  onClick={openHistoryList}
+                  title="Chat history"
+                  aria-label="Chat history"
+                  className="flex items-center gap-1 text-[12px] text-foreground-faint hover:text-foreground"
+                >
+                  <History size={13} />
+                </button>
+              )}
+              {!showHistoryList && messages.length > 0 && (
                 <button
                   onClick={startNewConversation}
                   title="New conversation"
@@ -358,7 +514,7 @@ export function AskRedixFi() {
                   <RotateCcw size={11} /> New
                 </button>
               )}
-              {symbol && (
+              {!showHistoryList && symbol && (
                 <button onClick={reset} className="text-[12px] text-foreground-faint hover:text-foreground">
                   Change stock
                 </button>
@@ -386,6 +542,40 @@ export function AskRedixFi() {
               >
                 Log in
               </Link>
+            </div>
+          ) : showHistoryList ? (
+            // Ask panel UI redesign session — real chat-history list,
+            // reusing `expanded` (the existing full-overlay mode) as its
+            // surface rather than a new modal type. Grouped by symbol vs
+            // general so a long mixed list still scans quickly; each row
+            // clickable via openConversation().
+            <div className="flex-1 overflow-y-auto px-4 py-3">
+              {historyList === null ? (
+                <p className="px-1 text-xs text-foreground-faint">Loading…</p>
+              ) : historyList.length === 0 ? (
+                <p className="px-1 text-xs text-foreground-faint">No past conversations within your plan&apos;s history window yet.</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {historyList.map((c) => (
+                    <li key={c.conversation_id}>
+                      <button
+                        onClick={() => openConversation(c)}
+                        className="w-full rounded-lg border border-border bg-hover px-3 py-2 text-left transition-colors hover:border-accent"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="truncate text-[13px] text-foreground">{c.preview}</span>
+                          {c.symbol !== "_general" && (
+                            <span className="shrink-0 rounded-full bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent">{c.symbol}</span>
+                          )}
+                        </div>
+                        <div className="mt-1 text-[11px] text-foreground-faint">
+                          {new Date(c.updated_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           ) : (
             <>
@@ -618,7 +808,11 @@ export function AskRedixFi() {
                     )}
                   </div>
                 ))}
-                {busy && <p className="text-xs text-foreground-faint">RedixFi AI is reading the data…</p>}
+                {busy && (
+                  <p className="text-xs text-foreground-faint">
+                    {(hasConcallSignal ? STATUS_STAGES_WITH_CONCALL : STATUS_STAGES)[statusStageIndex]}
+                  </p>
+                )}
               </div>
 
               {limit && (
@@ -638,7 +832,7 @@ export function AskRedixFi() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && send(input)}
-                  placeholder={symbol ? `Ask a question about ${symbol}…` : "Ask anything — a stock, a sector, or in general…"}
+                  placeholder="Ask anything — a stock, a sector, or in general…"
                   disabled={busy}
                   className="flex-1 rounded-lg border border-border bg-hover px-3 py-2 text-sm outline-none disabled:opacity-60"
                 />

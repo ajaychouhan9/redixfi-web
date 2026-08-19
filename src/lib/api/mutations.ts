@@ -20,6 +20,7 @@ import type {
   AnomalyFlagDoc,
   AskResult,
   AskHistoryResult,
+  AskConversationListItem,
   PromoCodeAdmin,
   AlertRule,
   AlertRulesList,
@@ -262,9 +263,31 @@ export async function askRedixfi(
 // only (GET /ask/history, core/routers/ask.py). `symbol` omitted for the
 // open/general-mode panel, matching start_conversation's own "_general"
 // bucket.
-export async function getAskHistory(token: string, symbol?: string | null): Promise<AskHistoryResult> {
-  const env = await apiGet<AskHistoryResult>("/ask/history", { token, params: symbol ? { symbol } : undefined });
+// Ask panel UI redesign session — `conversation_id`, when given, fetches
+// that EXACT conversation instead of the latest-for-symbol lookup (used
+// by the real history-list UI to reopen an older conversation the "New
+// chat" flow has since moved past). Mutually exclusive with `symbol` in
+// practice (the backend ignores `symbol` when `conversation_id` is
+// given) but both params can be passed harmlessly.
+export async function getAskHistory(
+  token: string,
+  symbol?: string | null,
+  conversationId?: string | null
+): Promise<AskHistoryResult> {
+  const params: Record<string, string> = {};
+  if (symbol) params.symbol = symbol;
+  if (conversationId) params.conversation_id = conversationId;
+  const env = await apiGet<AskHistoryResult>("/ask/history", { token, params: Object.keys(params).length ? params : undefined });
   return env.data;
+}
+
+// Ask panel UI redesign session — the real chat-history LIST (GET /ask/
+// conversations), every one of the caller's own conversations across
+// every symbol/general bucket, most-recent first, already scoped to
+// their per-tier retention window server-side.
+export async function getAskConversations(token: string): Promise<AskConversationListItem[]> {
+  const env = await apiGet<{ conversations: AskConversationListItem[] }>("/ask/conversations", { token });
+  return env.data.conversations;
 }
 
 // ---------- promo-code admin (/admin/promo-codes) — every call here is

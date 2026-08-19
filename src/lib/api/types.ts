@@ -1252,6 +1252,19 @@ export interface AskConversation {
   updated_at: string;
 }
 
+/** Ask panel UI redesign session — one row of the real chat-history list
+ * (GET /ask/conversations, core/users_repo.py::list_conversations).
+ * `symbol` is "_general" for an open-mode conversation — the same value
+ * start_conversation already writes, not a new sentinel. `preview` is
+ * the conversation's own first user message, truncated server-side. */
+export interface AskConversationListItem {
+  conversation_id: string;
+  symbol: string;
+  updated_at: string;
+  created_at: string;
+  preview: string;
+}
+
 export interface AskHistoryResult {
   conversation: AskConversation | null;
   // Context-tailored empty-state chips for symbol mode (core/ask.py::
