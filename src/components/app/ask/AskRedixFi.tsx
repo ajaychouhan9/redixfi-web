@@ -565,7 +565,13 @@ export function AskRedixFi() {
                                   <td className="px-3 py-2 text-foreground-muted">{row.date}</td>
                                   {m.table!.columns.map((col) => (
                                     <td key={col.key} className="px-3 py-2">
-                                      {row[col.key] ?? "—"}
+                                      {/* Backend now fills every column on every row (a
+                                          genuine gap, e.g. price present but that date's
+                                          composite_score doc doesn't exist yet, renders as
+                                          "N/A" — see core/tabular_ask.py::build_tabular_
+                                          answer) — this `??` is a defense-in-depth fallback
+                                          only, kept consistent with that same string. */}
+                                      {row[col.key] ?? "N/A"}
                                     </td>
                                   ))}
                                 </tr>
