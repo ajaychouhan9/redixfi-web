@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Sparkles, X, Send, Search, Globe, Maximize2, Minimize2, RotateCcw, History, ChevronLeft } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
@@ -151,6 +152,17 @@ const CONCALL_SUGGESTION_MARKER = "What did management say on the last call?"; /
 export function AskRedixFi() {
   const { user, getToken } = useAuth();
   const { open, setOpen, expanded, setExpanded } = useAskPanel();
+  const pathname = usePathname();
+  // UI polish batch, Item 4 — LOCKED DECISION, overrides rule 2b's old
+  // "always auto-resume the most recent conversation on open" default.
+  // `closedAtPathRef` records which route the panel was on the last time
+  // the user explicitly closed it (X button); `hasClosedRef` distinguishes
+  // "never closed yet this session" (first-ever open — no prior close to
+  // compare against, falls back to the old resume behavior, unaffected)
+  // from "closed at least once." The reopen effect below compares the
+  // CURRENT route against this to decide fresh-vs-resume.
+  const closedAtPathRef = useRef<string | null>(null);
+  const hasClosedRef = useRef(false);
   const [symbol, setSymbol] = useState<string | null>(null);
   const [results, setResults] = useState<ResearchSearchRow[]>([]);
   const [searching, setSearching] = useState(false);
@@ -185,6 +197,10 @@ export function AskRedixFi() {
   // loading state rather than a false "no history" flash.
   const [historyList, setHistoryList] = useState<AskConversationListItem[] | null>(null);
   const [showHistoryList, setShowHistoryList] = useState(false);
+  // UI polish batch, Item 6 — which section the history drawer shows.
+  // Resets to "history" (not persisted) each time the drawer reopens via
+  // openHistoryList() below, so it never silently reopens on a stale tab.
+  const [historyDrawerTab, setHistoryDrawerTab] = useState<"history" | "usage">("history");
   const [statusStageIndex, setStatusStageIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const historyFetchKey = useRef<string | null>(null);
@@ -234,6 +250,11 @@ export function AskRedixFi() {
     setOpen(false);
     setExpanded(false);
     setShowHistoryList(false);
+    // UI polish batch, Item 4 — arms the fresh-vs-resume check for the
+    // NEXT open: if the route changes before then, reopening starts a
+    // fresh conversation instead of resuming this one.
+    hasClosedRef.current = true;
+    closedAtPathRef.current = pathname;
   }
 
   function pickSymbol(sym: string) {
@@ -336,9 +357,14 @@ export function AskRedixFi() {
   // Ask panel UI redesign session — real chat-history list. Reuses
   // `expanded` (the existing full-overlay mode) as its surface, per the
   // task's explicit "don't build a new modal type" instruction.
+  // UI polish batch, Item 3 — no longer forces `setExpanded(true)`. History
+  // now opens as an in-panel slide-in drawer (see the JSX below) that
+  // works within WHATEVER panel mode (floating or expanded) was already
+  // active, rather than forcing a full-overlay mode switch just to view
+  // it — a real drawer, not a disguised second modal.
   async function openHistoryList() {
-    setExpanded(true);
     setShowHistoryList(true);
+    setHistoryDrawerTab("history");
     const token = await getToken();
     if (!token) return;
     try {
@@ -510,6 +536,21 @@ export function AskRedixFi() {
     usage && usage.daily_limit_per_symbol === null && usage.daily_limit != null
       ? `${Math.max(0, usage.daily_limit - (usage.daily_used ?? 0))}/${usage.daily_limit} left today`
       : dailyLimitLabel;
+  // UI polish batch, Item 5 — compact "used/limit" badge for the top
+  // ribbon (rendered on the trigger button below, visible without opening
+  // the panel). Deliberately a DIFFERENT framing from `remainingLabel`
+  // above ("X left today" vs this badge's "used/limit") — the ribbon is a
+  // glanceable at-a-door-count ("18/25" reads naturally as "used out of
+  // your cap", matching the task's own example), the panel subtitle is a
+  // sentence emphasizing what's left. Same `usage` data, same GET
+  // /me/usage request, just two different renderings of it. `null` (renders
+  // nothing) for free tier's per-symbol gate, same carve-out as
+  // `remainingLabel` — there's no single aggregate "used/limit" number
+  // for a per-stock-per-day gate.
+  const compactUsageBadge =
+    usage && usage.daily_limit_per_symbol === null && usage.daily_limit != null
+      ? `${usage.daily_used ?? 0}/${usage.daily_limit}`
+      : null;
   // Context-tailored suggestions (Phase 3/GET /ask/history) win over the
   // generic per-mode fallback whenever the server had something specific
   // to say about this symbol; the generic set still covers open/general
@@ -520,6 +561,34 @@ export function AskRedixFi() {
       ? initialSuggestions
       : QUICK_PROMPTS_SYMBOL
     : QUICK_PROMPTS_GENERAL;
+
+  // UI polish batch, Item 4 — the actual fresh-vs-resume decision. Fires
+  // BEFORE the preset-symbol/loadHistory effects below (declaration
+  // order — React runs a component's effects in the order they're
+  // declared, within the same commit) so by the time they run, a
+  // navigation-triggered reset has already cleared the stale state they'd
+  // otherwise act on. Reuses startNewConversation() (the exact same
+  // "clear + re-derive symbol from page context" logic the manual "New
+  // chat" button already uses) rather than a second reset implementation
+  // — this session's fresh-start behavior IS that same behavior, just
+  // triggered automatically instead of by a click.
+  //
+  // Only fires when: the panel is open, it was explicitly closed at least
+  // once before (`hasClosedRef` — an app's very first-ever open has
+  // nothing to compare against and keeps the old resume behavior,
+  // unaffected by this change), AND the route at that close differs from
+  // the route right now. Toggling the panel open/closed on the exact same
+  // page (no navigation in between) never reaches this branch — local
+  // state (messages, symbol, conversationId) was never cleared for that
+  // case, so the existing conversation naturally continues, matching the
+  // task's own "ambiguous case, prefer resuming when nothing navigated"
+  // guidance.
+  useEffect(() => {
+    if (open && hasClosedRef.current && closedAtPathRef.current !== null && closedAtPathRef.current !== pathname) {
+      startNewConversation();
+      hasClosedRef.current = false; // consumed — re-armed on the next close()
+    }
+  }, [open, pathname]);
 
   // Presets the current page's symbol into a fresh conversation whenever the
   // panel opens with none chosen yet — runs off `open` itself (not a local
@@ -547,6 +616,17 @@ export function AskRedixFi() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, symbol, user]);
 
+  // UI polish batch, Item 5 — the top-ribbon usage badge (rendered next to
+  // the trigger button below, unconditionally, not gated on `open`) needs
+  // real numbers BEFORE the panel is ever opened. Reuses the exact same
+  // refreshUsage()/GET /me/usage call the panel itself already makes — no
+  // second usage-fetching path — just triggered on mount/login instead of
+  // on panel-open, since this badge is visible independent of panel state.
+  useEffect(() => {
+    if (user) refreshUsage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
   return (
     <>
       {/* Font-size fix (2026-08-11): was text-xs (12px), task wants 14px.
@@ -559,11 +639,21 @@ export function AskRedixFi() {
           compact icon button, not a wide pill with invisible label space. */}
       <button
         onClick={() => setOpen(true)}
-        aria-label="Ask RedixFi AI"
+        aria-label={compactUsageBadge ? `Ask RedixFi AI, ${compactUsageBadge} questions used today` : "Ask RedixFi AI"}
         className="flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1.5 text-sm font-semibold transition-transform hover:scale-105 sm:px-3"
         style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dim))", color: "var(--accent-foreground)" }}
       >
         <Sparkles size={12} /> <span className="hidden sm:inline">RedixFi AI</span>
+        {/* UI polish batch, Item 5 — compact usage badge, real numbers from
+            the SAME GET /me/usage request the panel itself already makes
+            (see compactUsageBadge above), not a second fetch. Hidden entirely
+            (not just for free tier) until the first refreshUsage() resolves,
+            same "no placeholder number" posture as remainingLabel. */}
+        {compactUsageBadge && (
+          <Chip tone="neutral" className="hidden bg-white/20 text-accent-foreground sm:inline-flex">
+            {compactUsageBadge}
+          </Chip>
+        )}
       </button>
 
       {/* Phase 5 — expanded mode dims the page behind it, same overlay
@@ -586,45 +676,57 @@ export function AskRedixFi() {
         >
           <div className="flex items-center justify-between gap-3 border-b border-border bg-accent/10 px-4 py-3">
             <div className="flex items-center gap-2">
-              {showHistoryList && (
-                <button onClick={() => setShowHistoryList(false)} aria-label="Back to chat" className="text-foreground-faint hover:text-foreground">
-                  <ChevronLeft size={16} />
-                </button>
-              )}
               <Sparkles size={14} className="text-accent" />
               <div>
                 {/* Ask panel UI redesign session — the page-context symbol is
                     never named here, in EITHER panel state (see this file's
                     top docstring). This line is now IDENTICAL regardless of
-                    whether a page-context/picked symbol is silently active. */}
-                <div className="text-sm font-semibold">{showHistoryList ? "Chat history" : "RedixFi AI"}</div>
-                {!showHistoryList && (
-                  <div className="text-[11px] text-foreground-faint">
-                    Grounded in measured data only · {remainingLabel} · ask about any stock, sector, or in general
-                  </div>
-                )}
+                    whether a page-context/picked symbol is silently active.
+                    UI polish batch, Item 3 — the header no longer swaps to a
+                    "Chat history" title at all: history now opens as a
+                    drawer OVER the chat (see below), not a full content
+                    replacement, so this header stays constant underneath it. */}
+                <div className="text-sm font-semibold">RedixFi AI</div>
+                {/* UI polish batch, Item 1 — was text-[11px] text-foreground-
+                    faint, below the 13px secondary-text / higher-contrast-
+                    token floor established in the 2026-08-19 typography
+                    session (docs/00_MASTER_CONTEXT.md). Bumped to the same
+                    text-[13px] arbitrary value that session's own audit used
+                    elsewhere (Tailwind has no named 13px step) and to
+                    text-foreground-muted (5.75:1/5.92:1 contrast — a step
+                    darker/more-legible than text-foreground-faint's
+                    4.51:1/4.74:1, both existing tokens, no new grey shade
+                    invented). */}
+                <div className="text-[13px] text-foreground-muted">
+                  Grounded in measured data only · {remainingLabel} · ask about any stock, sector, or in general
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {!showHistoryList && (
-                <button
-                  onClick={openHistoryList}
-                  title="Chat history"
-                  aria-label="Chat history"
-                  className="flex items-center gap-1 text-[12px] text-foreground-faint hover:text-foreground"
-                >
-                  <History size={13} />
-                </button>
-              )}
-              {!showHistoryList && messages.length > 0 && (
+            <div className="flex items-center gap-3">
+              {/* UI polish batch, Item 2 — "New chat" now sits LEFT of the
+                  history icon (was the reverse); both icons enlarged from
+                  11px/13px to 16px, matching this panel's own Maximize2/
+                  Minimize2/X icon-button size (an existing convention in
+                  this exact header, not a new one) so both read as clearly
+                  tappable, not decorative. */}
+              {messages.length > 0 && (
                 <button
                   onClick={startNewConversation}
                   title="New conversation"
-                  className="flex items-center gap-1 text-[12px] text-foreground-faint hover:text-foreground"
+                  aria-label="New conversation"
+                  className="flex items-center gap-1 text-[13px] text-foreground-muted hover:text-foreground"
                 >
-                  <RotateCcw size={11} /> New
+                  <RotateCcw size={16} /> New
                 </button>
               )}
+              <button
+                onClick={openHistoryList}
+                title="Chat history"
+                aria-label="Chat history"
+                className="flex items-center gap-1 text-[13px] text-foreground-muted hover:text-foreground"
+              >
+                <History size={16} />
+              </button>
               {/* Ask AI symbol-resolution session, locked spec rule 1 —
                   NO "Change stock" UI anywhere, unconditionally. Stock
                   context is 100% backend-resolved (page context / session
@@ -644,6 +746,12 @@ export function AskRedixFi() {
             </div>
           </div>
 
+          {/* UI polish batch, Item 3 — this wrapper is the drawer's
+              positioning context (`relative`); the drawer itself (added
+              below, after the chat content) is `absolute inset-0` within
+              it, sliding in over the chat area ONLY — the header above
+              stays put, untouched by the drawer. */}
+          <div className="relative flex flex-1 flex-col overflow-hidden">
           {!user ? (
             <div className="space-y-3 px-4 py-6 text-center">
               <p className="text-sm text-foreground-muted">Log in to ask RedixFi AI questions about any stock, grounded in today&apos;s measured data.</p>
@@ -654,40 +762,6 @@ export function AskRedixFi() {
               >
                 Log in
               </Link>
-            </div>
-          ) : showHistoryList ? (
-            // Ask panel UI redesign session — real chat-history list,
-            // reusing `expanded` (the existing full-overlay mode) as its
-            // surface rather than a new modal type. Grouped by symbol vs
-            // general so a long mixed list still scans quickly; each row
-            // clickable via openConversation().
-            <div className="flex-1 overflow-y-auto px-4 py-3">
-              {historyList === null ? (
-                <p className="px-1 text-xs text-foreground-faint">Loading…</p>
-              ) : historyList.length === 0 ? (
-                <p className="px-1 text-xs text-foreground-faint">No past conversations within your plan&apos;s history window yet.</p>
-              ) : (
-                <ul className="space-y-1.5">
-                  {historyList.map((c) => (
-                    <li key={c.conversation_id}>
-                      <button
-                        onClick={() => openConversation(c)}
-                        className="w-full rounded-lg border border-border bg-hover px-3 py-2 text-left transition-colors hover:border-accent"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="truncate text-[13px] text-foreground">{c.preview}</span>
-                          {c.symbol !== "_general" && (
-                            <span className="shrink-0 rounded-full bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent">{c.symbol}</span>
-                          )}
-                        </div>
-                        <div className="mt-1 text-[11px] text-foreground-faint">
-                          {new Date(c.updated_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
-                        </div>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
             </div>
           ) : (
             <>
@@ -1022,6 +1096,121 @@ export function AskRedixFi() {
               </div>
             </>
           )}
+
+          {/* UI polish batch, Item 3 — the history/usage drawer itself.
+              Slides in from the RIGHT over the chat area above (never a new
+              tab/window, never a full content swap forcing expanded mode —
+              see openHistoryList()'s own comment), showing the SAME
+              conversation list already built in the Ask-panel-upgrade
+              session, now inside a real drawer instead of replacing the
+              whole panel body. Item 6 adds a second "Usage" section in the
+              same drawer container, per the task's explicit "reuse its
+              container rather than a new UI surface" instruction. */}
+          <div
+            className={`absolute inset-0 z-10 flex flex-col overflow-hidden border-l border-border bg-surface-raised transition-transform duration-200 ${
+              showHistoryList ? "translate-x-0" : "translate-x-full"
+            }`}
+            aria-hidden={!showHistoryList}
+          >
+            <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+              <button onClick={() => setShowHistoryList(false)} aria-label="Back to chat" className="text-foreground-muted hover:text-foreground">
+                <ChevronLeft size={16} />
+              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setHistoryDrawerTab("history")}
+                  className={`text-[13px] font-semibold ${historyDrawerTab === "history" ? "text-accent" : "text-foreground-muted hover:text-foreground"}`}
+                >
+                  History
+                </button>
+                <button
+                  onClick={() => setHistoryDrawerTab("usage")}
+                  className={`text-[13px] font-semibold ${historyDrawerTab === "usage" ? "text-accent" : "text-foreground-muted hover:text-foreground"}`}
+                >
+                  Usage
+                </button>
+              </div>
+            </div>
+
+            {historyDrawerTab === "history" ? (
+              // Ask panel UI redesign session — real chat-history list,
+              // content unchanged from before Item 3; only its CONTAINER
+              // changed (a sliding drawer instead of a full panel-body
+              // swap). Grouped by symbol vs general so a long mixed list
+              // still scans quickly; each row clickable via openConversation().
+              <div className="flex-1 overflow-y-auto px-4 py-3">
+                {historyList === null ? (
+                  <p className="px-1 text-xs text-foreground-faint">Loading…</p>
+                ) : historyList.length === 0 ? (
+                  <p className="px-1 text-xs text-foreground-faint">No past conversations within your plan&apos;s history window yet.</p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {historyList.map((c) => (
+                      <li key={c.conversation_id}>
+                        <button
+                          onClick={() => openConversation(c)}
+                          className="w-full rounded-lg border border-border bg-hover px-3 py-2 text-left transition-colors hover:border-accent"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="truncate text-[13px] text-foreground">{c.preview}</span>
+                            {c.symbol !== "_general" && (
+                              <span className="shrink-0 rounded-full bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent">{c.symbol}</span>
+                            )}
+                          </div>
+                          <div className="mt-1 text-[11px] text-foreground-faint">
+                            {new Date(c.updated_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                          </div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ) : (
+              // UI polish batch, Item 6 — usage tab. Every number here comes
+              // from the SAME `usage` state (GET /me/usage, core/metering.py::
+              // ask_usage_snapshot) already fetched for the ribbon badge/panel
+              // subtitle — no new fetch, no new backend endpoint. Feasibility
+              // (checked against the real backend before building this):
+              // daily_used/daily_limit and monthly_used/monthly_limit are
+              // real per-tier numbers straight from plan_limits.py via that
+              // one endpoint; topup_questions_remaining is a genuinely
+              // SEPARATE field (users.topup_questions_remaining, never mixed
+              // into ask_daily/ask_monthly) — all three ARE independently
+              // queryable right now, confirmed by reading core/metering.py
+              // directly. The one deliberate deviation from the task's exact
+              // "0/50 addon questions used" wording: the backend only ever
+              // stores a running REMAINING balance, never a "total ever
+              // purchased" figure, so a fixed "/50" denominator would be
+              // silently WRONG for any user who has bought a second ₹99/50
+              // topup pack (their real total is 100, not 50, but nothing
+              // tracks that) — shown as a plain remaining count instead,
+              // which stays accurate regardless of purchase history. See
+              // docs/00_MASTER_CONTEXT.md's own writeup for the full
+              // reasoning.
+              <div className="flex-1 overflow-y-auto px-4 py-3">
+                {!usage ? (
+                  <p className="px-1 text-xs text-foreground-faint">Loading…</p>
+                ) : usage.daily_limit_per_symbol !== null ? (
+                  <div className="space-y-2 text-[13px] text-foreground">
+                    <p>Free tier: {usage.daily_limit_per_symbol} question per stock per day.</p>
+                    <p>{usage.topup_questions_remaining} addon question{usage.topup_questions_remaining === 1 ? "" : "s"} remaining.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 text-[13px] text-foreground">
+                    <p>
+                      {usage.daily_used ?? 0}/{usage.daily_limit} daily questions used
+                    </p>
+                    <p>
+                      {usage.monthly_used ?? 0}/{usage.monthly_limit} monthly questions used
+                    </p>
+                    <p>{usage.topup_questions_remaining} addon question{usage.topup_questions_remaining === 1 ? "" : "s"} remaining</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          </div>
         </div>
       )}
     </>
