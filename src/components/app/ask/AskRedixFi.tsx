@@ -687,45 +687,63 @@ export function AskRedixFi() {
                     drawer OVER the chat (see below), not a full content
                     replacement, so this header stays constant underneath it. */}
                 <div className="text-sm font-semibold">RedixFi AI</div>
-                {/* UI polish batch, Item 1 — was text-[11px] text-foreground-
-                    faint, below the 13px secondary-text / higher-contrast-
-                    token floor established in the 2026-08-19 typography
-                    session (docs/00_MASTER_CONTEXT.md). Bumped to the same
-                    text-[13px] arbitrary value that session's own audit used
-                    elsewhere (Tailwind has no named 13px step) and to
-                    text-foreground-muted (5.75:1/5.92:1 contrast — a step
-                    darker/more-legible than text-foreground-faint's
-                    4.51:1/4.74:1, both existing tokens, no new grey shade
-                    invented). */}
-                <div className="text-[13px] text-foreground-muted">
+                {/* BUG B FIX (UI-polish-batch bug-fix session) — the prior
+                    fix (11px text-foreground-faint -> 13px text-foreground-
+                    muted) was confirmed present in the deployed source
+                    (verified by re-reading this exact class string before
+                    touching it again) but was, per direct founder report,
+                    NOT visibly different enough — text-foreground-muted
+                    (5.75:1/5.92:1) and text-foreground-faint (4.51:1/
+                    4.74:1) are both mid-grey tones, similar enough in
+                    practice to read as "the same grey" at a glance. This
+                    time: 14px (up from the ORIGINAL 11px, +27%) and
+                    text-foreground (the PRIMARY, full-contrast token —
+                    #1a2036 on #ffffff-family light backgrounds / #e8eaf2 on
+                    dark, i.e. near-black-on-white / near-white-on-dark,
+                    not another shade of grey) — an unmistakable jump, not
+                    another step on the same muted ladder. Still an
+                    EXISTING token (text-foreground is used sitewide, e.g.
+                    the message-bubble text just below), not invented. */}
+                <div className="text-[14px] text-foreground">
                   Grounded in measured data only · {remainingLabel} · ask about any stock, sector, or in general
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {/* UI polish batch, Item 2 — "New chat" now sits LEFT of the
-                  history icon (was the reverse); both icons enlarged from
-                  11px/13px to 16px, matching this panel's own Maximize2/
-                  Minimize2/X icon-button size (an existing convention in
-                  this exact header, not a new one) so both read as clearly
-                  tappable, not decorative. */}
+              {/* BUG B FIX (UI-polish-batch bug-fix session) — icons were
+                  ALREADY at size={16} from the prior session (History was
+                  13px, RotateCcw was 11px, originally) — confirmed present
+                  in source, but 16px is only +23% over History's original
+                  13px, short of this bug's own 30-40% floor. Now
+                  size={18}: +38% over History's original 13px, +64% over
+                  RotateCcw's original 11px — comfortably past the
+                  requested floor for BOTH icons, and visibly the largest
+                  icons in this header (bigger than the neighboring
+                  Maximize2/Minimize2/X at 14-16px, which is intentional —
+                  these two needed to read as clearly, unmistakably
+                  larger, not just "technically increased"). Labels/icons
+                  also switched from text-foreground-muted to
+                  text-foreground for the same reason as the subtitle
+                  above, with an text-accent hover state (was text-
+                  foreground, a same-shade-of-grey hover that gave no
+                  visual feedback of its own). */}
               {messages.length > 0 && (
                 <button
                   onClick={startNewConversation}
                   title="New conversation"
                   aria-label="New conversation"
-                  className="flex items-center gap-1 text-[13px] text-foreground-muted hover:text-foreground"
+                  className="flex items-center gap-1 text-[14px] text-foreground hover:text-accent"
                 >
-                  <RotateCcw size={16} /> New
+                  <RotateCcw size={18} /> New
                 </button>
               )}
               <button
                 onClick={openHistoryList}
                 title="Chat history"
                 aria-label="Chat history"
-                className="flex items-center gap-1 text-[13px] text-foreground-muted hover:text-foreground"
+                className="flex items-center gap-1 text-[14px] text-foreground hover:text-accent"
               >
-                <History size={16} />
+                <History size={18} />
               </button>
               {/* Ask AI symbol-resolution session, locked spec rule 1 —
                   NO "Change stock" UI anywhere, unconditionally. Stock
@@ -1018,11 +1036,36 @@ export function AskRedixFi() {
                 )}
               </div>
 
+              {/* BUG D FIX (UI-polish-batch bug-fix session) — root cause:
+                  the backend returns the SAME `cta: "topup"` for BOTH
+                  Basic and Pro hitting their daily/monthly cap (confirmed
+                  directly in core/metering.py::enforce_ask_usage — it
+                  never distinguishes the two tiers at all), so the old
+                  `limit.cta === "subscribe" ? "View plans" : "Manage
+                  plan"` ternary rendered "Manage plan" for EVERY topup-cta
+                  case, Pro included — even though Pro has no higher tier
+                  to "manage" toward. `/pricing` is still the correct link
+                  for a Pro caller too (confirmed: CheckoutView.tsx already
+                  renders <TopupCard/> on that exact route for any
+                  non-free tier, so this CTA lands the user exactly on the
+                  real, already-built purchase widget — not a new route).
+                  Label text reuses TopupCard's OWN existing button wording
+                  ("Add 50 questions — ₹99") rather than inventing new
+                  copy — "Add more questions" (not "Buy", which
+                  scripts/check-compliance.mjs correctly forbids sitewide
+                  as advice-shaped language, even here where it would
+                  genuinely just mean a commerce action — the checker
+                  doesn't special-case that, and this codebase's own
+                  compliance posture is deliberately not to try). Basic
+                  (cta="topup", !isPro) keeps "Manage plan" UNCHANGED, per
+                  this bug's own explicit "don't break Basic" instruction
+                  — upgrading to Pro genuinely helps a Basic caller, so
+                  that CTA stays correct for them. */}
               {limit && (
                 <div className="mx-4 mb-2 rounded-lg bg-amber-bg px-3 py-2 text-xs text-amber">
                   {limit.message}{" "}
                   <Link href="/pricing" className="font-semibold underline">
-                    {limit.cta === "subscribe" ? "View plans" : "Manage plan"}
+                    {limit.cta === "subscribe" ? "View plans" : isPro ? "Add more questions" : "Manage plan"}
                   </Link>
                 </div>
               )}
@@ -1097,17 +1140,28 @@ export function AskRedixFi() {
             </>
           )}
 
-          {/* UI polish batch, Item 3 — the history/usage drawer itself.
-              Slides in from the RIGHT over the chat area above (never a new
-              tab/window, never a full content swap forcing expanded mode —
-              see openHistoryList()'s own comment), showing the SAME
+          {/* BUG A FIX (UI-polish-batch bug-fix session) — this was
+              `absolute inset-0` (top/right/bottom/left all 0, i.e. 100%
+              width AND height of the relative parent), which — even
+              though the chat content behind it stayed genuinely mounted
+              in the DOM, exactly as claimed — was VISUALLY indistinguishable
+              from a full content swap: an opaque (`bg-surface-raised`),
+              same-size panel completely covers the chat the instant
+              `translate-x-0` applies. Confirmed by reading this exact
+              class string, not assumed. Now `inset-y-0 right-0 w-2/5`
+              (top/bottom 0, right-anchored, 40% width — the Tailwind
+              NAMED fraction utility, not a new arbitrary value) — a TRUE
+              partial-width side panel: the chat's own left ~60% stays
+              visible and interactive beside it. Slides in from the RIGHT
+              over the chat area above (never a new tab/window, never a
+              full content swap forcing expanded mode — see
+              openHistoryList()'s own comment), showing the SAME
               conversation list already built in the Ask-panel-upgrade
-              session, now inside a real drawer instead of replacing the
-              whole panel body. Item 6 adds a second "Usage" section in the
-              same drawer container, per the task's explicit "reuse its
+              session. Item 6 adds a second "Usage" section in the same
+              drawer container, per the task's explicit "reuse its
               container rather than a new UI surface" instruction. */}
           <div
-            className={`absolute inset-0 z-10 flex flex-col overflow-hidden border-l border-border bg-surface-raised transition-transform duration-200 ${
+            className={`absolute inset-y-0 right-0 z-10 flex w-2/5 flex-col overflow-hidden border-l border-border bg-surface-raised shadow-2xl transition-transform duration-200 ${
               showHistoryList ? "translate-x-0" : "translate-x-full"
             }`}
             aria-hidden={!showHistoryList}
