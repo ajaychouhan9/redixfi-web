@@ -1,26 +1,37 @@
-import { Sparkline } from "@/components/ui/Sparkline";
 import type { ScoreHistoryPoint } from "@/lib/api/types";
 
 /**
  * Inline trend/comparison chart for Ask-RedixFi answers (2026-08-06).
  *
- * ONE symbol (a causal/trend-shaped per-symbol question) -> reuses the
- * EXISTING Sparkline component unchanged, wrapped in the SAME `text-accent`
- * convention Research already uses for its own sparklines (ResearchDetail.tsx's
- * Delivery(30d) chart) — no new single-series visual language.
+ * Readability fix (2026-08-21) — founder report: the rendered chart (title
+ * "COMPOSITE SCORE — RECENT SESSIONS") had no x-axis date labels and no
+ * y-axis score gridlines/labels at all, so a viewer couldn't tell which
+ * point corresponded to which date/value at a glance — confirmed directly
+ * against this file's prior version (a bare `<polyline>`/`<Sparkline>`,
+ * zero axis markup). Both the single-symbol and multi-symbol (compare)
+ * cases now render through ONE shared SVG layout with real axis labels —
+ * the single-symbol case no longer delegates to the generic, deliberately
+ * axis-less `Sparkline` component (still used elsewhere for compact glance
+ * indicators, e.g. Research's Delivery(30d) mini chart, where axes would be
+ * inappropriate clutter — that component is untouched).
  *
- * TWO OR MORE symbols (compare mode) -> Sparkline's own per-invocation
- * min/max normalization can't be reused as-is here (two independently-scaled lines
- * would misrepresent the comparison), so this renders a small SHARED-SCALE
- * multi-line chart as plain inline SVG, in the same minimal style. Series
- * colors are the first N slots of a categorical palette validated (dataviz
- * skill: lightness/chroma/CVD-separation/normal-vision-floor/contrast) for
- * this app's actual --surface-raised in both themes (see globals.css's
- * --series-1..5 comment) — assigned in FIXED order by each symbol's
- * position in `series` (the same order Task 13's compare table already
- * uses), never cycled or re-assigned when the set changes. Every series is
- * ALSO direct-labeled in the legend below the chart (never color-alone) —
- * required by the palette's own light-mode contrast WARN.
+ * Y-AXIS: 3 gridlines (max/mid/min of the combined visible range), each
+ * with its real composite-score value.
+ * X-AXIS: date labels under a handful of evenly-spaced points (first, last,
+ * and up to 3 more between them) rather than every single point, which
+ * would overlap into unreadable clutter on a 20-30 point series — dates
+ * come from whichever series has the MOST points (the widest date
+ * coverage), since every series' own x-position is computed by index
+ * within its own length (unchanged from before this fix; this chart
+ * doesn't attempt real date-aligned x-positioning across series of
+ * different lengths, a separate, out-of-scope data-alignment concern).
+ *
+ * TWO OR MORE symbols (compare mode) keep their SHARED-SCALE multi-line
+ * rendering (one independently-scaled Sparkline per series would
+ * misrepresent the comparison) and their existing direct-labeled legend
+ * (symbol name + color swatch) below the chart — required by the
+ * categorical palette's own light-mode contrast WARN (see globals.css's
+ * --series-1..5 comment), unchanged by this fix.
  *
  * Real, measured data only (core/signals_view.py::score_history reading
  * measured_signals) — never a synthesized/interpolated line. A symbol with
@@ -28,6 +39,32 @@ import type { ScoreHistoryPoint } from "@/lib/api/types";
  * trend from yet), matching this product's own "honest, however short"
  * posture toward its own young signal history.
  */
+
+const CHART_WIDTH = 320;
+const CHART_HEIGHT = 150;
+const PAD_LEFT = 30;
+const PAD_RIGHT = 8;
+const PAD_TOP = 8;
+const PAD_BOTTOM = 20;
+const PLOT_WIDTH = CHART_WIDTH - PAD_LEFT - PAD_RIGHT;
+const PLOT_HEIGHT = CHART_HEIGHT - PAD_TOP - PAD_BOTTOM;
+const MAX_X_TICKS = 5;
+
+function formatTickDate(dateStr: string): string {
+  const d = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function xTickIndices(pointCount: number): number[] {
+  if (pointCount <= MAX_X_TICKS) return Array.from({ length: pointCount }, (_, i) => i);
+  const ticks = new Set<number>();
+  for (let i = 0; i < MAX_X_TICKS; i += 1) {
+    ticks.add(Math.round((i / (MAX_X_TICKS - 1)) * (pointCount - 1)));
+  }
+  return Array.from(ticks).sort((a, b) => a - b);
+}
+
 export function ScoreHistoryChart({
   series,
 }: {
@@ -36,61 +73,79 @@ export function ScoreHistoryChart({
   const withData = series.filter((s) => s.points.length >= 2);
   if (withData.length === 0) return null;
 
-  if (withData.length === 1) {
-    const s = withData[0];
-    return (
-      <div className="mt-2 rounded-lg border border-border bg-surface-raised p-3">
-        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-foreground-faint">
-          {s.symbol} composite score — last {s.points.length} sessions
-        </p>
-        <div className="text-accent">
-          <Sparkline values={s.points.map((p) => p.composite_score)} height={36} />
-        </div>
-      </div>
-    );
-  }
-
-  const width = 100;
-  const height = 44;
   const allValues = withData.flatMap((s) => s.points.map((p) => p.composite_score));
   const min = Math.min(...allValues);
   const max = Math.max(...allValues);
   const range = max - min || 1;
+  const mid = (min + max) / 2;
+
+  const xFor = (idx: number, len: number) => PAD_LEFT + (len <= 1 ? 0 : (idx / (len - 1)) * PLOT_WIDTH);
+  const yFor = (value: number) => PAD_TOP + PLOT_HEIGHT - ((value - min) / range) * PLOT_HEIGHT;
+
+  // Widest-coverage series drives the x-axis date ticks (see module docstring).
+  const referenceSeries = withData.reduce((a, b) => (b.points.length > a.points.length ? b : a));
+  const tickIndices = xTickIndices(referenceSeries.points.length);
+  const yTicks = [max, mid, min];
+
+  const title = withData.length === 1 ? `${withData[0].symbol} composite score — last ${withData[0].points.length} sessions` : "Composite score — recent sessions";
 
   return (
     <div className="mt-2 rounded-lg border border-border bg-surface-raised p-3">
-      <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-foreground-faint">
-        Composite score — recent sessions
-      </p>
-      <svg viewBox={`0 0 ${width} ${height}`} width="100%" height={height} preserveAspectRatio="none" role="img" aria-label="Composite score comparison over recent sessions">
+      <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-foreground-faint">{title}</p>
+      <svg
+        viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
+        width="100%"
+        height={CHART_HEIGHT}
+        role="img"
+        aria-label={withData.length === 1 ? `${withData[0].symbol} composite score over the last ${withData[0].points.length} sessions` : "Composite score comparison over recent sessions"}
+      >
+        {/* Y-axis gridlines + value labels */}
+        {yTicks.map((v, i) => {
+          const y = yFor(v);
+          return (
+            <g key={i}>
+              <line x1={PAD_LEFT} y1={y} x2={CHART_WIDTH - PAD_RIGHT} y2={y} stroke="var(--border)" strokeWidth={1} />
+              <text x={PAD_LEFT - 4} y={y} textAnchor="end" dominantBaseline="middle" fontSize={9} fill="var(--foreground-faint)">
+                {Math.round(v)}
+              </text>
+            </g>
+          );
+        })}
+        {/* X-axis date labels, sparsely ticked (see xTickIndices) */}
+        {tickIndices.map((idx) => {
+          const point = referenceSeries.points[idx];
+          if (!point) return null;
+          const x = xFor(idx, referenceSeries.points.length);
+          return (
+            <text key={idx} x={x} y={CHART_HEIGHT - 4} textAnchor="middle" fontSize={9} fill="var(--foreground-faint)">
+              {formatTickDate(point.date)}
+            </text>
+          );
+        })}
         {withData.map((s, i) => {
-          const points = s.points
-            .map((p, idx) => {
-              const x = (idx / (s.points.length - 1)) * width;
-              const y = height - ((p.composite_score - min) / range) * height;
-              return `${x},${y}`;
-            })
-            .join(" ");
+          const points = s.points.map((p, idx) => `${xFor(idx, s.points.length)},${yFor(p.composite_score)}`).join(" ");
           return (
             <polyline
               key={s.symbol}
               points={points}
               fill="none"
-              stroke={`var(--series-${(i % 5) + 1})`}
+              stroke={withData.length === 1 ? "var(--accent)" : `var(--series-${(i % 5) + 1})`}
               strokeWidth={2}
               vectorEffect="non-scaling-stroke"
             />
           );
         })}
       </svg>
-      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
-        {withData.map((s, i) => (
-          <span key={s.symbol} className="flex items-center gap-1 text-[12px] text-foreground-muted">
-            <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: `var(--series-${(i % 5) + 1})` }} aria-hidden />
-            {s.symbol}
-          </span>
-        ))}
-      </div>
+      {withData.length > 1 && (
+        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+          {withData.map((s, i) => (
+            <span key={s.symbol} className="flex items-center gap-1 text-[12px] text-foreground-muted">
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: `var(--series-${(i % 5) + 1})` }} aria-hidden />
+              {s.symbol}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

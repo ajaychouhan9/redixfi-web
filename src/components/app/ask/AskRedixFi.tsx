@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sparkles, X, Send, Search, Globe, Maximize2, Minimize2, RotateCcw, History, ChevronLeft } from "lucide-react";
+import { Sparkles, X, Send, Search, Globe, Maximize2, Minimize2, RotateCcw, History, ChevronLeft, Copy, Check } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 import { ApiError } from "@/lib/api/client";
@@ -202,6 +202,12 @@ export function AskRedixFi() {
   // openHistoryList() below, so it never silently reopens on a stale tab.
   const [historyDrawerTab, setHistoryDrawerTab] = useState<"history" | "usage">("history");
   const [statusStageIndex, setStatusStageIndex] = useState(0);
+  // Item 4 (2026-08-21) — copy-to-clipboard feedback for a user's own past
+  // question bubble. Index into `messages`, not a boolean, so only the
+  // bubble actually clicked shows the brief "copied" checkmark swap —
+  // never all of them at once. Cleared on a timer, and also implicitly
+  // reset on every fresh copy click (the index just moves).
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const historyFetchKey = useRef<string | null>(null);
 
@@ -415,6 +421,19 @@ export function AskRedixFi() {
     }
   }
 
+  // Item 4 (2026-08-21) — copies a past question's exact text. Works
+  // identically for a live in-progress conversation and a conversation
+  // reopened from history: both populate the SAME `messages` state (see
+  // loadHistory/openConversation above), so this one handler, reading
+  // straight off that state, already covers both surfaces without any
+  // extra branching.
+  function copyMessage(index: number, text: string) {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex((cur) => (cur === index ? null : cur)), 1500);
+    });
+  }
+
   async function send(text: string) {
     if (!text.trim() || busy) return;
     setBusy(true);
@@ -507,63 +526,14 @@ export function AskRedixFi() {
     }
   }, [input, pendingConfirm]);
 
-  // Multi-tier restructure (2026-08-08) — was a binary
-  // `tier === "free" ? "1/symbol/day" : "25/day"`, which silently showed
-  // Pro's number to Basic subscribers too. Mirrors core/plan_limits.py's
-  // AskLimits table exactly (kept in sync manually, same established
-  // cross-file-duplication convention as this codebase's other
-  // backend/frontend constant pairs) — "founding"/"paid" resolve the
-  // same way core/plan_limits.py::resolve_tier() does server-side
-  // (founding -> Pro's number, paid -> Basic's), so this label never
-  // disagrees with what enforce_ask_usage actually enforces.
-  const DAILY_LIMIT_LABEL: Record<string, string> = {
-    free: "1/symbol/day",
-    basic: "10/day",
-    pro: "25/day",
-    founding: "25/day",
-    paid: "10/day",
-  };
-  const dailyLimitLabel = DAILY_LIMIT_LABEL[user?.tier ?? "free"] ?? "1/symbol/day";
-  // BUG FIX (header/subtitle disagreement session) — ONE shared
-  // computation, used by BOTH the panel subtitle (`remainingLabel`) and
-  // the header badge (`compactUsageBadge`) below, so they can never
-  // disagree again. Investigation found this was NOT the "two divergent
-  // data sources" bug class this project has hit before — both displays
-  // already read the exact same `usage` object from the exact same GET
-  // /me/usage request. The real bug: the header badge used to render
-  // `"{daily_used}/{daily_limit}"` (a USED/limit fraction) while the
-  // subtitle rendered `"{remaining}/{daily_limit} left today"` (a
-  // REMAINING/limit fraction) — two DIFFERENT formulas over the SAME
-  // correct data. At most usage levels these read as obviously different
-  // numbers and the mismatch would have been obvious, but at the exact
-  // boundary a real exhausted account hits (daily_used == daily_limit,
-  // e.g. 25/25), `daily_used/daily_limit` and `daily_limit/daily_limit`
-  // both equal "25/25" - i.e. the "used" framing becomes numerically
-  // IDENTICAL to what "25 remaining" would look like, and a person
-  // scanning it reflexively reads any "X/25" as "X of 25 AVAILABLE" (the
-  // subtitle's own convention) — exactly the confusion the live
-  // screenshot showed. Fixed by giving the header the SAME "remaining"
-  // meaning as the subtitle, computed ONCE here, instead of a second
-  // "used" formula that happens to collide with it at the exhausted
-  // boundary. `null` for free tier's per-symbol gate (no single
-  // aggregate remaining count exists for a per-stock-per-day gate) —
-  // both displays fall back to their own static per-tier label there,
-  // unchanged.
-  const dailyRemaining =
-    usage && usage.daily_limit_per_symbol === null && usage.daily_limit != null
-      ? Math.max(0, usage.daily_limit - (usage.daily_used ?? 0))
-      : null;
-  const remainingLabel = dailyRemaining !== null ? `${dailyRemaining}/${usage!.daily_limit} left today` : dailyLimitLabel;
-  // UI polish batch, Item 5 (this session: reworked to show ONLY the
-  // single real REMAINING count, e.g. "0" or "18" — never a fraction —
-  // per this bug's own fix decision: a bare "X/Y" is ambiguous about
-  // whether X means used or remaining, and that ambiguity is exactly
-  // what produced the "25/25 looks fully available" misread when the
-  // account was actually exhausted). String(), not the raw number, so a
-  // real "0" (exhausted) stays a TRUTHY string and still renders the
-  // badge — a raw `0` would be falsy and silently hide it at exactly the
-  // moment a user most needs to see it.
-  const compactUsageBadge = dailyRemaining !== null ? String(dailyRemaining) : null;
+  // Product-decision session (2026-08-21) — the header badge and panel
+  // subtitle both used to show the live "N left today" remaining count
+  // (see this file's git history for the header/subtitle-disagreement
+  // fix that used to live here). Deliberately REMOVED, not a bug fix: the
+  // Usage tab inside the History drawer (below) is now the ONLY place
+  // daily/monthly/addon counts are shown, so this component no longer
+  // derives a remaining-count label/badge for the header or subtitle at
+  // all — see the trigger button and panel-header JSX below.
   // Context-tailored suggestions (Phase 3/GET /ask/history) win over the
   // generic per-mode fallback whenever the server had something specific
   // to say about this symbol; the generic set still covers open/general
@@ -629,17 +599,6 @@ export function AskRedixFi() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, symbol, user]);
 
-  // UI polish batch, Item 5 — the top-ribbon usage badge (rendered next to
-  // the trigger button below, unconditionally, not gated on `open`) needs
-  // real numbers BEFORE the panel is ever opened. Reuses the exact same
-  // refreshUsage()/GET /me/usage call the panel itself already makes — no
-  // second usage-fetching path — just triggered on mount/login instead of
-  // on panel-open, since this badge is visible independent of panel state.
-  useEffect(() => {
-    if (user) refreshUsage();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
   return (
     <>
       {/* Font-size fix (2026-08-11): was text-xs (12px), task wants 14px.
@@ -652,24 +611,11 @@ export function AskRedixFi() {
           compact icon button, not a wide pill with invisible label space. */}
       <button
         onClick={() => setOpen(true)}
-        aria-label={compactUsageBadge ? `Ask RedixFi AI, ${compactUsageBadge} questions remaining today` : "Ask RedixFi AI"}
+        aria-label="Ask RedixFi AI"
         className="flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1.5 text-sm font-semibold transition-transform hover:scale-105 sm:px-3"
         style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dim))", color: "var(--accent-foreground)" }}
       >
         <Sparkles size={12} /> <span className="hidden sm:inline">RedixFi AI</span>
-        {/* UI polish batch, Item 5 (reworked this session — see
-            dailyRemaining's own comment above for the bug this closes) —
-            compact usage badge, a single REMAINING count (not a
-            used/limit fraction), real numbers from the SAME GET /me/usage
-            request the panel itself already makes (see compactUsageBadge
-            above), not a second fetch. Hidden entirely (not just for free
-            tier) until the first refreshUsage() resolves, same "no
-            placeholder number" posture as remainingLabel. */}
-        {compactUsageBadge && (
-          <Chip tone="neutral" className="hidden bg-white/20 text-accent-foreground sm:inline-flex">
-            {compactUsageBadge}
-          </Chip>
-        )}
       </button>
 
       {/* Phase 5 — expanded mode dims the page behind it, same overlay
@@ -703,25 +649,17 @@ export function AskRedixFi() {
                     drawer OVER the chat (see below), not a full content
                     replacement, so this header stays constant underneath it. */}
                 <div className="text-sm font-semibold">RedixFi AI</div>
-                {/* BUG B FIX (UI-polish-batch bug-fix session) — the prior
-                    fix (11px text-foreground-faint -> 13px text-foreground-
-                    muted) was confirmed present in the deployed source
-                    (verified by re-reading this exact class string before
-                    touching it again) but was, per direct founder report,
-                    NOT visibly different enough — text-foreground-muted
-                    (5.75:1/5.92:1) and text-foreground-faint (4.51:1/
-                    4.74:1) are both mid-grey tones, similar enough in
-                    practice to read as "the same grey" at a glance. This
-                    time: 14px (up from the ORIGINAL 11px, +27%) and
-                    text-foreground (the PRIMARY, full-contrast token —
-                    #1a2036 on #ffffff-family light backgrounds / #e8eaf2 on
-                    dark, i.e. near-black-on-white / near-white-on-dark,
-                    not another shade of grey) — an unmistakable jump, not
-                    another step on the same muted ladder. Still an
-                    EXISTING token (text-foreground is used sitewide, e.g.
-                    the message-bubble text just below), not invented. */}
+                {/* Product-decision session (2026-08-21) — Item 2: the
+                    "N/25 left today" count fragment is REMOVED from this
+                    line (that number now lives ONLY in the Usage tab of
+                    the History drawer below). The "Grounded in measured
+                    data only" disclaimer itself is compliance-adjacent
+                    framing worth keeping on its own, so it stays — see
+                    BUG B FIX's own reasoning (still in git history) for
+                    why this is text-foreground/14px, not another muted
+                    shade. */}
                 <div className="text-[14px] text-foreground">
-                  Grounded in measured data only · {remainingLabel} · ask about any stock, sector, or in general
+                  Grounded in measured data only · ask about any stock, sector, or in general
                 </div>
               </div>
             </div>
@@ -844,13 +782,46 @@ export function AskRedixFi() {
                 )}
                 {messages.map((m, i) => (
                   <div key={i}>
-                    <div className={m.role === "user" ? "flex justify-end" : ""}>
+                    <div className={m.role === "user" ? "group flex items-center justify-end gap-1.5" : ""}>
+                      {/* Item 4 (2026-08-21) — copy a past question's exact text.
+                          Hover-revealed (matches this panel's existing icon-button
+                          convention, e.g. the header's History/New-conversation
+                          buttons, none of which sit permanently visible inline with
+                          content), but stays reachable via keyboard focus. Reads off
+                          the SAME `messages` state that both a live conversation and
+                          a reopened-from-history one populate (loadHistory/
+                          openConversation above), so this one button already covers
+                          both surfaces. */}
+                      {m.role === "user" && (
+                        <button
+                          onClick={() => copyMessage(i, m.text)}
+                          aria-label="Copy question"
+                          title="Copy question"
+                          className="shrink-0 text-foreground-faint opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+                        >
+                          {copiedIndex === i ? <Check size={13} /> : <Copy size={13} />}
+                        </button>
+                      )}
                       <div
-                        className="max-w-[85%] rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed"
+                        className="max-w-[85%] rounded-xl px-3.5 py-2.5 leading-relaxed break-words"
                         style={
                           m.role === "user"
-                            ? { background: "var(--accent)", color: "var(--accent-foreground)" }
-                            : { background: "var(--hover)", color: "var(--foreground-muted)", border: "1px solid var(--border)" }
+                            ? { background: "var(--accent)", color: "var(--accent-foreground)", fontSize: "13px" }
+                            : // Item 3 (2026-08-21) — the AI answer body specifically
+                              // (not the subtitle, not icons, not the user's own
+                              // question above): was text-foreground-muted/13px, now
+                              // text-foreground (this codebase's established
+                              // "maximum contrast" token — #1a2036 near-black on the
+                              // light theme's near-white --hover bubble background,
+                              // #e8eaf2 near-white on the dark theme's near-black one;
+                              // see globals.css) at 14.3px (13 * 1.1, ~10% larger).
+                              // Literal pure #ffffff was NOT used: this bubble's own
+                              // background (var(--hover)) is itself near-white in the
+                              // LIGHT theme, so white-on-white text would be
+                              // unreadable there — text-foreground already gives
+                              // near-white in the dark theme (this app's primary
+                              // theme) while staying legible in light mode too.
+                              { background: "var(--hover)", color: "var(--foreground)", border: "1px solid var(--border)", fontSize: "14.3px" }
                         }
                       >
                         {/* Phase 2 — structured markdown rendering for AI answers

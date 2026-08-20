@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { firebaseLogin, refreshTokens, type AuthTokens, type AuthUser } from "@/lib/api/mutations";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { firebaseLogin, getMe, refreshTokens, type AuthTokens, type AuthUser } from "@/lib/api/mutations";
 import { isExpiringSoon } from "./jwt";
 
 const STORAGE_KEY = "redixfi:auth";
@@ -47,6 +47,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStored(readStorage());
     setLoading(false);
   }, []);
+
+  // Tier-staleness fix (2026-08-21 investigation, B8 masking session) —
+  // `stored.user` (the sidebar/header's ONLY source for `user.tier`) was
+  // previously written just twice: at login, and whenever `getToken()`
+  // happens to refresh the access token near its own expiry. Between those
+  // two events it never changed — so a real server-side tier change during
+  // an active session (subscription lapse/cancellation/webhook update; a
+  // real Pro subscriber's DB-side `users.tier` genuinely reverting to
+  // "free") left the sidebar showing the OLD tier indefinitely, while every
+  // live endpoint (GET /signals, POST /ask, ...) correctly reads the
+  // CURRENT tier fresh from the DB on every request (core/auth.py::
+  // get_auth_context) — exactly the live-evidence symptom investigated
+  // this session: a sidebar reading "PRO PLAN" while /signals masked a
+  // subset of rows as free-tier-locked. The masking itself was confirmed
+  // correct (reads live DB tier every request); this closes the OTHER
+  // side — the cached label. One extra GET /me per fresh page load/login,
+  // merged into the SAME stored `user` object every other read of `user`
+  // already uses, so this needed no changes anywhere else. Ref-guarded to
+  // fire once per distinct logged-in user, not on every render.
+  const refreshedForUserRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!stored || refreshedForUserRef.current === stored.user.user_id) return;
+    refreshedForUserRef.current = stored.user.user_id;
+    getMe(stored.access_token)
+      .then((profile) => {
+        setStored((current) => {
+          if (!current || current.user.user_id !== profile.user_id) return current;
+          const next: StoredAuth = {
+            ...current,
+            user: { ...current.user, tier: profile.tier, name: profile.name, email: profile.email, phone: profile.phone },
+          };
+          writeStorage(next);
+          return next;
+        });
+      })
+      .catch(() => {
+        // Fail-soft, same posture as every other best-effort refresh in
+        // this app (e.g. AskRedixFi.tsx's refreshUsage) — keeps whatever
+        // tier was already cached rather than logging the user out over a
+        // transient network error.
+      });
+  }, [stored]);
 
   const loginWithFirebaseToken = useCallback(async (firebaseToken: string) => {
     const tokens: AuthTokens = await firebaseLogin(firebaseToken);
