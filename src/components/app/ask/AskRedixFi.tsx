@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 import { ApiError } from "@/lib/api/client";
 import { searchResearch } from "@/lib/api/endpoints";
-import { askRedixfi, getAskConversations, getAskHistory } from "@/lib/api/mutations";
+import { askRedixfi, getAskConversations, getAskHistory, getUsage } from "@/lib/api/mutations";
 import { getCurrentSymbol } from "@/lib/current-symbol";
 import { CompareResultCard } from "@/components/app/signals/CompareResultCard";
 import { ScoreHistoryChart } from "@/components/app/ask/ScoreHistoryChart";
@@ -23,11 +23,13 @@ import type {
   AskLimitDetail,
   AskScreenResult,
   AskTableResult,
+  AskUsageInfo,
   CompareResult,
   ResearchSearchRow,
   ScoreHistoryPoint,
   SourceCitation,
 } from "@/lib/api/types";
+import { estimateQuestionWeight, questionWeightLabel } from "@/lib/ask-panel/estimateQuestionWeight";
 
 /**
  * Persistent "RedixFi AI" entry point, per the locked design system: lives
@@ -91,6 +93,11 @@ interface AskMessage {
   // RedixFi AI backend upgrade — multi-day/multi-field tabular answer
   // (mode="tabular"), Pro tier only. Null for every other answer shape.
   table?: AskTableResult | null;
+  // Weighted-credit system — the ACTUAL weight this turn cost (from the
+  // server, result.question_weight / the persisted conversation turn's
+  // own field), rendered as a small per-message tag (requirement 4).
+  // Undefined only for a turn that predates this field.
+  questionWeight?: number;
 }
 
 const QUICK_PROMPTS_SYMBOL = [
@@ -152,6 +159,12 @@ export function AskRedixFi() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [limit, setLimit] = useState<AskLimitDetail | null>(null);
+  // Weighted-credit system — live "N remaining today/this month" figures
+  // from GET /me/usage (core/metering.py::ask_usage_snapshot), which
+  // already sums WEIGHTED consumption server-side — this is a read-only
+  // mirror, no client-side arithmetic. Refetched on open and after every
+  // successful send so it reflects the answer that was just charged.
+  const [usage, setUsage] = useState<AskUsageInfo | null>(null);
   // Phase 3 — persistent chat history. `initialSuggestions` are the
   // context-tailored empty-state chips for THIS symbol (core/ask.py::
   // compute_initial_suggestions, via GET /ask/history) — falls back to
@@ -248,6 +261,22 @@ export function AskRedixFi() {
   // resume as INFY, not its starting symbol). Never overrides a REAL
   // page-context `sym` — rule 2a's page-context priority always wins
   // over whatever a resumed conversation says.
+  // Weighted-credit system — read-only refresh of the live remaining-count
+  // figures; never mutates anything, safe to call as often as needed (on
+  // open, and again after each answer so the count reflects the just-
+  // charged weight). Silently no-ops on failure — the header falls back to
+  // the static per-tier label below when `usage` is still null.
+  async function refreshUsage() {
+    try {
+      const token = await getToken();
+      if (!token) return;
+      const env = await getUsage(token);
+      setUsage(env.ask_redixfi);
+    } catch {
+      // stays null — header falls back to the static label
+    }
+  }
+
   async function loadHistory(sym: string | null) {
     const key = sym ?? "_general";
     if (historyFetchKey.current === key) return;
@@ -270,6 +299,7 @@ export function AskRedixFi() {
             sourceCitations: m.source_citations,
             followUps: m.role === "assistant" ? m.follow_ups : undefined,
             resolvedSymbol: resumedSymbol,
+            questionWeight: m.role === "assistant" ? m.question_weight : undefined,
           }))
         );
       }
@@ -343,6 +373,7 @@ export function AskRedixFi() {
           sourceCitations: m.source_citations,
           followUps: m.role === "assistant" ? m.follow_ups : undefined,
           resolvedSymbol,
+          questionWeight: m.role === "assistant" ? m.question_weight : undefined,
         }))
       );
       setInitialSuggestions(history.initial_suggestions ?? []);
@@ -385,8 +416,14 @@ export function AskRedixFi() {
           compare: result.compare, screen: result.screen, table: result.table,
           webSourced: result.web_sourced, webSourceLabel: result.web_source_label, webSourceUrl: result.web_source_url,
           scoreHistory: result.score_history, resolvedSymbol: result.resolved_symbol, followUps: result.follow_ups,
+          questionWeight: result.question_weight,
         },
       ]);
+      // Weighted-credit system — this answer was just charged server-side
+      // (core/routers/ask.py, only on confirmed successful delivery); pull
+      // the fresh remaining-count now rather than computing it locally, so
+      // it can never drift from what the server actually deducted.
+      refreshUsage();
     } catch (e) {
       if (e instanceof ApiError && e.status === 429) {
         setLimit(e.detail as AskLimitDetail);
@@ -419,6 +456,18 @@ export function AskRedixFi() {
     paid: "10/day",
   };
   const dailyLimitLabel = DAILY_LIMIT_LABEL[user?.tier ?? "free"] ?? "1/symbol/day";
+  // Weighted-credit system — once GET /me/usage has loaded, replace the
+  // static per-tier label with the caller's ACTUAL remaining count (which
+  // already reflects weighted consumption — a Basic user who asked 3 heavy
+  // tabular questions shows fewer remaining than one who asked 3 simple
+  // ones, with zero client-side math beyond a subtraction of two server-
+  // reported numbers). Free tier's per-symbol gate isn't an aggregate
+  // count (daily_limit_per_symbol set, daily_limit null) so it keeps the
+  // static label — nothing to subtract there.
+  const remainingLabel =
+    usage && usage.daily_limit_per_symbol === null && usage.daily_limit != null
+      ? `${Math.max(0, usage.daily_limit - (usage.daily_used ?? 0))}/${usage.daily_limit} left today`
+      : dailyLimitLabel;
   // Context-tailored suggestions (Phase 3/GET /ask/history) win over the
   // generic per-mode fallback whenever the server had something specific
   // to say about this symbol; the generic set still covers open/general
@@ -451,6 +500,7 @@ export function AskRedixFi() {
   useEffect(() => {
     if (open && user) {
       loadHistory(symbol);
+      refreshUsage();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, symbol, user]);
@@ -508,7 +558,7 @@ export function AskRedixFi() {
                 <div className="text-sm font-semibold">{showHistoryList ? "Chat history" : "RedixFi AI"}</div>
                 {!showHistoryList && (
                   <div className="text-[11px] text-foreground-faint">
-                    Grounded in measured data only · {dailyLimitLabel} · ask about any stock, sector, or in general
+                    Grounded in measured data only · {remainingLabel} · ask about any stock, sector, or in general
                   </div>
                 )}
               </div>
@@ -677,11 +727,28 @@ export function AskRedixFi() {
                         {/* Phase 1 — collapsible per-source citations, replaces the
                             old bare sources_used category chips entirely. */}
                         {m.role === "ai" && m.sourceCitations && <SourcesSection citations={m.sourceCitations} />}
-                        {m.createdAt && (
-                          <div className="mt-1.5 text-[11px] text-foreground-faint opacity-70">
-                            {new Date(m.createdAt).toLocaleString(undefined, {
-                              month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
-                            })}
+                        {(m.createdAt || (m.role === "ai" && !!m.questionWeight)) && (
+                          <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-foreground-faint opacity-70">
+                            {m.createdAt && (
+                              <span>
+                                {new Date(m.createdAt).toLocaleString(undefined, {
+                                  month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+                                })}
+                              </span>
+                            )}
+                            {/* Weighted-credit system, requirement 4 — per-message cost
+                                tag. Only shown when this turn actually consumed quota
+                                (>0; a locked-guard/clarify-symbol turn costs nothing and
+                                shows no tag at all, matching it never being charged). */}
+                            {m.role === "ai" && !!m.questionWeight && (
+                              <span
+                                className="rounded-full px-1.5 py-0.5 font-mono"
+                                style={{ background: "var(--hover)", border: "1px solid var(--border)" }}
+                                title={`This answer used ${m.questionWeight} of your daily/monthly questions`}
+                              >
+                                −{m.questionWeight}
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
@@ -844,6 +911,16 @@ export function AskRedixFi() {
                 </div>
               )}
 
+              {/* Weighted-credit system, requirement 3 — pre-send cost estimate.
+                  Client-side heuristic (estimateQuestionWeight), not a backend
+                  call — see that module's docstring for why. Only shown once
+                  the question looks like it'll cost more than the 1-question
+                  floor, so a plain question shows nothing extra here. */}
+              {input.trim() && estimateQuestionWeight(input) > 1 && (
+                <div className="mx-3 mb-1.5 rounded-lg bg-accent/10 px-2.5 py-1.5 text-[11px] text-foreground-faint">
+                  {questionWeightLabel(estimateQuestionWeight(input))}
+                </div>
+              )}
               <div className="flex items-center gap-2 border-t border-border p-3">
                 {!symbol && (
                   <Search size={14} className="shrink-0 text-foreground-faint" aria-hidden />

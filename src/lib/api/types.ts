@@ -963,10 +963,27 @@ export interface WatchlistResponse {
   limit: number;
 }
 
+// Weighted-credit system — shape of GET /me/usage's `ask_redixfi` block
+// (core/metering.py::ask_usage_snapshot). `daily_used`/`monthly_used` are
+// already the SUM of weighted deductions, not a plain message count — the
+// server does the weighting, this is just a read-only mirror of it. Free
+// tier reports the per-symbol boolean gate instead (daily_limit_per_symbol
+// set, daily_limit/monthly_limit null) — that gate is never weighted.
+export interface AskUsageInfo {
+  tier: string;
+  daily_limit_per_symbol: number | null;
+  daily_used: number | null;
+  daily_limit: number | null;
+  monthly_used: number | null;
+  monthly_limit: number | null;
+  topup_questions_remaining: number;
+}
+
 export interface UsageInfo {
-  research_views_used: number;
+  research_views_used?: number;
   research_views_remaining: number;
   unlimited: boolean;
+  ask_redixfi: AskUsageInfo;
 }
 
 export interface InboxAlert {
@@ -1226,6 +1243,11 @@ export interface AskResult {
   // question suggestions, code-computed from the answer's own mode/fact
   // type. Empty array for a refusal or a locked/paywalled answer.
   follow_ups: string[];
+  // Weighted-credit system — how much of the caller's daily/monthly
+  // Ask-RedixFi COUNT this answer actually cost (1 for a simple question,
+  // up to 3 for a heavy tabular one; see core/ask.py::compute_question_
+  // weight). 0 for a free locked-guard/clarify-symbol turn.
+  question_weight?: number;
 }
 
 /** Shape of ApiError.detail on a 429 from POST /ask (core/metering.py::enforce_ask_usage). */
@@ -1247,6 +1269,10 @@ export interface AskConversationMessage {
   created_at: string;
   source_citations?: SourceCitation[];
   follow_ups?: string[];
+  // Weighted-credit system — see AskResult.question_weight; stored the
+  // same way so a REOPENED conversation shows the same per-message cost
+  // tag a live answer would. Absent on turns that predate this field.
+  question_weight?: number;
 }
 
 export interface AskConversation {
