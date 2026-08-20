@@ -165,6 +165,13 @@ export function AskRedixFi() {
   // mirror, no client-side arithmetic. Refetched on open and after every
   // successful send so it reflects the answer that was just charged.
   const [usage, setUsage] = useState<AskUsageInfo | null>(null);
+  // Weighted-credit follow-up session, Enhancement 2 — Pro-tier explicit
+  // confirm-before-send for a heavy (weight >=2) question. `null` means
+  // no confirmation pending (normal composer flow); set on a Send click/
+  // Enter press that estimates >=2 for a Pro caller, cleared on either
+  // "Send anyway" (proceeds) or "Cancel" (returns to the input, nothing
+  // sent, nothing consumed) — see handleSendClick below.
+  const [pendingConfirm, setPendingConfirm] = useState<{ text: string; weight: number } | null>(null);
   // Phase 3 — persistent chat history. `initialSuggestions` are the
   // context-tailored empty-state chips for THIS symbol (core/ask.py::
   // compute_initial_suggestions, via GET /ask/history) — falls back to
@@ -438,6 +445,41 @@ export function AskRedixFi() {
       setBusy(false);
     }
   }
+
+  // Weighted-credit follow-up session, Enhancement 2 — same founding->pro
+  // capability equivalence this file already applies for the daily-limit
+  // label just below (a founding member paid a premium and gets Pro's
+  // capabilities), reused here rather than re-deriving a second notion of
+  // "is this a Pro caller."
+  const isPro = user?.tier === "pro" || user?.tier === "founding";
+
+  // Weighted-credit follow-up session, Enhancement 2 — the ONLY entry
+  // point the composer's Send button and Enter key now go through
+  // (replacing direct invocations of send()). Weight-1 questions, and
+  // any question from a non-Pro caller, send immediately exactly as
+  // before — no added friction. A Pro caller's weight>=2 question is
+  // intercepted BEFORE the request goes out: send() itself is not
+  // invoked yet, so nothing is charged until the user explicitly
+  // confirms.
+  function handleSendClick(text: string) {
+    if (!text.trim() || busy) return;
+    const weight = estimateQuestionWeight(text);
+    if (isPro && weight >= 2) {
+      setPendingConfirm({ text, weight });
+      return;
+    }
+    send(text);
+  }
+
+  // Editing the question while a confirmation is pending invalidates it —
+  // the confirmed weight/text no longer matches what's in the box, so
+  // silently re-confirming on a stale estimate would be wrong. Clears
+  // back to the normal composer; the next Send/Enter re-evaluates fresh.
+  useEffect(() => {
+    if (pendingConfirm && input !== pendingConfirm.text) {
+      setPendingConfirm(null);
+    }
+  }, [input, pendingConfirm]);
 
   // Multi-tier restructure (2026-08-08) — was a binary
   // `tier === "free" ? "1/symbol/day" : "25/day"`, which silently showed
@@ -916,10 +958,45 @@ export function AskRedixFi() {
                   call — see that module's docstring for why. compliance-ignore
                   Only shown once the question looks like it'll cost more than
                   the 1-question floor, so a plain question shows nothing extra
-                  here. */}
-              {input.trim() && estimateQuestionWeight(input) > 1 && (
+                  here. Pro-tier only: a Pro caller gets the ACTIVE confirm-
+                  before-send step below instead (Enhancement 2) — showing
+                  both would be redundant. Non-Pro tiers keep this passive
+                  line unchanged, since Enhancement 2 is Pro-only per its own
+                  spec. */}
+              {!isPro && input.trim() && estimateQuestionWeight(input) > 1 && (
                 <div className="mx-3 mb-1.5 rounded-lg bg-accent/10 px-2.5 py-1.5 text-[11px] text-foreground-faint">
                   {questionWeightLabel(estimateQuestionWeight(input))}
+                </div>
+              )}
+              {/* Weighted-credit follow-up session, Enhancement 2 — Pro-tier
+                  explicit confirm-before-send for a weight>=2 question.
+                  Nothing has been sent yet: handleSendClick set this state
+                  INSTEAD of calling send(), so "Cancel" costs nothing and
+                  "Send anyway" is the first point this question actually
+                  goes out. */}
+              {isPro && pendingConfirm && (
+                <div className="mx-3 mb-1.5 flex items-center justify-between gap-2 rounded-lg bg-accent/10 px-2.5 py-1.5 text-[11px] text-foreground-faint">
+                  <span>
+                    This detailed request uses up to {pendingConfirm.weight} of your daily questions. Send anyway?
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2">
+                    <button
+                      onClick={() => setPendingConfirm(null)}
+                      className="font-semibold text-foreground-muted hover:text-foreground"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        const { text } = pendingConfirm;
+                        setPendingConfirm(null);
+                        send(text);
+                      }}
+                      className="rounded-full bg-accent px-2.5 py-1 font-semibold text-accent-foreground"
+                    >
+                      Send
+                    </button>
+                  </span>
                 </div>
               )}
               <div className="flex items-center gap-2 border-t border-border p-3">
@@ -929,13 +1006,13 @@ export function AskRedixFi() {
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && send(input)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSendClick(input)}
                   placeholder="Ask anything — a stock, a sector, or in general…"
                   disabled={busy}
                   className="flex-1 rounded-lg border border-border bg-hover px-3 py-2 text-sm outline-none disabled:opacity-60"
                 />
                 <button
-                  onClick={() => send(input)}
+                  onClick={() => handleSendClick(input)}
                   disabled={busy || !input.trim()}
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground disabled:opacity-50"
                   aria-label="Send"

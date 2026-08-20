@@ -4,11 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run check:compliance && npm run check:auth-fetch && next build",
+    "build": "npm run check:compliance && npm run check:auth-fetch && npm run check:no-change-stock && next build",
     "start": "next start",
     "lint": "eslint",
     "check:compliance": "node scripts/check-compliance.mjs",
-    "check:auth-fetch": "node scripts/check-auth-fetch.mjs"
+    "check:auth-fetch": "node scripts/check-auth-fetch.mjs",
+    "check:no-change-stock": "node scripts/check-no-change-stock-button.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
