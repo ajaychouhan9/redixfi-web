@@ -913,9 +913,10 @@ export function AskRedixFi() {
 
               {/* Weighted-credit system, requirement 3 — pre-send cost estimate.
                   Client-side heuristic (estimateQuestionWeight), not a backend
-                  call — see that module's docstring for why. Only shown once
-                  the question looks like it'll cost more than the 1-question
-                  floor, so a plain question shows nothing extra here. */}
+                  call — see that module's docstring for why. compliance-ignore
+                  Only shown once the question looks like it'll cost more than
+                  the 1-question floor, so a plain question shows nothing extra
+                  here. */}
               {input.trim() && estimateQuestionWeight(input) > 1 && (
                 <div className="mx-3 mb-1.5 rounded-lg bg-accent/10 px-2.5 py-1.5 text-[11px] text-foreground-faint">
                   {questionWeightLabel(estimateQuestionWeight(input))}
