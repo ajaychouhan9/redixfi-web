@@ -524,33 +524,46 @@ export function AskRedixFi() {
     paid: "10/day",
   };
   const dailyLimitLabel = DAILY_LIMIT_LABEL[user?.tier ?? "free"] ?? "1/symbol/day";
-  // Weighted-credit system — once GET /me/usage has loaded, replace the
-  // static per-tier label with the caller's ACTUAL remaining count (which
-  // already reflects weighted consumption — a Basic user who asked 3 heavy
-  // tabular questions shows fewer remaining than one who asked 3 simple
-  // ones, with zero client-side math beyond a subtraction of two server-
-  // reported numbers). Free tier's per-symbol gate isn't an aggregate
-  // count (daily_limit_per_symbol set, daily_limit null) so it keeps the
-  // static label — nothing to subtract there.
-  const remainingLabel =
+  // BUG FIX (header/subtitle disagreement session) — ONE shared
+  // computation, used by BOTH the panel subtitle (`remainingLabel`) and
+  // the header badge (`compactUsageBadge`) below, so they can never
+  // disagree again. Investigation found this was NOT the "two divergent
+  // data sources" bug class this project has hit before — both displays
+  // already read the exact same `usage` object from the exact same GET
+  // /me/usage request. The real bug: the header badge used to render
+  // `"{daily_used}/{daily_limit}"` (a USED/limit fraction) while the
+  // subtitle rendered `"{remaining}/{daily_limit} left today"` (a
+  // REMAINING/limit fraction) — two DIFFERENT formulas over the SAME
+  // correct data. At most usage levels these read as obviously different
+  // numbers and the mismatch would have been obvious, but at the exact
+  // boundary a real exhausted account hits (daily_used == daily_limit,
+  // e.g. 25/25), `daily_used/daily_limit` and `daily_limit/daily_limit`
+  // both equal "25/25" - i.e. the "used" framing becomes numerically
+  // IDENTICAL to what "25 remaining" would look like, and a person
+  // scanning it reflexively reads any "X/25" as "X of 25 AVAILABLE" (the
+  // subtitle's own convention) — exactly the confusion the live
+  // screenshot showed. Fixed by giving the header the SAME "remaining"
+  // meaning as the subtitle, computed ONCE here, instead of a second
+  // "used" formula that happens to collide with it at the exhausted
+  // boundary. `null` for free tier's per-symbol gate (no single
+  // aggregate remaining count exists for a per-stock-per-day gate) —
+  // both displays fall back to their own static per-tier label there,
+  // unchanged.
+  const dailyRemaining =
     usage && usage.daily_limit_per_symbol === null && usage.daily_limit != null
-      ? `${Math.max(0, usage.daily_limit - (usage.daily_used ?? 0))}/${usage.daily_limit} left today`
-      : dailyLimitLabel;
-  // UI polish batch, Item 5 — compact "used/limit" badge for the top
-  // ribbon (rendered on the trigger button below, visible without opening
-  // the panel). Deliberately a DIFFERENT framing from `remainingLabel`
-  // above ("X left today" vs this badge's "used/limit") — the ribbon is a
-  // glanceable at-a-door-count ("18/25" reads naturally as "used out of
-  // your cap", matching the task's own example), the panel subtitle is a
-  // sentence emphasizing what's left. Same `usage` data, same GET
-  // /me/usage request, just two different renderings of it. `null` (renders
-  // nothing) for free tier's per-symbol gate, same carve-out as
-  // `remainingLabel` — there's no single aggregate "used/limit" number
-  // for a per-stock-per-day gate.
-  const compactUsageBadge =
-    usage && usage.daily_limit_per_symbol === null && usage.daily_limit != null
-      ? `${usage.daily_used ?? 0}/${usage.daily_limit}`
+      ? Math.max(0, usage.daily_limit - (usage.daily_used ?? 0))
       : null;
+  const remainingLabel = dailyRemaining !== null ? `${dailyRemaining}/${usage!.daily_limit} left today` : dailyLimitLabel;
+  // UI polish batch, Item 5 (this session: reworked to show ONLY the
+  // single real REMAINING count, e.g. "0" or "18" — never a fraction —
+  // per this bug's own fix decision: a bare "X/Y" is ambiguous about
+  // whether X means used or remaining, and that ambiguity is exactly
+  // what produced the "25/25 looks fully available" misread when the
+  // account was actually exhausted). String(), not the raw number, so a
+  // real "0" (exhausted) stays a TRUTHY string and still renders the
+  // badge — a raw `0` would be falsy and silently hide it at exactly the
+  // moment a user most needs to see it.
+  const compactUsageBadge = dailyRemaining !== null ? String(dailyRemaining) : null;
   // Context-tailored suggestions (Phase 3/GET /ask/history) win over the
   // generic per-mode fallback whenever the server had something specific
   // to say about this symbol; the generic set still covers open/general
@@ -639,16 +652,19 @@ export function AskRedixFi() {
           compact icon button, not a wide pill with invisible label space. */}
       <button
         onClick={() => setOpen(true)}
-        aria-label={compactUsageBadge ? `Ask RedixFi AI, ${compactUsageBadge} questions used today` : "Ask RedixFi AI"}
+        aria-label={compactUsageBadge ? `Ask RedixFi AI, ${compactUsageBadge} questions remaining today` : "Ask RedixFi AI"}
         className="flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1.5 text-sm font-semibold transition-transform hover:scale-105 sm:px-3"
         style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dim))", color: "var(--accent-foreground)" }}
       >
         <Sparkles size={12} /> <span className="hidden sm:inline">RedixFi AI</span>
-        {/* UI polish batch, Item 5 — compact usage badge, real numbers from
-            the SAME GET /me/usage request the panel itself already makes
-            (see compactUsageBadge above), not a second fetch. Hidden entirely
-            (not just for free tier) until the first refreshUsage() resolves,
-            same "no placeholder number" posture as remainingLabel. */}
+        {/* UI polish batch, Item 5 (reworked this session — see
+            dailyRemaining's own comment above for the bug this closes) —
+            compact usage badge, a single REMAINING count (not a
+            used/limit fraction), real numbers from the SAME GET /me/usage
+            request the panel itself already makes (see compactUsageBadge
+            above), not a second fetch. Hidden entirely (not just for free
+            tier) until the first refreshUsage() resolves, same "no
+            placeholder number" posture as remainingLabel. */}
         {compactUsageBadge && (
           <Chip tone="neutral" className="hidden bg-white/20 text-accent-foreground sm:inline-flex">
             {compactUsageBadge}
