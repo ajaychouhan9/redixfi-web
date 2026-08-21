@@ -10,6 +10,7 @@ import { ApiError } from "@/lib/api/client";
 import { searchResearch } from "@/lib/api/endpoints";
 import { askRedixfi, getAskConversations, getAskHistory, getUsage } from "@/lib/api/mutations";
 import { getCurrentSymbol } from "@/lib/current-symbol";
+import { shouldStartFreshOnReopen } from "@/lib/ask-panel/freshStartRule";
 import { CompareResultCard } from "@/components/app/signals/CompareResultCard";
 import { ScoreHistoryChart } from "@/components/app/ask/ScoreHistoryChart";
 import { MarkdownAnswer } from "@/components/app/ask/MarkdownAnswer";
@@ -526,14 +527,22 @@ export function AskRedixFi() {
     }
   }, [input, pendingConfirm]);
 
-  // Product-decision session (2026-08-21) — the header badge and panel
-  // subtitle both used to show the live "N left today" remaining count
-  // (see this file's git history for the header/subtitle-disagreement
-  // fix that used to live here). Deliberately REMOVED, not a bug fix: the
-  // Usage tab inside the History drawer (below) is now the ONLY place
-  // daily/monthly/addon counts are shown, so this component no longer
-  // derives a remaining-count label/badge for the header or subtitle at
-  // all — see the trigger button and panel-header JSX below.
+  // Correction session (2026-08-21) — the immediately prior session's Item
+  // 2 removed the header count entirely and moved it into the Usage tab
+  // ONLY; corrected THIS session back to showing real daily/monthly/addon
+  // numbers directly in the panel header (see the header JSX below), per
+  // the founder's explicit reversal. Reads the SAME `usage` state (GET
+  // /me/usage, via refreshUsage() below) the Usage tab itself already
+  // renders from — not a second calculation, so these two displays can
+  // never disagree (the exact bug class the 2026-08-20 header/subtitle
+  // session had to fix once already for the OLD badge/subtitle pair).
+  // `null` usage (not yet fetched) renders a plain loading string rather
+  // than a placeholder "0" that could misread as a real exhausted count.
+  const usageHeaderLine = !usage
+    ? "Loading usage…"
+    : usage.daily_limit_per_symbol !== null
+      ? `Free tier: ${usage.daily_limit_per_symbol}/symbol/day · Addon: ${usage.topup_questions_remaining} remaining`
+      : `Daily: ${usage.daily_used ?? 0}/${usage.daily_limit} · Monthly: ${usage.monthly_used ?? 0}/${usage.monthly_limit} · Addon: ${usage.topup_questions_remaining} remaining`;
   // Context-tailored suggestions (Phase 3/GET /ask/history) win over the
   // generic per-mode fallback whenever the server had something specific
   // to say about this symbol; the generic set still covers open/general
@@ -566,8 +575,20 @@ export function AskRedixFi() {
   // case, so the existing conversation naturally continues, matching the
   // task's own "ambiguous case, prefer resuming when nothing navigated"
   // guidance.
+  // Regression-fix session (2026-08-21) — this exact condition now lives in
+  // shouldStartFreshOnReopen() (src/lib/ask-panel/freshStartRule.ts),
+  // extracted verbatim (same boolean expression, not re-derived) so
+  // scripts/test-ask-fresh-start.ts can assert it directly — this rule has
+  // regressed and needed re-fixing more than once (UI polish batch, Item 4,
+  // 2026-08-20; this session again), and an inline-only condition had no
+  // way to be tested outside a full React/DOM harness. Re-verified this
+  // session against the live component: still fires in the correct
+  // declaration-order position (before the preset-symbol/loadHistory
+  // effects below), still reachable via every close() path (X button,
+  // expanded-mode backdrop click — grepped, no `setOpen(false)` bypasses
+  // close() anywhere in this file).
   useEffect(() => {
-    if (open && hasClosedRef.current && closedAtPathRef.current !== null && closedAtPathRef.current !== pathname) {
+    if (shouldStartFreshOnReopen({ open, hasClosedBefore: hasClosedRef.current, closedAtPath: closedAtPathRef.current, currentPath: pathname })) {
       startNewConversation();
       hasClosedRef.current = false; // consumed — re-armed on the next close()
     }
@@ -649,18 +670,19 @@ export function AskRedixFi() {
                     drawer OVER the chat (see below), not a full content
                     replacement, so this header stays constant underneath it. */}
                 <div className="text-sm font-semibold">RedixFi AI</div>
-                {/* Product-decision session (2026-08-21) — Item 2: the
-                    "N/25 left today" count fragment is REMOVED from this
-                    line (that number now lives ONLY in the Usage tab of
-                    the History drawer below). The "Grounded in measured
-                    data only" disclaimer itself is compliance-adjacent
-                    framing worth keeping on its own, so it stays — see
-                    BUG B FIX's own reasoning (still in git history) for
-                    why this is text-foreground/14px, not another muted
-                    shade. */}
-                <div className="text-[14px] text-foreground">
-                  Grounded in measured data only · ask about any stock, sector, or in general
-                </div>
+                {/* Correction session (2026-08-21) — Item 2 corrected: the
+                    generic "Grounded in measured data only · ask about any
+                    stock..." disclaimer line is OUT; a real, live
+                    daily/monthly/addon counter line is IN, sourced from the
+                    same `usage` state as the Usage tab (see
+                    `usageHeaderLine` above) — never a second calculation.
+                    Free tier has no daily/monthly aggregate (it's a
+                    per-symbol gate, core/metering.py::enforce_ask_usage),
+                    so its own line shows the per-symbol limit instead.
+                    Still text-foreground/14px (unchanged from the prior
+                    session's BUG B FIX contrast reasoning, still in git
+                    history) — only the CONTENT of this line changed. */}
+                <div className="text-[14px] text-foreground">{usageHeaderLine}</div>
               </div>
             </div>
             <div className="flex items-center gap-3">

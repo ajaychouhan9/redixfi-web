@@ -30,5 +30,18 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    // Regression-fix session (2026-08-21) — a standalone Node script (run
+    // via `node --experimental-strip-types`, see its own header comment),
+    // not part of the Next.js app build. Node's ESM loader requires the
+    // explicit `.ts` extension on its relative import (`moduleResolution:
+    // "bundler"` here otherwise rejects that extension with TS5097 unless
+    // `allowImportingTsExtensions` is also enabled project-wide, which
+    // this one script doesn't warrant) — excluded from the app's own
+    // type-check scope for that reason, same as the existing `.mjs`
+    // check-*.mjs scripts already sit outside `**/*.ts`/`**/*.tsx` by
+    // extension alone.
+    "scripts/test-ask-fresh-start.ts"
+  ]
 }
