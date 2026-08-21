@@ -13,6 +13,7 @@ import type {
   BillingOrder,
   BillingVerifyResult,
   PromoValidation,
+  TopupOrder,
   SmartScreenResult,
   WatchlistSummary,
   PortfolioBrief,
@@ -172,8 +173,19 @@ export async function validatePromoCode(code: string, plan: string): Promise<Pro
 // Task 20 Part D — Ask-RedixFi topup, already built (Task 17) for the
 // reactive 429-triggered flow; reused here for the proactive Checkout
 // line item. Same order/verify shape as billing's, distinct endpoints.
-export async function createTopupOrder(token: string): Promise<BillingOrder> {
-  const env = await apiMutate<BillingOrder>("/ask/topup/order", "POST", undefined, { token });
+//
+// Addon-promo extension (2026-08-21) — `promoCode` is optional (matches
+// createBillingOrder's own optional-param shape above); the backend
+// validates it against the SAME `applies_to`-array scope check every
+// other promo redemption uses, so an addon purchase can never accidentally
+// redeem a subscription-only code and vice versa.
+export async function createTopupOrder(token: string, promoCode?: string): Promise<TopupOrder> {
+  const env = await apiMutate<TopupOrder>(
+    "/ask/topup/order",
+    "POST",
+    promoCode ? { promo_code: promoCode } : undefined,
+    { token }
+  );
   return env.data;
 }
 

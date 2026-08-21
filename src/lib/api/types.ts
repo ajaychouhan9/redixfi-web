@@ -844,6 +844,28 @@ export interface BillingOrder {
   [key: string]: unknown;
 }
 
+// Addon-promo extension (2026-08-21) — POST /ask/topup/order's response.
+// Mirrors BillingOrder's own order-vs-free_checkout shape (see that
+// interface's comments for the full reasoning) but topup-specific:
+// `questions`/`topup_questions_remaining` instead of a subscription id/
+// tier, since a topup purchase tops up a running balance, not a plan.
+export interface TopupOrder {
+  order_id?: string;
+  amount_paise: number;
+  currency?: string;
+  questions: number;
+  razorpay_key_id?: string;
+  discount_pct?: number | null;
+  discount_type?: "percentage" | "flat" | null;
+  discount_value?: number | null;
+  // 100%-off (or near-enough) promo bypass — same Razorpay-skip pattern as
+  // BillingOrder.free_checkout; when true, `topup_questions_remaining` is
+  // already the POST-purchase balance, and the caller must skip
+  // openRazorpayCheckout() entirely.
+  free_checkout?: boolean;
+  topup_questions_remaining?: number;
+}
+
 // Task 20 Part B — real shape of POST /billing/verify's response, distinct
 // from the older, loosely-typed `{ ok: boolean }` other callers use (that
 // field never actually existed on the wire — the real key is `success` —

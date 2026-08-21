@@ -29,9 +29,9 @@ import type { PromoCodeAdmin } from "@/lib/api/types";
 // monthly/annual combination (was "monthly"/"annual", spanning the
 // single pre-restructure paid tier). Mirrors routers/admin.py's
 // VALID_APPLIES_TO exactly (kept in sync manually — see that file's own
-// comment on why this isn't a shared import across two routers for 4
-// literals).
-const APPLIES_TO_OPTIONS = [
+// comment on why this isn't a shared import across two routers for a
+// handful of literals).
+const SUBSCRIPTION_APPLIES_TO_OPTIONS = [
   { value: "basic_monthly", label: "Basic (monthly)" },
   { value: "pro_monthly", label: "Pro (monthly)" },
   { value: "basic_annual", label: "Basic Annual" },
@@ -45,6 +45,30 @@ const APPLIES_TO_OPTIONS = [
   // a founding-related value into a code's applies_to. Belt and
   // suspenders, all layers agree.
 ];
+
+// Addon-promo extension (2026-08-21) — a code's `applies_to` array can
+// independently include this value alongside/instead of the subscription
+// labels above: check only this box for an addon-only code, only the
+// subscription boxes for the old subscription-only behavior (unchanged
+// default, see emptyForm() below), or both for a code that discounts
+// either purchase. Same array, same field — "subscription vs addon vs
+// both" is just which of these checkboxes end up checked, not a second
+// piece of state.
+const ADDON_APPLIES_TO_OPTIONS = [{ value: "ask_topup_50", label: "Ask-RedixFi addon (50 questions / ₹99)" }];
+
+const APPLIES_TO_OPTIONS = [...SUBSCRIPTION_APPLIES_TO_OPTIONS, ...ADDON_APPLIES_TO_OPTIONS];
+const APPLIES_TO_LABEL: Record<string, string> = Object.fromEntries(APPLIES_TO_OPTIONS.map((o) => [o.value, o.label]));
+
+type ScopeFilter = "all" | "subscription" | "addon" | "both";
+
+function scopeOf(appliesTo: string[]): Exclude<ScopeFilter, "all"> | "none" {
+  const hasSubscription = appliesTo.some((v) => SUBSCRIPTION_APPLIES_TO_OPTIONS.some((o) => o.value === v));
+  const hasAddon = appliesTo.some((v) => ADDON_APPLIES_TO_OPTIONS.some((o) => o.value === v));
+  if (hasSubscription && hasAddon) return "both";
+  if (hasAddon) return "addon";
+  if (hasSubscription) return "subscription";
+  return "none";
+}
 
 function randomCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no ambiguous 0/O/1/I
@@ -76,6 +100,7 @@ export function PromoCodeAdminView() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [editingCode, setEditingCode] = useState<string | null>(null);
+  const [scopeFilter, setScopeFilter] = useState<ScopeFilter>("all");
 
   async function load() {
     const token = await getToken();
@@ -205,6 +230,8 @@ export function PromoCodeAdminView() {
     await load();
   }
 
+  const filteredCodes = scopeFilter === "all" ? codes : codes.filter((c) => scopeOf(c.applies_to) === scopeFilter);
+
   if (authState === "checking") {
     return <p className="text-sm text-foreground-muted">Checking access…</p>;
   }
@@ -286,20 +313,37 @@ export function PromoCodeAdminView() {
 
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <span className="text-xs font-medium text-foreground-faint">Applicable plans</span>
+              <span className="text-xs font-medium text-foreground-faint">Applies to</span>
               <button type="button" onClick={toggleAllPlans} className="text-xs text-accent hover:underline">
-                {form.applies_to.length === APPLIES_TO_OPTIONS.length ? "Clear all" : "All plans"}
+                {form.applies_to.length === APPLIES_TO_OPTIONS.length ? "Clear all" : "Select all"}
               </button>
             </div>
-            <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-surface p-2.5">
-              {APPLIES_TO_OPTIONS.map((o) => (
-                <label key={o.value} className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={form.applies_to.includes(o.value)} onChange={() => toggleAppliesTo(o.value)} />
-                  {o.label}
-                </label>
-              ))}
-              <p className="mt-1 text-[12px] text-foreground-faint">
-                Founding Annual is never discountable — price-lock only, enforced server-side.
+            <div className="flex flex-col gap-2.5 rounded-lg border border-border bg-surface p-2.5">
+              <div>
+                <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-foreground-faint">Subscription</p>
+                <div className="flex flex-col gap-1.5">
+                  {SUBSCRIPTION_APPLIES_TO_OPTIONS.map((o) => (
+                    <label key={o.value} className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={form.applies_to.includes(o.value)} onChange={() => toggleAppliesTo(o.value)} />
+                      {o.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-foreground-faint">Addon</p>
+                <div className="flex flex-col gap-1.5">
+                  {ADDON_APPLIES_TO_OPTIONS.map((o) => (
+                    <label key={o.value} className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={form.applies_to.includes(o.value)} onChange={() => toggleAppliesTo(o.value)} />
+                      {o.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <p className="text-[12px] text-foreground-faint">
+                Check any combination — e.g. only the addon box for an addon-only code, or both groups for a code that
+                discounts either purchase. Founding Annual is never discountable — price-lock only, enforced server-side.
               </p>
             </div>
           </div>
@@ -365,7 +409,21 @@ export function PromoCodeAdminView() {
         </div>
       </Card>
 
-      <Card title={`All codes (${codes.length})`}>
+      <Card
+        title={`All codes (${filteredCodes.length}${scopeFilter !== "all" ? ` of ${codes.length}` : ""})`}
+        action={
+          <select
+            value={scopeFilter}
+            onChange={(e) => setScopeFilter(e.target.value as ScopeFilter)}
+            className="rounded-lg border border-border bg-surface px-2 py-1 text-xs"
+          >
+            <option value="all">All scopes</option>
+            <option value="subscription">Subscription only</option>
+            <option value="addon">Addon only</option>
+            <option value="both">Both</option>
+          </select>
+        }
+      >
         <div className="overflow-x-auto">
           <table className="w-full min-w-[820px] text-sm">
             {/* Font-size audit (2026-08-11): was text-[11px], bumped to
@@ -375,7 +433,8 @@ export function PromoCodeAdminView() {
                 <th className="px-2 py-2">Code</th>
                 <th className="px-2 py-2">Type</th>
                 <th className="px-2 py-2">Value</th>
-                <th className="px-2 py-2">Plans</th>
+                <th className="px-2 py-2">Scope</th>
+                <th className="px-2 py-2">Applies to</th>
                 <th className="px-2 py-2">Used / Limit</th>
                 <th className="px-2 py-2">Expiry</th>
                 <th className="px-2 py-2">Active</th>
@@ -383,13 +442,14 @@ export function PromoCodeAdminView() {
               </tr>
             </thead>
             <tbody>
-              {codes.map((c) => (
+              {filteredCodes.map((c) => (
                 <tr key={c.code} className="border-b border-border last:border-0">
                   <td className="px-2 py-2 font-mono font-semibold">{c.code}</td>
                   <td className="px-2 py-2">{c.discount_type}</td>
                   <td className="px-2 py-2">{c.discount_type === "percentage" ? `${c.discount_value}%` : `₹${c.discount_value}`}</td>
+                  <td className="px-2 py-2 text-xs capitalize">{scopeOf(c.applies_to)}</td>
                   <td className="px-2 py-2 text-xs">
-                    {c.applies_to.join(", ")}
+                    {c.applies_to.map((v) => APPLIES_TO_LABEL[v] ?? v).join(", ")}
                     {c.one_use_per_user && <span className="ml-1 text-foreground-faint">(1/user)</span>}
                   </td>
                   <td className="px-2 py-2">
@@ -409,10 +469,10 @@ export function PromoCodeAdminView() {
                   </td>
                 </tr>
               ))}
-              {codes.length === 0 && (
+              {filteredCodes.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-2 py-6 text-center text-sm text-foreground-muted">
-                    No promo codes yet.
+                  <td colSpan={9} className="px-2 py-6 text-center text-sm text-foreground-muted">
+                    {codes.length === 0 ? "No promo codes yet." : "No codes match this scope filter."}
                   </td>
                 </tr>
               )}

@@ -151,7 +151,7 @@ const STATUS_STAGES_WITH_CONCALL = ["Searching signals...", "Reading concall tra
 const CONCALL_SUGGESTION_MARKER = "What did management say on the last call?"; // compliance-ignore
 
 export function AskRedixFi() {
-  const { user, getToken, updateCachedUser } = useAuth();
+  const { user, loading: authLoading, getToken, updateCachedUser } = useAuth();
   const { open, setOpen, expanded, setExpanded } = useAskPanel();
   const pathname = usePathname();
   // UI polish batch, Item 4 — LOCKED DECISION, overrides rule 2b's old
@@ -560,8 +560,20 @@ export function AskRedixFi() {
   // it — a Free caller still never reaches this branch at all (their
   // charge doesn't depend on weight either way), and a Basic/Pro caller
   // who hasn't opted in still gets the normal dialog.
+  // Confirm-dialog race-condition fix (2026-08-21) — `authLoading` (Auth-
+  // Context's own "user load in progress" flag, distinct from `!!user`)
+  // guards this whole function. Without it, a question sent the instant
+  // the panel opens could run `isWeightedTier` while `user` is still null
+  // pre-load, silently reading as Free and skipping the weight>=2 confirm
+  // gate for a real Basic/Pro caller. The composer input/button and every
+  // chip below are also `disabled` while `authLoading` (belt-and-
+  // suspenders — this in-function guard is what actually matters, in case
+  // a future caller reaches handleSendClick some other way). Once
+  // `authLoading` is false, `user` is exactly the same "genuinely no
+  // account" vs "confirmed tier" distinction this file already used —
+  // unchanged for a real logged-out visitor or a confirmed Free-tier user.
   function handleSendClick(text: string) {
-    if (!text.trim() || busy) return;
+    if (!text.trim() || busy || authLoading) return;
     const weight = estimateQuestionWeight(text, isPro);
     if (isWeightedTier && weight >= 2 && !user?.ask_skip_confirm) {
       setPendingConfirm({ text, weight });
@@ -909,7 +921,8 @@ export function AskRedixFi() {
                         <button
                           key={p}
                           onClick={() => handleSendClick(p)}
-                          className="w-full rounded-lg border border-border bg-hover px-3 py-2 text-left text-[12.5px] text-foreground-muted transition-colors hover:text-foreground"
+                          disabled={authLoading}
+                          className="w-full rounded-lg border border-border bg-hover px-3 py-2 text-left text-[12.5px] text-foreground-muted transition-colors hover:text-foreground disabled:opacity-50"
                         >
                           {p}
                         </button>
@@ -1150,7 +1163,8 @@ export function AskRedixFi() {
                           <button
                             key={f}
                             onClick={() => handleSendClick(f)}
-                            className="rounded-full border border-border bg-hover px-2.5 py-1 text-left text-[11.5px] text-foreground-muted transition-colors hover:text-foreground"
+                            disabled={authLoading}
+                            className="rounded-full border border-border bg-hover px-2.5 py-1 text-left text-[11.5px] text-foreground-muted transition-colors hover:text-foreground disabled:opacity-50"
                           >
                             {f}
                           </button>
@@ -1287,13 +1301,13 @@ export function AskRedixFi() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSendClick(input)}
-                  placeholder="Ask anything — a stock, a sector, or in general…"
-                  disabled={busy}
+                  placeholder={authLoading ? "Loading your account…" : "Ask anything — a stock, a sector, or in general…"}
+                  disabled={busy || authLoading}
                   className="flex-1 rounded-lg border border-border bg-hover px-3 py-2 text-sm outline-none disabled:opacity-60"
                 />
                 <button
                   onClick={() => handleSendClick(input)}
-                  disabled={busy || !input.trim()}
+                  disabled={busy || !input.trim() || authLoading}
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground disabled:opacity-50"
                   aria-label="Send"
                 >
