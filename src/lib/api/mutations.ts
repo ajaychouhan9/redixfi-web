@@ -40,6 +40,14 @@ export interface AuthUser {
   name: string | null;
   tier: string;
   tnc_accepted_at: string | null;
+  // "Always allow" opt-out session (2026-08-21) — optional because
+  // POST /auth/firebase-login and /auth/refresh (core/routers/auth.py::
+  // _tokens_for_user) don't return it; only ever populated after
+  // AuthContext's own GET /me refresh merges it in (same pattern already
+  // used for keeping `tier` fresh — see that effect's own comment).
+  // `undefined` and `false` both mean "confirm every time" (the locked
+  // default) to every reader of this field.
+  ask_skip_confirm?: boolean;
 }
 
 export interface AuthTokens {
@@ -76,6 +84,14 @@ export async function updateProfile(token: string, body: { name?: string; email?
 
 export async function updateAlertPrefs(token: string, body: Partial<AlertPreferences>) {
   const env = await apiMutate<AlertPreferences>("/me/alerts", "PATCH", body, { token });
+  return env.data;
+}
+
+// "Always allow" opt-out session (2026-08-21) — "Don't ask me again" on
+// the Ask-RedixFi heavy-question confirm dialog, and its Account-settings
+// revert toggle, both go through this one call.
+export async function updateAskPreferences(token: string, skip_confirm: boolean) {
+  const env = await apiMutate<{ ask_skip_confirm: boolean }>("/me/ask-preferences", "PATCH", { skip_confirm }, { token });
   return env.data;
 }
 

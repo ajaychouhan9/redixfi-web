@@ -955,6 +955,13 @@ export interface MeProfile {
   kyc_status: string;
   tnc_accepted_at: string | null;
   alerts_opt_in: AlertPreferences;
+  // "Always allow" opt-out session (2026-08-21) — "Don't ask me again" on
+  // the Ask-RedixFi heavy-question (weight>=2) confirm dialog, persisted
+  // per-account (routers/me.py::PATCH /me/ask-preferences). `false` for
+  // every account by default and for every account that predates this
+  // field (server-side `.get(..., False)`) — opt-in only, never defaults
+  // to skipping.
+  ask_skip_confirm: boolean;
   created_at: string;
 }
 

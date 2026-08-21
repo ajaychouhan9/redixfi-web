@@ -19,6 +19,18 @@ interface AuthContextValue {
   getToken: () => Promise<string | null>;
   loginWithFirebaseToken: (firebaseToken: string) => Promise<void>;
   logout: () => void;
+  /**
+   * "Always allow" opt-out session (2026-08-21) — optimistically merges
+   * fields into the cached `user` object right after a caller's own
+   * successful PATCH (e.g. `updateAskPreferences`), so a change takes
+   * effect for the REST OF THIS SESSION immediately — the once-per-login
+   * `GET /me` refresh above only ever runs once per session (ref-guarded),
+   * so without this, a preference flipped mid-session would silently keep
+   * reading its OLD cached value until the next login/token-refresh.
+   * Local-only (does not itself call the API); the caller is responsible
+   * for persisting the change server-side first.
+   */
+  updateCachedUser: (partial: Partial<AuthUser>) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -76,7 +88,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (!current || current.user.user_id !== profile.user_id) return current;
           const next: StoredAuth = {
             ...current,
-            user: { ...current.user, tier: profile.tier, name: profile.name, email: profile.email, phone: profile.phone },
+            user: {
+              ...current.user,
+              tier: profile.tier, name: profile.name, email: profile.email, phone: profile.phone,
+              ask_skip_confirm: profile.ask_skip_confirm,
+            },
           };
           writeStorage(next);
           return next;
@@ -102,6 +118,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStored(null);
   }, []);
 
+  const updateCachedUser = useCallback((partial: Partial<AuthUser>) => {
+    setStored((current) => {
+      if (!current) return current;
+      const next: StoredAuth = { ...current, user: { ...current.user, ...partial } };
+      writeStorage(next);
+      return next;
+    });
+  }, []);
+
   const getToken = useCallback(async (): Promise<string | null> => {
     const current = readStorage();
     if (!current) return null;
@@ -124,8 +149,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user: stored?.user ?? null, loading, getToken, loginWithFirebaseToken, logout }),
-    [stored, loading, getToken, loginWithFirebaseToken, logout]
+    () => ({ user: stored?.user ?? null, loading, getToken, loginWithFirebaseToken, logout, updateCachedUser }),
+    [stored, loading, getToken, loginWithFirebaseToken, logout, updateCachedUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

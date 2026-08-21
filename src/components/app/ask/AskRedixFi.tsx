@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 import { ApiError } from "@/lib/api/client";
 import { searchResearch } from "@/lib/api/endpoints";
-import { askRedixfi, getAskConversations, getAskHistory, getUsage } from "@/lib/api/mutations";
+import { askRedixfi, getAskConversations, getAskHistory, getUsage, updateAskPreferences } from "@/lib/api/mutations";
 import { getCurrentSymbol } from "@/lib/current-symbol";
 import { shouldStartFreshOnReopen } from "@/lib/ask-panel/freshStartRule";
 import { CompareResultCard } from "@/components/app/signals/CompareResultCard";
@@ -151,7 +151,7 @@ const STATUS_STAGES_WITH_CONCALL = ["Searching signals...", "Reading concall tra
 const CONCALL_SUGGESTION_MARKER = "What did management say on the last call?"; // compliance-ignore
 
 export function AskRedixFi() {
-  const { user, getToken } = useAuth();
+  const { user, getToken, updateCachedUser } = useAuth();
   const { open, setOpen, expanded, setExpanded } = useAskPanel();
   const pathname = usePathname();
   // UI polish batch, Item 4 — LOCKED DECISION, overrides rule 2b's old
@@ -185,6 +185,13 @@ export function AskRedixFi() {
   // "Send anyway" (proceeds) or "Cancel" (returns to the input, nothing
   // sent, nothing consumed) — see handleSendClick below.
   const [pendingConfirm, setPendingConfirm] = useState<{ text: string; weight: number } | null>(null);
+  // "Always allow" opt-out session (2026-08-21) — local checkbox state for
+  // the confirm dialog's "Don't ask me again," reset to unchecked every
+  // time a NEW confirmation is raised (see the effect just below
+  // pendingConfirm's own setup) so a stale check from a PRIOR dialog can
+  // never silently carry over and opt someone out without them checking
+  // it on the one they're actually looking at.
+  const [dontAskAgain, setDontAskAgain] = useState(false);
   // Phase 3 — persistent chat history. `initialSuggestions` are the
   // context-tailored empty-state chips for THIS symbol (core/ask.py::
   // compute_initial_suggestions, via GET /ask/history) — falls back to
@@ -542,11 +549,23 @@ export function AskRedixFi() {
   // billed tiers, per the task's explicit "this should not be tier-
   // different UI" instruction. `send()` itself is not invoked until the
   // user explicitly clicks "Send" — nothing is charged before that.
+  //
+  // "Always allow" opt-out session (2026-08-21) — `user?.ask_skip_confirm`
+  // (per-account, persisted server-side, see AuthContext's own comment on
+  // how it stays fresh mid-session) skips straight to `send()` even for a
+  // weight>=2 question, exactly like a weight-1 one — no dialog, no click
+  // required, per the locked spec's own "must not require a click to
+  // proceed" requirement once opted in. Tier-independent by construction:
+  // this check is ADDITIONAL to `isWeightedTier`, never a replacement for
+  // it — a Free caller still never reaches this branch at all (their
+  // charge doesn't depend on weight either way), and a Basic/Pro caller
+  // who hasn't opted in still gets the normal dialog.
   function handleSendClick(text: string) {
     if (!text.trim() || busy) return;
     const weight = estimateQuestionWeight(text, isPro);
-    if (isWeightedTier && weight >= 2) {
+    if (isWeightedTier && weight >= 2 && !user?.ask_skip_confirm) {
       setPendingConfirm({ text, weight });
+      setDontAskAgain(false);
       return;
     }
     send(text);
@@ -866,10 +885,30 @@ export function AskRedixFi() {
                   <div>
                     <p className="mb-2 text-xs text-foreground-faint">Try asking:</p>
                     <div className="space-y-1.5">
+                      {/* BUG FIX (2026-08-21, confirm-dialog-skipped
+                          investigation) — was `onClick={() => send(p)}`,
+                          calling send() DIRECTLY: a quick-prompt chip's
+                          question skipped handleSendClick() (and therefore
+                          the weight>=2 confirm gate) entirely, regardless
+                          of its estimated weight, since it never went
+                          through the one function that checks it. A
+                          server-tailored suggestion CAN legitimately be a
+                          heavy, document-grounded question (e.g. the
+                          concall-aware initial-suggestion chip this file
+                          already special-cases via CONCALL_SUGGESTION_
+                          MARKER above) — a real, structural gap, not a
+                          wrong-estimate problem (estimateQuestionWeight
+                          itself already returns 3 for the exact reported
+                          "ABB annual report and concall summary" text,
+                          confirmed directly before this fix — see
+                          estimateQuestionWeight.ts, unchanged this
+                          session). Routed through handleSendClick()
+                          instead — same gate, same dialog, regardless of
+                          which UI element triggered the question. */}
                       {quickPrompts.map((p) => (
                         <button
                           key={p}
-                          onClick={() => send(p)}
+                          onClick={() => handleSendClick(p)}
                           className="w-full rounded-lg border border-border bg-hover px-3 py-2 text-left text-[12.5px] text-foreground-muted transition-colors hover:text-foreground"
                         >
                           {p}
@@ -1098,13 +1137,19 @@ export function AskRedixFi() {
                     {/* Additive (2026-08-06) — deterministic follow-up chips,
                         reusing the SAME empty-state "Try asking" chip pattern
                         above (no new chip component), shown only under the
-                        MOST RECENT answer. */}
+                        MOST RECENT answer.
+                        BUG FIX (2026-08-21) — same confirm-dialog-skipped
+                        fix as the quick-prompt chips above: was
+                        `onClick={() => send(f)}` (direct), now routed
+                        through handleSendClick() so a heavy follow-up
+                        suggestion gets the same weight>=2 confirm gate a
+                        typed-and-Sent question does. */}
                     {m.role === "ai" && i === messages.length - 1 && !busy && m.followUps && m.followUps.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {m.followUps.map((f) => (
                           <button
                             key={f}
-                            onClick={() => send(f)}
+                            onClick={() => handleSendClick(f)}
                             className="rounded-full border border-border bg-hover px-2.5 py-1 text-left text-[11.5px] text-foreground-muted transition-colors hover:text-foreground"
                           >
                             {f}
@@ -1178,28 +1223,60 @@ export function AskRedixFi() {
                   nothing and "Send anyway" is the first point this question
                   actually goes out. */}
               {pendingConfirm && (
-                <div className="mx-3 mb-1.5 flex items-center justify-between gap-2 rounded-lg bg-accent/10 px-2.5 py-1.5 text-[11px] text-foreground-faint">
-                  <span>
-                    This detailed request uses up to {pendingConfirm.weight} of your daily questions. Send anyway?
-                  </span>
-                  <span className="flex shrink-0 items-center gap-2">
-                    <button
-                      onClick={() => setPendingConfirm(null)}
-                      className="font-semibold text-foreground-muted hover:text-foreground"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => {
-                        const { text } = pendingConfirm;
-                        setPendingConfirm(null);
-                        send(text);
-                      }}
-                      className="rounded-full bg-accent px-2.5 py-1 font-semibold text-accent-foreground"
-                    >
-                      Send
-                    </button>
-                  </span>
+                <div className="mx-3 mb-1.5 space-y-1.5 rounded-lg bg-accent/10 px-2.5 py-1.5 text-[11px] text-foreground-faint">
+                  <div className="flex items-center justify-between gap-2">
+                    <span>
+                      This detailed request uses up to {pendingConfirm.weight} of your daily questions. Send anyway?
+                    </span>
+                    <span className="flex shrink-0 items-center gap-2">
+                      <button
+                        onClick={() => setPendingConfirm(null)}
+                        className="font-semibold text-foreground-muted hover:text-foreground"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => {
+                          const { text } = pendingConfirm;
+                          setPendingConfirm(null);
+                          // "Always allow" opt-out session (2026-08-21) —
+                          // the preference is only ever PERSISTED here, on
+                          // an explicit Send with the box checked (per the
+                          // locked spec's own "if checked before clicking
+                          // Send" wording) — checking the box and then
+                          // Cancelling saves nothing, matching "nothing
+                          // sent, nothing consumed, nothing changed" for
+                          // Cancel everywhere else in this file. Fire-and-
+                          // forget: the send itself must not wait on this
+                          // PATCH landing — same fail-soft posture as
+                          // refreshUsage() elsewhere in this file. Updates
+                          // the cached `user` immediately (updateCachedUser)
+                          // so the VERY NEXT weight>=2 question this
+                          // session skips the dialog without waiting for
+                          // AuthContext's own once-per-login GET /me.
+                          if (dontAskAgain) {
+                            updateCachedUser({ ask_skip_confirm: true });
+                            getToken().then((token) => {
+                              if (token) updateAskPreferences(token, true).catch(() => {});
+                            });
+                          }
+                          send(text);
+                        }}
+                        className="rounded-full bg-accent px-2.5 py-1 font-semibold text-accent-foreground"
+                      >
+                        Send
+                      </button>
+                    </span>
+                  </div>
+                  <label className="flex cursor-pointer items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      checked={dontAskAgain}
+                      onChange={(e) => setDontAskAgain(e.target.checked)}
+                      className="h-3 w-3 shrink-0 accent-accent"
+                    />
+                    Don&apos;t ask me again
+                  </label>
                 </div>
               )}
               <div className="flex items-center gap-2 border-t border-border p-3">

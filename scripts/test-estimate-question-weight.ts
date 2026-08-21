@@ -62,6 +62,16 @@ const BOTH_DOC_SOURCES = "Summarize the latest concall and annual report of ABB"
 check("concall + annual report (2 distinct sources), Pro -> 3", estimateQuestionWeight(BOTH_DOC_SOURCES, true), 3);
 check("concall + annual report (2 distinct sources), Basic -> 3", estimateQuestionWeight(BOTH_DOC_SOURCES, false), 3);
 
+// Confirm-dialog-skipped investigation (2026-08-21) — the EXACT reported
+// question text. Confirms the estimate itself was never the bug (returns
+// 3, correctly, for both tiers) — the real root cause was the quick-
+// prompt/follow-up chips calling send() directly instead of
+// handleSendClick(), bypassing whatever this function returns entirely.
+// See AskRedixFi.tsx's own fix comment at both chip onClick handlers.
+const REPORTED_QUESTION = "ABB annual report and concall summary";
+check("EXACT reported text, Pro -> 3 (estimate was already correct)", estimateQuestionWeight(REPORTED_QUESTION, true), 3);
+check("EXACT reported text, Basic -> 3", estimateQuestionWeight(REPORTED_QUESTION, false), 3);
+
 // Plain question -> 1, always.
 check("plain question, Pro -> 1", estimateQuestionWeight("What is TCS's composite score today?", true), 1);
 check("plain question, Basic -> 1", estimateQuestionWeight("What is TCS's composite score today?", false), 1);
