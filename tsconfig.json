@@ -41,7 +41,10 @@
     // this one script doesn't warrant) — excluded from the app's own
     // type-check scope for that reason, same as the existing `.mjs`
     // check-*.mjs scripts already sit outside `**/*.ts`/`**/*.tsx` by
-    // extension alone.
-    "scripts/test-ask-fresh-start.ts"
+    // extension alone. Glob (not one filename per script) since this
+    // session added a second one (test-estimate-question-weight.ts) —
+    // covers every future `node --experimental-strip-types`-run test
+    // script under this prefix without a repeated tsconfig edit.
+    "scripts/test-*.ts"
   ]
 }

@@ -31,7 +31,7 @@ import type {
   ScoreHistoryPoint,
   SourceCitation,
 } from "@/lib/api/types";
-import { estimateQuestionWeight, questionWeightLabel } from "@/lib/ask-panel/estimateQuestionWeight";
+import { estimateQuestionWeight } from "@/lib/ask-panel/estimateQuestionWeight";
 
 /**
  * Persistent "RedixFi AI" entry point, per the locked design system: lives
@@ -211,6 +211,20 @@ export function AskRedixFi() {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const historyFetchKey = useRef<string | null>(null);
+  // BUG 1 fix (2026-08-21) — see the fresh-start effect's own comment below
+  // for the full race condition this closes: `startNewConversation()` (a
+  // fresh-start reopen) and the loadHistory effect are two SEPARATE effects
+  // that both fire in the SAME commit when `open` flips true; the
+  // loadHistory effect's closure still sees the PRE-fresh-start `symbol`
+  // value (React doesn't re-run a sibling effect mid-flush just because an
+  // earlier effect in the same pass called setState), so it was fetching
+  // history for the OLD symbol — recreating the "old conversation" the
+  // fresh-start was supposed to prevent. This ref, set only when a fresh
+  // start just fired, tells the loadHistory effect to skip exactly ONE
+  // pass (the stale one) and let the FOLLOWING commit — where `symbol` has
+  // actually become the fresh value `startNewConversation()` set — run
+  // normally instead.
+  const skipNextLoadRef = useRef(false);
 
   // Symbol-search suggestions — only relevant while no symbol context is set
   // yet; the same box doubles as "ask anything" once ≥2 chars are typed, so
@@ -496,21 +510,42 @@ export function AskRedixFi() {
   // capability equivalence this file already applies for the daily-limit
   // label just below (a founding member paid a premium and gets Pro's
   // capabilities), reused here rather than re-deriving a second notion of
-  // "is this a Pro caller."
+  // "is this a Pro caller." Still used for the TABULAR-mode gate
+  // specifically (tabular is genuinely Pro-only, core/tabular_ask.py's own
+  // module docstring) — passed into estimateQuestionWeight() below.
   const isPro = user?.tier === "pro" || user?.tier === "founding";
+  // BUG 2 fix (2026-08-21) — "is this caller's Ask usage charged by
+  // WEIGHT at all." Basic and Pro both draw from a weighted daily/monthly
+  // bucket (core/metering.py::enforce_ask_usage's aggregate branch, weight
+  // 1-3 per question); Free draws from a flat per-symbol gate that
+  // IGNORES weight entirely (same function's `daily_limit_per_symbol`
+  // branch — confirmed by reading it directly: `increment_usage(...)`
+  // with no weight argument at all). A "this uses up to N of your daily
+  // questions" prompt is accurate for Basic/Pro and actively WRONG for
+  // Free (their one question always costs exactly 1, regardless of N) —
+  // so the confirm-before-send flow below applies to Basic+Pro only,
+  // never Free, matching what each tier is ACTUALLY charged for.
+  const isWeightedTier = !!user && user.tier !== "free";
 
   // Weighted-credit follow-up session, Enhancement 2 — the ONLY entry
   // point the composer's Send button and Enter key now go through
-  // (replacing direct invocations of send()). Weight-1 questions, and
-  // any question from a non-Pro caller, send immediately exactly as
-  // before — no added friction. A Pro caller's weight>=2 question is
-  // intercepted BEFORE the request goes out: send() itself is not
-  // invoked yet, so nothing is charged until the user explicitly
-  // confirms.
+  // (replacing direct invocations of send()). Weight-1 questions send
+  // immediately exactly as before — no added friction.
+  //
+  // BUG 2 fix (2026-08-21) — was `isPro && weight >= 2`, showing this
+  // confirmation ONLY for Pro; Basic instead got a passive, non-blocking
+  // hint line (now removed, see the composer JSX below) with no actual
+  // confirm/cancel step. Founder-reported bug: Basic showed "uses up to 2"
+  // but was charged 1 regardless of whether the user "confirmed" anything
+  // — there was nothing to confirm. Now gated on `isWeightedTier`
+  // (Basic+Pro alike, never Free) — SAME component, SAME logic, for both
+  // billed tiers, per the task's explicit "this should not be tier-
+  // different UI" instruction. `send()` itself is not invoked until the
+  // user explicitly clicks "Send" — nothing is charged before that.
   function handleSendClick(text: string) {
     if (!text.trim() || busy) return;
-    const weight = estimateQuestionWeight(text);
-    if (isPro && weight >= 2) {
+    const weight = estimateQuestionWeight(text, isPro);
+    if (isWeightedTier && weight >= 2) {
       setPendingConfirm({ text, weight });
       return;
     }
@@ -587,10 +622,35 @@ export function AskRedixFi() {
   // effects below), still reachable via every close() path (X button,
   // expanded-mode backdrop click — grepped, no `setOpen(false)` bypasses
   // close() anywhere in this file).
+  //
+  // BUG 1 fix (2026-08-21) — the regression-fix session confirmed this
+  // exact condition and its reachability were intact, but missed a real
+  // SAME-COMMIT race with the loadHistory effect below: both fire in the
+  // SAME pass when `open` flips true; `startNewConversation()` here
+  // invokes `setSymbol(pageSymbol)`, but the loadHistory effect's closure
+  // — already created before this effect ran — still holds the PRE-update
+  // `symbol` (React doesn't propagate a sibling effect's setState mid-
+  // flush), so it was fetching and RESUMING the OLD symbol's conversation
+  // the instant after this effect just cleared it. Root cause of the
+  // "Pro-only fixed" report: this race exists for every tier equally (no
+  // tier-conditional code anywhere in this mechanism — grepped), but Free
+  // (genuinely B8-masked symbols) and Basic (needs the SAME async unlock-
+  // correction round-trip to prove they're not free, even though B8 never
+  // actually masks them — see `SignalUnlockGate.tsx`) hit the underlying
+  // trigger — `getCurrentSymbol()` returning stale/null while that
+  // correction is still in flight — on almost every realistic non-top-N
+  // test symbol, while a Pro tester testing against an always-visible
+  // top-N/watchlist symbol (no correction delay at all) can easily never
+  // hit it. `skipNextLoadRef` (declared with this file's other refs
+  // above) closes the race: armed here on every fresh start, consumed by
+  // the loadHistory effect below, which skips exactly the one stale-
+  // closure pass and adopts the CORRECT symbol on the very next commit
+  // instead.
   useEffect(() => {
     if (shouldStartFreshOnReopen({ open, hasClosedBefore: hasClosedRef.current, closedAtPath: closedAtPathRef.current, currentPath: pathname })) {
       startNewConversation();
       hasClosedRef.current = false; // consumed — re-armed on the next close()
+      skipNextLoadRef.current = true; // consumed by the loadHistory effect below
     }
   }, [open, pathname]);
 
@@ -612,8 +672,24 @@ export function AskRedixFi() {
   // panel is open. Fires after the preset-symbol effect above so a page's
   // own current symbol is already resolved before history is fetched for
   // it, not for the stale "no symbol yet" state.
+  //
+  // BUG 1 fix (2026-08-21) — `skipNextLoadRef` (see the fresh-start effect
+  // above for the full race this closes) skips exactly the ONE pass
+  // immediately following a fresh start, where `symbol` here is still the
+  // STALE pre-fresh-start value (same-commit closure, not yet re-rendered)
+  // — without this, `loadHistory(symbol)` would fetch and resume the OLD
+  // conversation the fresh start was just clearing. The very next commit
+  // (symbol now the fresh value `startNewConversation()` set, `open`
+  // unchanged) re-runs this effect normally — `historyFetchKey.current`
+  // already matches that key by then (set by `startNewConversation()`
+  // itself), so `loadHistory` correctly no-ops and the conversation stays
+  // genuinely empty, not a phantom resume.
   useEffect(() => {
     if (open && user) {
+      if (skipNextLoadRef.current) {
+        skipNextLoadRef.current = false;
+        return;
+      }
       loadHistory(symbol);
       refreshUsage();
     }
@@ -1079,28 +1155,29 @@ export function AskRedixFi() {
                 </div>
               )}
 
-              {/* Weighted-credit system, requirement 3 — pre-send cost estimate.
-                  Client-side heuristic (estimateQuestionWeight), not a backend
-                  call — see that module's docstring for why. compliance-ignore
-                  Only shown once the question looks like it'll cost more than
-                  the 1-question floor, so a plain question shows nothing extra
-                  here. Pro-tier only: a Pro caller gets the ACTIVE confirm-
-                  before-send step below instead (Enhancement 2) — showing
-                  both would be redundant. Non-Pro tiers keep this passive
-                  line unchanged, since Enhancement 2 is Pro-only per its own
-                  spec. */}
-              {!isPro && input.trim() && estimateQuestionWeight(input) > 1 && (
-                <div className="mx-3 mb-1.5 rounded-lg bg-accent/10 px-2.5 py-1.5 text-[11px] text-foreground-faint">
-                  {questionWeightLabel(estimateQuestionWeight(input))}
-                </div>
-              )}
-              {/* Weighted-credit follow-up session, Enhancement 2 — Pro-tier
-                  explicit confirm-before-send for a weight>=2 question.
-                  Nothing has been sent yet: handleSendClick set this state
-                  INSTEAD of calling send(), so "Cancel" costs nothing and
-                  "Send anyway" is the first point this question actually
-                  goes out. */}
-              {isPro && pendingConfirm && (
+              {/* BUG 2 fix (2026-08-21) — the old passive, non-blocking hint
+                  line (shown to Basic/Free, no actual confirm/cancel step)
+                  is REMOVED. It's no longer needed for Basic: a weight>=2
+                  question now goes through the SAME active confirm dialog
+                  Pro already had (see `isWeightedTier` above), so Basic
+                  never reaches a state where a hint-only line would apply.
+                  Free is correctly excluded entirely now (was previously
+                  also shown this line, inaccurately — Free's one allowed
+                  question always costs exactly 1 regardless of estimated
+                  weight, so a "uses up to N" hint was never true for them;
+                  see `isWeightedTier`'s own comment above). */}
+              {/* Weighted-credit follow-up session, Enhancement 2 — active
+                  confirm-before-send for a weight>=2 question. BUG 2 fix
+                  (2026-08-21): was Pro-only (`isPro && pendingConfirm`); now
+                  fires for Basic and Pro alike (`pendingConfirm` can only
+                  ever be SET for a weighted tier at all — see
+                  handleSendClick's `isWeightedTier` gate above — so no
+                  separate tier check is needed here; one source of truth,
+                  not two). Nothing has been sent yet: handleSendClick set
+                  this state INSTEAD of calling send(), so "Cancel" costs
+                  nothing and "Send anyway" is the first point this question
+                  actually goes out. */}
+              {pendingConfirm && (
                 <div className="mx-3 mb-1.5 flex items-center justify-between gap-2 rounded-lg bg-accent/10 px-2.5 py-1.5 text-[11px] text-foreground-faint">
                   <span>
                     This detailed request uses up to {pendingConfirm.weight} of your daily questions. Send anyway?
