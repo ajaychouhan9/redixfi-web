@@ -61,18 +61,43 @@ export function MarkdownAnswer({ text }: { text: string }) {
   if (blocks.length === 0) return null;
 
   return (
-    <div className="space-y-1.5">
+    // Typography pass (2026-08-21) — `space-y-1.5` (6px) was flat across
+    // every block type: paragraph breaks, bullet lists, and section
+    // headers all got the same tight gap, the "wall of text" complaint.
+    // Bumped to `space-y-3` (12px) — `space-y-*` only inserts margin
+    // BETWEEN actual sibling blocks, so a short 1-2 sentence answer (a
+    // single block) gets zero extra spacing from this change; it scales
+    // with content, not a forced minimum height.
+    <div className="space-y-3">
       {blocks.map((b, i) => {
         if (b.type === "header") {
           return (
-            <div key={i} className="pt-0.5 text-[12.5px] font-semibold text-foreground">
+            <div
+              key={i}
+              // Was `text-[12.5px]` — SMALLER than the 15px body text
+              // (`text-sm`, see AskRedixFi.tsx), the opposite of the
+              // intended hierarchy. `text-base` (16px) matches the exact
+              // precedent already set for "this needs to stand out"
+              // headings in this same answer surface (Card's
+              // `titleClassName="text-base"`, e.g.
+              // AnnualReportSummaryCard.tsx) rather than a new one-off
+              // size. Extra `mt-1` on non-first headers (on top of the
+              // container's space-y-3) reads as a real section break —
+              // e.g. "Latest Concall" / "Latest Annual Report" — without
+              // adding a leading gap when a header opens the answer.
+              className={`text-base font-semibold text-foreground${i > 0 ? " mt-1" : ""}`}
+            >
               {renderInline(b.content as string, `h${i}`)}
             </div>
           );
         }
         if (b.type === "bullets") {
           return (
-            <ul key={i} className="list-disc space-y-1 pl-4">
+            // `pl-5` (was `pl-4`) matches the bullet-list convention
+            // already shipped on AnnualReportSummaryCard.tsx's own bullets
+            // (`list-disc space-y-1 pl-5`) — same answer-adjacent surface,
+            // kept consistent rather than left subtly different.
+            <ul key={i} className="list-disc space-y-1 pl-5">
               {(b.content as string[]).map((item, j) => (
                 <li key={j}>{renderInline(item, `b${i}-${j}`)}</li>
               ))}

@@ -953,7 +953,25 @@ export function AskRedixFi() {
                         </button>
                       )}
                       <div
-                        className="max-w-[85%] rounded-xl px-3.5 py-2.5 leading-relaxed break-words"
+                        // Typography pass (2026-08-21) — answer-text-only fix: added
+                        // `text-sm` here. Was previously reached only via the AI
+                        // branch's inline `fontSize: "14.3px"` literal below, a
+                        // one-off value that predates and never tracked the real
+                        // app-wide body-text token (`globals.css`'s `--text-sm`,
+                        // bumped to 15px on 2026-08-18 — the actual current floor,
+                        // not the 14px figure from the older 2026-08-11 audit
+                        // sessions, which never touched this component anyway: they
+                        // only bumped this same file's inline result-TABLE header,
+                        // never the answer prose). The user's own question bubble
+                        // keeps its explicit inline `fontSize: "13px"` below, which
+                        // wins over this className via CSS's inline-style precedence
+                        // — unaffected by this change, in scope was the answer text
+                        // only. `leading-relaxed` (1.625) already here pairs with
+                        // `text-sm` to give ~1.65-1.75-range prose line-height
+                        // instead of `text-sm`'s own tighter default — same "reuse
+                        // an existing token, don't invent a new one" approach as
+                        // everywhere else in this codebase.
+                        className="max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed break-words"
                         style={
                           m.role === "user"
                             ? { background: "var(--accent)", color: "var(--accent-foreground)", fontSize: "13px" }
@@ -964,14 +982,10 @@ export function AskRedixFi() {
                               // "maximum contrast" token — #1a2036 near-black on the
                               // light theme's near-white --hover bubble background,
                               // #e8eaf2 near-white on the dark theme's near-black one;
-                              // see globals.css) at 14.3px (13 * 1.1, ~10% larger).
-                              // Literal pure #ffffff was NOT used: this bubble's own
-                              // background (var(--hover)) is itself near-white in the
-                              // LIGHT theme, so white-on-white text would be
-                              // unreadable there — text-foreground already gives
-                              // near-white in the dark theme (this app's primary
-                              // theme) while staying legible in light mode too.
-                              { background: "var(--hover)", color: "var(--foreground)", border: "1px solid var(--border)", fontSize: "14.3px" }
+                              // see globals.css) — sizing itself now comes from the
+                              // shared className's `text-sm` (15px, see above)
+                              // instead of this one-off inline value.
+                              { background: "var(--hover)", color: "var(--foreground)", border: "1px solid var(--border)" }
                         }
                       >
                         {/* Phase 2 — structured markdown rendering for AI answers
