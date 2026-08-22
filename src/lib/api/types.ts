@@ -1218,18 +1218,27 @@ export interface SourceCitation {
   subject?: string | null;
 }
 
-/** RedixFi AI backend upgrade — multi-day/multi-field tabular answer
- * (core/tabular_ask.py::build_tabular_answer), Pro tier only. `columns[].key`
- * is the exact property name to read off each row (symbol-prefixed, e.g.
- * "TCS_close", when 2+ symbols are compared; bare, e.g. "close", for a
- * single symbol). `rows` is one object per calendar date with real data for
- * at least one column — a date with no data anywhere is simply absent, not
- * padded with nulls, so `row_count` is always an honest coverage count. */
+/** Shared table shape for TWO distinct Ask AI features: core/tabular_ask.py's
+ * multi-day/multi-field NUMERIC tabular answer (Pro tier only) and core/
+ * document_table_ask.py's structured extraction of UNSTRUCTURED document
+ * facts (products/segments/categories, every tier) — same rendering
+ * contract, different data source. `columns` is the single source of truth
+ * for what to render: EVERY key a row can carry is listed here (a "Date"
+ * column for the numeric feature's date-keyed rows, "Item"/"Description"
+ * for the document-extraction feature's rows, nothing else assumed) — see
+ * this bug fix's own session note for why a previously-hardcoded "Date"
+ * column broke the moment a dateless table reused this same shape.
+ * `symbol`/`field` are populated only by the numeric tabular feature (which
+ * needs them for symbol-prefixed multi-stock columns, e.g. "TCS_close") —
+ * optional here since document-table columns carry neither. `rows` is one
+ * object per real data point (a numeric-tabular row per calendar date with
+ * data, a document-table row per extracted item) — nothing padded/
+ * fabricated, so `row_count` is always an honest count. */
 export interface AskTableColumn {
   key: string;
   label: string;
-  symbol: string;
-  field: string;
+  symbol?: string;
+  field?: string;
 }
 
 export interface AskTableResult {

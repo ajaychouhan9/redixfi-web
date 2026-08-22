@@ -1103,18 +1103,41 @@ export function AskRedixFi() {
                       </div>
                     )}
 
-                    {/* RedixFi AI backend upgrade — multi-day/multi-field
-                        tabular answer (mode="tabular", Pro tier only).
-                        Same table markup/styling as the screen-result table
-                        just above (border/overflow-x-auto wrapper, mono
-                        uppercase header) — no existing component already
-                        renders an arbitrary date x symbol×field grid
-                        (SignalTableRow/CompareResultCard both have fixed,
-                        signal-specific column shapes), so this reuses the
-                        established VISUAL pattern rather than introducing a
-                        new one, plus the shared ExportButton/downloadCsv
-                        utilities already used by Signals/Research/Market
-                        Activity exports for the CSV download. */}
+                    {/* Shared table renderer for TWO distinct Ask AI features
+                        (see AskTableColumn's own docstring in lib/api/types.ts):
+                        core/tabular_ask.py's multi-day/multi-field NUMERIC
+                        answer (mode="tabular", Pro tier only) and core/
+                        document_table_ask.py's structured document-fact
+                        extraction (products/segments, every tier). Same
+                        table markup/styling as the screen-result table just
+                        above (border/overflow-x-auto wrapper, mono uppercase
+                        header) — no existing component already renders an
+                        arbitrary grid (SignalTableRow/CompareResultCard both
+                        have fixed, signal-specific column shapes), so this
+                        reuses the established VISUAL pattern rather than
+                        introducing a new one, plus the shared ExportButton/
+                        downloadCsv utilities already used by Signals/
+                        Research/Market Activity exports for the CSV
+                        download.
+
+                        BUG FIX (structured-table-extraction follow-up
+                        session) — this used to hardcode a "Date" header/CSV
+                        column ahead of `m.table.columns`, correct for the
+                        numeric feature's date-keyed rows but wrong for the
+                        document-extraction feature's rows (products/
+                        segments have no date at all) — real live evidence:
+                        "create a table of key products" for ABB produced a
+                        real Item/Description table with an extra, always-
+                        blank "Date" column in both the in-panel render and
+                        the CSV export. Fixed by rendering EXCLUSIVELY off
+                        `m.table.columns` (the backend's own single source of
+                        truth for which columns exist, see core/tabular_
+                        ask.py::build_tabular_answer — "Date" is now an
+                        explicit column entry there for the numeric feature,
+                        simply absent for the document-extraction feature)
+                        rather than assuming a column no row here can
+                        guarantee. Each row is keyed by its own column
+                        values, not by an assumed `row.date`. */}
                     {m.table && m.table.rows.length > 0 && (
                       <div className="mt-2">
                         <div className="mb-1.5 flex justify-end">
@@ -1124,7 +1147,7 @@ export function AskRedixFi() {
                               downloadCsv(
                                 "redixfi-ask-table.csv",
                                 m.table!.rows.map((row) => {
-                                  const out: Record<string, unknown> = { Date: row.date };
+                                  const out: Record<string, unknown> = {};
                                   for (const col of m.table!.columns) out[col.label] = row[col.key];
                                   return out;
                                 })
@@ -1136,7 +1159,6 @@ export function AskRedixFi() {
                           <table className="w-full min-w-[560px] text-sm">
                             <thead>
                               <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wide text-foreground-faint">
-                                <th className="px-3 py-2">Date</th>
                                 {m.table.columns.map((col) => (
                                   <th key={col.key} className="px-3 py-2">
                                     {col.label}
@@ -1145,9 +1167,8 @@ export function AskRedixFi() {
                               </tr>
                             </thead>
                             <tbody>
-                              {m.table.rows.map((row) => (
-                                <tr key={String(row.date)} className="border-b border-border last:border-0">
-                                  <td className="px-3 py-2 text-foreground-muted">{row.date}</td>
+                              {m.table.rows.map((row, i) => (
+                                <tr key={i} className="border-b border-border last:border-0">
                                   {m.table!.columns.map((col) => (
                                     <td key={col.key} className="px-3 py-2">
                                       {/* Backend now fills every column on every row (a
