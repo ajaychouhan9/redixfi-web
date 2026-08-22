@@ -1277,6 +1277,13 @@ export interface AskResult {
   // up to 3 for a heavy tabular one; see core/ask.py::compute_question_
   // weight). 0 for a free locked-guard/clarify-symbol turn.
   question_weight?: number;
+  // Locked-quota-rules session — True only when this turn charged 0
+  // (document-not-found, web-fallback-offer, an empty confirmed web
+  // search, a genuine refusal, a technical-error template fallback).
+  // Server-computed (core/routers/ask.py's own charged_to=="none" check),
+  // never re-derived client-side, so the "balance unchanged" footer can
+  // never drift from what was actually charged.
+  quota_unchanged?: boolean;
 }
 
 /** Shape of ApiError.detail on a 429 from POST /ask (core/metering.py::enforce_ask_usage). */
@@ -1302,6 +1309,11 @@ export interface AskConversationMessage {
   // same way so a REOPENED conversation shows the same per-message cost
   // tag a live answer would. Absent on turns that predate this field.
   question_weight?: number;
+  // Locked-quota-rules session — see AskResult.quota_unchanged; stored
+  // only when true (sparse, same convention as the backend's own
+  // storage), so a REOPENED conversation shows the same footer a live
+  // zero-charge answer would.
+  quota_unchanged?: boolean;
 }
 
 export interface AskConversation {

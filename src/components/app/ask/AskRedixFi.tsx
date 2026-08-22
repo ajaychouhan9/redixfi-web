@@ -100,6 +100,12 @@ interface AskMessage {
   // own field), rendered as a small per-message tag (requirement 4).
   // Undefined only for a turn that predates this field.
   questionWeight?: number;
+  // Locked-quota-rules session — True only for a turn that correctly
+  // charged 0 (server-computed, core/routers/ask.py's charged_to=="none"
+  // check). Renders the quiet "balance unchanged" footer below; undefined/
+  // false on every normally-charged turn and every turn predating this
+  // field.
+  quotaUnchanged?: boolean;
 }
 
 const QUICK_PROMPTS_SYMBOL = [
@@ -356,6 +362,7 @@ export function AskRedixFi() {
             followUps: m.role === "assistant" ? m.follow_ups : undefined,
             resolvedSymbol: resumedSymbol,
             questionWeight: m.role === "assistant" ? m.question_weight : undefined,
+            quotaUnchanged: m.role === "assistant" ? m.quota_unchanged : undefined,
           }))
         );
       }
@@ -435,6 +442,7 @@ export function AskRedixFi() {
           followUps: m.role === "assistant" ? m.follow_ups : undefined,
           resolvedSymbol,
           questionWeight: m.role === "assistant" ? m.question_weight : undefined,
+          quotaUnchanged: m.role === "assistant" ? m.quota_unchanged : undefined,
         }))
       );
       setInitialSuggestions(history.initial_suggestions ?? []);
@@ -490,7 +498,7 @@ export function AskRedixFi() {
           compare: result.compare, screen: result.screen, table: result.table,
           webSourced: result.web_sourced, webSourceLabel: result.web_source_label, webSourceUrl: result.web_source_url,
           scoreHistory: result.score_history, resolvedSymbol: result.resolved_symbol, followUps: result.follow_ups,
-          questionWeight: result.question_weight,
+          questionWeight: result.question_weight, quotaUnchanged: result.quota_unchanged,
         },
       ]);
       // Weighted-credit system — this answer was just charged server-side
@@ -1034,6 +1042,21 @@ export function AskRedixFi() {
                                 −{m.questionWeight}
                               </span>
                             )}
+                          </div>
+                        )}
+                        {/* Locked-quota-rules session — quiet reassurance footer for
+                            EVERY correctly-zero-charge answer (document-not-found,
+                            web-fallback-offer, an empty confirmed web search, a
+                            genuine refusal, a technical-error template fallback).
+                            `quotaUnchanged` is server-computed (charged_to=="none"),
+                            never re-derived here, so this can never accidentally show
+                            on a normally-charged answer or vice versa. Same muted
+                            sizing/color as the timestamp/weight-tag row just above —
+                            deliberately NOT the same weight as the answer body, a
+                            quiet aside, not a banner. Locked wording — do not reword. */}
+                        {m.role === "ai" && m.quotaUnchanged && (
+                          <div className="mt-1 text-[11px] text-foreground-faint opacity-70">
+                            Your question balance is unchanged for this response.
                           </div>
                         )}
                       </div>
