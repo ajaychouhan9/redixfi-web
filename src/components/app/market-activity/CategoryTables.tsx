@@ -114,8 +114,19 @@ function safeCell(value: unknown): string {
   return String(value);
 }
 
+/** A row's `symbol` is only usable here once it's a resolved NSE symbol.
+ * When resolution failed, the API still returns the row with `symbol` set
+ * to the raw BSE numeric scrip code (e.g. "524723") — the Corporate
+ * Events page is NSE-only, so those rows have nothing valid to link to
+ * and are filtered out client-side. The record itself is untouched in
+ * Mongo; this is presentation-only. */
+function hasResolvedNseSymbol(symbol: string): boolean {
+  return !/^\d+$/.test(symbol.trim());
+}
+
 export function CorporateEventsTable({ rows }: { rows: MarketActivityCorporateEventRow[] }) {
-  if (rows.length === 0) return <EmptyState text="No upcoming corporate events recorded." />;
+  const visibleRows = rows.filter((r) => hasResolvedNseSymbol(r.symbol));
+  if (visibleRows.length === 0) return <EmptyState text="No upcoming corporate events recorded." />;
   // corporate_events' real field shape (verified against data-pipeline/
   // corprate_event.py's CorporateEvent dataclass, BUG 6 fix 2026-08-16):
   // event_type/headline are reliable, known columns — shown explicitly
@@ -128,50 +139,45 @@ export function CorporateEventsTable({ rows }: { rows: MarketActivityCorporateEv
     "type", "symbol", "company_name", "date", "event_date", "valid_till",
     "event_type", "headline", "meta", "source_symbol",
   ]);
-  const extraCols = Array.from(new Set(rows.flatMap((r) => Object.keys(r))))
+  const extraCols = Array.from(new Set(visibleRows.flatMap((r) => Object.keys(r))))
     .filter((k) => !knownKeys.has(k))
-    .filter((k) => rows.every((r) => typeof r[k] !== "object" || r[k] === null))
+    .filter((k) => visibleRows.every((r) => typeof r[k] !== "object" || r[k] === null))
     .slice(0, 2);
   return (
     <div className="overflow-x-auto">
-      {/* table-fixed + an explicit Date width stop the date from being
-       * squeezed/wrapped by the variable-width Headline column — Date's
-       * content ("28 Mar 2026") is short but fixed-width, so it gets a
-       * fixed column instead of competing for space like the rest. */}
-      <table className="w-full min-w-[560px] table-fixed text-sm">
+      {/* table-fixed + explicit widths on every column except Headline stop
+       * long values (e.g. event_type "MANAGEMENT_CHANGE") from stealing
+       * space from — or visually overlapping — neighboring columns. Every
+       * fixed-width column also gets break-words so a long single "word"
+       * (no spaces, e.g. underscored enum values) wraps inside its own
+       * cell instead of overflowing into the next one. Headline is the
+       * only column left unsized, so table-fixed hands it 100% of
+       * whatever width remains. */}
+      <table className="w-full min-w-[720px] table-fixed text-sm">
         <thead className="text-left text-xs font-semibold uppercase tracking-wide text-foreground-faint">
           <tr>
             <th className="w-24 py-1.5 pr-3 sm:w-28">Date</th>
             <th className="w-24 py-1.5 pr-3 sm:w-28">Symbol</th>
-            <th className="w-28 py-1.5 pr-3 sm:w-32">Event type</th>
+            <th className="w-32 py-1.5 pr-3 sm:w-36">Event type</th>
             <th className="py-1.5 pr-3">Headline</th>
             {extraCols.map((c) => (
-              <th key={c} className="py-1.5 pr-3">
+              <th key={c} className="w-28 py-1.5 pr-3 sm:w-32">
                 {c.replace(/_/g, " ")}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => (
+          {visibleRows.map((r, i) => (
             <tr key={`${r.symbol}-${i}`} className="border-t border-border">
-              <td className="whitespace-nowrap py-1.5 pr-3">{formatDateIst(r.date)}</td>
-              <td className="truncate py-1.5 pr-3">
+              <td className="whitespace-nowrap py-1.5 pr-3 align-top">{formatDateIst(r.date)}</td>
+              <td className="break-words py-1.5 pr-3 align-top">
                 <SymbolLink symbol={r.symbol} companyName={r.company_name} />
-                {/* source_symbol only appears when the server resolved a raw
-                 * BSE scrip code to this canonical symbol — shown small and
-                 * muted so the original identifier stays traceable without
-                 * competing with the resolved symbol for attention. */}
-                {r.source_symbol && (
-                  <span className="ml-1 text-[12px] text-foreground-faint" title={`Original BSE code: ${r.source_symbol}`}>
-                    ({r.source_symbol})
-                  </span>
-                )}
               </td>
-              <td className="py-1.5 pr-3">{safeCell(r.event_type)}</td>
-              <td className="py-1.5 pr-3 text-foreground-muted">{safeCell(r.headline ?? r.summary)}</td>
+              <td className="break-words py-1.5 pr-3 align-top">{safeCell(r.event_type)}</td>
+              <td className="break-words py-1.5 pr-3 align-top text-foreground-muted">{safeCell(r.headline ?? r.summary)}</td>
               {extraCols.map((c) => (
-                <td key={c} className="py-1.5 pr-3">
+                <td key={c} className="break-words py-1.5 pr-3 align-top">
                   {safeCell(r[c])}
                 </td>
               ))}
