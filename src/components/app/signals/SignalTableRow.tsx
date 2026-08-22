@@ -120,10 +120,25 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
           subtitle={row.day_change_pct !== null ? <DeltaValue value={row.day_change_pct} kind="pct" className="text-[12px]" /> : undefined}
         />
       </td>
-      {/* Score: always visible — unchanged position/behavior. */}
+      {/* Score: always visible — unchanged position/behavior.
+          Bug 1 fix (2026-08-22): `locked` here must be ONLY the real B8
+          tier gate (`row.locked`), never OR'd with a `=== null` data check.
+          row_from_joined already forces composite_score/delivery_pct/
+          volume_ratio_5d to null whenever `locked` is true (core/
+          signals_view.py), so a genuinely tier-locked row was ALREADY
+          covered by `locked` alone — the `|| field === null` this used to
+          carry could only ever fire an EXTRA case: a Basic/Pro row that is
+          NOT tier-locked (backend already proved `locked: false`) but
+          happens to have no measured_signals doc yet (a brand-new/thin-
+          history stock). That extra case was rendering the exact same
+          padlock as a real paywall, telling a paying Basic/Pro user to
+          "upgrade" for data that doesn't exist for ANY tier. StackedCell
+          already has the correct fallback for this (`primary === null` +
+          `locked` false -> plain "—", see its own docstring above) — this
+          callsite was just never letting that branch be reached. */}
       <td className="px-3 py-2.5">
         <StackedCell
-          locked={locked || row.composite_score === null}
+          locked={locked}
           lockedFallback="--"
           lockedTitle="Unlock all 750 measured scores"
           primary={row.composite_score}
@@ -133,7 +148,7 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
       {columns.delivery && (
         <td className="hidden px-3 py-2.5 sm:table-cell">
           <StackedCell
-            locked={locked || row.delivery_pct === null}
+            locked={locked}
             lockedFallback="--%"
             primary={row.delivery_pct !== null ? `${row.delivery_pct}%` : null}
             subtitle={row.delivery_avg20 !== null ? `avg ${row.delivery_avg20}%` : undefined}
@@ -143,7 +158,7 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
       {columns.volume && (
         <td className="hidden px-3 py-2.5 sm:table-cell">
           <StackedCell
-            locked={locked || row.volume_ratio_5d === null}
+            locked={locked}
             lockedFallback="--x"
             primary={row.volume_ratio_5d !== null ? `${row.volume_ratio_5d}x` : null}
             subtitle="vs 20d avg"

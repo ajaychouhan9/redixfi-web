@@ -225,6 +225,13 @@ export interface SignalDetail {
   change_explanation: ChangeExplanation;
   insight_chips: InsightChip[];
   locked?: boolean;
+  // Bug 2/3 fix (2026-08-22): distinguishes "not yet scored" (a real
+  // symbols_master member with no measured_signals doc — locked is false,
+  // every other field below is absent) from a genuine tier lock (locked
+  // true) and from a full unlocked result (both true) — see
+  // SignalUnlockGate.tsx / signals/[symbol]/page.tsx for the two
+  // narrower response shapes this covers.
+  has_score?: boolean;
 }
 
 export interface EducationFaqNode {

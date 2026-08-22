@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getSignalDetail, getChart, getResearch } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
+import { Card } from "@/components/ui/Card";
 import { SignalUnlockGate } from "@/components/app/signals/SignalUnlockGate";
 import { SignalDetailView } from "@/components/app/signals/SignalDetailView";
 
@@ -37,6 +38,28 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
   // when it's actually needed — see that file for the full writeup.
   if (detail.locked) {
     return <SignalUnlockGate symbol={symbol} initialDetail={detail} initialCandles={[]} />;
+  }
+
+  // Bug 2/3 fix (2026-08-22): `has_score: false` means this symbol is a
+  // real member of the tracked universe but has no measured_signals doc
+  // yet (new listing, awaiting the next scheduled scoring run) — the
+  // backend used to 404 for this case (core/routers/signals.py), which
+  // sent EVERY tier (a real paying subscriber included, and a free user
+  // who should have seen the paywall below instead) to Next's generic
+  // not-found page. Same for every tier by construction — there's no
+  // upgrade that would unlock data that doesn't exist yet, so this is a
+  // plain, honest message, not the paywall Card above.
+  if (detail.has_score === false) {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <Card>
+          <p className="text-sm">
+            {detail.company_name ?? symbol.toUpperCase()} doesn&apos;t have measured signal data yet — this usually
+            means it was recently added to coverage. Check back after the next scheduled update.
+          </p>
+        </Card>
+      </div>
+    );
   }
 
   // @auth-ok: SSR, same reason as getSignalDetail above. getResearch's
