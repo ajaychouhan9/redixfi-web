@@ -1330,6 +1330,11 @@ export interface AskConversationMessage {
   // storage), so a REOPENED conversation shows the same footer a live
   // zero-charge answer would.
   quota_unchanged?: boolean;
+  // Red-flag-radar history-gap fix — see AskResult.table; previously never
+  // stored on a persisted turn at all (any table-shaped answer, not just
+  // red-flag) so a REOPENED conversation silently dropped it. Absent on
+  // turns that predate this field.
+  table?: AskTableResult | null;
 }
 
 export interface AskConversation {

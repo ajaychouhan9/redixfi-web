@@ -363,6 +363,7 @@ export function AskRedixFi() {
             resolvedSymbol: resumedSymbol,
             questionWeight: m.role === "assistant" ? m.question_weight : undefined,
             quotaUnchanged: m.role === "assistant" ? m.quota_unchanged : undefined,
+            table: m.role === "assistant" ? m.table ?? null : undefined,
           }))
         );
       }
@@ -443,6 +444,7 @@ export function AskRedixFi() {
           resolvedSymbol,
           questionWeight: m.role === "assistant" ? m.question_weight : undefined,
           quotaUnchanged: m.role === "assistant" ? m.quota_unchanged : undefined,
+          table: m.role === "assistant" ? m.table ?? null : undefined,
         }))
       );
       setInitialSuggestions(history.initial_suggestions ?? []);
