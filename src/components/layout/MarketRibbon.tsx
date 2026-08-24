@@ -12,8 +12,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { AskRedixFi } from "@/components/app/ask/AskRedixFi";
 import { HeaderSearch } from "@/components/layout/HeaderSearch";
 import { UserMenu } from "@/components/layout/UserMenu";
-import { LogoMark } from "@/components/brand/LogoMark";
-import { Wordmark } from "@/components/brand/Wordmark";
+import { RedixFiLogo } from "@/components/brand/RedixFiLogo";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 const POLL_MS = 60_000;
@@ -187,14 +186,13 @@ export function MarketRibbon({
           md where Sidebar itself is hidden (BottomNav is the mobile nav
           instead). Content moved verbatim from Sidebar.tsx's old header
           block — Sidebar no longer renders it. */}
-      <div className="hidden w-56 shrink-0 items-center gap-2 border-r border-border px-4 md:flex">
-        <span
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md"
-          style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dim))" }}
-        >
-          <LogoMark size={15} variant="solid" className="text-[var(--accent-foreground)]" />
+      <div className="flex w-12 shrink-0 items-center justify-center border-r border-border px-2 md:w-56 md:justify-start md:px-4">
+        <span className="md:hidden">
+          <RedixFiLogo variant="symbol" size={20} />
         </span>
-        <Wordmark tagline className="flex flex-col leading-tight" />
+        <span className="hidden md:block">
+          <RedixFiLogo variant="full" />
+        </span>
       </div>
 
       <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-3 px-4 py-2.5 text-xs sm:px-6">

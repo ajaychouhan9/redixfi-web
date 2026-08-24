@@ -1,14 +1,12 @@
 import Link from "next/link";
-import { LogoMark } from "@/components/brand/LogoMark";
-import { Wordmark } from "@/components/brand/Wordmark";
+import { RedixFiLogo } from "@/components/brand/RedixFiLogo";
 
 export default function SeoLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="flex h-14 items-center justify-between border-b border-border px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2">
-          <LogoMark size={22} />
-          <Wordmark />
+        <Link href="/">
+          <RedixFiLogo variant="compact" />
         </Link>
         <nav className="flex items-center gap-4 text-sm">
           <Link href="/signals" className="text-foreground-muted hover:text-foreground">

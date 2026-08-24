@@ -5,8 +5,7 @@ import { useEffect, useState } from "react";
 import { getFirebaseAuth } from "@/lib/auth/firebase";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { Card } from "@/components/ui/Card";
-import { LogoMark } from "@/components/brand/LogoMark";
-import { Wordmark } from "@/components/brand/Wordmark";
+import { RedixFiLogo } from "@/components/brand/RedixFiLogo";
 
 /**
  * TASK 19 — Auth redesign. Google Sign-In (primary) + email/password
@@ -176,8 +175,7 @@ export default function LoginPage() {
   return (
     <div className="mx-auto max-w-sm py-10">
       <div className="mb-6 flex flex-col items-center gap-2">
-        <LogoMark size={56} />
-        <Wordmark />
+        <RedixFiLogo variant="compact" layout="col" size={56} />
       </div>
       <h1 className="mb-4 text-xl font-semibold">{mode === "signup" ? "Create your account" : "Log in"}</h1>
       <Card>

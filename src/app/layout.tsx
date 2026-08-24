@@ -38,6 +38,10 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "RedixFi",
+    // The full wordmark lockup (provided artwork, not code-generated) —
+    // its dark background is baked in, which is fine here since a social
+    // preview card is never subject to the site's light/dark toggle.
+    images: [{ url: "/branding/redixfi-full-logo.png", width: 2172, height: 724, alt: "RedixFi — Market. Simplified." }],
   },
   twitter: {
     card: "summary_large_image",
