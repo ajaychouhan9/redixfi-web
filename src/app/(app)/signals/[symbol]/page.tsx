@@ -42,20 +42,29 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
 
   // Bug 2/3 fix (2026-08-22): `has_score: false` means this symbol is a
   // real member of the tracked universe but has no measured_signals doc
-  // yet (new listing, awaiting the next scheduled scoring run) — the
-  // backend used to 404 for this case (core/routers/signals.py), which
-  // sent EVERY tier (a real paying subscriber included, and a free user
-  // who should have seen the paywall below instead) to Next's generic
+  // yet — the backend used to 404 for this case (core/routers/signals.py),
+  // which sent EVERY tier (a real paying subscriber included, and a free
+  // user who should have seen the paywall below instead) to Next's generic
   // not-found page. Same for every tier by construction — there's no
   // upgrade that would unlock data that doesn't exist yet, so this is a
   // plain, honest message, not the paywall Card above.
+  //
+  // Copy update (2026-08-25): this used to say "recently added to
+  // coverage", but that turned out to be wrong for most symbols hitting
+  // this branch — a candle-history gap affecting ~911/2,299 NSE symbols
+  // (00_MASTER_CONTEXT.md, "candle coverage gap" entry) was the real cause
+  // for established, long-listed companies, not newness. SignalDetail
+  // carries no listing-date/candle-count field to distinguish "genuinely
+  // new listing" from "coverage gap" here, so the copy is now neutral
+  // ("coverage pending") instead of asserting a specific, often-wrong
+  // reason. Revisit once the backend exposes that distinction.
   if (detail.has_score === false) {
     return (
       <div className="mx-auto max-w-3xl">
         <Card>
           <p className="text-sm">
-            {detail.company_name ?? symbol.toUpperCase()} doesn&apos;t have measured signal data yet — this usually
-            means it was recently added to coverage. Check back after the next scheduled update.
+            {detail.company_name ?? symbol.toUpperCase()} doesn&apos;t have measured signal data yet. Coverage for
+            this symbol is pending — check back after the next scheduled update.
           </p>
         </Card>
       </div>
