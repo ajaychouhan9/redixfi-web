@@ -1,22 +1,21 @@
 /**
- * RedixFi's original geometric lettermark — NOT the Twitter/X wordmark.
- * Two tapered bars crossing into an X, each waisted toward the center
- * (wide at the outer ends, narrow at the crossing) with a small faceted diamond
- * dropped over the intersection — reads as a cut gem/premium mark rather
- * than a flat social-icon X. Construction is deliberately un-Twitter-like:
- * tapered bars + gradient + facet vs. Twitter's uniform-width strokes.
+ * RedixFi's approved symbol (2026-08 brand refresh) — a stylized "R" built
+ * from three ascending chart bars (the tallest bar doubling as the letter's
+ * vertical stem), a bowl at the top of the stem, and a diagonal "trending
+ * up" arrow breaking out past the bowl. Replaces the earlier X/gem
+ * lettermark design.
  *
  * variant="gradient" (default) paints the brand gold gradient directly —
  * use standalone on a neutral surface (favicon, login page, empty states).
- * variant="solid" fills with currentColor instead — use inside an
- * already-colored badge (e.g. the sidebar's gold-gradient square) where
- * the mark itself should be foreground-colored, not re-apply the gradient.
+ * variant="solid" fills/strokes with currentColor instead — use inside an
+ * already-colored badge (e.g. the header's gold-gradient square) where the
+ * mark itself should be foreground-colored, not re-apply the gradient.
  *
- * Colors are CSS variables (--accent / --accent-dim / --accent-foreground),
- * so this component tracks the dark/light theme toggle automatically with
- * no separate light/dark markup. Static contexts that can't inherit page
- * CSS (e.g. app/icon.svg for the favicon) hardcode the same hex values
- * instead — see that file's own comment.
+ * Colors are CSS variables (--accent / --accent-dim), so this component
+ * tracks the dark/light theme toggle automatically with no separate
+ * light/dark markup. Static contexts that can't inherit page CSS (e.g.
+ * app/icon.svg for the favicon) hardcode the same hex values instead — see
+ * that file's own comment.
  */
 export function LogoMark({
   size = 24,
@@ -28,7 +27,7 @@ export function LogoMark({
   className?: string;
 }) {
   const gradientId = "redixfi-logomark-gradient";
-  const fill = variant === "solid" ? "currentColor" : `url(#${gradientId})`;
+  const paint = variant === "solid" ? "currentColor" : `url(#${gradientId})`;
 
   return (
     <svg
@@ -42,27 +41,29 @@ export function LogoMark({
     >
       {variant === "gradient" && (
         <defs>
-          <linearGradient id={gradientId} x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
-            <stop offset="0" stopColor="var(--accent)" />
-            <stop offset="1" stopColor="var(--accent-dim)" />
+          <linearGradient id={gradientId} x1="2" y1="21" x2="19" y2="3" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stopColor="var(--accent-dim)" />
+            <stop offset="1" stopColor="var(--accent)" />
           </linearGradient>
         </defs>
       )}
-      {/* Bar: top-left → bottom-right, waisted at center */}
+      {/* Ascending chart bars — short, medium, then the tall bar doubles as the R stem below */}
+      <rect x="2" y="15" width="2.6" height="6" rx="0.6" fill={paint} />
+      <rect x="5.4" y="11.5" width="2.6" height="9.5" rx="0.6" fill={paint} />
+      <rect x="8.8" y="3" width="2.6" height="18" rx="0.6" fill={paint} />
+      {/* Bowl, attached to the top of the stem (evenodd cutout forms the counter) */}
       <path
-        d="M1.16 4.84 L11.01 12.99 L19.16 22.84 L22.84 19.16 L12.99 11.01 L4.84 1.16 Z"
-        fill={fill}
+        d="M8.8,3 A3.4,3.4 0 0 1 8.8,9.8 Z M8.8,4.6 A1.9,1.9 0 0 1 8.8,8.2 Z"
+        fill={paint}
+        fillRule="evenodd"
       />
-      {/* Bar: top-right → bottom-left, waisted at center */}
+      {/* Diagonal "trending up" arrow breaking out past the bowl */}
       <path
-        d="M22.84 4.84 L12.99 12.99 L4.84 22.84 L1.16 19.16 L11.01 11.01 L19.16 1.16 Z"
-        fill={fill}
-      />
-      {/* Faceted highlight at the crossing */}
-      <path
-        d="M12 9.6 L14.4 12 L12 14.4 L9.6 12 Z"
-        fill="var(--accent-foreground)"
-        opacity="0.3"
+        d="M9.5 16 L18 6.5 M13.5 6.5 L18 6.5 L18 11"
+        stroke={paint}
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );

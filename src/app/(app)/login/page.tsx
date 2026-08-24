@@ -6,6 +6,7 @@ import { getFirebaseAuth } from "@/lib/auth/firebase";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { Card } from "@/components/ui/Card";
 import { LogoMark } from "@/components/brand/LogoMark";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 /**
  * TASK 19 — Auth redesign. Google Sign-In (primary) + email/password
@@ -176,7 +177,7 @@ export default function LoginPage() {
     <div className="mx-auto max-w-sm py-10">
       <div className="mb-6 flex flex-col items-center gap-2">
         <LogoMark size={56} />
-        <span className="font-mono text-lg font-semibold tracking-tight">RedixFi</span>
+        <Wordmark />
       </div>
       <h1 className="mb-4 text-xl font-semibold">{mode === "signup" ? "Create your account" : "Log in"}</h1>
       <Card>

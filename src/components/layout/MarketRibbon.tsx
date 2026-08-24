@@ -13,6 +13,7 @@ import { AskRedixFi } from "@/components/app/ask/AskRedixFi";
 import { HeaderSearch } from "@/components/layout/HeaderSearch";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { LogoMark } from "@/components/brand/LogoMark";
+import { Wordmark } from "@/components/brand/Wordmark";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 const POLL_MS = 60_000;
@@ -193,10 +194,7 @@ export function MarketRibbon({
         >
           <LogoMark size={15} variant="solid" className="text-[var(--accent-foreground)]" />
         </span>
-        <div className="flex flex-col leading-tight">
-          <span className="font-mono text-lg font-semibold tracking-tight">RedixFi</span>
-          <span className="text-[11px] text-foreground-faint">Read the market. Understand it.</span>
-        </div>
+        <Wordmark tagline className="flex flex-col leading-tight" />
       </div>
 
       <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-3 px-4 py-2.5 text-xs sm:px-6">
