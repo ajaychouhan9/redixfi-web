@@ -3,16 +3,19 @@
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import type { DailyBrief } from "@/lib/api/types";
-import { splitDailyBriefSummary } from "@/lib/dailyBriefSplit";
+import { splitDailyBriefBullets } from "@/lib/dailyBriefSplit";
+import { formatShortDate, formatTimeIst } from "@/lib/format";
 
 /**
- * Splits the brief into a 2-3 sentence lead and the remainder. Pure display
- * restructuring — the full body is still rendered in full once expanded,
- * nothing is dropped or truncated permanently.
+ * Splits the brief into sentence-per-bullet chunks, showing the first few
+ * and revealing the rest on expand. Pure display restructuring — the full
+ * body is still rendered in full once expanded, nothing is dropped or
+ * truncated permanently.
  */
 export function AiDailyBriefCard({ brief }: { brief: DailyBrief | null }) {
-  const { summary, rest } = brief ? splitDailyBriefSummary(brief.body) : { summary: "", rest: "" };
+  const { visible, rest } = brief ? splitDailyBriefBullets(brief.body) : { visible: [], rest: [] };
   const [expanded, setExpanded] = useState(false);
+  const bullets = expanded ? [...visible, ...rest] : visible;
 
   return (
     <div
@@ -31,16 +34,26 @@ export function AiDailyBriefCard({ brief }: { brief: DailyBrief | null }) {
             </span>
             <div>
               <div className="font-mono text-[11px] uppercase tracking-widest text-accent">AI Daily Brief</div>
-              {brief && <div className="font-mono text-[12px] text-foreground-faint">{brief.period === "close" ? "Close session" : "Morning session"}</div>}
+              {brief && (
+                <div className="font-mono text-[12px] text-foreground-faint">
+                  {brief.period === "close" ? "Close session" : "Morning session"}
+                  {brief.created_at && (
+                    <> · {formatShortDate(brief.created_at)}, {formatTimeIst(brief.created_at)}</>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <span className="shrink-0 rounded-md bg-accent/10 px-2 py-1 font-mono text-[11px] uppercase tracking-wider text-accent-dim">AI-generated</span>
         </div>
         {brief ? (
           <>
-            <p className="text-[15px] leading-[1.75] text-foreground">{summary}</p>
-            {rest && expanded && <p className="mt-2 text-[15px] leading-[1.75] text-foreground">{rest}</p>}
-            {rest && (
+            <ul className="list-disc space-y-1.5 pl-5 text-[15px] leading-[1.6] text-foreground marker:text-accent-dim">
+              {bullets.map((sentence, i) => (
+                <li key={i}>{sentence}</li>
+              ))}
+            </ul>
+            {rest.length > 0 && (
               <button
                 type="button"
                 onClick={() => setExpanded((e) => !e)}

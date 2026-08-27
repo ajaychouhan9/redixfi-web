@@ -42,3 +42,24 @@ export function splitDailyBriefSummary(body: string, maxSentences = 3): DailyBri
     rest: sentences.slice(maxSentences).join("").trim(),
   };
 }
+
+export interface DailyBriefBullets {
+  visible: string[];
+  rest: string[];
+}
+
+/**
+ * Same sentence boundaries as splitDailyBriefSummary(), kept as separate
+ * bullets instead of being rejoined into paragraph prose. This is a
+ * heuristic split of unstructured, LLM-written prose (daily_brief_builder.py
+ * has no structured {label, value} fact list) — it produces reasonable
+ * bullets for the builder's current sentence-per-topic style, but a symbol
+ * with a mid-sentence period edge case could still land awkwardly. A
+ * durable fix belongs in the builder emitting structured facts.
+ */
+export function splitDailyBriefBullets(body: string, maxVisible = 3): DailyBriefBullets {
+  const sentences = sentencesIn(body)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+  return { visible: sentences.slice(0, maxVisible), rest: sentences.slice(maxVisible) };
+}
