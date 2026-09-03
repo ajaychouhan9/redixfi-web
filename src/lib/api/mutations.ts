@@ -5,6 +5,8 @@
 
 import { apiGet, apiGetPaged, apiGetOptional, apiMutate } from "./client";
 import type {
+  ReviewQueueDetail,
+  ReviewQueueList,
   MeProfile,
   AlertPreferences,
   WatchlistResponse,
@@ -395,4 +397,59 @@ export async function updateAlertRule(
 
 export async function deleteAlertRule(token: string, ruleId: string): Promise<void> {
   await apiMutate<{ ok: boolean }>(`/alert-rules/${encodeURIComponent(ruleId)}`, "DELETE", undefined, { token });
+}
+
+// ---------- human-review queue (/admin/review-queue, 2026-09-03) —
+// admin-only, gated server-side by core/admin_auth.py::require_admin on every
+// request. The hidden route is not the boundary; that dependency is. ----------
+
+export async function listReviewQueue(
+  token: string,
+  state: string = "pending",
+  task?: string,
+): Promise<ReviewQueueList> {
+  const params = new URLSearchParams({ state });
+  if (task) params.set("task", task);
+  const env = await apiGet<ReviewQueueList>(`/admin/review-queue?${params.toString()}`, { token });
+  return env.data;
+}
+
+export async function getReviewQueueRow(token: string, id: string): Promise<ReviewQueueDetail> {
+  const env = await apiGet<ReviewQueueDetail>(`/admin/review-queue/${encodeURIComponent(id)}`, { token });
+  return env.data;
+}
+
+/** Omit `editedOutput` to publish Qwen's output unchanged; pass it to publish
+ *  the reviewer's edited version instead. One route, because it is one
+ *  decision — see routers/admin_review.py::approve. */
+export async function approveReviewRow(
+  token: string,
+  id: string,
+  editedOutput?: Record<string, unknown>,
+): Promise<{ id: string; state: string; edited: boolean; fields_written: string[] }> {
+  const env = await apiMutate<{ id: string; state: string; edited: boolean; fields_written: string[] }>(
+    `/admin/review-queue/${encodeURIComponent(id)}/approve`,
+    "POST",
+    editedOutput ? { edited_output: editedOutput } : {},
+    { token },
+  );
+  return env.data;
+}
+
+/** `retry: true` queues it for the next batch (it does NOT launch a GPU run —
+ *  those are gated to a live human action). `retry: false` discards it
+ *  terminally and requires a note. Neither touches the source document. */
+export async function rejectReviewRow(
+  token: string,
+  id: string,
+  retry: boolean,
+  note: string,
+): Promise<{ id: string; state: string; note: string }> {
+  const env = await apiMutate<{ id: string; state: string; note: string }>(
+    `/admin/review-queue/${encodeURIComponent(id)}/reject`,
+    "POST",
+    { retry, note },
+    { token },
+  );
+  return env.data;
 }

@@ -1543,3 +1543,56 @@ export interface MarketActivitySummary {
   corporate_events_today: number;
   total_today: number;
 }
+
+// ---------- human-review queue (/admin/review-queue, 2026-09-03) ----------
+// Mirrors api/app/core/review_queue.py. `qwen_output` is deliberately absent
+// from list rows and present only on the detail response — annual reports run
+// to megabytes and the list route omits both it and the source text on purpose.
+
+export type ReviewQueueState = "pending" | "approved" | "retry_queued" | "discarded";
+
+export interface ReviewQueueRow {
+  id: string;
+  task: string;
+  doc_id: string;
+  collection: string | null;
+  symbol: string | null;
+  state: ReviewQueueState;
+  reason: string;
+  final_status: string | null;
+  model: string;
+  attempts: number;
+  retry_count: number;
+  created_at: string;
+  updated_at: string;
+  resolved_at: string | null;
+  resolved_by: string | null;
+  edited: boolean;
+  review_note?: string;
+}
+
+export interface ReviewQueueList {
+  counts: Record<ReviewQueueState, number>;
+  returned: number;
+  rows: ReviewQueueRow[];
+}
+
+export interface ReviewQueueSource {
+  available: boolean;
+  collection?: string;
+  symbol?: string | null;
+  company_name?: string | null;
+  fiscal_year?: string | null;
+  filing_date?: string | null;
+  source_pdf_url?: string | null;
+  total_chars?: number;
+  excerpt?: string;
+  truncated?: boolean;
+}
+
+export interface ReviewQueueDetail extends ReviewQueueRow {
+  qwen_output: Record<string, unknown> | null;
+  rephrase_log?: Record<string, unknown> | null;
+  rejections?: unknown;
+  source: ReviewQueueSource;
+}
