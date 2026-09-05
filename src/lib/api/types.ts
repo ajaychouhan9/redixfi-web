@@ -1552,6 +1552,8 @@ export interface MarketActivitySummary {
 export type ReviewQueueState = "pending" | "approved" | "retry_queued" | "discarded";
 
 export interface ReviewQueueRow {
+  dispatch_batch?: string;
+  resolution_kind?: string;
   id: string;
   task: string;
   doc_id: string;

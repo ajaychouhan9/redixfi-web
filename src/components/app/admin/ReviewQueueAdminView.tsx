@@ -50,6 +50,8 @@ const EDITABLE_FIELDS = [
   "summary",
   "bullets",
   "key_takeaway",
+  "tone_label",
+  "tone_note",
 ];
 
 const LIST_FIELDS = new Set(["key_points", "important_risks", "bullets"]);
@@ -173,7 +175,7 @@ export function ReviewQueueAdminView() {
     await act(
       () => rejectReviewRow(token, selected.id, retry, note.trim()),
       retry
-        ? "Queued for another attempt on the next batch. The document was not changed."
+        ? "Retry requested. Eligible retries get reserved batch slots; generation awaits a manual GPU launch. No publication has changed."
         : "Discarded. The document was not changed.",
     );
   }
@@ -347,14 +349,20 @@ export function ReviewQueueAdminView() {
               </button>
             </div>
             <p className="mt-2 text-xs text-foreground-muted">
-              Retry is queued for the next batch — it does not start a GPU run now. Neither reject
-              changes the document.
+              Retry reserves work in a future eligible batch; it does not start a GPU run.
+              There is no fixed execution time. Another failed attempt returns here for review.
+              Discard retains this decision and blocks automatic replacement of this candidate.
+              Neither rejection removes an earlier published summary.
             </p>
           </Card>
         ) : (
           <Card>
             <p className="text-sm text-foreground-muted">
               Already {selected.state.replace("_", " ")}
+              {selected.state === "retry_queued" && (selected.dispatch_batch
+                ? " — selected for a batch awaiting generation/writeback"
+                : " — awaiting an eligible batch slot")}
+              {selected.resolution_kind === "validated_retry" && " — retry passed validation and was published automatically"}
               {selected.resolved_by && ` by ${selected.resolved_by}`}
               {selected.review_note && ` — “${selected.review_note}”`}
             </p>
