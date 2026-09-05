@@ -16,7 +16,7 @@ import type { ReviewQueueDetail, ReviewQueueList, ReviewQueueState } from "@/lib
  * `/admin/review-queue` — NOT linked in any user-facing nav (see
  * src/components/layout/Sidebar.tsx's fixed NAV_ITEMS, untouched by this
  * page), same posture as PromoCodeAdminView. The hidden URL is not the
- * security boundary: every call here hits a route gated server-side by
+ * security boundary: every request here hits a route gated server-side by
  * core/admin_auth.py::require_admin, re-checked on every request. A
  * non-admin who reaches this URL sees ONLY the access-denied state — the
  * queue never renders without a successful 403-free response first.
