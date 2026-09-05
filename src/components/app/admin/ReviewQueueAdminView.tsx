@@ -175,7 +175,7 @@ export function ReviewQueueAdminView() {
     await act(
       () => rejectReviewRow(token, selected.id, retry, note.trim()),
       retry
-        ? "Retry requested. Eligible retries get reserved batch slots; generation awaits a manual GPU launch. No publication has changed."
+        ? "Retry requested for automatic generation. If the GPU account is busy, the worker checks again after one hour. No publication has changed."
         : "Discarded. The document was not changed.",
     );
   }
@@ -349,8 +349,9 @@ export function ReviewQueueAdminView() {
               </button>
             </div>
             <p className="mt-2 text-xs text-foreground-muted">
-              Retry reserves work in a future eligible batch; it does not start a GPU run.
-              There is no fixed execution time. Another failed attempt returns here for review.
+              Retry requests automatic GPU generation. If the GPU account is busy,
+              the worker checks again after one hour. There is no fixed completion time.
+              An output that fails validation returns here for review.
               Discard retains this decision and blocks automatic replacement of this candidate.
               Neither rejection removes an earlier published summary.
             </p>
