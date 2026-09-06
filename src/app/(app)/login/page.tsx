@@ -100,7 +100,9 @@ export default function LoginPage() {
     try {
       const { GoogleAuthProvider, signInWithPopup } = await import("firebase/auth");
       const auth = getFirebaseAuth();
-      const result = await signInWithPopup(auth, new GoogleAuthProvider());
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+      const result = await signInWithPopup(auth, provider);
       const idToken = await result.user.getIdToken();
       await finishLogin(idToken);
     } catch (e) {
