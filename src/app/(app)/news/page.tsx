@@ -56,7 +56,6 @@ export default function NewsPage() {
   const totalPages = Math.max(1, Math.ceil(total / 20));
   const isFreeOrAnon = !user || user.tier === "free";
   const exportRows = items.map((item) => ({
-    uuid: item.uuid,
     published_at: item.published_at,
     headline: item.headline,
     description: item.description,
@@ -64,11 +63,6 @@ export default function NewsPage() {
     url: item.url,
     category: item.category,
     severity: item.severity,
-    impact: item.impact,
-    scope: item.scope ?? "",
-    high_priority: item.high_priority,
-    matched_symbols: item.matched_symbols?.join(", ") ?? "",
-    entities: JSON.stringify(item.entities),
   }));
   const exportCsv = () => downloadCsv(`redixfi-news-${new Date().toISOString().slice(0, 10)}.csv`, exportRows);
   const exportXlsx = () => downloadXlsx(`redixfi-news-${new Date().toISOString().slice(0, 10)}.xlsx`, [{ name: "News", rows: exportRows }]);
