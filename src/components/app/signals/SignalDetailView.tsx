@@ -20,7 +20,8 @@ import Link from "next/link";
 import type { Candle, DeliveryPoint, FundamentalsBlock, SignalConflict, SignalDetail } from "@/lib/api/types";
 import { ExportButton } from "@/components/ui/ExportButton";
 import { downloadCsv } from "@/lib/csv";
-import { downloadXlsx, type XlsxSheet } from "@/lib/xlsx";
+import { downloadXlsx } from "@/lib/xlsx";
+import { buildSignalDetailCsvRows, buildSignalDetailSheets } from "@/lib/signal-detail-export";
 import { isProEntitled } from "@/lib/entitlements";
 import { useAuth } from "@/lib/auth/AuthContext";
 
@@ -47,43 +48,11 @@ export function SignalDetailView({
 }) {
   const { user } = useAuth();
   const s = detail.signals;
-  const exportRows = [{
-    symbol: detail.symbol,
-    company_name: detail.company_name,
-    sector: detail.sector,
-    industry: detail.industry ?? "",
-    price: detail.last_price ?? "",
-    day_change_pct: detail.day_change_pct ?? "",
-    composite_score: detail.composite_score ?? "",
-    score_change_1d: detail.delta_1d ?? "",
-    score_change_5d: detail.delta_5d ?? "",
-    signal_states: detail.signal_states.join(", "),
-    trend_10d_pct: s.trend_10d_pct ?? "",
-    sector_rank: s.sector_rank ?? "",
-    sector_count: s.sector_count ?? "",
-    delivery_pct: s.delivery_pct ?? "",
-    delivery_avg20: s.delivery_avg20 ?? "",
-    fii_net_buy_days_5: s.fii_net_buy_days_5 ?? "",
-    pcr: s.pcr_available ? s.pcr : "",
-    rsi_14: s.rsi_14 ?? "",
-    pledge_pct: s.pledge_pct ?? "",
-    insider_net_30d: s.insider_net_30d,
-    event_risk_5d: s.event_risk_5d,
-    event_categories: s.event_categories.join(", "),
-    narrative: detail.narrative,
-  }];
-  const newsRows = detail.news.map((item) => ({ ...item, entities: JSON.stringify(item.entities), matched_symbols: item.matched_symbols?.join(", ") ?? "" }));
-  const exportSheets: XlsxSheet[] = [
-    { name: "Signal", rows: exportRows },
-    { name: "Change Log", rows: detail.change_log.map((row) => ({ ...row })) },
-    { name: "Candles", rows: candles.map((row) => ({ ...row })) },
-    { name: "Delivery", rows: (delivery30d ?? []).map((row) => ({ ...row })) },
-    { name: "News", rows: newsRows },
-  ];
+  const exportSheets = buildSignalDetailSheets(detail, candles, delivery30d, fundamentals);
   const exportCsv = () => {
-    const sectionRows: Record<string, unknown>[] = exportSheets.flatMap((sheet) => sheet.rows.map((row) => ({ section: sheet.name, ...row })));
-    const keys = Array.from(new Set(sectionRows.flatMap((row) => Object.keys(row))));
-    downloadCsv(`redixfi-signal-${detail.symbol.toLowerCase()}.csv`, sectionRows.map((row) => Object.fromEntries(keys.map((key) => [key, row[key] ?? ""]))));
+    const rows = buildSignalDetailCsvRows(detail, candles, delivery30d);
+    const keys = Array.from(new Set(rows.flatMap((row) => Object.keys(row))));
+    downloadCsv(`redixfi-signal-${detail.symbol.toLowerCase()}.csv`, rows.map((row) => Object.fromEntries(keys.map((key) => [key, row[key] ?? ""]))));
   };
   const exportXlsx = () => downloadXlsx(`redixfi-signal-${detail.symbol.toLowerCase()}.xlsx`, exportSheets);
 

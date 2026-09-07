@@ -7,6 +7,13 @@ const TEXT_BLACK = "000000";
 export interface XlsxSheet {
   name: string;
   rows: Record<string, unknown>[];
+  summaryRows?: XlsxSummaryRow[];
+}
+
+export interface XlsxSummaryRow {
+  kind: "section" | "blank" | "item";
+  label?: string;
+  value?: unknown;
 }
 
 function xmlEscape(value: unknown): string {
@@ -40,13 +47,14 @@ function asDate(value: unknown, key: string): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-function cellXml(value: unknown, key: string, ref: string): string {
+function cellXml(value: unknown, key: string, ref: string, style?: number): string {
+  const styleAttribute = style === undefined ? "" : ` s="${style}"`;
   const date = asDate(value, key);
   if (date) return `<c r="${ref}" s="2"><v>${excelDate(date)}</v></c>`;
-  if (typeof value === "number" && Number.isFinite(value)) return `<c r="${ref}"><v>${value}</v></c>`;
-  if (typeof value === "boolean") return `<c r="${ref}" t="b"><v>${value ? 1 : 0}</v></c>`;
+  if (typeof value === "number" && Number.isFinite(value)) return `<c r="${ref}"${styleAttribute}><v>${value}</v></c>`;
+  if (typeof value === "boolean") return `<c r="${ref}"${styleAttribute} t="b"><v>${value ? 1 : 0}</v></c>`;
   const text = value === null || value === undefined ? "" : Array.isArray(value) ? value.map((item) => typeof item === "object" ? JSON.stringify(item) : String(item)).join(", ") : typeof value === "object" ? JSON.stringify(value) : String(value);
-  return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xmlEscape(text)}</t></is></c>`;
+  return `<c r="${ref}"${styleAttribute} t="inlineStr"><is><t xml:space="preserve">${xmlEscape(text)}</t></is></c>`;
 }
 
 function safeSheetName(name: string, used: Set<string>): string {
@@ -72,6 +80,22 @@ function sheetXml(sheet: XlsxSheet): string {
   ].join("");
   const lastRow = Math.max(rows.length + 2, 2);
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:${lastColumn}${lastRow}"/><sheetViews><sheetView workbookViewId="0"><pane ySplit="2" topLeftCell="A3" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols>${headers.map((h, i) => `<col min="${i + 1}" max="${i + 1}" width="${Math.min(34, Math.max(12, h.length + 3))}" customWidth="1"/>`).join("")}</cols><sheetData>${body}</sheetData><autoFilter ref="A2:${lastColumn}${lastRow}"/><mergeCells count="1"><mergeCell ref="A1:${lastColumn}1"/></mergeCells></worksheet>`;
+}
+
+function summarySheetXml(sheet: XlsxSheet): string {
+  const rows = sheet.summaryRows ?? [];
+  const lastRow = Math.max(rows.length + 2, 2);
+  const body = [
+    `<row r="1" ht="20"><c r="A1" s="1" t="inlineStr"><is><t>RedixFi — Market. Simplified. | redixfi.com</t></is></c></row>`,
+    `<row r="2" ht="20"><c r="A2" s="3" t="inlineStr"><is><t>Metric</t></is></c><c r="B2" s="3" t="inlineStr"><is><t>Value / Explanation</t></is></c></row>`,
+    ...rows.map((row, index) => {
+      const rowNumber = index + 3;
+      if (row.kind === "blank") return `<row r="${rowNumber}" ht="9"/>`;
+      if (row.kind === "section") return `<row r="${rowNumber}" ht="22"><c r="A${rowNumber}" s="4" t="inlineStr"><is><t>${xmlEscape(row.label ?? "")}</t></is></c><c r="B${rowNumber}" s="4" t="inlineStr"><is><t></t></is></c></row>`;
+      return `<row r="${rowNumber}" ht="36" customHeight="1">${cellXml(row.label ?? "", "label", `A${rowNumber}`)}${cellXml(row.value ?? "", "value", `B${rowNumber}`, 5)}</row>`;
+    }),
+  ].join("");
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:B${lastRow}"/><sheetViews><sheetView workbookViewId="0"><pane ySplit="2" topLeftCell="A3" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols><col min="1" max="1" width="30" customWidth="1"/><col min="2" max="2" width="100" customWidth="1"/></cols><sheetData>${body}</sheetData><autoFilter ref="A2:B${lastRow}"/><mergeCells count="1"><mergeCell ref="A1:B1"/></mergeCells></worksheet>`;
 }
 
 function crc32(bytes: Uint8Array): number {
@@ -117,7 +141,7 @@ function zip(files: { name: string; data: Uint8Array }[]): Uint8Array {
 
 export function downloadXlsx(filename: string, sheets: XlsxSheet[]) {
   const encoder = new TextEncoder();
-  const validSheets = sheets.filter((sheet) => sheet.rows.length > 0);
+  const validSheets = sheets.filter((sheet) => sheet.rows.length > 0 || (sheet.summaryRows?.length ?? 0) > 0);
   if (!validSheets.length) return;
   const usedNames = new Set<string>();
   const sheetEntries = validSheets.map((sheet, i) => ({ sheet: { ...sheet, name: safeSheetName(sheet.name, usedNames) }, id: i + 1 }));
@@ -130,7 +154,7 @@ export function downloadXlsx(filename: string, sheets: XlsxSheet[]) {
     { name: "xl/workbook.xml", data: encoder.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${workbookSheets}</sheets></workbook>`) },
     { name: "xl/_rels/workbook.xml.rels", data: encoder.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels}<Relationship Id="rId${validSheets.length + 3}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`) },
     { name: "xl/styles.xml", data: encoder.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="14" formatCode="yyyy-mm-dd"/></numFmts><fonts count="3"><font><sz val="11"/><color rgb="FF${TEXT_BLACK}"/><name val="Aptos"/></font><font><b/><sz val="11"/><color rgb="FF${TEXT_BLACK}"/><name val="Aptos"/></font><font><b/><sz val="11"/><color rgb="FF${TEXT_BLACK}"/><name val="Aptos"/></font></fonts><fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF${BRAND_GOLD}"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FF${HEADER_BLUE}"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFill="1"/><xf numFmtId="14" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="0" fontId="2" fillId="3" borderId="0" xfId="0" applyFill="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles><dxfs count="0"/><tableStyles count="0" defaultTableStyle="TableStyleMedium2" defaultPivotStyle="PivotStyleMedium9"/></styleSheet>`) },
-    ...sheetEntries.map(({ sheet, id }) => ({ name: `xl/worksheets/sheet${id}.xml`, data: encoder.encode(sheetXml(sheet)) })),
+    ...sheetEntries.map(({ sheet, id }) => ({ name: `xl/worksheets/sheet${id}.xml`, data: encoder.encode(sheet.summaryRows ? summarySheetXml(sheet) : sheetXml(sheet)) })),
   ];
   const archive = zip(files);
   const archiveBuffer = archive.buffer.slice(archive.byteOffset, archive.byteOffset + archive.byteLength) as ArrayBuffer;

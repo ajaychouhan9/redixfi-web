@@ -1,10 +1,6 @@
 import { Card } from "@/components/ui/Card";
 import type { FundamentalsBlock, SignalDetail } from "@/lib/api/types";
-
-interface ChecklistRow {
-  label: string;
-  answer: string;
-}
+import { getChecklistRows } from "@/lib/signal-detail-export";
 
 /**
  * Renders the trader's mental checklist as factual, equal-weight answers.
@@ -12,93 +8,15 @@ interface ChecklistRow {
  * (spec Part 3, "analysis enablement" core product identity).
  */
 export function AnalystChecklist({ detail, fundamentals }: { detail: SignalDetail; fundamentals?: FundamentalsBlock | null }) {
-  const s = detail.signals;
-  const states = new Set(detail.signal_states);
-
-  const rows: ChecklistRow[] = [
-    {
-      label: "Trend",
-      answer:
-        s.trend_10d_pct === null
-          ? "Not enough price history to measure a 10-session trend yet."
-          : states.has("TREND_UP_10D")
-            ? `Price rose ${s.trend_10d_pct}% over the last 10 sessions.`
-            : states.has("TREND_DOWN_10D")
-              ? `Price fell ${Math.abs(s.trend_10d_pct)}% over the last 10 sessions.`
-              : `Price was little changed over the last 10 sessions (${s.trend_10d_pct}%).`,
-    },
-    {
-      label: "Volume confirmation",
-      answer:
-        s.volume_ratio_5d === null
-          ? "Not enough volume history to measure participation yet."
-          : states.has("VOLUME_ELEVATED")
-            ? `Volume ran ${s.volume_ratio_5d}x the 5-day average — elevated participation.`
-            : states.has("VOLUME_MUTED")
-              ? `Volume ran ${s.volume_ratio_5d}x the 5-day average — muted participation.`
-              : `Volume was near its 5-day average (${s.volume_ratio_5d}x).`,
-    },
-    {
-      label: "Delivery quality",
-      answer:
-        s.delivery_pct === null || s.delivery_avg20 === null
-          ? "Delivery data not available for this stock."
-          : states.has("DELIVERY_UP")
-            ? `Delivery rose to ${s.delivery_pct}% vs a ${s.delivery_avg20}% 20-day average.`
-            : states.has("DELIVERY_DOWN")
-              ? `Delivery fell to ${s.delivery_pct}% vs a ${s.delivery_avg20}% 20-day average.`
-              : `Delivery held near its average (${s.delivery_pct}% vs ${s.delivery_avg20}%).`,
-    },
-    {
-      label: "Sector standing",
-      answer:
-        s.sector_rank === null || s.sector_count === null
-          ? detail.industry
-            ? `Fewer than 5 measured peers in ${detail.industry} — not enough to rank.`
-            : "No industry classification on file yet for this stock — not enough to rank."
-          : `Ranks #${s.sector_rank} of ${s.sector_count} stocks measured in ${detail.industry} today.`,
-    },
-    {
-      label: "Event risk",
-      answer: s.event_risk_5d
-        ? `An AI-classified news event matched this stock in the last 5 days (${s.event_categories.join(", ") || "uncategorized"}).`
-        : "No AI-classified news event matched this stock in the last 5 days.",
-    },
-  ];
-
-  // Task 09: 2 fundamental rows, same factual/equal-weight framing as the
-  // rows above — negatives (decelerating growth, above-sector P/E) stated
-  // just as plainly as their opposite reading, no verdict either way.
-  if (fundamentals?.coverage.has_quarterly) {
-    const q = fundamentals.quarterly;
-    rows.push({
-      label: "Growth trend",
-      answer:
-        q.revenue_yoy_pct === null
-          ? "Not enough filed quarters to measure a growth trend yet."
-          : q.revenue_accel_quarters >= 2
-            ? `Revenue grew ${q.revenue_yoy_pct}% YoY last quarter — the ${q.revenue_accel_quarters}th straight quarter of accelerating YoY growth.`
-            : `Revenue grew ${q.revenue_yoy_pct}% YoY last quarter (no multi-quarter acceleration streak on file).`,
-    });
-  }
-  if (fundamentals) {
-    const v = fundamentals.valuation;
-    rows.push({
-      label: "Valuation vs peers",
-      answer:
-        v.pe_ttm === null || v.sector_pe === null
-          ? "P/E or sector P/E not available for this stock yet."
-          : `Trailing P/E of ${v.pe_ttm} sits ${v.pe_vs_sector ?? "in line with"} the sector average of ${v.sector_pe}.`,
-    });
-  }
+  const rows = getChecklistRows(detail, fundamentals);
 
   return (
     <Card title="Analyst checklist">
       <dl className="space-y-3">
-        {rows.map((r) => (
-          <div key={r.label} className="grid grid-cols-[9rem_1fr] gap-3 text-sm">
-            <dt className="font-medium text-foreground-muted">{r.label}</dt>
-            <dd>{r.answer}</dd>
+        {rows.map((row) => (
+          <div key={row.label} className="grid grid-cols-[9rem_1fr] gap-3 text-sm">
+            <dt className="font-medium text-foreground-muted">{row.label}</dt>
+            <dd>{row.value}</dd>
           </div>
         ))}
       </dl>
