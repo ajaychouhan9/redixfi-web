@@ -19,9 +19,8 @@ import { formatShortDate } from "@/lib/format";
 import Link from "next/link";
 import type { Candle, DeliveryPoint, FundamentalsBlock, SignalConflict, SignalDetail } from "@/lib/api/types";
 import { ExportButton } from "@/components/ui/ExportButton";
-import { downloadCsv } from "@/lib/csv";
 import { downloadXlsx } from "@/lib/xlsx";
-import { buildSignalDetailCsvRows, buildSignalDetailSheets } from "@/lib/signal-detail-export";
+import { buildSignalDetailSheets } from "@/lib/signal-detail-export";
 import { isProEntitled } from "@/lib/entitlements";
 import { useAuth } from "@/lib/auth/AuthContext";
 
@@ -49,11 +48,6 @@ export function SignalDetailView({
   const { user } = useAuth();
   const s = detail.signals;
   const exportSheets = buildSignalDetailSheets(detail, candles, delivery30d, fundamentals);
-  const exportCsv = () => {
-    const rows = buildSignalDetailCsvRows(detail, candles, delivery30d);
-    const keys = Array.from(new Set(rows.flatMap((row) => Object.keys(row))));
-    downloadCsv(`redixfi-signal-${detail.symbol.toLowerCase()}.csv`, rows.map((row) => Object.fromEntries(keys.map((key) => [key, row[key] ?? ""]))));
-  };
   const exportXlsx = () => downloadXlsx(`redixfi-signal-${detail.symbol.toLowerCase()}.xlsx`, exportSheets);
 
   return (
@@ -96,7 +90,7 @@ export function SignalDetailView({
             )}
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <ExportButton onExport={exportCsv} onCsv={exportCsv} onXlsx={exportXlsx} canExport={isProEntitled(user)} label="Download" />
+            <ExportButton onExport={exportXlsx} canExport={isProEntitled(user)} label="Download Excel" enabledTitle="Export as Excel" disabledTitle="Upgrade to export Excel" />
             <WatchlistButton symbol={detail.symbol} />
             <CompareIndicator symbol={detail.symbol} companyName={detail.company_name} />
             <AlertCreateButton symbol={detail.symbol} />

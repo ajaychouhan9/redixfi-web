@@ -147,23 +147,44 @@ export function getChecklistRows(detail: SignalDetail, fundamentals?: Fundamenta
 
 export function buildSignalSummaryRows(detail: SignalDetail, fundamentals?: FundamentalsBlock | null): XlsxSummaryRow[] {
   const rows: XlsxSummaryRow[] = [];
-  const section = (label: string) => { rows.push({ kind: "section", label }, { kind: "blank" }); };
-  const items = (values: DetailTextRow[]) => values.forEach((row) => rows.push({ kind: "item", label: row.label, value: row.value }));
+  const section = (label: string) => rows.push({ kind: "section", cells: [label, "", "", ""] }, { kind: "blank" });
+  const table = (headers: string[]) => rows.push({ kind: "header", cells: headers });
+  const items = (values: DetailTextRow[]) => values.forEach((row) => rows.push({ kind: "item", cells: [row.label, row.value] }));
+  const scoreMovement = detail.delta_1d == null
+    ? "Composite score movement: Not available."
+    : `Composite score moved from ${detail.composite_score - detail.delta_1d} to ${detail.composite_score} today (${detail.delta_1d > 0 ? "+" : ""}${detail.delta_1d}).`;
 
-  section("AI Summary");
-  rows.push({ kind: "item", label: "Interpretation", value: detail.narrative });
-  rows.push({ kind: "blank" });
-  section("Why did this change?");
-  items(getWhyDidThisChangeRows(detail));
-  rows.push({ kind: "blank" });
-  section("Tension in the data");
-  if (detail.conflicts.length) detail.conflicts.forEach((conflict, index) => rows.push({ kind: "item", label: `Conflict ${index + 1}`, value: conflict.text ?? JSON.stringify(conflict) }));
-  else rows.push({ kind: "item", label: "Status", value: "Not available" });
-  rows.push({ kind: "blank" });
-  section("What the data shows");
+  rows.push(
+    { kind: "title", cells: ["RedixFi — Market. Simplified."] , merge: [0, 3] },
+    { kind: "subtitle", cells: [`${detail.symbol} — Signal Summary`], merge: [0, 3] },
+    { kind: "metadata", cells: ["Date", detail.date, "Composite Score", detail.composite_score] },
+    { kind: "metadata", cells: ["Industry / Sector", `${detail.industry ?? "Not available"} / ${detail.sector}`, "Score Change", detail.delta_1d] },
+    { kind: "blank" },
+  );
+
+  section("AI SUMMARY");
+  rows.push({ kind: "narrative", cells: ["Summary", detail.narrative], merge: [1, 3] }, { kind: "blank" });
+
+  section("WHY DID THIS CHANGE?");
+  table(["Factor", "Change", "Explanation"]);
+  rows.push({ kind: "item", cells: ["Composite score", detail.delta_1d == null ? "Not available" : `${detail.delta_1d > 0 ? "+" : ""}${detail.delta_1d}`, scoreMovement] });
+  if (detail.component_changes.length) {
+    rows.push(...detail.component_changes.map((change) => ({ kind: "item" as const, cells: [COMPONENT_LABEL[change.signal] ?? change.signal, change.direction, change.note] })));
+  } else {
+    rows.push({ kind: "item", cells: ["Factors", "Not available", "No component-level change was returned."] });
+  }
+  rows.push({ kind: "narrative", cells: ["Context", detail.change_explanation.cause ? `A matched news event on this date: ${detail.change_explanation.cause.headline} (${detail.change_explanation.cause.category.replace(/_/g, " ")}, ${detail.change_explanation.cause.severity} severity)` : detail.change_explanation.note ?? "Not available"], merge: [1, 3] }, { kind: "blank" });
+
+  section("TENSION IN THE DATA");
+  rows.push({ kind: "narrative", cells: ["Observation", detail.conflicts.length ? detail.conflicts.map((conflict) => conflict.text ?? JSON.stringify(conflict)).join("\n") : "No material tension identified in the current measured signals."], merge: [1, 3] }, { kind: "blank" });
+
+  section("WHAT THE DATA SHOWS");
+  table(["Metric", "Value"]);
   items(getWhatDataShowsRows(detail));
   rows.push({ kind: "blank" });
-  section("Analyst checklist");
+
+  section("ANALYST CHECKLIST");
+  table(["Check", "Observation"]);
   items(getChecklistRows(detail, fundamentals));
   return rows;
 }
