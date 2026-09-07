@@ -85,7 +85,36 @@ export function MarketActivityHub() {
     };
   }, [params, getToken]);
 
-  const buildExportRows = useCallback(() => rows.map((row) => {
+  const buildExportRows = useCallback(() => {
+    if (tab === "all") {
+      const typeLabel: Record<MarketActivityType, string> = {
+        concall: "Concall",
+        insider: "Insider trade",
+        corporate_event: "Corporate event",
+        bulk_block: "Bulk/block deal",
+      };
+      return rows.map((row) => {
+        let detail = "";
+        switch (row.type) {
+          case "concall":
+            detail = row.subject === "EARNINGS_CALL_TRANSCRIPT" ? "Concall transcript" : "Investor presentation";
+            break;
+          case "insider":
+            detail = `${row.transaction_type} · ${row.quantity.toLocaleString("en-IN")} shares · ₹${row.value_amount.toLocaleString("en-IN")}`;
+            break;
+          case "bulk_block": {
+            const types = row.deal_types_present?.length ? row.deal_types_present.join("/") : "Deal";
+            detail = `${types} · ${row.net_direction ?? "—"} · ${row.net_quantity != null ? Number(row.net_quantity).toLocaleString("en-IN") : "—"} shares`;
+            break;
+          }
+          case "corporate_event":
+            detail = row.event_type ?? "Corporate event";
+            break;
+        }
+        return { date: row.date, symbol: row.symbol, type: typeLabel[row.type], detail };
+      });
+    }
+    return rows.map((row) => {
       switch (row.type) {
         case "concall":
           return {
@@ -135,7 +164,8 @@ export function MarketActivityHub() {
             headline: row.headline ?? row.summary ?? "",
           };
       }
-    }), [rows]);
+    });
+  }, [rows, tab]);
 
   const exportCsv = useCallback(() => {
     const flat = buildExportRows();

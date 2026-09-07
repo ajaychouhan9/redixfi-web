@@ -20,7 +20,7 @@ import Link from "next/link";
 import type { Candle, DeliveryPoint, FundamentalsBlock, SignalConflict, SignalDetail } from "@/lib/api/types";
 import { ExportButton } from "@/components/ui/ExportButton";
 import { downloadCsv } from "@/lib/csv";
-import { downloadXlsx } from "@/lib/xlsx";
+import { downloadXlsx, type XlsxSheet } from "@/lib/xlsx";
 import { isProEntitled } from "@/lib/entitlements";
 import { useAuth } from "@/lib/auth/AuthContext";
 
@@ -73,14 +73,19 @@ export function SignalDetailView({
     narrative: detail.narrative,
   }];
   const newsRows = detail.news.map((item) => ({ ...item, entities: JSON.stringify(item.entities), matched_symbols: item.matched_symbols?.join(", ") ?? "" }));
-  const exportCsv = () => downloadCsv(`redixfi-signal-${detail.symbol.toLowerCase()}.csv`, exportRows);
-  const exportXlsx = () => downloadXlsx(`redixfi-signal-${detail.symbol.toLowerCase()}.xlsx`, [
+  const exportSheets: XlsxSheet[] = [
     { name: "Signal", rows: exportRows },
     { name: "Change Log", rows: detail.change_log.map((row) => ({ ...row })) },
     { name: "Candles", rows: candles.map((row) => ({ ...row })) },
     { name: "Delivery", rows: (delivery30d ?? []).map((row) => ({ ...row })) },
     { name: "News", rows: newsRows },
-  ]);
+  ];
+  const exportCsv = () => {
+    const sectionRows: Record<string, unknown>[] = exportSheets.flatMap((sheet) => sheet.rows.map((row) => ({ section: sheet.name, ...row })));
+    const keys = Array.from(new Set(sectionRows.flatMap((row) => Object.keys(row))));
+    downloadCsv(`redixfi-signal-${detail.symbol.toLowerCase()}.csv`, sectionRows.map((row) => Object.fromEntries(keys.map((key) => [key, row[key] ?? ""]))));
+  };
+  const exportXlsx = () => downloadXlsx(`redixfi-signal-${detail.symbol.toLowerCase()}.xlsx`, exportSheets);
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">

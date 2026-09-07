@@ -1,6 +1,8 @@
-const BRAND_NAVY = "0B0F1A";
-const BRAND_SURFACE = "12172A";
+import { formatExportHeader, normalizeExportRows } from "./csv";
+
 const BRAND_GOLD = "D4A94E";
+const HEADER_BLUE = "D9EAF7";
+const TEXT_BLACK = "000000";
 
 export interface XlsxSheet {
   name: string;
@@ -42,17 +44,29 @@ function cellXml(value: unknown, key: string, ref: string): string {
   if (date) return `<c r="${ref}" s="2"><v>${excelDate(date)}</v></c>`;
   if (typeof value === "number" && Number.isFinite(value)) return `<c r="${ref}"><v>${value}</v></c>`;
   if (typeof value === "boolean") return `<c r="${ref}" t="b"><v>${value ? 1 : 0}</v></c>`;
-  const text = value === null || value === undefined ? "" : String(value);
+  const text = value === null || value === undefined ? "" : Array.isArray(value) ? value.map((item) => typeof item === "object" ? JSON.stringify(item) : String(item)).join(", ") : typeof value === "object" ? JSON.stringify(value) : String(value);
   return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xmlEscape(text)}</t></is></c>`;
 }
 
+function safeSheetName(name: string, used: Set<string>): string {
+  const base = (name || "Sheet").replace(/[\\/?*\[\]:]/g, "-").slice(0, 31) || "Sheet";
+  let candidate = base;
+  let suffix = 2;
+  while (used.has(candidate)) {
+    const suffixText = ` ${suffix++}`;
+    candidate = `${base.slice(0, 31 - suffixText.length)}${suffixText}`;
+  }
+  used.add(candidate);
+  return candidate;
+}
+
 function sheetXml(sheet: XlsxSheet): string {
-  const rows = sheet.rows;
+  const rows = normalizeExportRows(sheet.rows);
   const headers = rows.length ? Object.keys(rows[0]) : [];
   const lastColumn = columnName(Math.max(headers.length - 1, 0));
   const body = [
     `<row r="1" ht="20"><c r="A1" s="1" t="inlineStr"><is><t>RedixFi — Market. Simplified. | redixfi.com</t></is></c></row>`,
-    `<row r="2">${headers.map((h, i) => `<c r="${columnName(i)}2" s="3" t="inlineStr"><is><t>${xmlEscape(h)}</t></is></c>`).join("")}</row>`,
+    `<row r="2">${headers.map((h, i) => `<c r="${columnName(i)}2" s="3" t="inlineStr"><is><t>${xmlEscape(formatExportHeader(h))}</t></is></c>`).join("")}</row>`,
     ...rows.map((row, rowIndex) => `<row r="${rowIndex + 3}">${headers.map((key, columnIndex) => cellXml(row[key], key, `${columnName(columnIndex)}${rowIndex + 3}`)).join("")}</row>`),
   ].join("");
   const lastRow = Math.max(rows.length + 2, 2);
@@ -92,8 +106,9 @@ export function downloadXlsx(filename: string, sheets: XlsxSheet[]) {
   const encoder = new TextEncoder();
   const validSheets = sheets.filter((sheet) => sheet.rows.length > 0);
   if (!validSheets.length) return;
-  const sheetEntries = validSheets.map((sheet, i) => ({ sheet, id: i + 1 }));
-  const workbookSheets = sheetEntries.map(({ sheet, id }) => `<sheet name="${xmlEscape(sheet.name.slice(0, 31))}" sheetId="${id}" r:id="rId${id + 2}"/>`).join("");
+  const usedNames = new Set<string>();
+  const sheetEntries = validSheets.map((sheet, i) => ({ sheet: { ...sheet, name: safeSheetName(sheet.name, usedNames) }, id: i + 1 }));
+  const workbookSheets = sheetEntries.map(({ sheet, id }) => `<sheet name="${xmlEscape(sheet.name)}" sheetId="${id}" r:id="rId${id + 2}"/>`).join("");
   const rels = sheetEntries.map(({ id }) => `<Relationship Id="rId${id + 2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${id}.xml"/>`).join("");
   const contentSheets = sheetEntries.map(({ id }) => `<Override PartName="/xl/worksheets/sheet${id}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("");
   const files = [
@@ -101,10 +116,12 @@ export function downloadXlsx(filename: string, sheets: XlsxSheet[]) {
     { name: "_rels/.rels", data: encoder.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`) },
     { name: "xl/workbook.xml", data: encoder.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${workbookSheets}</sheets></workbook>`) },
     { name: "xl/_rels/workbook.xml.rels", data: encoder.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels}<Relationship Id="rId${validSheets.length + 2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`) },
-    { name: "xl/styles.xml", data: encoder.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="14" formatCode="yyyy-mm-dd"/></numFmts><fonts count="2"><font><sz val="11"/><color rgb="FFFFFFFF"/><name val="Aptos"/></font><font><b/><sz val="11"/><color rgb="${BRAND_GOLD}"/><name val="Aptos"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="${BRAND_NAVY}"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellXfs count="4"><xf/><xf fillId="2" fontId="1"/><xf numFmtId="14" applyNumberFormat="1"/><xf fillId="2" fontId="0"/></cellXfs></styleSheet>`) },
+    { name: "xl/styles.xml", data: encoder.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="14" formatCode="yyyy-mm-dd"/></numFmts><fonts count="3"><font><sz val="11"/><color rgb="FF${TEXT_BLACK}"/><name val="Aptos"/></font><font><b/><sz val="11"/><color rgb="FF${TEXT_BLACK}"/><name val="Aptos"/></font><font><b/><sz val="11"/><color rgb="FF${TEXT_BLACK}"/><name val="Aptos"/></font></fonts><fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF${BRAND_GOLD}"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FF${HEADER_BLUE}"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellXfs count="4"><xf/><xf fillId="2" fontId="1" applyFill="1"/><xf numFmtId="14" applyNumberFormat="1"/><xf fillId="3" fontId="2" applyFill="1"/></cellXfs></styleSheet>`) },
     ...sheetEntries.map(({ sheet, id }) => ({ name: `xl/worksheets/sheet${id}.xml`, data: encoder.encode(sheetXml(sheet)) })),
   ];
-  const blob = new Blob([zip(files) as unknown as BlobPart], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const archive = zip(files);
+  const archiveBuffer = archive.buffer.slice(archive.byteOffset, archive.byteOffset + archive.byteLength) as ArrayBuffer;
+  const blob = new Blob([archiveBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;

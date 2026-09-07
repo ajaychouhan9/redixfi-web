@@ -23,10 +23,8 @@ import type { ResearchDetail as ResearchDetailType, PeerRow } from "@/lib/api/ty
  * used here is already loaded client-side as this component's own props
  * (SSR'd by the page) — no separate fetch, so unlike the Signals list
  * export this one was never at risk of the recurring auth-token bug.
- * Quarterly/annual TIME SERIES (series_8q/series_5y/series_4q) are
- * deliberately left out of this flat, one-row-per-company CSV — they're
- * naturally multi-row per company and would need a different export
- * shape; a reasonable scope boundary, not a silent omission. */
+ * Quarterly/annual/shareholding time series are kept in their own
+ * multi-row worksheets and included as sectioned rows in the CSV. */
 export function ResearchExportButton({ data, peers }: { data: ResearchDetailType; peers: PeerRow[] | null }) {
   const { user } = useAuth();
   if (!isProEntitled(user)) return null;
@@ -96,17 +94,33 @@ export function ResearchExportButton({ data, peers }: { data: ResearchDetailType
     }
     const oneRow = (value: object | null | undefined): Record<string, unknown>[] => value ? [value as Record<string, unknown>] : [];
     const listRows = (value: unknown) => Array.isArray(value) ? value.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object")) : [];
+    const without = (value: object | null | undefined, keys: string[]) => {
+      if (!value) return [];
+      const excluded = new Set(keys);
+      return [Object.fromEntries(Object.entries(value).filter(([key]) => !excluded.has(key)))];
+    };
+    const quarterlySummary = without(f?.quarterly, ["series_8q"]);
+    const annualSummary = without(f?.annual, ["series_5y"]);
+    const ownershipSummary = without(f?.shareholding, ["series_4q"]);
+    const eventsSummary = without(f?.events, ["recent_dividends", "recent_bonus", "recent_splits"]);
     const sheets: XlsxSheet[] = [
       { name: "Overview", rows: [overview] },
       { name: "Peers", rows: peersRows },
       { name: "Valuation", rows: oneRow(f?.valuation) },
-      { name: "Quarterly", rows: oneRow(f?.quarterly) },
+      { name: "Growth", rows: [...quarterlySummary, ...annualSummary] },
+      { name: "Quarterly", rows: quarterlySummary },
       { name: "Quarterly Series", rows: listRows(f?.quarterly?.series_8q) },
-      { name: "Annual", rows: oneRow(f?.annual) },
+      { name: "Annual", rows: annualSummary },
       { name: "Annual Series", rows: listRows(f?.annual?.series_5y) },
       { name: "Balance", rows: oneRow(f?.balance) },
       { name: "Cashflow", rows: oneRow(f?.cashflow) },
-      { name: "Shareholding", rows: oneRow(f?.shareholding) },
+      { name: "Ownership", rows: ownershipSummary },
+      { name: "Ownership Series", rows: listRows(f?.shareholding?.series_4q) },
+      { name: "Events Summary", rows: eventsSummary },
+      { name: "Dividends", rows: listRows(f?.events?.recent_dividends) },
+      { name: "Bonus", rows: listRows(f?.events?.recent_bonus) },
+      { name: "Splits", rows: listRows(f?.events?.recent_splits) },
+      { name: "Delivery", rows: data.delivery_30d.map((row) => ({ ...row })) },
       { name: "Events", rows: listRows(data.corporate_events) },
       { name: "Insider Trades", rows: data.insider_trades.map((row) => ({ ...row })) },
       { name: "Bulk Block", rows: listRows(data.bulk_block_deals) },
@@ -115,8 +129,16 @@ export function ResearchExportButton({ data, peers }: { data: ResearchDetailType
       { name: "News", rows: data.news.map((row) => ({ ...row, entities: JSON.stringify(row.entities), matched_symbols: row.matched_symbols?.join(", ") ?? "" })) },
       { name: "Concalls", rows: data.concall_transcripts.map((row) => ({ ...row })) },
       { name: "Annual Report", rows: data.annual_report_summary ? [{ ...data.annual_report_summary, bullets: data.annual_report_summary.bullets.join("\n") }] : [] },
+      { name: "Signal Summary", rows: [{ symbol: data.symbol, ...data.signal_summary }] },
+      { name: "Sources", rows: [
+        ...data.concall_transcripts.map((row) => ({ section: "Concall", filing_date: row.filing_date, source_url: row.source_pdf_url })),
+        ...(data.annual_report_summary ? [{ section: "Annual Report", filing_date: data.annual_report_summary.filing_date, source_url: data.annual_report_summary.source_pdf_url }] : []),
+        ...data.news.map((row) => ({ section: "News", published_at: row.published_at, source_url: row.url, source: row.source })),
+      ] },
     ];
-    const csvRows = [overview, ...peersRows];
+    const sectionRows: Record<string, unknown>[] = sheets.flatMap((sheet) => sheet.rows.map((row) => ({ section: sheet.name, ...row })));
+    const csvKeys = Array.from(new Set(sectionRows.flatMap((row) => Object.keys(row))));
+    const csvRows = sectionRows.map((row) => Object.fromEntries(csvKeys.map((key) => [key, row[key] ?? ""])));
     return { csvRows, sheets };
   }
 
