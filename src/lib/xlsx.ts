@@ -129,5 +129,8 @@ export function downloadXlsx(filename: string, sheets: XlsxSheet[]) {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  URL.revokeObjectURL(url);
+  // Keep the object URL alive until the browser has started the download.
+  // Revoking it synchronously can leave the downloaded XLSX empty or
+  // unreadable in Chromium-based browsers.
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
