@@ -85,6 +85,10 @@ function crc32(bytes: Uint8Array): number {
 function u16(value: number): number[] { return [value & 255, (value >>> 8) & 255]; }
 function u32(value: number): number[] { return [value & 255, (value >>> 8) & 255, (value >>> 16) & 255, (value >>> 24) & 255]; }
 
+function appendBytes(target: number[], bytes: Uint8Array) {
+  for (const byte of bytes) target.push(byte);
+}
+
 function zip(files: { name: string; data: Uint8Array }[]): Uint8Array {
   const encoder = new TextEncoder();
   const parts: number[] = [];
@@ -93,13 +97,21 @@ function zip(files: { name: string; data: Uint8Array }[]): Uint8Array {
   for (const file of files) {
     const name = encoder.encode(file.name);
     const crc = crc32(file.data);
-    const local = [0x50, 0x4b, 0x03, 0x04, ...u16(20), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(crc), ...u32(file.data.length), ...u32(file.data.length), ...u16(name.length), ...u16(0), ...name, ...file.data];
-    parts.push(...local);
-    central.push(0x50, 0x4b, 0x01, 0x02, ...u16(20), ...u16(20), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(crc), ...u32(file.data.length), ...u32(file.data.length), ...u16(name.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(offset), ...name);
-    offset += local.length;
+    const localHeader = [0x50, 0x4b, 0x03, 0x04, ...u16(20), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(crc), ...u32(file.data.length), ...u32(file.data.length), ...u16(name.length), ...u16(0)];
+    parts.push(...localHeader);
+    appendBytes(parts, name);
+    appendBytes(parts, file.data);
+    const localLength = localHeader.length + name.length + file.data.length;
+    central.push(0x50, 0x4b, 0x01, 0x02, ...u16(20), ...u16(20), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(crc), ...u32(file.data.length), ...u32(file.data.length), ...u16(name.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(offset));
+    appendBytes(central, name);
+    offset += localLength;
   }
   const end = [0x50, 0x4b, 0x05, 0x06, ...u16(0), ...u16(0), ...u16(files.length), ...u16(files.length), ...u32(central.length), ...u32(offset), ...u16(0)];
-  return new Uint8Array([...parts, ...central, ...end]);
+  const result = new Uint8Array(parts.length + central.length + end.length);
+  result.set(parts, 0);
+  result.set(central, parts.length);
+  result.set(end, parts.length + central.length);
+  return result;
 }
 
 export function downloadXlsx(filename: string, sheets: XlsxSheet[]) {
