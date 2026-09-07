@@ -109,7 +109,6 @@ function buildSummaryRows(data: ResearchDetail, peers: PeerRow[] | null): XlsxSu
   const latestPcr = data.options_pcr_history[0] ?? null;
   const latestEvent = latestByDate(data.corporate_events, (row) => String(row.event_date ?? row.date ?? ""));
   const rows: XlsxSummaryRow[] = [
-    { kind: "title", cells: ["RedixFi — Market. Simplified."], merge: [0, 3] as [number, number] },
     { kind: "subtitle", cells: [`${data.symbol} — Research Summary`], merge: [0, 3] as [number, number] },
     { kind: "metadata", cells: ["Symbol", data.symbol, "Company", data.company_name] },
     { kind: "metadata", cells: ["Sector / Industry", `${data.sector || "Not available"} / ${f?.identity.industry ?? "Not available"}`, "Data as of", dateText(f?.as_of)] },
