@@ -1,3 +1,5 @@
+"use client";
+
 import { Card } from "@/components/ui/Card";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { AiLabel } from "@/components/ui/AiLabel";
@@ -16,6 +18,11 @@ import { CurrentSymbolSync } from "@/components/app/CurrentSymbolSync";
 import { formatShortDate } from "@/lib/format";
 import Link from "next/link";
 import type { Candle, DeliveryPoint, FundamentalsBlock, SignalConflict, SignalDetail } from "@/lib/api/types";
+import { ExportButton } from "@/components/ui/ExportButton";
+import { downloadCsv } from "@/lib/csv";
+import { downloadXlsx } from "@/lib/xlsx";
+import { isProEntitled } from "@/lib/entitlements";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 /**
  * Bug 2 fix — extracted out of app/(app)/signals/[symbol]/page.tsx (same
@@ -38,7 +45,42 @@ export function SignalDetailView({
   delivery30d?: DeliveryPoint[];
   fundamentals?: FundamentalsBlock | null;
 }) {
+  const { user } = useAuth();
   const s = detail.signals;
+  const exportRows = [{
+    symbol: detail.symbol,
+    company_name: detail.company_name,
+    sector: detail.sector,
+    industry: detail.industry ?? "",
+    price: detail.last_price ?? "",
+    day_change_pct: detail.day_change_pct ?? "",
+    composite_score: detail.composite_score ?? "",
+    score_change_1d: detail.delta_1d ?? "",
+    score_change_5d: detail.delta_5d ?? "",
+    signal_states: detail.signal_states.join(", "),
+    trend_10d_pct: s.trend_10d_pct ?? "",
+    sector_rank: s.sector_rank ?? "",
+    sector_count: s.sector_count ?? "",
+    delivery_pct: s.delivery_pct ?? "",
+    delivery_avg20: s.delivery_avg20 ?? "",
+    fii_net_buy_days_5: s.fii_net_buy_days_5 ?? "",
+    pcr: s.pcr_available ? s.pcr : "",
+    rsi_14: s.rsi_14 ?? "",
+    pledge_pct: s.pledge_pct ?? "",
+    insider_net_30d: s.insider_net_30d,
+    event_risk_5d: s.event_risk_5d,
+    event_categories: s.event_categories.join(", "),
+    narrative: detail.narrative,
+  }];
+  const newsRows = detail.news.map((item) => ({ ...item, entities: JSON.stringify(item.entities), matched_symbols: item.matched_symbols?.join(", ") ?? "" }));
+  const exportCsv = () => downloadCsv(`redixfi-signal-${detail.symbol.toLowerCase()}.csv`, exportRows);
+  const exportXlsx = () => downloadXlsx(`redixfi-signal-${detail.symbol.toLowerCase()}.xlsx`, [
+    { name: "Signal", rows: exportRows },
+    { name: "Change Log", rows: detail.change_log.map((row) => ({ ...row })) },
+    { name: "Candles", rows: candles.map((row) => ({ ...row })) },
+    { name: "Delivery", rows: (delivery30d ?? []).map((row) => ({ ...row })) },
+    { name: "News", rows: newsRows },
+  ]);
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
@@ -80,6 +122,7 @@ export function SignalDetailView({
             )}
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <ExportButton onExport={exportCsv} onCsv={exportCsv} onXlsx={exportXlsx} canExport={isProEntitled(user)} label="Download" />
             <WatchlistButton symbol={detail.symbol} />
             <CompareIndicator symbol={detail.symbol} companyName={detail.company_name} />
             <AlertCreateButton symbol={detail.symbol} />

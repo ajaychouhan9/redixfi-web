@@ -6,6 +6,10 @@ import { getNews } from "@/lib/api/endpoints";
 import type { NewsItem } from "@/lib/api/types";
 import { NewsList } from "@/components/app/NewsList";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { ExportButton } from "@/components/ui/ExportButton";
+import { downloadCsv } from "@/lib/csv";
+import { downloadXlsx } from "@/lib/xlsx";
+import { isProEntitled } from "@/lib/entitlements";
 
 const SEVERITIES = ["", "high", "medium", "low", "none"] as const;
 
@@ -51,6 +55,23 @@ export default function NewsPage() {
 
   const totalPages = Math.max(1, Math.ceil(total / 20));
   const isFreeOrAnon = !user || user.tier === "free";
+  const exportRows = items.map((item) => ({
+    uuid: item.uuid,
+    published_at: item.published_at,
+    headline: item.headline,
+    description: item.description,
+    source: item.source,
+    url: item.url,
+    category: item.category,
+    severity: item.severity,
+    impact: item.impact,
+    scope: item.scope ?? "",
+    high_priority: item.high_priority,
+    matched_symbols: item.matched_symbols?.join(", ") ?? "",
+    entities: JSON.stringify(item.entities),
+  }));
+  const exportCsv = () => downloadCsv(`redixfi-news-${new Date().toISOString().slice(0, 10)}.csv`, exportRows);
+  const exportXlsx = () => downloadXlsx(`redixfi-news-${new Date().toISOString().slice(0, 10)}.xlsx`, [{ name: "News", rows: exportRows }]);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -95,6 +116,9 @@ export default function NewsPage() {
             {s || "All"}
           </button>
         ))}
+        <div className="ml-auto">
+          <ExportButton onExport={exportCsv} onCsv={exportCsv} onXlsx={exportXlsx} canExport={isProEntitled(user)} label="Download" />
+        </div>
       </div>
       {loading ? <p className="text-sm text-foreground-muted">Loading…</p> : <NewsList items={items} />}
       <div className="mt-4 flex items-center justify-between text-xs text-foreground-muted">

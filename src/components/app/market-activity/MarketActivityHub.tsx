@@ -13,6 +13,7 @@ import type {
   MarketActivityBulkBlockRow,
 } from "@/lib/api/types";
 import { downloadCsv } from "@/lib/csv";
+import { downloadXlsx } from "@/lib/xlsx";
 import { formatDateIst } from "@/lib/format";
 import { ExportButton } from "@/components/ui/ExportButton";
 import { UnlockBanner } from "@/components/ui/Locked";
@@ -84,8 +85,7 @@ export function MarketActivityHub() {
     };
   }, [params, getToken]);
 
-  const exportCsv = useCallback(() => {
-    const flat = rows.map((row) => {
+  const buildExportRows = useCallback(() => rows.map((row) => {
       switch (row.type) {
         case "concall":
           return {
@@ -135,9 +135,16 @@ export function MarketActivityHub() {
             headline: row.headline ?? row.summary ?? "",
           };
       }
-    });
+    }), [rows]);
+
+  const exportCsv = useCallback(() => {
+    const flat = buildExportRows();
     downloadCsv(`redixfi-market-activity-${tab}-${new Date().toISOString().slice(0, 10)}.csv`, flat);
-  }, [rows, tab]);
+  }, [buildExportRows, tab]);
+
+  const exportXlsx = useCallback(() => {
+    downloadXlsx(`redixfi-market-activity-${tab}-${new Date().toISOString().slice(0, 10)}.xlsx`, [{ name: tab === "all" ? "All Activity" : tab, rows: buildExportRows() }]);
+  }, [buildExportRows, tab]);
 
   // BUG 3 fix (2026-08-16): these 4 data types are NOT daily events —
   // the hub itself never hard-required "today" (rows already come back
@@ -210,8 +217,10 @@ export function MarketActivityHub() {
             <div className="ml-auto shrink-0">
               <ExportButton
                 onExport={exportCsv}
+                onCsv={exportCsv}
+                onXlsx={exportXlsx}
                 canExport={csvExportEnabled && !!user}
-                label="Export CSV"
+                label="Download"
                 enabledTitle="Export current view as CSV"
                 className="flex items-center gap-1 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs text-foreground-muted disabled:opacity-40"
               />
@@ -223,8 +232,10 @@ export function MarketActivityHub() {
         <div className="mb-3 flex justify-end">
           <ExportButton
             onExport={exportCsv}
+            onCsv={exportCsv}
+            onXlsx={exportXlsx}
             canExport={!!user}
-            label="Export CSV"
+            label="Download"
             className="flex items-center gap-1 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs text-foreground-muted disabled:opacity-40"
           />
         </div>
@@ -257,7 +268,7 @@ export function MarketActivityHub() {
           </div>
         )}
 
-        {!loading && !error && maxRows !== null && rows.length >= maxRows && (
+        {!loading && !error && !csvExportEnabled && maxRows !== null && rows.length >= maxRows && (
           <UnlockBanner
             label={`Showing the latest ${maxRows} entries for your plan. Pro gets full history, filters, and CSV export.`}
             cta="Upgrade to Pro"

@@ -9,6 +9,8 @@ import { SignalTableRow, type VisibleColumns } from "./SignalTableRow";
 import { UnlockBanner } from "@/components/ui/Locked";
 import { ExportButton } from "@/components/ui/ExportButton";
 import { downloadCsv } from "@/lib/csv";
+import { downloadXlsx } from "@/lib/xlsx";
+import { isProEntitled } from "@/lib/entitlements";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getWatchlist } from "@/lib/api/mutations";
 
@@ -115,7 +117,7 @@ export function SignalsExplorer() {
   // core/plan_limits.py::resolve_tier() server-side (a founding
   // subscriber shouldn't lose a capability they already had while their
   // account awaits the founder's manual decision).
-  const canExport = user && (user.tier === "pro" || user.tier === "founding");
+  const canExport = isProEntitled(user);
   // The core new differentiation mechanic: Basic sees the full, unmasked
   // table but with NO sort/filter/search controls — server-side
   // (routers/signals.py) already ignores these params for a Basic
@@ -128,7 +130,7 @@ export function SignalsExplorer() {
   // instruction.
   const explorerControlsEnabled = user?.tier !== "basic" && user?.tier !== "paid";
 
-  const exportCsv = useCallback(async () => {
+  const fetchExportRows = useCallback(async () => {
     // Bug fix (2026-08-08) — this fetch never sent the caller's auth
     // token (the 4th occurrence of this project's recurring auth-token
     // bug pattern, caught during this session's explicit audit): every
@@ -151,9 +153,7 @@ export function SignalsExplorer() {
     // own 8 visible columns, since a CSV should give more than a
     // screenshot would. Signal Chips flattened to one comma-separated
     // field (not one column per possible chip) so the CSV stays tabular.
-    downloadCsv(
-      `redixfi-signals-${new Date().toISOString().slice(0, 10)}.csv`,
-      all.map((r) => ({
+    return all.map((r) => ({
         symbol: r.symbol,
         company_name: r.company_name,
         sector: r.sector,
@@ -167,9 +167,16 @@ export function SignalsExplorer() {
         volume_ratio_5d: r.volume_ratio_5d ?? "",
         signal_chips: r.signal_states.join(", "),
         event_risk: r.event_risk ?? "",
-      }))
-    );
+      }));
   }, [params, getToken]);
+
+  const exportCsv = useCallback(async () => {
+    downloadCsv(`redixfi-signals-${new Date().toISOString().slice(0, 10)}.csv`, await fetchExportRows());
+  }, [fetchExportRows]);
+
+  const exportXlsx = useCallback(async () => {
+    downloadXlsx(`redixfi-signals-${new Date().toISOString().slice(0, 10)}.xlsx`, [{ name: "Signals", rows: await fetchExportRows() }]);
+  }, [fetchExportRows]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -287,8 +294,10 @@ export function SignalsExplorer() {
             </div>
             <ExportButton
               onExport={exportCsv}
+              onCsv={exportCsv}
+              onXlsx={exportXlsx}
               canExport={!!canExport}
-              label="CSV"
+              label="Download"
               enabledTitle="Export current filter as CSV"
               className="flex items-center gap-1 rounded-lg border border-border bg-hover px-2 py-1.5 text-xs text-foreground-muted disabled:opacity-40"
             />

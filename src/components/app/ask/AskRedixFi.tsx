@@ -20,6 +20,8 @@ import { filterChips } from "@/components/app/signals/SmartScreenerBox";
 import { Chip } from "@/components/ui/Chip";
 import { ExportButton } from "@/components/ui/ExportButton";
 import { downloadCsv } from "@/lib/csv";
+import { downloadXlsx } from "@/lib/xlsx";
+import { isProEntitled } from "@/lib/entitlements";
 import type {
   AskConversationListItem,
   AskLimitDetail,
@@ -1144,17 +1146,32 @@ export function AskRedixFi() {
                       <div className="mt-2">
                         <div className="mb-1.5 flex justify-end">
                           <ExportButton
-                            canExport
-                            onExport={() =>
-                              downloadCsv(
-                                "redixfi-ask-table.csv",
-                                m.table!.rows.map((row) => {
-                                  const out: Record<string, unknown> = {};
-                                  for (const col of m.table!.columns) out[col.label] = row[col.key];
-                                  return out;
-                                })
-                              )
-                            }
+                            canExport={isProEntitled(user)}
+                            onExport={() => {
+                              const rows = m.table!.rows.map((row) => {
+                                const out: Record<string, unknown> = {};
+                                for (const col of m.table!.columns) out[col.label] = row[col.key];
+                                return out;
+                              });
+                              downloadCsv("redixfi-ask-table.csv", rows);
+                            }}
+                            onCsv={() => {
+                              const rows = m.table!.rows.map((row) => {
+                                const out: Record<string, unknown> = {};
+                                for (const col of m.table!.columns) out[col.label] = row[col.key];
+                                return out;
+                              });
+                              downloadCsv("redixfi-ask-table.csv", rows);
+                            }}
+                            onXlsx={() => {
+                              const rows = m.table!.rows.map((row) => {
+                                const out: Record<string, unknown> = {};
+                                for (const col of m.table!.columns) out[col.label] = row[col.key];
+                                return out;
+                              });
+                              downloadXlsx("redixfi-ask-table.xlsx", [{ name: "AI Result", rows }]);
+                            }}
+                            label="Download"
                           />
                         </div>
                         <div className="overflow-x-auto rounded-lg border border-border">
