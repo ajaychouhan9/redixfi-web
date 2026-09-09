@@ -206,13 +206,25 @@ export function MarketRibbon({
                 <span className="font-sans font-medium text-foreground-muted">NIFTY</span>
                 {/* Font-size fix (2026-08-11): value bumped to 15px per the
                     task's explicit target — label/delta unchanged. */}
-                <span className="text-[15px] tabular-nums">{overview.nifty.close.toLocaleString("en-IN")}</span>
-                <DeltaValue value={overview.nifty.change_pct} kind="pct" />
+                {overview.nifty ? (
+                  <>
+                    <span className="text-[15px] tabular-nums">{overview.nifty.close.toLocaleString("en-IN")}</span>
+                    <DeltaValue value={overview.nifty.change_pct} kind="pct" />
+                  </>
+                ) : (
+                  <span className="text-foreground-faint">Unavailable</span>
+                )}
               </span>
               <span className="hidden items-center gap-2 font-mono sm:flex">
                 <span className="font-sans font-medium text-foreground-muted">BANKNIFTY</span>
-                <span className="text-[15px] tabular-nums">{overview.banknifty.close.toLocaleString("en-IN")}</span>
-                <DeltaValue value={overview.banknifty.change_pct} kind="pct" />
+                {overview.banknifty ? (
+                  <>
+                    <span className="text-[15px] tabular-nums">{overview.banknifty.close.toLocaleString("en-IN")}</span>
+                    <DeltaValue value={overview.banknifty.change_pct} kind="pct" />
+                  </>
+                ) : (
+                  <span className="text-foreground-faint">Unavailable</span>
+                )}
               </span>
               {/* 2026-08-17 mobile-header fix: at 375-390px, StateChip +
                   NIFTY alone already run ~280px against ~343px of usable
