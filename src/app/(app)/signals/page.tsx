@@ -6,12 +6,12 @@ import { getSectorSummary, getSignals } from "@/lib/api/endpoints";
 
 export const metadata: Metadata = {
   title: "Signal Dashboard",
-  description: "Measured composite signal scores across 750+ NSE/BSE stocks — trend, delivery, sector standing and options positioning, factually reported.",
+  description: "Measured composite signal scores across 2,000+ NSE stocks — trend, delivery, sector standing and options positioning, factually reported.",
 };
 
 export default async function SignalsPage() {
   const sectorSummary = await getSectorSummary().then((r) => r.data).catch(() => null);
-  // Real live count for the subtitle below (not hardcoded "750+") — same
+  // Real live count for the subtitle below (not hardcoded "2,000+") — same
   // /signals endpoint SignalsExplorer itself lists from, unfiltered
   // (size:1, we only need page_info.total). @auth-ok: SSR, anonymous —
   // the total UNIVERSE size doesn't vary by tier (only which rows are
@@ -24,7 +24,7 @@ export default async function SignalsPage() {
       <div className="mb-5">
         <h1 className="text-lg font-semibold">Signal Dashboard</h1>
         <p className="mt-1 text-sm text-foreground-muted">
-          Measured market signals across {trackedCount !== null ? trackedCount.toLocaleString("en-IN") : "750+"} tracked stocks
+          Measured market signals across {trackedCount !== null ? trackedCount.toLocaleString("en-IN") : "2,000+"} tracked stocks
         </p>
       </div>
       <div className="mb-5">{sectorSummary && <SectorSummaryCard data={sectorSummary} />}</div>

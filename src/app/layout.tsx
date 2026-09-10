@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     template: "%s · RedixFi",
   },
   description:
-    "Measured signals, delivery and options data, AI-classified news and daily briefs across 750+ NSE/BSE stocks. Analytics, not advice — directional research launches after SEBI RA registration.",
+    "Measured signals, delivery and options data, AI-classified news and daily briefs across 2,000+ NSE stocks. Analytics, not advice — directional research launches after SEBI RA registration.",
   openGraph: {
     type: "website",
     siteName: "RedixFi",

@@ -28,7 +28,7 @@ export function VisitorIntroStrip() {
   return (
     <div className="flex flex-col items-start gap-3 rounded-xl border border-border bg-surface-raised px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm text-foreground-muted">
-        RedixFi tracks measured signals, delivery and options data, and AI-classified news across 750+ NSE/BSE
+        RedixFi tracks measured signals, delivery and options data, and AI-classified news across 2,000+ NSE
         stocks every day — analytics, not advice.
       </p>
       <div className="flex shrink-0 items-center gap-3">

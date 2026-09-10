@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ShieldCheck, Database, UserCircle, CreditCard, Newspaper, ChevronRight } from "lucide-react";
+import { ShieldCheck, Database, UserCircle, CreditCard, Newspaper, ChevronRight, Info } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 
 export const metadata: Metadata = { title: "More" };
@@ -8,6 +8,7 @@ export const metadata: Metadata = { title: "More" };
 const LINKS = [
   { href: "/more/disclaimer", label: "Full disclaimer", icon: ShieldCheck },
   { href: "/more/data-sources", label: "Data sources & update times", icon: Database },
+  { href: "/more/about-us", label: "About & Contact", icon: Info },
   { href: "/account", label: "Account", icon: UserCircle },
   { href: "/pricing", label: "Subscription & pricing", icon: CreditCard },
   { href: "/news", label: "News", icon: Newspaper },

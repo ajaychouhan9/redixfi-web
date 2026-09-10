@@ -33,7 +33,7 @@ export function LockedRow({ children, title = "Unlock with Analytics Pro" }: { c
  * pattern used at the bottom of every masked list (Signals table, Home
  * movers). Always states the real rule plainly (never implies a curated
  * "best of" selection — compliance CURATION TEST). */
-export function UnlockBanner({ label, cta = "Unlock all 750 measured scores" }: { label: string; cta?: string }) {
+export function UnlockBanner({ label, cta = "Unlock all 2,000+ measured scores" }: { label: string; cta?: string }) {
   return (
     <div className="flex items-center justify-between gap-3 border-t border-border px-5 py-3">
       <span className="text-[12px] text-foreground-faint">{label}</span>

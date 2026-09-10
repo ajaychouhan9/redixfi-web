@@ -1,3 +1,5 @@
+import type { AskTopupTier } from "@/lib/api/types";
+
 // Multi-tier restructure (2026-08-08) — Basic/Pro replace the single paid
 // tier. Feature lists deliberately state each tier's FULL capability set
 // rather than "everything in Basic, plus X" — Pro's Ask-AI cap (25/day)
@@ -16,7 +18,7 @@
 // drift apart the same way this project's numeric configs repeatedly
 // have.
 export const BASIC_FEATURES = [
-  "All 750+ stocks' measured signal scores — full data, no masking",
+  "All 2,000+ NSE stocks' measured signal scores — full data, no masking",
   "Unlimited Research Pro company lookups",
   "Same-day news (no 24h delay)",
   "Watchlist alerts: signal changes, event risk, market-wide events",
@@ -27,7 +29,7 @@ export const BASIC_FEATURES = [
 ];
 
 export const PRO_FEATURES = [
-  "All 750+ stocks' measured signal scores — full data, no masking",
+  "All 2,000+ NSE stocks' measured signal scores — full data, no masking",
   "Unlimited Research Pro company lookups",
   "Same-day news (no 24h delay)",
   "Watchlist alerts: signal changes, event risk, market-wide events",
@@ -35,4 +37,15 @@ export const PRO_FEATURES = [
   "Ask-RedixFi AI: 25 questions/day",
   "Compare up to 10 stocks side by side",
   "Full sort/filter/search + CSV export on the Signal Dashboard",
+];
+
+// 4-tier addon structure (2026-09-11, locked with founder), replacing the
+// old single 50-question/₹99 option. Mirrors api/app/core/config.py::
+// ASK_TOPUP_TIERS exactly — same manual-sync convention as BASIC_FEATURES/
+// PRO_FEATURES above (no endpoint exposes the tier catalog as data).
+export const ASK_TOPUP_TIERS: AskTopupTier[] = [
+  { id: "ask_topup_50", questions: 50, priceRupees: 99 },
+  { id: "ask_topup_150", questions: 150, priceRupees: 199 },
+  { id: "ask_topup_500", questions: 500, priceRupees: 499 },
+  { id: "ask_topup_1000", questions: 1000, priceRupees: 749 },
 ];

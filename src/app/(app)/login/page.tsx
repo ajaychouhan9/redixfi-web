@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getFirebaseAuth } from "@/lib/auth/firebase";
+import { getFirebaseAuth, describeAuthError } from "@/lib/auth/firebase";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { Card } from "@/components/ui/Card";
 import { RedixFiLogo } from "@/components/brand/RedixFiLogo";
@@ -106,7 +106,7 @@ export default function LoginPage() {
       const idToken = await result.user.getIdToken();
       await finishLogin(idToken);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not sign in with Google.");
+      setError(describeAuthError(e));
     } finally {
       setBusy(false);
     }
@@ -136,7 +136,7 @@ export default function LoginPage() {
       const idToken = await cred.user.getIdToken();
       await finishLogin(idToken);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong.");
+      setError(describeAuthError(e));
     } finally {
       setBusy(false);
     }
@@ -153,7 +153,7 @@ export default function LoginPage() {
       setConfirmation(result);
       setPhoneStage("otp");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not send OTP.");
+      setError(describeAuthError(e));
     } finally {
       setBusy(false);
     }
@@ -168,7 +168,7 @@ export default function LoginPage() {
       const idToken = await cred.user.getIdToken();
       await finishLogin(idToken);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Invalid code.");
+      setError(describeAuthError(e));
     } finally {
       setBusy(false);
     }

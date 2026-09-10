@@ -860,6 +860,9 @@ export interface TopupOrder {
   order_id?: string;
   amount_paise: number;
   currency?: string;
+  // 4-tier addon structure (2026-09-11) — which tier this order/response
+  // covers (e.g. "ask_topup_500"), matching AskTopupTier.id below.
+  tier?: AskTopupTierId;
   questions: number;
   razorpay_key_id?: string;
   discount_pct?: number | null;
@@ -871,6 +874,20 @@ export interface TopupOrder {
   // openRazorpayCheckout() entirely.
   free_checkout?: boolean;
   topup_questions_remaining?: number;
+}
+
+// 4-tier addon structure (2026-09-11, locked with founder) — mirrors
+// api/app/core/config.py::ASK_TOPUP_TIERS exactly, kept in sync manually
+// (same established convention as plan-features.ts and other cross-file
+// duplicated constants in this codebase; there's no endpoint exposing the
+// tier catalog as data). `id` doubles as the Razorpay order `plan` and the
+// promo_codes.applies_to label for that tier.
+export type AskTopupTierId = "ask_topup_50" | "ask_topup_150" | "ask_topup_500" | "ask_topup_1000";
+
+export interface AskTopupTier {
+  id: AskTopupTierId;
+  questions: number;
+  priceRupees: number;
 }
 
 // Task 20 Part B — real shape of POST /billing/verify's response, distinct

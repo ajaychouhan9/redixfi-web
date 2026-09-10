@@ -140,7 +140,7 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
         <StackedCell
           locked={locked}
           lockedFallback="--"
-          lockedTitle="Unlock all 750 measured scores"
+          lockedTitle="Unlock all 2,000+ measured scores"
           primary={row.composite_score}
           subtitle={row.delta_1d !== null ? <DeltaValue value={row.delta_1d} className="text-[12px]" /> : undefined}
         />

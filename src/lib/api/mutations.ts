@@ -16,6 +16,7 @@ import type {
   BillingVerifyResult,
   PromoValidation,
   TopupOrder,
+  AskTopupTierId,
   SmartScreenResult,
   WatchlistSummary,
   PortfolioBrief,
@@ -181,11 +182,15 @@ export async function validatePromoCode(code: string, plan: string): Promise<Pro
 // validates it against the SAME `applies_to`-array scope check every
 // other promo redemption uses, so an addon purchase can never accidentally
 // redeem a subscription-only code and vice versa.
-export async function createTopupOrder(token: string, promoCode?: string): Promise<TopupOrder> {
+//
+// 4-tier addon structure (2026-09-11) — `tier` selects which of the 4
+// AskTopupTier options (types.ts) to purchase; defaults to the smallest
+// tier server-side (routers/ask.py::DEFAULT_ASK_TOPUP_TIER) if omitted.
+export async function createTopupOrder(token: string, tier: AskTopupTierId, promoCode?: string): Promise<TopupOrder> {
   const env = await apiMutate<TopupOrder>(
     "/ask/topup/order",
     "POST",
-    promoCode ? { promo_code: promoCode } : undefined,
+    { tier, ...(promoCode ? { promo_code: promoCode } : {}) },
     { token }
   );
   return env.data;
@@ -196,6 +201,19 @@ export async function verifyTopupOrder(
   body: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }
 ): Promise<{ success: boolean; topup_questions_remaining: number }> {
   const env = await apiMutate<{ success: boolean; topup_questions_remaining: number }>("/ask/topup/verify", "POST", body, { token });
+  return env.data;
+}
+
+// ---------- support / contact ----------
+
+// About & Contact page's chat-box alternative to the mailto: link
+// (2026-09-11) — anonymous-allowed (backend: get_auth_context, not
+// require_auth), same optional-token pattern as smartScreen below.
+export async function submitContactMessage(
+  token: string | null,
+  body: { name: string; email: string; message: string }
+): Promise<{ submitted: boolean }> {
+  const env = await apiMutate<{ submitted: boolean }>("/support/contact", "POST", body, token ? { token } : undefined);
   return env.data;
 }
 

@@ -7,6 +7,10 @@ export function FooterDisclaimer() {
       predictions. We are not yet SEBI-registered as a Research Analyst.{" "}
       <Link href="/more/disclaimer" className="underline">
         Full disclaimer
+      </Link>{" "}
+      ·{" "}
+      <Link href="/more/about-us" className="underline">
+        About &amp; Contact
       </Link>
     </footer>
   );

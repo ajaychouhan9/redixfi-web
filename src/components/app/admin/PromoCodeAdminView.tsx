@@ -54,7 +54,16 @@ const SUBSCRIPTION_APPLIES_TO_OPTIONS = [
 // either purchase. Same array, same field — "subscription vs addon vs
 // both" is just which of these checkboxes end up checked, not a second
 // piece of state.
-const ADDON_APPLIES_TO_OPTIONS = [{ value: "ask_topup_50", label: "Ask-RedixFi addon (50 questions / ₹99)" }];
+// 4-tier addon structure (2026-09-11, locked with founder) — one label per
+// tier, same "select any combination" pattern as the subscription labels
+// above. Mirrors routers/admin.py's VALID_APPLIES_TO and data/plan-
+// features.ts::ASK_TOPUP_TIERS exactly (manually kept in sync).
+const ADDON_APPLIES_TO_OPTIONS = [
+  { value: "ask_topup_50", label: "Ask-RedixFi addon (50 questions / ₹99)" },
+  { value: "ask_topup_150", label: "Ask-RedixFi addon (150 questions / ₹199)" },
+  { value: "ask_topup_500", label: "Ask-RedixFi addon (500 questions / ₹499)" },
+  { value: "ask_topup_1000", label: "Ask-RedixFi addon (1,000 questions / ₹749)" },
+];
 
 const APPLIES_TO_OPTIONS = [...SUBSCRIPTION_APPLIES_TO_OPTIONS, ...ADDON_APPLIES_TO_OPTIONS];
 const APPLIES_TO_LABEL: Record<string, string> = Object.fromEntries(APPLIES_TO_OPTIONS.map((o) => [o.value, o.label]));
