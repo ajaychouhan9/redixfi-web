@@ -30,6 +30,7 @@ import type {
   MarketActivityPageInfo,
   MarketActivityType,
   MarketActivitySummary,
+  SharedScreen,
 } from "./types";
 
 // Every exported fetch function below MUST carry an `@auth public` or
@@ -73,7 +74,7 @@ export const getSignals = (params: SignalsListParams = {}, opts?: FetchOpts) =>
 // @auth-ok: SEO/export-only (sitemap.ts, /stocks/[symbol]), always
 // anonymous by design — a shared/crawlable page must never carry a
 // visitor's personal token.
-/** Pages through the full universe (~751 symbols) for SEO/export use only — not for live UI lists. */
+/** Pages through the full universe (2,000+ symbols) for SEO/export use only — not for live UI lists. */
 export async function getAllSignals(opts?: FetchOpts): Promise<SignalRow[]> {
   const size = 200;
   const first = await getSignals({ page: 1, size, sort: "name", order: "asc" }, opts);
@@ -274,3 +275,14 @@ export async function getMarketActivity(params: MarketActivityListParams = {}, o
 // research()'s own 4 data blocks) — used for Home's compact card.
 export const getMarketActivitySummary = (opts?: FetchOpts) =>
   apiGet<MarketActivitySummary>("/market-activity/summary", opts);
+
+// ---------- shared screens ----------
+
+// @auth public — GET /shared-screens/{slug} uses get_auth_context (not
+// require_auth) precisely so a logged-out visitor can open a shared link;
+// it only returns the saved QUERY, never results, so there is no
+// tier-dependent payload to leak here. The viewer's own token (if any)
+// belongs on the SEPARATE getSignals(params) call the page makes to
+// actually run the query — that's where B8 masking applies.
+export const getSharedScreen = (slug: string, opts?: FetchOpts) =>
+  apiGetOptional<SharedScreen>(`/shared-screens/${encodeURIComponent(slug)}`, opts);

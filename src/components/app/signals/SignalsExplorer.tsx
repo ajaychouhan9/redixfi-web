@@ -8,11 +8,13 @@ import { SIGNAL_SECTORS } from "@/data/sectors";
 import { SignalTableRow, type VisibleColumns } from "./SignalTableRow";
 import { UnlockBanner } from "@/components/ui/Locked";
 import { ExportButton } from "@/components/ui/ExportButton";
+import { ShareScreenButton } from "./ShareScreenButton";
 import { downloadCsv } from "@/lib/csv";
 import { downloadXlsx } from "@/lib/xlsx";
 import { isProEntitled } from "@/lib/entitlements";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getWatchlist } from "@/lib/api/mutations";
+import type { SharedScreenParams } from "@/lib/api/types";
 
 const SORT_OPTIONS = [
   { value: "name", label: "Name (A–Z)" },
@@ -29,18 +31,27 @@ const SORT_OPTIONS = [
 
 const PAGE_SIZE = 50;
 
-export function SignalsExplorer() {
+// "Clone this screen" (2026-09-11 task) — a shared screen's saved params,
+// pre-filling the SAME filter state a user typing it in by hand would
+// reach. Purely an initial-value source: once mounted, this component's
+// own state owns the truth, so the clone target can still freely modify
+// and re-save under a new link. Optional/partial because a shared screen
+// may have omitted any given filter.
+export function SignalsExplorer({ initialParams }: { initialParams?: SharedScreenParams } = {}) {
   const { user, getToken } = useAuth();
-  const [q, setQ] = useState("");
-  const [sector, setSector] = useState("");
-  const [scoreMin, setScoreMin] = useState("");
-  const [scoreMax, setScoreMax] = useState("");
-  const [eventRiskOnly, setEventRiskOnly] = useState(false);
+  const [q, setQ] = useState(initialParams?.q ?? "");
+  const [sector, setSector] = useState(initialParams?.sector ?? "");
+  const [scoreMin, setScoreMin] = useState(initialParams?.score_min != null ? String(initialParams.score_min) : "");
+  const [scoreMax, setScoreMax] = useState(initialParams?.score_max != null ? String(initialParams.score_max) : "");
+  const [eventRiskOnly, setEventRiskOnly] = useState(!!initialParams?.event_risk);
   const [watchlistOnly, setWatchlistOnly] = useState(false);
   const [watchlistSymbols, setWatchlistSymbols] = useState<string[] | null>(null);
-  // Default sort is name — NEVER score by default (compliance CURATION TEST).
-  const [sort, setSort] = useState<string>("name");
-  const [order, setOrder] = useState<"asc" | "desc">("asc");
+  // Default sort is name — NEVER score by default (compliance CURATION
+  // TEST) — but a CLONED screen's sort is the original creator's own
+  // explicit choice, not an unset default, same as a canned screen
+  // (/screens/[slug]) already legitimately sorting by delta_1d.
+  const [sort, setSort] = useState<string>(initialParams?.sort ?? "name");
+  const [order, setOrder] = useState<"asc" | "desc">(initialParams?.order ?? "asc");
   const [page, setPage] = useState(1);
   // Column spec (2026-08-08, finalized): Symbol/Price/Score are always on
   // (not in this picker state at all). VWAP removed — intraday-only,
@@ -77,6 +88,23 @@ export function SignalsExplorer() {
       size: PAGE_SIZE,
     }),
     [q, sector, scoreMin, scoreMax, eventRiskOnly, sort, order, page]
+  );
+
+  // Same filter identity as `params` above, minus pagination — what
+  // "Share this screen" persists. Page/size aren't part of a screen's
+  // identity (a viewer always starts at page 1, same as opening /screens
+  // or /signals fresh).
+  const shareParams: SharedScreenParams = useMemo(
+    () => ({
+      q: q || undefined,
+      sector: sector || undefined,
+      score_min: scoreMin ? Number(scoreMin) : undefined,
+      score_max: scoreMax ? Number(scoreMax) : undefined,
+      event_risk: eventRiskOnly ? true : undefined,
+      sort,
+      order,
+    }),
+    [q, sector, scoreMin, scoreMax, eventRiskOnly, sort, order]
   );
 
   useEffect(() => {
@@ -301,6 +329,7 @@ export function SignalsExplorer() {
               enabledTitle="Export current filter as CSV"
               className="flex items-center gap-1 rounded-lg border border-border bg-hover px-2 py-1.5 text-xs text-foreground-muted disabled:opacity-40"
             />
+            {explorerControlsEnabled && <ShareScreenButton params={shareParams} />}
           </div>
         </div>
       </div>

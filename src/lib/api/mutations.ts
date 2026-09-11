@@ -30,6 +30,8 @@ import type {
   AlertRulesList,
   AlertMetric,
   AlertDirection,
+  SharedScreenParams,
+  SharedScreenSummary,
 } from "./types";
 
 // ---------- auth ----------
@@ -415,6 +417,25 @@ export async function updateAlertRule(
 
 export async function deleteAlertRule(token: string, ruleId: string): Promise<void> {
   await apiMutate<{ ok: boolean }>(`/alert-rules/${encodeURIComponent(ruleId)}`, "DELETE", undefined, { token });
+}
+
+// ---------- shared screens ("Share this screen" / "Clone this screen") ----------
+
+export async function createSharedScreen(
+  token: string,
+  body: { title: string; params: SharedScreenParams }
+): Promise<SharedScreenSummary> {
+  const env = await apiMutate<SharedScreenSummary>("/shared-screens", "POST", body, { token });
+  return env.data;
+}
+
+export async function getMySharedScreens(token: string): Promise<SharedScreenSummary[]> {
+  const env = await apiGet<SharedScreenSummary[]>("/shared-screens/mine", { token });
+  return env.data;
+}
+
+export async function deleteSharedScreen(token: string, slug: string): Promise<void> {
+  await apiMutate<{ ok: boolean }>(`/shared-screens/${encodeURIComponent(slug)}`, "DELETE", undefined, { token });
 }
 
 // ---------- human-review queue (/admin/review-queue, 2026-09-03) —

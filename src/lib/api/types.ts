@@ -1615,3 +1615,41 @@ export interface ReviewQueueDetail extends ReviewQueueRow {
   rejections?: unknown;
   source: ReviewQueueSource;
 }
+
+// ---------- shared screens ("Share this screen" / "Clone this screen",
+// 2026-09-11) — stores only a Signals filter/sort query, never results.
+// The public view page re-runs GET /signals itself through the VIEWER's
+// own auth context, so B8 masking/tier gates apply exactly as everywhere
+// else on the site. See api/app/routers/shared_screens.py's own docstring
+// for why this is scoped to Signals only, not Ask AI queries. ----------
+
+/** Mirrors SignalsListParams' server-validated subset exactly (backend's
+ * `_validate_params` whitelist) — every field optional/nullable since a
+ * saved screen may have omitted any filter. */
+export interface SharedScreenParams {
+  sector?: string | null;
+  score_min?: number | null;
+  score_max?: number | null;
+  event_risk?: boolean | null;
+  market_cap_min?: number | null;
+  market_cap_max?: number | null;
+  fundamental_flag?: string | null;
+  q?: string | null;
+  sort: string;
+  order: "asc" | "desc";
+}
+
+export interface SharedScreen {
+  slug: string;
+  kind: "signals";
+  title: string;
+  params: SharedScreenParams;
+  created_at: string;
+  view_count: number;
+}
+
+export interface SharedScreenSummary {
+  slug: string;
+  title: string;
+  params: SharedScreenParams;
+}
