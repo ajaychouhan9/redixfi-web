@@ -24,7 +24,25 @@ export interface FetchOpts {
   revalidate?: number;
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
+  /** ms; overrides DEFAULT_TIMEOUT_MS for one call (e.g. a deliberately long export/report fetch). */
+  timeoutMs?: number;
 }
+
+// 2026-09-11 fix — no request here EVER had a timeout before this. A slow/
+// hanging backend response (confirmed live: /research/{symbol} and
+// /market/overview intermittently taking 30-60s+ without erroring) doesn't
+// just degrade one page — a server-side fetch that never resolves blocks
+// Next's build-time static generation for that page indefinitely, and
+// (app)/layout.tsx's own market-overview fetch runs on EVERY page under
+// it. Three consecutive Vercel deployments failed this way: every
+// /account/*, /admin/promo-codes attempt hit Next's own 60s-per-attempt
+// external ceiling and got killed from OUTSIDE this file's try/catch
+// blocks — those blocks only ever handled a fast rejection, never a hang,
+// so they never had a chance to fire. 20s is short enough to resolve
+// safely inside Next's 60s ceiling (with headroom for connection+parse)
+// while staying generous enough not to false-fail a legitimately slow-but-
+// working call.
+const DEFAULT_TIMEOUT_MS = 20_000;
 
 function buildUrl(path: string, params?: FetchOpts["params"]) {
   const url = new URL(BASE_URL.replace(/\/$/, "") + path);
@@ -47,6 +65,7 @@ async function rawFetch(path: string, opts: FetchOpts = {}): Promise<Response> {
     method: opts.method ?? "GET",
     headers,
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+    signal: AbortSignal.timeout(opts.timeoutMs ?? DEFAULT_TIMEOUT_MS),
   };
   if (typeof opts.revalidate === "number") {
     fetchInit.next = { revalidate: opts.revalidate };
