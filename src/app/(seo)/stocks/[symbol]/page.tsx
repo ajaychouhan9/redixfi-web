@@ -33,15 +33,27 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
   const { symbol } = await params;
   const data = await loadCompany(symbol.toUpperCase());
   if (!data) return { title: `${symbol.toUpperCase()} not found` };
+  const title = `${data.company_name} (${data.symbol}) — Price, Delivery & News`;
+  const description = `${data.company_name} (${data.symbol}): ₹${data.price.last_price}, ${data.price.day_change_pct}% today, 52-week range ₹${data.price.week52_low}–₹${data.price.week52_high}, delivery trend and latest news — measured data, not advice.`;
+  const ogImage = `/api/og?${new URLSearchParams({
+    type: "stock",
+    title: data.symbol,
+    subtitle: data.company_name,
+    stat: `₹${data.price.last_price.toLocaleString("en-IN")}`,
+    statLabel: `${data.price.day_change_pct >= 0 ? "+" : ""}${data.price.day_change_pct}% today`,
+    direction: data.price.day_change_pct >= 0 ? "up" : "down",
+  }).toString()}`;
   return {
-    title: `${data.company_name} (${data.symbol}) — Price, Delivery & News`,
-    description: `${data.company_name} (${data.symbol}): ₹${data.price.last_price}, ${data.price.day_change_pct}% today, 52-week range ₹${data.price.week52_low}–₹${data.price.week52_high}, delivery trend and latest news — measured data, not advice.`,
+    title,
+    description,
     alternates: { canonical: `/stocks/${data.symbol}` },
     openGraph: {
       title: `${data.company_name} (${data.symbol})`,
       description: `Price, delivery trend and news for ${data.company_name} — measured market data.`,
       type: "website",
+      images: [{ url: ogImage, width: 1200, height: 630 }],
     },
+    twitter: { card: "summary_large_image", title, description, images: [ogImage] },
   };
 }
 
@@ -99,6 +111,18 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
         <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-faint">Latest news</h2>
         <NewsList items={data.news.slice(0, 3)} />
       </div>
+
+      {/* Defensive: `concall_transcripts` is typed as always-present but a
+          real production /research/{symbol} response can omit it — crashed
+          this page live with RELIANCE (TypeError: Cannot read properties
+          of undefined) during this task's own testing. */}
+      {(data.concall_transcripts?.length ?? 0) > 0 && (
+        <p className="mt-4 text-sm">
+          <Link href={`/stocks/${data.symbol}/concall-summary`} className="font-medium text-accent hover:underline">
+            Read the latest concall summary →
+          </Link>
+        </p>
+      )}
 
       <div className="mt-8 rounded-xl border border-accent/30 bg-accent/5 p-5 text-center">
         <p className="text-sm font-medium">

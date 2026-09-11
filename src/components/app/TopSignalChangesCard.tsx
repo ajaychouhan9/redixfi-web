@@ -2,6 +2,7 @@ import Link from "next/link";
 import { TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import type { SignalsMovers, MoverRow } from "@/lib/api/types";
+import { ShareCardPopover } from "@/components/app/marketing/ShareCardPopover";
 
 function MoverList({ rows, label, tone }: { rows: MoverRow[]; label: string; tone: "up" | "down" }) {
   const Icon = tone === "up" ? TrendingUp : TrendingDown;
@@ -27,13 +28,28 @@ function MoverList({ rows, label, tone }: { rows: MoverRow[]; label: string; ton
 }
 
 export function TopSignalChangesCard({ movers }: { movers: SignalsMovers | null }) {
+  const topGainer = movers?.up[0];
+  const topDecliner = movers?.down[0];
+  const shareStat = topGainer ? `${topGainer.symbol} +${topGainer.delta_1d}` : undefined;
   return (
     <Card
       title="Top Signal Changes"
       action={
-        <Link href="/signals/movers" className="flex items-center gap-0.5 text-xs font-medium text-accent">
-          See all <ChevronRight size={12} />
-        </Link>
+        <div className="flex items-center gap-2">
+          <ShareCardPopover
+            card={{
+              type: "movers",
+              title: "Top Movers",
+              subtitle: "Biggest measured signal score changes today",
+              stat: shareStat,
+              statLabel: topDecliner ? `Top decliner: ${topDecliner.symbol} ${topDecliner.delta_1d}` : undefined,
+              direction: "up",
+            }}
+          />
+          <Link href="/signals/movers" className="flex items-center gap-0.5 text-xs font-medium text-accent">
+            See all <ChevronRight size={12} />
+          </Link>
+        </div>
       }
     >
       <div className="grid grid-cols-2 gap-x-6">

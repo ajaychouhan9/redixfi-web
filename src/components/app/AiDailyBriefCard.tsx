@@ -5,6 +5,7 @@ import { Sparkles } from "lucide-react";
 import type { DailyBrief } from "@/lib/api/types";
 import { splitDailyBriefBullets } from "@/lib/dailyBriefSplit";
 import { formatShortDate, formatTimeIst } from "@/lib/format";
+import { ShareCardPopover } from "@/components/app/marketing/ShareCardPopover";
 
 /**
  * Splits the brief into sentence-per-bullet chunks, showing the first few
@@ -44,7 +45,19 @@ export function AiDailyBriefCard({ brief }: { brief: DailyBrief | null }) {
               )}
             </div>
           </div>
-          <span className="shrink-0 rounded-md bg-accent/10 px-2 py-1 font-mono text-[11px] uppercase tracking-wider text-accent-dim">AI-generated</span>
+          <div className="flex shrink-0 items-center gap-2">
+            {brief && (
+              <ShareCardPopover
+                card={{
+                  type: "brief",
+                  title: "Daily Market Pulse",
+                  subtitle: brief.period === "close" ? "Close session" : "Morning session",
+                  statLabel: brief.created_at ? `${formatShortDate(brief.created_at)}, ${formatTimeIst(brief.created_at)}` : undefined,
+                }}
+              />
+            )}
+            <span className="rounded-md bg-accent/10 px-2 py-1 font-mono text-[11px] uppercase tracking-wider text-accent-dim">AI-generated</span>
+          </div>
         </div>
         {brief ? (
           <>

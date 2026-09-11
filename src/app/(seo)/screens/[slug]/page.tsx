@@ -11,10 +11,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const screen = getCannedScreen(slug);
   if (!screen) return { title: "Screen not found" };
+  const ogImage = `/api/og?${new URLSearchParams({
+    type: "screener",
+    title: screen.title,
+    subtitle: screen.description,
+  }).toString()}`;
   return {
     title: screen.title,
     description: screen.description,
     alternates: { canonical: `/screens/${screen.slug}` },
+    openGraph: { title: screen.title, description: screen.description, type: "website", images: [{ url: ogImage, width: 1200, height: 630 }] },
+    twitter: { card: "summary_large_image", title: screen.title, description: screen.description, images: [ogImage] },
   };
 }
 
@@ -28,8 +35,29 @@ export default async function ScreenPage({ params }: { params: Promise<{ slug: s
   // visitor gets on the real Signals list.
   const env = await getSignals({ ...screen.params, size: 10 }, { revalidate: 120 });
 
+  // ItemList: the accurate Schema.org type for a ranked list of named
+  // items (here, stocks matching the screen's real filter/sort) — B8-safe
+  // by construction, since it only names symbols already visible in the
+  // unmasked identity fields (row.symbol/company_name are never masked;
+  // see signals_view.py::row_from_joined) and never includes a masked
+  // numeric field.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: screen.title,
+    description: screen.description,
+    itemListElement: env.data.map((r, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: `${r.company_name} (${r.symbol})`,
+    })),
+  };
+
   return (
     <div className="mx-auto max-w-2xl">
+      {/* eslint-disable-next-line react/no-danger */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+
       <h1 className="mb-1 text-xl font-semibold">{screen.title}</h1>
       <p className="mb-4 text-sm text-foreground-muted">{screen.description}</p>
 
