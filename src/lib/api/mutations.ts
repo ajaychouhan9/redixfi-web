@@ -142,6 +142,26 @@ export async function addPushToken(token: string, pushToken: string, platform: "
   await apiMutate<{ ok: boolean }>("/me/push-token", "POST", { token: pushToken, platform }, { token });
 }
 
+export async function removePushTokens(token: string) {
+  await apiMutate<{ ok: boolean }>("/me/push-token", "DELETE", undefined, { token });
+}
+
+// ---------- Telegram linking (2026-09-11 task) ----------
+
+export async function getTelegramLinkCode(token: string): Promise<{ code: string; deep_link: string | null; expires_in_minutes: number }> {
+  const env = await apiMutate<{ code: string; deep_link: string | null; expires_in_minutes: number }>("/telegram/link-code", "POST", undefined, { token });
+  return env.data;
+}
+
+export async function getTelegramStatus(token: string): Promise<{ linked: boolean; bot_username: string | null }> {
+  const env = await apiGet<{ linked: boolean; bot_username: string | null }>("/telegram/status", { token });
+  return env.data;
+}
+
+export async function unlinkTelegram(token: string) {
+  await apiMutate<{ ok: boolean }>("/telegram/link", "DELETE", undefined, { token });
+}
+
 // ---------- billing ----------
 
 export async function createBillingOrder(token: string, plan: string, promoCode?: string): Promise<BillingOrder> {

@@ -1009,6 +1009,10 @@ export interface MeProfile {
   // to skipping.
   ask_skip_confirm: boolean;
   created_at: string;
+  // Delivery-channel status (2026-09-11 task) — display only; neither
+  // field gates delivery itself (alert_worker.py's tier check does).
+  web_push_enabled: boolean;
+  telegram_linked: boolean;
 }
 
 export interface WatchlistResponse {

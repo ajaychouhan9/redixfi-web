@@ -14,15 +14,23 @@ export const firebaseConfigured = Boolean(config.apiKey && config.projectId && c
 let app: FirebaseApp | null = null;
 let authInstance: Auth | null = null;
 
-export function getFirebaseAuth(): Auth {
+/** Shared app instance — exported (2026-09-11) so lib/push/webPush.ts can
+ * get Firebase Messaging off the SAME app rather than re-initializing a
+ * second one for the same project. */
+export function getFirebaseApp(): FirebaseApp {
   if (!firebaseConfigured) {
     throw new Error("Firebase is not configured — set NEXT_PUBLIC_FIREBASE_* env vars.");
   }
   if (!app) {
     app = getApps()[0] ?? initializeApp(config);
   }
+  return app;
+}
+
+export function getFirebaseAuth(): Auth {
+  const appRef = getFirebaseApp();
   if (!authInstance) {
-    authInstance = getAuth(app);
+    authInstance = getAuth(appRef);
   }
   return authInstance;
 }

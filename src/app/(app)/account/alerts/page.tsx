@@ -5,6 +5,7 @@ import { AccountTabs } from "@/components/app/account/AccountTabs";
 import { RequireAuth } from "@/components/app/account/RequireAuth";
 import { Card } from "@/components/ui/Card";
 import { AlertRulesSection } from "@/components/app/alerts/AlertRulesSection";
+import { DeliveryChannelsCard } from "@/components/app/account/DeliveryChannelsCard";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getMe, updateAlertPrefs } from "@/lib/api/mutations";
 import type { AlertPreferences, MeProfile } from "@/lib/api/types";
@@ -45,27 +46,30 @@ function AlertsForm() {
   const prefs = profile.alerts_opt_in;
 
   return (
-    <Card title="Alert preferences">
-      <ul className="divide-y divide-border">
-        {(Object.keys(LABELS) as (keyof AlertPreferences)[]).map((key) => (
-          <li key={key} className="flex items-center justify-between gap-4 py-3">
-            <div>
-              <p className="text-sm font-medium">{LABELS[key].title}</p>
-              <p className="text-xs text-foreground-muted">{LABELS[key].help}</p>
-            </div>
-            <button
-              onClick={() => toggle(key)}
-              disabled={saving === key}
-              role="switch"
-              aria-checked={prefs[key]}
-              className={`h-6 w-11 shrink-0 rounded-full transition-colors ${prefs[key] ? "bg-accent" : "bg-neutral-bg"}`}
-            >
-              <span className={`block h-5 w-5 translate-y-0.5 rounded-full bg-white transition-transform ${prefs[key] ? "translate-x-5" : "translate-x-0.5"}`} />
-            </button>
-          </li>
-        ))}
-      </ul>
-    </Card>
+    <>
+      <Card title="Alert preferences">
+        <ul className="divide-y divide-border">
+          {(Object.keys(LABELS) as (keyof AlertPreferences)[]).map((key) => (
+            <li key={key} className="flex items-center justify-between gap-4 py-3">
+              <div>
+                <p className="text-sm font-medium">{LABELS[key].title}</p>
+                <p className="text-xs text-foreground-muted">{LABELS[key].help}</p>
+              </div>
+              <button
+                onClick={() => toggle(key)}
+                disabled={saving === key}
+                role="switch"
+                aria-checked={prefs[key]}
+                className={`h-6 w-11 shrink-0 rounded-full transition-colors ${prefs[key] ? "bg-accent" : "bg-neutral-bg"}`}
+              >
+                <span className={`block h-5 w-5 translate-y-0.5 rounded-full bg-white transition-transform ${prefs[key] ? "translate-x-5" : "translate-x-0.5"}`} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      </Card>
+      <DeliveryChannelsCard profile={profile} onProfileChange={setProfile} />
+    </>
   );
 }
 
