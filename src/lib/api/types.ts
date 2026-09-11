@@ -994,6 +994,10 @@ export interface MeProfile {
   name: string | null;
   email: string | null;
   tier: "free" | "basic" | "pro" | "paid" | "founding" | string;
+  plan_display_name: string;
+  is_pro_trial: boolean;
+  pro_trial_started_at: string | null;
+  pro_trial_ends_at: string | null;
   subscription: SubscriptionState;
   // Task 20 Part B — set only while a monthly->annual upgrade is
   // SCHEDULED (payment captured, not yet active). null otherwise.
@@ -1028,6 +1032,7 @@ export interface WatchlistResponse {
 // set, daily_limit/monthly_limit null) — that gate is never weighted.
 export interface AskUsageInfo {
   tier: string;
+  is_pro_trial: boolean;
   daily_limit_per_symbol: number | null;
   daily_used: number | null;
   daily_limit: number | null;
@@ -1325,9 +1330,9 @@ export interface AskResult {
 
 /** Shape of ApiError.detail on a 429 from POST /ask (core/metering.py::enforce_ask_usage). */
 export interface AskLimitDetail {
-  reason: "free_daily_limit" | "daily_cap" | "monthly_cap";
+  reason: "free_daily_limit" | "trial_daily_limit" | "daily_cap" | "monthly_cap";
   message: string;
-  cta: "subscribe" | "topup";
+  cta: "subscribe" | "upgrade" | "topup";
   topup_questions?: number;
   topup_price_paise?: number;
 }

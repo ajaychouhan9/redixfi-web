@@ -59,6 +59,9 @@ export function VisitorIntroStrip() {
             See pricing
           </Link>
         </div>
+        <p className="mt-2 text-xs font-medium text-accent">
+          Login to get 2 days of free Pro Trial access — a one-time offer for eligible accounts.
+        </p>
 
         <div className="mt-5 inline-flex max-w-2xl items-start gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs leading-relaxed text-foreground-muted">
           <span aria-hidden className="mt-0.5 text-accent-dim">ⓘ</span>

@@ -180,6 +180,10 @@ export default function LoginPage() {
         <RedixFiLogo variant="compact" layout="col" size={56} />
       </div>
       <h1 className="mb-4 text-xl font-semibold">{mode === "signup" ? "Create your account" : "Log in"}</h1>
+      <p className="mb-4 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-foreground">
+        <span className="font-semibold">Login to get 2 days of free Pro Trial access.</span>{" "}
+        One-time offer for eligible accounts; your 48 hours start after your first successful login.
+      </p>
       <Card>
         <div className="space-y-4">
           {/* Primary: Google Sign-In — most visible option, per the task doc. */}

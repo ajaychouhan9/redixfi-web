@@ -90,7 +90,7 @@ function AccountProfile() {
           <dt className="text-foreground-muted">Email</dt>
           <dd>{profile.email ?? "—"}</dd>
           <dt className="text-foreground-muted">Tier</dt>
-          <dd className="capitalize">{profile.tier}</dd>
+          <dd>{profile.plan_display_name}</dd>
         </dl>
       </Card>
       <SubscriptionStatusCard profile={profile} onChange={setProfile} />

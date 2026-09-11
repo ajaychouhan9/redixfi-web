@@ -618,6 +618,8 @@ export function AskRedixFi() {
   // than a placeholder "0" that could misread as a real exhausted count.
   const usageHeaderLine = !usage
     ? "Loading usage…"
+    : usage.is_pro_trial
+      ? `Pro Trial: ${Math.max(0, (usage.daily_limit ?? 25) - (usage.daily_used ?? 0))} of ${usage.daily_limit ?? 25} questions remaining today`
     : usage.daily_limit_per_symbol !== null
       ? `Free tier: ${usage.daily_limit_per_symbol}/symbol/day · Addon: ${usage.topup_questions_remaining} remaining`
       : `Daily: ${usage.daily_used ?? 0}/${usage.daily_limit} · Monthly: ${usage.monthly_used ?? 0}/${usage.monthly_limit} · Addon: ${usage.topup_questions_remaining} remaining`;
@@ -1286,7 +1288,7 @@ export function AskRedixFi() {
                 <div className="mx-4 mb-2 rounded-lg bg-amber-bg px-3 py-2 text-xs text-amber">
                   {limit.message}{" "}
                   <Link href="/pricing" className="font-semibold underline">
-                    {limit.cta === "subscribe" ? "View plans" : isPro ? "Add more questions" : "Manage plan"}
+                    {limit.cta === "subscribe" ? "View plans" : limit.cta === "upgrade" ? "Upgrade" : isPro ? "Add more questions" : "Manage plan"}
                   </Link>
                 </div>
               )}
@@ -1499,6 +1501,11 @@ export function AskRedixFi() {
               <div className="flex-1 overflow-y-auto px-4 py-3">
                 {!usage ? (
                   <p className="px-1 text-xs text-foreground-faint">Loading…</p>
+                ) : usage.is_pro_trial ? (
+                  <div className="space-y-2 text-[13px] text-foreground">
+                    <p>Pro Trial daily allowance: {usage.daily_limit} questions.</p>
+                    <p>{Math.max(0, (usage.daily_limit ?? 25) - (usage.daily_used ?? 0))} questions remaining today.</p>
+                  </div>
                 ) : usage.daily_limit_per_symbol !== null ? (
                   <div className="space-y-2 text-[13px] text-foreground">
                     <p>Free tier: {usage.daily_limit_per_symbol} question per stock per day.</p>

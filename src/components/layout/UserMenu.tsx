@@ -62,7 +62,9 @@ export function UserMenu() {
         <div className="absolute right-0 top-full z-30 mt-1.5 w-52 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-lg">
           <div className="border-b border-border px-3 py-2.5">
             <p className="truncate text-sm font-medium">{user.name || user.email || user.phone || "Your account"}</p>
-            <p className="mt-0.5 text-xs text-foreground-faint">{TIER_LABEL[user.tier] ?? user.tier} plan</p>
+            <p className="mt-0.5 text-xs text-foreground-faint">
+              {user.is_pro_trial ? "Pro Trial" : `${TIER_LABEL[user.tier] ?? user.tier} plan`}
+            </p>
           </div>
           <nav className="p-1.5 text-sm">
             <Link href="/account" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-md px-2.5 py-2 text-foreground-muted hover:bg-hover hover:text-foreground">
@@ -72,7 +74,7 @@ export function UserMenu() {
               <Bookmark size={14} /> Watchlist
             </Link>
             <Link href="/pricing" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-md px-2.5 py-2 text-foreground-muted hover:bg-hover hover:text-foreground">
-              <CreditCard size={14} /> {user.tier === "pro" || user.tier === "founding" ? "Manage plan" : "Upgrade plan"}
+              <CreditCard size={14} /> {user.is_pro_trial ? "Upgrade" : user.tier === "pro" || user.tier === "founding" ? "Manage plan" : "Upgrade plan"}
             </Link>
             <button
               onClick={() => {

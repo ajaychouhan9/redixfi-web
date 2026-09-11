@@ -1,6 +1,7 @@
 import { Sidebar, BottomNav } from "@/components/layout/Sidebar";
 import { MarketRibbon } from "@/components/layout/MarketRibbon";
 import { FooterDisclaimer } from "@/components/layout/FooterDisclaimer";
+import { TrialStatusBar } from "@/components/layout/TrialStatusBar";
 import { getMarketOverview } from "@/lib/api/endpoints";
 
 // CLS fix (2026-08-08) — see MarketRibbon.tsx's own docstring for the
@@ -71,6 +72,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           reserving space once the ribbon is actually fixed. */}
       <div className="flex min-w-0 flex-1 flex-col md:pt-[var(--header-height)] md:ml-56">
         <MarketRibbon initialOverview={initialOverview} initialFresh={initialFresh} initialSignalsAsOf={initialSignalsAsOf} />
+        <TrialStatusBar />
         <main className="mb-14 flex-1 px-4 py-4 md:mb-0 md:px-6 md:py-6">{children}</main>
         <FooterDisclaimer />
       </div>

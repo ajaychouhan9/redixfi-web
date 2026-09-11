@@ -54,6 +54,17 @@ export function formatDateTimeIst(iso: string): string {
   return `${formatDateIst(iso)}, ${formatTimeIst(iso)}`;
 }
 
+/** Trial expiry in the viewer's browser/device timezone, e.g. "13 Sep, 3:30 PM". */
+export function formatTrialExpiryLocal(iso: string): string {
+  return new Intl.DateTimeFormat(undefined, {
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(new Date(iso));
+}
+
 /** e.g. "15 Jul" — used in change logs / recap cards */
 export function formatShortDate(iso: string): string {
   return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" }).format(

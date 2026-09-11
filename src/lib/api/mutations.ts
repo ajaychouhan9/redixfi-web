@@ -46,6 +46,10 @@ export interface AuthUser {
   email: string | null;
   name: string | null;
   tier: string;
+  plan_display_name: string;
+  is_pro_trial: boolean;
+  pro_trial_started_at: string | null;
+  pro_trial_ends_at: string | null;
   tnc_accepted_at: string | null;
   // "Always allow" opt-out session (2026-08-21) — optional because
   // POST /auth/firebase-login and /auth/refresh (core/routers/auth.py::

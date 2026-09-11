@@ -150,6 +150,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             user: {
               ...current.user,
               tier: profile.tier, name: profile.name, email: profile.email, phone: profile.phone,
+              plan_display_name: profile.plan_display_name,
+              is_pro_trial: profile.is_pro_trial,
+              pro_trial_started_at: profile.pro_trial_started_at,
+              pro_trial_ends_at: profile.pro_trial_ends_at,
               ask_skip_confirm: profile.ask_skip_confirm,
             },
           };
@@ -164,6 +168,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })();
   }, [stored, getToken]);
+
+  // A trial is a server-owned absolute interval, not a session duration.
+  // Refresh the cached presentation exactly when that interval ends so the
+  // visible plan changes to Free without requiring logout/login. Every API
+  // request independently resolves the same timestamp server-side, so this
+  // timer is display synchronization only and grants no entitlement.
+  useEffect(() => {
+    const trialEndsAt = stored?.user.is_pro_trial ? stored.user.pro_trial_ends_at : null;
+    if (!trialEndsAt) return;
+    const delay = Math.max(0, new Date(trialEndsAt).getTime() - Date.now());
+    const timer = window.setTimeout(async () => {
+      const token = await getToken();
+      if (!token) return;
+      try {
+        const profile = await getMe(token);
+        updateCachedUser({
+          tier: profile.tier,
+          plan_display_name: profile.plan_display_name,
+          is_pro_trial: profile.is_pro_trial,
+          pro_trial_started_at: profile.pro_trial_started_at,
+          pro_trial_ends_at: profile.pro_trial_ends_at,
+        });
+      } catch {
+        // Fail closed in the UI too. The backend has already stopped Pro
+        // access; this prevents a transient profile-fetch failure leaving a
+        // stale trial badge or Pro-only controls visible.
+        updateCachedUser({ tier: "free", plan_display_name: "Free", is_pro_trial: false });
+      }
+    }, delay);
+    return () => window.clearTimeout(timer);
+  }, [stored?.user.is_pro_trial, stored?.user.pro_trial_ends_at, getToken, updateCachedUser]);
 
   const value = useMemo<AuthContextValue>(
     () => ({ user: stored?.user ?? null, loading, getToken, loginWithFirebaseToken, logout, updateCachedUser }),

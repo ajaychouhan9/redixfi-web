@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { cancelBilling, getMe } from "@/lib/api/mutations";
-import { formatShortDate } from "@/lib/format";
+import { formatShortDate, formatTrialExpiryLocal } from "@/lib/format";
 import type { MeProfile } from "@/lib/api/types";
 
 /**
@@ -19,6 +19,24 @@ export function SubscriptionStatusCard({ profile, onChange }: { profile: MeProfi
   const { getToken } = useAuth();
   const [cancelling, setCancelling] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  if (profile.is_pro_trial && profile.pro_trial_ends_at) {
+    return (
+      <Card title="Plan">
+        <dl className="grid grid-cols-2 gap-y-2 text-sm">
+          <dt className="text-foreground-muted">Plan</dt>
+          <dd>Pro Trial</dd>
+          <dt className="text-foreground-muted">Status</dt>
+          <dd>Active trial</dd>
+          <dt className="text-foreground-muted">Ends</dt>
+          <dd>{formatTrialExpiryLocal(profile.pro_trial_ends_at)}</dd>
+        </dl>
+        <Link href="/pricing" className="mt-3 inline-block rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-accent-foreground">
+          Upgrade
+        </Link>
+      </Card>
+    );
+  }
 
   async function handleCancel() {
     setCancelling(true);

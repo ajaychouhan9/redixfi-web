@@ -21,7 +21,7 @@ function isAnnualPlanId(planId: string | null | undefined): boolean {
 }
 
 export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) {
-  const { user, getToken } = useAuth();
+  const { user, getToken, updateCachedUser } = useAuth();
   const [profile, setProfile] = useState<MeProfile | null>(null);
   const [plans] = useState(initialPlans);
   const [period, setPeriod] = useState<"monthly" | "annual">("monthly");
@@ -36,7 +36,15 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
   async function reload() {
     const token = await getToken();
     if (!token) return;
-    setProfile(await getMe(token));
+    const next = await getMe(token);
+    setProfile(next);
+    updateCachedUser({
+      tier: next.tier,
+      plan_display_name: next.plan_display_name,
+      is_pro_trial: next.is_pro_trial,
+      pro_trial_started_at: next.pro_trial_started_at,
+      pro_trial_ends_at: next.pro_trial_ends_at,
+    });
   }
 
   useEffect(() => {
@@ -128,7 +136,7 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
         services will only be introduced after we receive the necessary regulatory approvals.
       </p>
 
-      {profile && activeSub && (
+      {profile && (activeSub || profile.is_pro_trial) && (
         <div className="mb-6">
           <SubscriptionStatusCard profile={profile} onChange={setProfile} />
         </div>
@@ -221,7 +229,7 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
         )}
       </div>
 
-      {profile && profile.tier !== "free" && (
+      {profile && profile.tier !== "free" && !profile.is_pro_trial && (
         <div className="mt-6">
           <TopupCard />
         </div>
