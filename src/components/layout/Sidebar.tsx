@@ -33,12 +33,14 @@ const NAV_ITEMS = [
 ] as const;
 
 // Desktop sidebar's full order (task-specified): Home / Signals / Intraday
-// / Research / Alerts / Watchlist / AI Assistant / More. Watchlist used to
+// / Research / Alerts / Watchlist / RedixFi AI / More. Watchlist used to
 // sit in a separate section below the main nav (its own Link block); Alerts
 // links to the real threshold-alert page (account/alerts/page.tsx, not a
-// new route). "AI Assistant" isn't a route — no fabricated page — it's a
-// second trigger into the SAME persistent AskRedixFi panel already in the
-// header (see AskPanelContext), rendered as its own list item below.
+// new route). "RedixFi AI" isn't a route — no fabricated page — it's a
+// second trigger into the SAME persistent RedixFi AI panel already in the
+// header (see AskPanelContext), rendered as its own list item below. It uses
+// the same Sparkles mark as the top-ribbon entry point so both clearly
+// represent one feature.
 const SIDEBAR_LINK_ITEMS = [
   { href: "/", label: "Home", icon: Home },
   { href: "/signals", label: "Signals", icon: BarChart3 },
@@ -64,7 +66,7 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const { user } = useAuth();
-  const { open: askOpen, openExpanded: openAskExpanded } = useAskPanel();
+  const { open: askOpen, openPanel } = useAskPanel();
 
   return (
     // Fixed/sticky sidebar (2026-08-11): previously a normal in-flow flex
@@ -114,14 +116,14 @@ export function Sidebar({
           );
         })}
         <button
-          onClick={openAskExpanded}
+          onClick={openPanel}
           className={clsx(
             "flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",
             askOpen ? "bg-accent/10 text-accent" : "text-foreground-muted hover:bg-hover hover:text-foreground"
           )}
         >
           <Sparkles size={17} strokeWidth={2} />
-          AI Assistant
+          RedixFi AI
         </button>
         <Link
           href="/more"

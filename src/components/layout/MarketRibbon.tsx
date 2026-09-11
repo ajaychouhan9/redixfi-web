@@ -9,7 +9,7 @@ import type { MarketOverview } from "@/lib/api/types";
 import { FreshnessDot } from "@/components/ui/FreshnessDot";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { AskRedixFi } from "@/components/app/ask/AskRedixFi";
+import { AskRedixFiTrigger } from "@/components/app/ask/AskRedixFi";
 import { HeaderSearch } from "@/components/layout/HeaderSearch";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { RedixFiLogo } from "@/components/brand/RedixFiLogo";
@@ -279,7 +279,7 @@ export function MarketRibbon({
           {signalsAsOf && <span className="hidden font-mono md:inline">{signalsAsOf}</span>}
           {overview && <FreshnessDot fresh={fresh} />}
 
-          <AskRedixFi />
+          <AskRedixFiTrigger />
 
           <Link href="/account/inbox" aria-label="Inbox" className="relative flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-hover">
             <Bell size={13} />

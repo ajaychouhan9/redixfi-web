@@ -2992,3 +2992,108 @@ cache-lock warnings occurred while prerendering; all 29 routes generated).
 **LIVE UI VERIFICATION PENDING:** deploy this frontend commit, refresh the
 Home page, and confirm the rendered lead begins `The Nikkei 225 fell
 0.03%. The market closed...`, never `03%.`.
+
+## 2026-09-11 — RedixFi AI chat UI redesign + responsive dock/drawer/sheet (frontend)
+
+Scope: **AI chat UI only.** No backend/AI-intelligence change — retrieval,
+routing, grounding, compliance, LLM selection, suggested/follow-up question
+CONTENT, conversation persistence and metering are all untouched. The
+backend's LOCKED rule (one processed Ask AI question = one quota deduction)
+is mirrored read-only.
+
+**Consistent name.** Every user-facing surface now says exactly
+**RedixFi AI**. The sidebar nav renamed "AI Assistant" → "RedixFi AI"
+(`Sidebar.tsx`) and uses the SAME `Sparkles` mark as the top-ribbon
+`AskRedixFiTrigger`, so both read as one feature. Still exactly TWO entry
+points into the one panel — no new entry point.
+
+**Responsive panel (the main fix — it never covers dashboard cards).** The
+single `AskRedixFi` panel (`src/components/app/ask/AskRedixFi.tsx`) is
+mounted once in the app shell via the new client wrapper
+`src/components/layout/AiDockShell.tsx` (`src/app/(app)/layout.tsx`), which
+also adds `lg:mr-[400px]` to the content column while open:
+
+* **≥1024px** — persistent right-hand DOCK, 400px wide (`fixed right-0
+  top-[var(--header-height)] bottom-0`). Content reflows (margin reserves the
+  space), so no card is covered. No scrim.
+* **768–1023px** — dismissible right DRAWER, 420px, over a scrim
+  (`bg-black/40`, hidden ≥lg).
+* **<768px** — BOTTOM SHEET at `88vh`/`88dvh`, full width, rounded top,
+  drag handle with drag-down-to-close (pointer capture; >120px dismisses),
+  and an explicit close X. Anchored to the bottom edge, so the old
+  "fixed panel partially covering cards" bug cannot recur.
+* `inert` + `aria-hidden` when closed (and on the history slide-over when
+  hidden) so off-screen controls stay out of the tab order.
+
+**Retired weighted-question UI (backend unchanged).** Removed the pre-send
+2x/3x estimate, the "uses up to N of your daily questions" confirm dialog,
+the per-message "−N" weight tag, and the Account **"Confirm before sending
+detailed questions"** toggle. `src/lib/ask-panel/estimateQuestionWeight.ts`
+existed only for that user-facing 1/2/3 cost display and was deleted
+(together with its `scripts/test-estimate-question-weight.ts`). Internal
+complexity weight / cost analytics on the backend are untouched; the server
+stays authoritative for quota.
+
+**Header / New Chat / History.** Header is now: `RedixFi AI` (title) +
+compact `New Chat` and `History` controls + close X. "New Chat" reuses the
+existing `startNewConversation()`; "History" reuses the existing
+`GET /ask/conversations` + `GET /ask/history` semantics. History opens as a
+full-panel in-experience slide-over with tabs **History / Usage** and an
+obvious **‹ Back** to return to the current conversation (no second overlay
+over the dashboard on mobile). The old Maximize/Minimize full-overlay mode
+(`expanded`) is gone.
+
+**Quota presentation (remaining-first, server values only).** Dense text
+replaced by a compact strip under the header, reading `GET /me/usage`'s
+`ask_redixfi` block with thin, INDEPENDENT bars:
+* **Pro Trial** — `Today · 21 of 25 remaining` + one bar. Never monthly
+  500, never add-ons.
+* **Basic / Pro** — `Today · N remaining` and `This month · N remaining`,
+  each with its OWN bar (never one segmented bar — different denominators).
+* **Free** — `1 per stock` (+ add-on only when a balance exists).
+* Add-on line appears only when `topup_questions_remaining > 0` (and never
+  on trial).
+
+**Sources / compliance / input.** The existing `SourcesSection`
+(`Sources [N Sources] ▼`) is kept, rendered as a small expandable chip
+directly under the answer and associated with its message. A fixed
+compliance line, `Informational only — not investment advice.`, sits
+immediately above the chat input whenever the input is visible (never
+LLM-generated). Suggested/follow-up chips are presentational only
+(compact wrapping pills, visually distinct from messages). The input +
+send stay pinned to the panel bottom; `88dvh`/`interactive` sizing keeps
+them above the mobile keyboard, and long answers scroll independently.
+
+**Where the questions come from (preserved, not changed):**
+* **New-chat suggestions** — `GET /ask/history` → `initial_suggestions`,
+  generated server-side by `core/ask.py::compute_initial_suggestions`
+  (symbol-context-tailored). The frontend falls back to its STATIC
+  `QUICK_PROMPTS_SYMBOL` / `QUICK_PROMPTS_GENERAL` arrays when no
+  symbol context is resolved (e.g. Home) or before history loads.
+* **Follow-up suggestions** — `POST /ask` → `result.follow_ups`, generated
+  server-side by `core/ask.py::compute_follow_ups` (deterministic, code-
+  computed from the answer's mode/fact type) and persisted per assistant
+  turn; shown under the most recent answer.
+
+**Tests / build (local):** `npx tsc --noEmit` clean; `check:compliance`
+0 errors (16 pre-existing negated-word warnings, none new); `check:auth-fetch`
+0 violations; `check:no-change-stock` 0 violations; `scripts/test-ask-fresh-start.ts`
+ALL PASS; `npm run build` exit 0, **38/38 routes** generated. ESLint still
+reports only the same pre-existing `react-hooks/set-state-in-effect`
+findings carried over verbatim from the old component (not run by `build`).
+
+**Browser verification (Playwright + installed Chrome, headless):**
+* Layout at 1280 / 820 / 390 — **10/10**: desktop panel does not overlap
+  `main`, content reflows ~400px, dock width 400; tablet drawer 420px +
+  scrim; mobile sheet `88%` height, bottom-anchored, scrim + drag handle,
+  close X dismisses (`aria-hidden` + `translate-y-full`).
+* Logged-in quota mock for all four tiers — **28/28**: trial shows only
+  `21 of 25 remaining` (no monthly/500/add-on, 1 bar); basic `8 remaining`
+  + `184 remaining` (2 bars); pro `21`/`488` + `Add-on: 7 remaining`
+  (2 bars); free `1 per stock` (0 bars); compliance line present on all;
+  new-chat chips render; a mocked `POST /ask` renders the answer, the
+  `Sources [1 Source]` chip and the backend follow-up chip with no
+  weighted tag/warning.
+
+**Deploy:** Vercel git-push deploy (web → Vercel, `main`).
+

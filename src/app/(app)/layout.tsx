@@ -1,5 +1,6 @@
 import { Sidebar, BottomNav } from "@/components/layout/Sidebar";
 import { MarketRibbon } from "@/components/layout/MarketRibbon";
+import { AiDockShell } from "@/components/layout/AiDockShell";
 import { FooterDisclaimer } from "@/components/layout/FooterDisclaimer";
 import { TrialStatusBar } from "@/components/layout/TrialStatusBar";
 import { getMarketOverview } from "@/lib/api/endpoints";
@@ -70,12 +71,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           to its own real rendered height, so this reservation can never
           fall short of reality — the `md:` gate is unchanged, still only
           reserving space once the ribbon is actually fixed. */}
-      <div className="flex min-w-0 flex-1 flex-col md:pt-[var(--header-height)] md:ml-56">
+      {/* RedixFi AI chat UI session (2026-09-11) — the content column now
+          lives inside AiDockShell, which adds `lg:mr-[400px]` while the
+          panel is docked so desktop content reflows instead of being
+          covered, and mounts the single responsive panel instance. */}
+      <AiDockShell>
         <MarketRibbon initialOverview={initialOverview} initialFresh={initialFresh} initialSignalsAsOf={initialSignalsAsOf} />
         <TrialStatusBar />
         <main className="mb-14 flex-1 px-4 py-4 md:mb-0 md:px-6 md:py-6">{children}</main>
         <FooterDisclaimer />
-      </div>
+      </AiDockShell>
       <BottomNav />
     </div>
   );

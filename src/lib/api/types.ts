@@ -1005,12 +1005,10 @@ export interface MeProfile {
   kyc_status: string;
   tnc_accepted_at: string | null;
   alerts_opt_in: AlertPreferences;
-  // "Always allow" opt-out session (2026-08-21) — "Don't ask me again" on
-  // the Ask-RedixFi heavy-question (weight>=2) confirm dialog, persisted
-  // per-account (routers/me.py::PATCH /me/ask-preferences). `false` for
-  // every account by default and for every account that predates this
-  // field (server-side `.get(..., False)`) — opt-in only, never defaults
-  // to skipping.
+  // Backend preference field (retained). Previously set by the Account
+  // "Confirm before sending detailed questions" toggle for the retired
+  // weighted-credit confirm dialog; that dialog and its toggle are gone, so
+  // the UI no longer reads or writes this.
   ask_skip_confirm: boolean;
   created_at: string;
   // Delivery-channel status (2026-09-11 task) — display only; neither
@@ -1024,12 +1022,12 @@ export interface WatchlistResponse {
   limit: number;
 }
 
-// Weighted-credit system — shape of GET /me/usage's `ask_redixfi` block
-// (core/metering.py::ask_usage_snapshot). `daily_used`/`monthly_used` are
-// already the SUM of weighted deductions, not a plain message count — the
-// server does the weighting, this is just a read-only mirror of it. Free
-// tier reports the per-symbol boolean gate instead (daily_limit_per_symbol
-// set, daily_limit/monthly_limit null) — that gate is never weighted.
+// Shape of GET /me/usage's `ask_redixfi` block (core/metering.py::
+// ask_usage_snapshot). LOCKED rule (2026-09-11): one processed Ask AI
+// question = one question deducted, so `daily_used`/`monthly_used` are plain
+// question counts (the server is the single source of truth; this is a
+// read-only mirror). Free tier reports the per-stock-per-day gate instead
+// (daily_limit_per_symbol set, daily_limit/monthly_limit null).
 export interface AskUsageInfo {
   tier: string;
   is_pro_trial: boolean;
@@ -1314,10 +1312,11 @@ export interface AskResult {
   // question suggestions, code-computed from the answer's own mode/fact
   // type. Empty array for a refusal or a locked/paywalled answer.
   follow_ups: string[];
-  // Weighted-credit system — how much of the caller's daily/monthly
-  // Ask-RedixFi COUNT this answer actually cost (1 for a simple question,
-  // up to 3 for a heavy tabular one; see core/ask.py::compute_question_
-  // weight). 0 for a free locked-guard/clarify-symbol turn.
+  // Backend field (retained): the actual question count charged for this
+  // turn — 1 for a delivered answer, 0 for a non-delivering turn. The
+  // RedixFi AI UI no longer renders a per-message cost tag (the weighted
+  // 2x/3x display is retired); quota is shown once in the panel's compact
+  // usage area instead.
   question_weight?: number;
   // Locked-quota-rules session — True only when this turn charged 0
   // (document-not-found, web-fallback-offer, an empty confirmed web
@@ -1347,9 +1346,8 @@ export interface AskConversationMessage {
   created_at: string;
   source_citations?: SourceCitation[];
   follow_ups?: string[];
-  // Weighted-credit system — see AskResult.question_weight; stored the
-  // same way so a REOPENED conversation shows the same per-message cost
-  // tag a live answer would. Absent on turns that predate this field.
+  // Backend field (retained) — see AskResult.question_weight. Absent on
+  // turns that predate this field.
   question_weight?: number;
   // Locked-quota-rules session — see AskResult.quota_unchanged; stored
   // only when true (sparse, same convention as the backend's own
