@@ -32,6 +32,7 @@ import type {
   AlertDirection,
   SharedScreenParams,
   SharedScreenSummary,
+  DailyBrief,
 } from "./types";
 
 // ---------- auth ----------
@@ -510,5 +511,16 @@ export async function rejectReviewRow(
     { retry, note },
     { token },
   );
+  return env.data;
+}
+
+// ---------- admin: daily brief social export (2026-09-12 task) ----------
+
+/** Admin-gated (core/admin_auth.py::require_admin server-side) — returns
+ * null (not a 404) when no daily_brief has been generated for today yet,
+ * same "data: null on a real 200" shape GET /brief/latest uses for other
+ * absent-doc cases elsewhere in this app. */
+export async function getDailyBriefExport(token: string): Promise<DailyBrief | null> {
+  const env = await apiGet<DailyBrief | null>("/admin/daily-brief-export", { token });
   return env.data;
 }

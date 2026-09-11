@@ -8,7 +8,7 @@ export interface DailyBriefSplit {
  * a decimal point between digits (for example, ``0.03%`` or ``₹123.45``)
  * is part of the number, never a sentence boundary.
  */
-function sentencesIn(body: string): string[] {
+export function sentencesIn(body: string): string[] {
   const sentences: string[] = [];
   let start = 0;
 
