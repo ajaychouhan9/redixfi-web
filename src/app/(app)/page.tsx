@@ -10,6 +10,9 @@ import { WatchlistAlertsCard } from "@/components/app/WatchlistAlertsCard";
 import { MarketActivityCard } from "@/components/app/MarketActivityCard";
 import { VisitorIntroStrip } from "@/components/app/VisitorIntroStrip";
 import { HomePricingSection } from "@/components/app/HomePricingSection";
+import { GovernanceRadarCard } from "@/components/app/marketing/GovernanceRadarCard";
+import { AskAiTeaserCard } from "@/components/app/marketing/AskAiTeaserCard";
+import { SmallCapPositioningStrip } from "@/components/app/marketing/SmallCapPositioningStrip";
 
 // News IS fetched here now, but only ever with NO token — this is exactly
 // the anonymous/free-tier feed (24h-delayed per B8) any logged-out visitor
@@ -58,6 +61,18 @@ export default async function HomePage() {
           why that's the correct, non-cloaking default). Hides itself
           client-side once a REAL logged-in token resolves. */}
       <VisitorIntroStrip />
+
+      {/* Governance/Ask AI preview + small-cap positioning — anonymous
+          visitors only (each self-gates on `user`, same pattern as
+          VisitorIntroStrip). Sits above the real live dashboard rows below
+          so a first-time visitor sees the two AI features named in the
+          hero (document summaries, governance radar) demonstrated with
+          real, already-generated output before scrolling into live data. */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <GovernanceRadarCard />
+        <AskAiTeaserCard />
+      </div>
+      <SmallCapPositioningStrip />
 
       {/* Row 1 — AI Daily Brief (wider) + Market Pulse. Founder decision:
           the Brief is the strongest differentiator, so it leads. 1 column
