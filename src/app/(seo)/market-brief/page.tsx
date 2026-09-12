@@ -3,6 +3,15 @@ import Link from "next/link";
 import { getLatestBrief } from "@/lib/api/endpoints";
 import { AiLabel } from "@/components/ui/AiLabel";
 
+// Build-failure fix (2026-09-11) — same treatment as /track-record. This is
+// the only other prerendered route that fetches a live upstream
+// (GET /brief/latest) without catching; while it was build-prerendered a
+// transient upstream error (nginx HTML / 500) could abort the whole Vercel
+// build. Render on request instead — data freshness is unchanged (the fetch
+// below still requests revalidate: 300, and /market-brief/[date] is already
+// dynamic).
+export const dynamic = "force-dynamic";
+
 export const revalidate = 300;
 
 export const metadata: Metadata = {
