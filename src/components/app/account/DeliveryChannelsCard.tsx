@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { isProEntitled } from "@/lib/entitlements";
 import { enableWebPush, disableWebPush, webPushSupported } from "@/lib/push/webPush";
 import { getTelegramLinkCode, getTelegramStatus, unlinkTelegram } from "@/lib/api/mutations";
+import { telegramBotUsername, telegramStartCommand, telegramWebLink } from "@/lib/telegram";
 import type { MeProfile } from "@/lib/api/types";
 
 /** "Enable browser notifications" + "Connect Telegram" (2026-09-11 task).
@@ -20,6 +21,7 @@ export function DeliveryChannelsCard({ profile, onProfileChange }: { profile: Me
   const [tgCode, setTgCode] = useState<{ code: string; deep_link: string | null } | null>(null);
   const [tgBusy, setTgBusy] = useState(false);
   const [tgError, setTgError] = useState<string | null>(null);
+  const [tgCopied, setTgCopied] = useState(false);
 
   if (!isProEntitled(user)) {
     return (
@@ -107,6 +109,25 @@ export function DeliveryChannelsCard({ profile, onProfileChange }: { profile: Me
     }
   }
 
+  // The linking code must survive even when neither the app nor Telegram Web
+  // can carry the deep link (e.g. Telegram Web drops `tgaddr` when the user
+  // isn't logged in yet) — so the plain `/start <code>` command is always
+  // shown and copyable.
+  async function copyStartCommand() {
+    if (!tgCode) return;
+    try {
+      await navigator.clipboard.writeText(telegramStartCommand(tgCode.code));
+      setTgCopied(true);
+      window.setTimeout(() => setTgCopied(false), 1500);
+    } catch {
+      // Clipboard can be blocked (permissions / insecure context) — the
+      // command stays visible and selectable, so nothing is surfaced.
+    }
+  }
+
+  const tgBot = telegramBotUsername(tgCode?.deep_link);
+  const tgWebLink = tgCode ? telegramWebLink(tgCode.deep_link, tgCode.code) : null;
+
   return (
     <Card title="Delivery channels">
       <div className="divide-y divide-border">
@@ -159,19 +180,44 @@ export function DeliveryChannelsCard({ profile, onProfileChange }: { profile: Me
           </div>
           {tgError && <p className="mt-2 text-xs text-down">{tgError}</p>}
           {tgCode && !profile.telegram_linked && (
-            <div className="mt-3 rounded-lg border border-border bg-surface px-3 py-2.5 text-xs">
-              {tgCode.deep_link ? (
-                <p>
+            <div className="mt-3 space-y-2 rounded-lg border border-border bg-surface px-3 py-2.5 text-xs">
+              {/* Two ways in, same payload: the normal t.me deep link (mobile
+                  / Telegram Desktop installed) and Telegram Web (no install).
+                  Without the web option, a desktop browser whose START button
+                  fires an unregistered tg:// URL dead-ends the link. */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                {tgCode.deep_link && (
                   <a href={tgCode.deep_link} target="_blank" rel="noopener noreferrer" className="font-medium text-accent hover:underline">
-                    Open Telegram and tap Start →
+                    Open in the Telegram app →
                   </a>
-                </p>
-              ) : (
-                <p className="text-foreground-muted">
-                  Open our Telegram bot and send: <span className="font-mono font-semibold text-foreground">/start {tgCode.code}</span>
-                </p>
-              )}
-              <p className="mt-1 text-foreground-faint">Code expires in 15 minutes. This page updates automatically once linked.</p>
+                )}
+                {tgWebLink && (
+                  <a href={tgWebLink} target="_blank" rel="noopener noreferrer" className="font-medium text-accent hover:underline">
+                    Use Telegram Web (no app needed) →
+                  </a>
+                )}
+              </div>
+              {/* The plain command is the always-works fallback (any Telegram
+                  client, and it survives Telegram Web's login redirect) — so
+                  the linking code is never lost. */}
+              <p className="text-foreground-muted">
+                {tgBot ? (
+                  <>
+                    Or open <span className="font-semibold text-foreground">@{tgBot}</span> in Telegram and send:
+                  </>
+                ) : (
+                  <>Open our Telegram bot and send:</>
+                )}{" "}
+                <span className="font-mono font-semibold text-foreground">{telegramStartCommand(tgCode.code)}</span>{" "}
+                <button
+                  type="button"
+                  onClick={copyStartCommand}
+                  className="rounded border border-border px-1.5 py-0.5 font-medium text-foreground-muted hover:text-foreground"
+                >
+                  {tgCopied ? "Copied" : "Copy code"}
+                </button>
+              </p>
+              <p className="text-foreground-faint">Code expires in 15 minutes. This page updates automatically once linked.</p>
             </div>
           )}
         </div>
