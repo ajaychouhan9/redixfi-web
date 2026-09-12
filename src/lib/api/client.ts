@@ -78,10 +78,37 @@ async function rawFetch(path: string, opts: FetchOpts = {}): Promise<Response> {
 
 async function parseOrThrow(res: Response) {
   const text = await res.text();
-  const json = text ? JSON.parse(text) : null;
-  if (!res.ok) {
-    const detail = json?.detail ?? json;
-    const message = typeof detail === "string" ? detail : res.statusText;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let json: any = null;
+  let parsed = text.length === 0; // an empty body is a valid "no content" case
+  if (text) {
+    try {
+      json = JSON.parse(text);
+      parsed = true;
+    } catch {
+      parsed = false;
+    }
+  }
+
+  // A response that is not JSON (typically an nginx/Cloudflare/Vercel HTML
+  // error page, e.g. a 502 Bad Gateway while the API is briefly down)
+  // must NEVER escape as a raw `SyntaxError: Unexpected token '<'`. That
+  // exact crash failed a Vercel prerender of /track-record on 2026-09-11
+  // (upstream returned nginx's `<html>...502...</html>` and this function
+  // blindly JSON.parse'd it). Surface a structured ApiError instead, on
+  // both a non-2xx status AND a 2xx-status non-JSON body.
+  if (!res.ok || !parsed) {
+    // Prefer a JSON body's own `detail` string (unchanged behavior); for a
+    // non-JSON body keep the readable HTTP status text as the message and
+    // stash only a bounded snippet of the body in `detail` for diagnostics.
+    const jsonDetail =
+      json && typeof json === "object" && typeof json.detail === "string"
+        ? json.detail
+        : typeof json === "string"
+          ? json
+          : undefined;
+    const message = jsonDetail || (res.ok ? "Expected JSON but received a non-JSON response" : res.statusText || `Request failed with status ${res.status}`);
+    const detail = json ?? (text ? text.slice(0, 500) : undefined);
     throw new ApiError(res.status, message, detail);
   }
   return json;

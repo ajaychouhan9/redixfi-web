@@ -14,6 +14,17 @@ import type { TrackRecordBucket, TrackRecordSnapshot } from "@/lib/api/types";
 // number here carries its own sample size (N=) and date range inline,
 // nothing is phrased as a forward statement, and every percentage is
 // relative to the stock's own sector, never an absolute return.
+//
+// Build-failure fix (2026-09-11) — render on request, NOT at build time.
+// This page depends on a live upstream (GET /track-record). While it was
+// statically prerendered, a transient upstream outage during a Vercel build
+// returned an nginx 502 HTML page and the prerender aborted the whole deploy
+// (`SyntaxError: Unexpected token '<'`). Dynamic rendering removes the
+// build-time API dependency; a genuine error now surfaces per request rather
+// than failing the deploy or caching a broken page. Freshness is unchanged:
+// the study is cached 6h by the backend (TRACK_RECORD_CACHE_TTL) and the
+// fetch below still requests revalidate: 21600.
+export const dynamic = "force-dynamic";
 export const revalidate = 21600; // 6h — matches the backend's own TRACK_RECORD_CACHE_TTL
 
 export const metadata: Metadata = {
