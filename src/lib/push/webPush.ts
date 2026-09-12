@@ -11,7 +11,7 @@
 // wrapper avoids running two separate, incompatible push-token schemes
 // (an FCM registration token vs a raw PushSubscription object) against
 // the ONE backend delivery path that already speaks FCM tokens only.
-import { getFirebaseApp, firebaseConfigured } from "@/lib/auth/firebase";
+import { getFirebaseApp, messagingConfigured } from "@/lib/auth/firebase";
 import { addPushToken, removePushTokens } from "@/lib/api/mutations";
 
 const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
@@ -21,7 +21,11 @@ export function webPushSupported(): boolean {
     typeof window !== "undefined" &&
     "serviceWorker" in navigator &&
     "Notification" in window &&
-    firebaseConfigured &&
+    // `messagingConfigured` (not `firebaseConfigured`) — push additionally
+    // needs messagingSenderId, which Auth does not; without this the toggle
+    // stays off and the user sees the friendly "not configured yet" message
+    // instead of FCM's raw `messaging/missing-app-config-values`.
+    messagingConfigured &&
     Boolean(VAPID_KEY)
   );
 }
@@ -39,7 +43,7 @@ export function notificationPermission(): NotificationPermission | "unsupported"
 export async function enableWebPush(authToken: string): Promise<void> {
   if (!webPushSupported()) {
     throw new Error(
-      !firebaseConfigured || !VAPID_KEY
+      !messagingConfigured || !VAPID_KEY
         ? "Browser notifications aren't configured yet."
         : "This browser doesn't support push notifications."
     );

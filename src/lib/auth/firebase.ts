@@ -5,11 +5,25 @@ const config = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  // FCM requires messagingSenderId on the app config. Firebase Auth does NOT
+  // use it, but `getMessaging(app)` reads `app.options.messagingSenderId` and
+  // throws `messaging/missing-app-config-values: "messagingSenderId"` when it
+  // is absent — which is what broke browser push in production (2026-09-12):
+  // the env var was provisioned in Vercel but this object never read it.
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
 /** True once real Firebase project keys (NEXT_PUBLIC_FIREBASE_*) are provisioned in the environment. */
 export const firebaseConfigured = Boolean(config.apiKey && config.projectId && config.appId);
+
+/**
+ * Messaging needs `messagingSenderId` IN ADDITION to the auth keys above.
+ * Kept separate from `firebaseConfigured` on purpose: Auth does not need it,
+ * so a missing sender ID must not disable login/OTP — it should only disable
+ * the browser-push toggle (see lib/push/webPush.ts).
+ */
+export const messagingConfigured = Boolean(firebaseConfigured && config.messagingSenderId);
 
 let app: FirebaseApp | null = null;
 let authInstance: Auth | null = null;
