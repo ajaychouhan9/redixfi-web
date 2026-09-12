@@ -6,6 +6,7 @@ import { RequireAuth } from "@/components/app/account/RequireAuth";
 import { Card } from "@/components/ui/Card";
 import { AlertRulesSection } from "@/components/app/alerts/AlertRulesSection";
 import { DeliveryChannelsCard } from "@/components/app/account/DeliveryChannelsCard";
+import { MorningBriefChannelsCard } from "@/components/app/account/MorningBriefChannelsCard";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getMe, updateAlertPrefs } from "@/lib/api/mutations";
 import type { AlertPreferences, MeProfile } from "@/lib/api/types";
@@ -69,6 +70,9 @@ function AlertsForm() {
         </ul>
       </Card>
       <DeliveryChannelsCard profile={profile} onProfileChange={setProfile} />
+      {/* PUBLIC Morning Brief channels — separate from the personalized
+          delivery channels above, available to every tier. */}
+      <MorningBriefChannelsCard />
     </>
   );
 }

@@ -1660,3 +1660,39 @@ export interface SharedScreenSummary {
   title: string;
   params: SharedScreenParams;
 }
+
+// ---------- public Morning Brief channels (2026-09-12 task) ----------
+//
+// PUBLIC distribution, deliberately separate from the personalized alert
+// delivery channels (inbox / email / personalized Telegram / push). Never
+// contains a bot token or any server credential — only the public follow
+// URLs the founder configured.
+
+export interface PublicChannelLink {
+  /** False until the founder pastes the real value into the API env. */
+  configured: boolean;
+  url: string | null;
+  /** Whether the API can PUBLISH here (Telegram only; WhatsApp is manual). */
+  publish_configured: boolean;
+}
+
+export interface PublicChannelLinks {
+  telegram: PublicChannelLink;
+  whatsapp: PublicChannelLink;
+}
+
+export interface ChannelDiscoveryState {
+  /** Server-computed: false after today's show, permanently false after
+   * "already subscribed" / "don't show again". */
+  should_show: boolean;
+  already_subscribed: boolean;
+  dismissed: boolean;
+  last_shown_date: string | null;
+}
+
+export interface PublicChannelsResponse {
+  channels: PublicChannelLinks;
+  discovery: ChannelDiscoveryState;
+}
+
+export type ChannelDiscoveryAction = "seen" | "already_subscribed" | "dismissed";

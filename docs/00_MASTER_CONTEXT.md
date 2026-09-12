@@ -3097,3 +3097,45 @@ findings carried over verbatim from the old component (not run by `build`).
 
 **Deploy:** Vercel git-push deploy (web → Vercel, `main`).
 
+## 2026-09-12 — Public Morning Brief channels (UI + discovery notification)
+
+**Placement (locked).** Channel details/links appear in exactly ONE place:
+Account → Alerts → Delivery channels, via the new
+`src/components/app/account/MorningBriefChannelsCard.tsx` (fetched from
+`GET /public-channels`). Nothing was added to the header, footer, homepage,
+SEO pages or pricing — enforced by a static placement guard in
+`scripts/test-public-channels.mjs`.
+
+**Separate from personalized delivery.** `DeliveryChannelsCard` still owns the
+PERSONALIZED channels and keeps its existing Pro gate
+(`isProEntitled(user)`); the new card is not tier-gated (public distribution is
+not an entitlement), keeps its own heading ("Morning Brief channels"), and
+renders "Follow / Open" per configured channel or a "Coming soon" state when
+the founder has not configured it yet. No channel URL is hardcoded in the app —
+it always comes from the API.
+
+**Daily discovery notification.**
+`src/components/app/ChannelDiscoveryBanner.tsx` (rendered once by the
+`(app)` shell, below the trial bar; not part of the header/footer) shows the
+locked copy and exactly three actions — "View channels" (navigates to
+`/account/alerts#morning-brief-channels`, makes NO server write),
+"Already subscribed" and "Don't show again" (both permanently suppress via
+`POST /public-channels/discovery`). Whether it renders at all is decided
+SERVER-side (`should_show`), so the once-per-day rule and the two permanent
+opt-outs survive logout/device/browser changes; the banner only marks "seen"
+once it has actually rendered. No 30-day snooze exists.
+`src/lib/publicChannels.ts` holds the pure copy/action/visibility logic.
+
+**Tests.** `node scripts/test-public-channels.mjs` — **26/26**: discovery
+visibility rules (fresh / shown-today / previous-day-may-return /
+already_subscribed / dismissed / null-guard), no-snooze, action mapping
+("View channels" performs no write), locked copy, and the placement guard
+(channel links only in the Alerts page, no header/footer/home/SEO/pricing
+promotion, no hardcoded WhatsApp URL, banner carries no URL, public card not
+Pro-gated while the personalized card keeps its gate). Also verified with the
+full production build (`npm run build`, guards + `tsc --noEmit` clean).
+
+**Not deployed:** committed locally only — pushing `main` would trigger the
+Vercel production deploy, which this task forbids.
+
+

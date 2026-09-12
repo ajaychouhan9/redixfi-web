@@ -33,6 +33,9 @@ import type {
   SharedScreenParams,
   SharedScreenSummary,
   DailyBrief,
+  PublicChannelsResponse,
+  ChannelDiscoveryState,
+  ChannelDiscoveryAction,
 } from "./types";
 
 // ---------- auth ----------
@@ -527,4 +530,33 @@ export async function rejectReviewRow(
 export async function getDailyBriefExport(token: string): Promise<DailyBrief | null> {
   const env = await apiGet<DailyBrief | null>("/admin/daily-brief-export", { token });
   return env.data;
+}
+
+// ---------- public Morning Brief channels (2026-09-12 task) ----------
+//
+// PUBLIC distribution — separate from the personalized alert delivery
+// channels. Both calls require a token (they read/write the CALLER's own
+// discovery preferences); neither is tier-gated.
+
+export async function getPublicChannels(token: string): Promise<PublicChannelsResponse> {
+  const env = await apiGet<PublicChannelsResponse>("/public-channels", { token });
+  return env.data;
+}
+
+/** Records the user's EXPLICIT discovery state:
+ *  "seen"               — today's notification was displayed (max once/day).
+ *  "already_subscribed" — permanent suppression; the user's own statement,
+ *                         never a fabricated external subscribed=true.
+ *  "dismissed"          — permanent suppression ("Don't show again"). */
+export async function postChannelDiscovery(
+  token: string,
+  action: ChannelDiscoveryAction,
+): Promise<ChannelDiscoveryState> {
+  const env = await apiMutate<{ discovery: ChannelDiscoveryState }>(
+    "/public-channels/discovery",
+    "POST",
+    { action },
+    { token },
+  );
+  return env.data.discovery;
 }

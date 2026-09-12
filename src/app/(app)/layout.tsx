@@ -3,6 +3,7 @@ import { MarketRibbon } from "@/components/layout/MarketRibbon";
 import { AiDockShell } from "@/components/layout/AiDockShell";
 import { FooterDisclaimer } from "@/components/layout/FooterDisclaimer";
 import { TrialStatusBar } from "@/components/layout/TrialStatusBar";
+import { ChannelDiscoveryBanner } from "@/components/app/ChannelDiscoveryBanner";
 import { getMarketOverview } from "@/lib/api/endpoints";
 
 // CLS fix (2026-08-08) — see MarketRibbon.tsx's own docstring for the
@@ -78,6 +79,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <AiDockShell>
         <MarketRibbon initialOverview={initialOverview} initialFresh={initialFresh} initialSignalsAsOf={initialSignalsAsOf} />
         <TrialStatusBar />
+        {/* Daily PUBLIC CHANNEL DISCOVERY notification — at most once/day,
+            server-decided; renders nothing unless the API says it should
+            show today. Not a header/footer/homepage promotion: it is the
+            required in-app discovery notice and it only POINTS at the
+            dedicated section inside Account → Alerts. */}
+        <ChannelDiscoveryBanner />
         <main className="mb-14 flex-1 px-4 py-4 md:mb-0 md:px-6 md:py-6">{children}</main>
         <FooterDisclaimer />
       </AiDockShell>
