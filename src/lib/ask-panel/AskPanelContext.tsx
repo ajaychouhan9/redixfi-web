@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  ASK_PANEL_MODE_STORAGE_KEY,
+  DEFAULT_ASK_PANEL_MODE,
+  restoreAskPanelMode,
+  type AskPanelMode,
+} from "@/lib/ask-panel/panelMode";
 
 /**
  * Shared open/close state for the single RedixFi AI panel (locked design:
@@ -18,6 +24,8 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from "re
 interface AskPanelContextValue {
   open: boolean;
   setOpen: (open: boolean) => void;
+  mode: AskPanelMode;
+  setMode: (mode: AskPanelMode) => void;
   /** Open on top of whatever is on screen (sidebar nav item's "destination"). */
   openPanel: () => void;
 }
@@ -26,8 +34,19 @@ const AskPanelContext = createContext<AskPanelContextValue | null>(null);
 
 export function AskPanelProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [mode, setModeState] = useState<AskPanelMode>(DEFAULT_ASK_PANEL_MODE);
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      setModeState(restoreAskPanelMode(window.localStorage.getItem(ASK_PANEL_MODE_STORAGE_KEY)));
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+  const setMode = (nextMode: AskPanelMode) => {
+    setModeState(nextMode);
+    window.localStorage.setItem(ASK_PANEL_MODE_STORAGE_KEY, nextMode);
+  };
   const openPanel = () => setOpen(true);
-  const value = useMemo(() => ({ open, setOpen, openPanel }), [open]);
+  const value = useMemo(() => ({ open, setOpen, openPanel, mode, setMode }), [open, mode]);
   return <AskPanelContext.Provider value={value}>{children}</AskPanelContext.Provider>;
 }
 

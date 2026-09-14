@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sparkles, X, Send, Search, Globe, RotateCcw, History, ChevronLeft, Copy, Check } from "lucide-react";
+import { Sparkles, X, Send, Search, Globe, RotateCcw, History, ChevronLeft, Copy, Check, Columns2, PanelRight, Maximize2, Pin } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 import { ApiError } from "@/lib/api/client";
@@ -13,6 +13,9 @@ import { getCurrentSymbol, onCurrentSymbolChange } from "@/lib/current-symbol";
 import { shouldStartFreshOnReopen } from "@/lib/ask-panel/freshStartRule";
 import { mayLoadPageConversation } from "@/lib/ask-panel/conversationSelectionRule";
 import { restoreAskMessages, type AskRenderableMessage } from "@/lib/ask-panel/historyMessage";
+import { ASK_PANEL_WIDTHS, type AskPanelMode } from "@/lib/ask-panel/panelMode";
+import { getStarterQuestions } from "@/lib/ask-panel/starterQuestions";
+import { resolveVisibleChatSymbol } from "@/lib/ask-panel/contextHeader";
 import { CompareResultCard } from "@/components/app/signals/CompareResultCard";
 import { ScoreHistoryChart } from "@/components/app/ask/ScoreHistoryChart";
 import { MarkdownAnswer } from "@/components/app/ask/MarkdownAnswer";
@@ -63,16 +66,10 @@ import type {
  * conversation persistence and the history list. This session only changes
  * how they are presented.
  */
-const QUICK_PROMPTS_SYMBOL = [
-  "What's driving today's score change?",
-  "How does this compare to its sector peers?",
-  "What does the composite score measure?",
-];
-
-const QUICK_PROMPTS_GENERAL = [
-  "Which sectors are strongest today?",
-  "What does the composite score measure?",
-  "Show me stocks with rising delivery and above-average volume",
+const PANEL_MODE_OPTIONS: { mode: AskPanelMode; label: string; icon: typeof PanelRight }[] = [
+  { mode: "compact", label: "Compact workspace", icon: PanelRight },
+  { mode: "half", label: "Half workspace", icon: Columns2 },
+  { mode: "full", label: "Full research workspace", icon: Maximize2 },
 ];
 
 // volume kept off here — this is a compact in-chat ranking table, out of
@@ -195,7 +192,7 @@ function AskQuota({ usage, detailed = false }: { usage: AskUsageInfo | null; det
 
 export function AskRedixFi() {
   const { user, loading: authLoading, getToken } = useAuth();
-  const { open, setOpen } = useAskPanel();
+  const { open, setOpen, mode, setMode } = useAskPanel();
   const pathname = usePathname();
   // UI polish batch, Item 4 — LOCKED DECISION. `closedAtPathRef` records
   // which route the panel was on the last time the user explicitly closed
@@ -243,7 +240,20 @@ export function AskRedixFi() {
   const freshChatRef = useRef(false);
   const explicitlySelectedConversationRef = useRef<string | null>(null);
   const [dismissedPageConflict, setDismissedPageConflict] = useState<string | null>(null);
-  const effectiveSymbol = symbol ?? pageSymbol;
+  const [contextPickerOpen, setContextPickerOpen] = useState(false);
+  const [contextQuery, setContextQuery] = useState("");
+  const [contextResults, setContextResults] = useState<ResearchSearchRow[]>([]);
+  const [contextSearching, setContextSearching] = useState(false);
+  const [pageContextSuppressed, setPageContextSuppressed] = useState(false);
+  // Once a conversation exists its durable chat context is authoritative.
+  // Page context is only the prospective context for a genuinely fresh chat.
+  const effectiveSymbol = resolveVisibleChatSymbol({
+    chatContextSymbol: chatContext?.primary_symbol ?? null,
+    selectedSymbol: symbol,
+    pageSymbol,
+    conversationId,
+    pageContextSuppressed,
+  });
 
   useEffect(() => {
     const sync = () => setPageSymbol(getCurrentSymbol());
@@ -272,6 +282,23 @@ export function AskRedixFi() {
   }, [input, effectiveSymbol]);
 
   useEffect(() => {
+    if (!contextPickerOpen || contextQuery.trim().length < 2) {
+      return;
+    }
+    let cancelled = false;
+    setContextSearching(true);
+    const id = setTimeout(() => {
+      searchResearch(contextQuery.trim(), 8)
+        .then((env) => !cancelled && setContextResults(env.data))
+        .finally(() => !cancelled && setContextSearching(false));
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(id);
+    };
+  }, [contextPickerOpen, contextQuery]);
+
+  useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages]);
 
@@ -298,6 +325,7 @@ export function AskRedixFi() {
   }
 
   function pickSymbol(sym: string) {
+    setPageContextSuppressed(false);
     explicitlySelectedConversationRef.current = null;
     setSymbol(sym);
     setChatContext({ type: "SINGLE_STOCK", primary_symbol: sym, source: "USER_SELECTED" });
@@ -310,6 +338,39 @@ export function AskRedixFi() {
     setHistoryLoaded(false);
     setShowHistoryList(false);
     historyFetchKey.current = null;
+  }
+
+  async function changeChatContext(sym: string) {
+    const canonical = sym.toUpperCase();
+    if (conversationId) {
+      const token = await getToken();
+      if (!token) return;
+      const updated = await updateAskContext(token, { conversation_id: conversationId, action: "set", symbol: canonical });
+      setChatContext(updated.chat_context);
+      setSymbol(updated.chat_context?.primary_symbol ?? null);
+    } else {
+      setChatContext({ type: "SINGLE_STOCK", primary_symbol: canonical, source: "USER_SELECTED" });
+      setSymbol(canonical);
+    }
+    setContextPickerOpen(false);
+    setPageContextSuppressed(false);
+    setContextQuery("");
+    setContextResults([]);
+  }
+
+  async function clearChatContext() {
+    if (conversationId) {
+      const token = await getToken();
+      if (!token) return;
+      const updated = await updateAskContext(token, { conversation_id: conversationId, action: "clear" });
+      setChatContext(updated.chat_context);
+    } else {
+      setChatContext(null);
+    }
+    setSymbol(null);
+    setPageContextSuppressed(true);
+    setContextPickerOpen(false);
+    setContextQuery("");
   }
 
   // Read-only refresh of the live remaining-count figures; never mutates
@@ -359,6 +420,7 @@ export function AskRedixFi() {
     setShowHistoryList(false);
     setSymbol(null);
     setChatContext(null);
+    setPageContextSuppressed(false);
     setInput("");
     setInitialSuggestions([]);
     setHistoryLoaded(true);
@@ -391,6 +453,7 @@ export function AskRedixFi() {
     explicitlySelectedConversationRef.current = item.conversation_id;
     setShowHistoryList(false);
     setSymbol(resolvedSymbol);
+    setPageContextSuppressed(false);
     setResults([]);
     setInput("");
     setLimit(null);
@@ -427,7 +490,7 @@ export function AskRedixFi() {
       const token = await getToken();
       if (!token) return;
       const result = await askRedixfi(token, {
-        page_context_symbol: pageSymbol,
+        page_context_symbol: pageContextSuppressed ? null : pageSymbol,
         chat_context_symbol: conversationId ? undefined : symbol,
         question: text,
         conversation_id: conversationId,
@@ -464,13 +527,9 @@ export function AskRedixFi() {
     }
   }
 
-  // Context-tailored suggestions (GET /ask/history) win over the generic
-  // per-mode fallback whenever the server had something specific to say.
-  const quickPrompts = effectiveSymbol
-    ? initialSuggestions.length > 0
-      ? initialSuggestions
-      : QUICK_PROMPTS_SYMBOL
-    : QUICK_PROMPTS_GENERAL;
+  // Stable capability catalogue: rendering is purely local and therefore
+  // consumes neither Ask quota nor an answer-generation provider call.
+  const starterQuestions = getStarterQuestions(effectiveSymbol);
 
   // UI polish batch, Item 4 — the fresh-vs-resume decision (extracted to
   // shouldStartFreshOnReopen so it can be tested directly). Fires BEFORE the
@@ -527,12 +586,14 @@ export function AskRedixFi() {
     if (shouldClose) close();
   }
 
-  // Responsive surface: bottom sheet (<md) → right drawer (md–lg) → dock (lg+).
+  // Responsive surface: mobile sheet, tablet drawer, user-sized desktop
+  // workspace. Full deliberately overlays the content while preserving the
+  // global left navigation; compact/half remain docked and reflow the page.
   const panelClass = [
     "fixed z-50 flex flex-col overflow-hidden border-border bg-surface-raised shadow-2xl transition-transform duration-300 ease-out",
     "inset-x-0 bottom-0 h-[88vh] rounded-t-2xl border-t supports-[height:100dvh]:h-[88dvh]",
     "md:inset-x-auto md:left-auto md:right-0 md:top-[var(--header-height)] md:bottom-0 md:h-auto md:w-[420px] md:rounded-none md:rounded-l-2xl md:border-l md:border-t-0",
-    "lg:w-[400px]",
+    "lg:w-[var(--ask-panel-width)]",
     open ? "translate-y-0 md:translate-x-0" : "pointer-events-none translate-y-full md:translate-y-0 md:translate-x-full",
   ].join(" ");
 
@@ -548,7 +609,10 @@ export function AskRedixFi() {
         aria-hidden={!open}
         inert={!open}
         className={panelClass}
-        style={dragY ? { transform: `translateY(${dragY}px)`, transition: "none" } : undefined}
+        style={{
+          "--ask-panel-width": ASK_PANEL_WIDTHS[mode],
+          ...(dragY ? { transform: `translateY(${dragY}px)`, transition: "none" } : {}),
+        } as CSSProperties}
       >
         {/* Mobile drag handle (<md only). */}
         <div
@@ -568,6 +632,20 @@ export function AskRedixFi() {
             <span className="truncate text-sm font-semibold">RedixFi AI</span>
           </div>
           <div className="flex shrink-0 items-center gap-0.5">
+            <div className="mr-1 hidden items-center rounded-lg border border-border bg-surface p-0.5 lg:flex" role="group" aria-label="Ask workspace size">
+              {PANEL_MODE_OPTIONS.map(({ mode: option, label, icon: Icon }) => (
+                <button
+                  key={option}
+                  onClick={() => setMode(option)}
+                  title={label}
+                  aria-label={label}
+                  aria-pressed={mode === option}
+                  className={`rounded-md p-1.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent ${mode === option ? "bg-accent text-accent-foreground" : "text-foreground-faint hover:bg-hover hover:text-foreground"}`}
+                >
+                  <Icon size={14} />
+                </button>
+              ))}
+            </div>
             <button
               onClick={startNewConversation}
               title="New Chat"
@@ -593,6 +671,51 @@ export function AskRedixFi() {
             </button>
           </div>
         </div>
+
+        {/* Durable chat context, never inferred from a conflicting page once
+            a conversation exists. Context changes use Phase 1's zero-cost
+            endpoint and preserve the current messages. */}
+        {user && (
+          <div className="relative border-b border-border bg-surface px-3 py-2 md:px-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2 text-[13px]">
+                {effectiveSymbol ? <Pin size={13} className="shrink-0 text-accent" /> : <Globe size={13} className="shrink-0 text-accent" />}
+                <span className="truncate font-semibold">{effectiveSymbol ? `${effectiveSymbol} · NSE` : "Market-wide"}</span>
+              </div>
+              <div className="flex shrink-0 items-center gap-2 text-[12px]">
+                <button onClick={() => setContextPickerOpen((value) => !value)} className="font-medium text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+                  {effectiveSymbol ? "Change" : "Select stock"}
+                </button>
+                {effectiveSymbol && <button onClick={clearChatContext} className="text-foreground-faint hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">Clear</button>}
+              </div>
+            </div>
+            {contextPickerOpen && (
+              <div className="mt-2 rounded-xl border border-border bg-surface-raised p-2 shadow-lg">
+                <label className="flex items-center gap-2 rounded-lg border border-border bg-hover px-2.5 py-2">
+                  <Search size={14} className="text-foreground-faint" />
+                  <span className="sr-only">Search stocks to change chat context</span>
+                  <input autoFocus value={contextQuery} onChange={(event) => {
+                    setContextQuery(event.target.value);
+                    if (event.target.value.trim().length < 2) setContextResults([]);
+                  }} placeholder="Search symbol or company" className="min-w-0 flex-1 bg-transparent text-sm outline-none" />
+                </label>
+                {contextSearching && <p className="px-2 py-2 text-xs text-foreground-faint">Searching…</p>}
+                {contextResults.length > 0 && (
+                  <ul className="mt-1 max-h-56 overflow-y-auto">
+                    {contextResults.map((row) => (
+                      <li key={row.canonicalSymbol}>
+                        <button onClick={() => changeChatContext(row.canonicalSymbol)} className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm hover:bg-hover focus-visible:outline-2 focus-visible:outline-accent">
+                          <span className="font-semibold">{row.canonicalSymbol}</span>
+                          <span className="ml-3 truncate text-foreground-faint">{row.company_name}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Compact, scannable quota strip (never a dense text line). */}
         {user && (
@@ -660,19 +783,17 @@ export function AskRedixFi() {
                 )}
                 {messages.length === 0 && historyLoaded && (
                   <div>
-                    <p className="mb-2 text-[12px] text-foreground-faint">Try asking:</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {/* Quick-prompt suggestions. Content is unchanged
-                          (server-tailored via GET /ask/history, else the
-                          generic per-mode fallback below) — presentation is
-                          a compact wrapping chip so it reads as a distinct
-                          "suggestions" affordance, never a sent message. */}
-                      {quickPrompts.map((p) => (
+                    <div className="mb-4">
+                      <p className="text-base font-semibold text-foreground">Explore what RedixFi can answer</p>
+                      <p className="mt-1 text-[12px] text-foreground-faint">Choose a research question or write your own below.</p>
+                    </div>
+                    <div className={`grid gap-2.5 ${mode === "full" ? "lg:grid-cols-3 xl:grid-cols-4" : mode === "half" ? "lg:grid-cols-2" : "grid-cols-1"}`}>
+                      {starterQuestions.map((p) => (
                         <button
                           key={p}
                           onClick={() => send(p)}
                           disabled={authLoading}
-                          className="rounded-full border border-border bg-hover px-3 py-1.5 text-left text-[12.5px] text-foreground-muted transition-colors hover:border-accent hover:text-foreground disabled:opacity-50"
+                          className="min-h-20 rounded-xl border border-border bg-hover px-4 py-3 text-left text-[13px] font-medium leading-relaxed text-foreground-muted shadow-sm transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-accent hover:bg-surface hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50"
                         >
                           {p}
                         </button>
