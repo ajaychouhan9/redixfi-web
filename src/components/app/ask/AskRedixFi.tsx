@@ -11,6 +11,7 @@ import { searchResearch } from "@/lib/api/endpoints";
 import { askRedixfi, getAskConversations, getAskHistory, getUsage } from "@/lib/api/mutations";
 import { getCurrentSymbol } from "@/lib/current-symbol";
 import { shouldStartFreshOnReopen } from "@/lib/ask-panel/freshStartRule";
+import { restoreAskMessages, type AskRenderableMessage } from "@/lib/ask-panel/historyMessage";
 import { CompareResultCard } from "@/components/app/signals/CompareResultCard";
 import { ScoreHistoryChart } from "@/components/app/ask/ScoreHistoryChart";
 import { MarkdownAnswer } from "@/components/app/ask/MarkdownAnswer";
@@ -25,13 +26,8 @@ import { isProEntitled } from "@/lib/entitlements";
 import type {
   AskConversationListItem,
   AskLimitDetail,
-  AskScreenResult,
-  AskTableResult,
   AskUsageInfo,
-  CompareResult,
   ResearchSearchRow,
-  ScoreHistoryPoint,
-  SourceCitation,
 } from "@/lib/api/types";
 
 /**
@@ -65,36 +61,6 @@ import type {
  * conversation persistence and the history list. This session only changes
  * how they are presented.
  */
-interface AskMessage {
-  role: "user" | "ai";
-  text: string;
-  sourceCitations?: SourceCitation[];
-  createdAt?: string;
-  compare?: CompareResult | null;
-  screen?: AskScreenResult | null;
-  // Task 22 Phase 4 — narrow web fallback (company-profile facts read from
-  // an external source, e.g. Wikidata, when RedixFi's own DB doesn't have
-  // it). Rendered as its own visibly distinct badge below, never mixed
-  // into the AI-generated framing — this content wasn't LLM-authored.
-  webSourced?: boolean;
-  webSourceLabel?: string | null;
-  webSourceUrl?: string | null;
-  // Additive (2026-08-06) — inline trend/comparison chart data (null/empty
-  // for a plain single-fact answer, which stays text-only by design) and
-  // deterministic follow-up suggestion chips.
-  scoreHistory?: ScoreHistoryPoint[] | null;
-  resolvedSymbol?: string | null;
-  followUps?: string[];
-  // RedixFi AI backend upgrade — multi-day/multi-field tabular answer
-  // (mode="tabular"), Pro tier only. Null for every other answer shape.
-  table?: AskTableResult | null;
-  // Locked-quota-rules session — True only for a turn that correctly
-  // charged 0 (server-computed, routers/ask.py's charged_to=="none" check).
-  // Renders the quiet "balance unchanged" footer below; undefined/false on
-  // every normally-charged turn.
-  quotaUnchanged?: boolean;
-}
-
 const QUICK_PROMPTS_SYMBOL = [
   "What's driving today's score change?",
   "How does this compare to its sector peers?",
@@ -239,7 +205,7 @@ export function AskRedixFi() {
   const [symbol, setSymbol] = useState<string | null>(null);
   const [results, setResults] = useState<ResearchSearchRow[]>([]);
   const [searching, setSearching] = useState(false);
-  const [messages, setMessages] = useState<AskMessage[]>([]);
+  const [messages, setMessages] = useState<AskRenderableMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -360,18 +326,7 @@ export function AskRedixFi() {
         setConversationId(convo.conversation_id);
         const resumedSymbol = !sym && convo.symbol && convo.symbol !== "_general" ? convo.symbol : sym;
         if (!sym && resumedSymbol) setSymbol(resumedSymbol);
-        setMessages(
-          convo.messages.map((m) => ({
-            role: m.role === "user" ? "user" : "ai",
-            text: m.content,
-            createdAt: m.created_at,
-            sourceCitations: m.source_citations,
-            followUps: m.role === "assistant" ? m.follow_ups : undefined,
-            resolvedSymbol: resumedSymbol,
-            quotaUnchanged: m.role === "assistant" ? m.quota_unchanged : undefined,
-            table: m.role === "assistant" ? m.table ?? null : undefined,
-          }))
-        );
+        setMessages(restoreAskMessages(convo.messages, resumedSymbol));
       }
     } finally {
       setHistoryLoaded(true);
@@ -421,18 +376,7 @@ export function AskRedixFi() {
     try {
       const history = await getAskHistory(token, null, item.conversation_id);
       setConversationId(item.conversation_id);
-      setMessages(
-        (history.conversation?.messages ?? []).map((m) => ({
-          role: m.role === "user" ? "user" : "ai",
-          text: m.content,
-          createdAt: m.created_at,
-          sourceCitations: m.source_citations,
-          followUps: m.role === "assistant" ? m.follow_ups : undefined,
-          resolvedSymbol,
-          quotaUnchanged: m.role === "assistant" ? m.quota_unchanged : undefined,
-          table: m.role === "assistant" ? m.table ?? null : null,
-        }))
-      );
+      setMessages(restoreAskMessages(history.conversation?.messages ?? [], resolvedSymbol));
       setInitialSuggestions(history.initial_suggestions ?? []);
     } finally {
       setHistoryLoaded(true);

@@ -1269,6 +1269,7 @@ export interface AskTableResult {
   columns: AskTableColumn[];
   rows: Record<string, string | number | null>[];
   row_count: number;
+  total_count?: number;
 }
 
 export interface AskResult {
@@ -1359,6 +1360,20 @@ export interface AskConversationMessage {
   // red-flag) so a REOPENED conversation silently dropped it. Absent on
   // turns that predate this field.
   table?: AskTableResult | null;
+  // Canonical live-response blocks. These are absent on legacy turns that
+  // predate complete structured persistence and must never be regenerated.
+  sources_used?: string[];
+  refused?: boolean;
+  technical_result?: string;
+  grounding_status?: string;
+  mode?: AskResult["mode"];
+  resolved_symbol?: string | null;
+  compare?: CompareResult | null;
+  screen?: AskScreenResult | null;
+  web_sourced?: boolean;
+  web_source_label?: string | null;
+  web_source_url?: string | null;
+  score_history?: ScoreHistoryPoint[] | null;
 }
 
 export interface AskConversation {
