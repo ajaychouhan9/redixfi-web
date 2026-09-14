@@ -3208,6 +3208,7 @@ TypeScript and production build pass, and no backend runtime change was made.
 Frontend commit `3784ec029c376a5de3fefe9194bbf6972055569a` matches
 `origin/main` and Vercel reports its Production deployment complete. The
 backend remains at runtime commit `516f80b57fd6fc783a051729fe4cb165a2d19404`;
-no backend or scheduler restart was required. An authenticated production Ask
-browser tab was unavailable in the verification session, so manual smoke
-scenarios A–F remain unverified; automated tests cover the selection guard.
+no backend or scheduler restart was required. The production browser showed an
+authenticated home-page session, but `/stocks/TCS` rendered guest-mode with no
+Ask drawer. Manual stock-page smoke scenarios A–F therefore remain unverified;
+automated tests cover the selection guard.
