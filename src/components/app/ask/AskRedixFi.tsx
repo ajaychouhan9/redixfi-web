@@ -8,8 +8,8 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 import { ApiError } from "@/lib/api/client";
 import { searchResearch } from "@/lib/api/endpoints";
-import { askRedixfi, getAskConversations, getAskHistory, getUsage } from "@/lib/api/mutations";
-import { getCurrentSymbol } from "@/lib/current-symbol";
+import { askRedixfi, getAskConversations, getAskHistory, getUsage, updateAskContext } from "@/lib/api/mutations";
+import { getCurrentSymbol, onCurrentSymbolChange } from "@/lib/current-symbol";
 import { shouldStartFreshOnReopen } from "@/lib/ask-panel/freshStartRule";
 import { restoreAskMessages, type AskRenderableMessage } from "@/lib/ask-panel/historyMessage";
 import { CompareResultCard } from "@/components/app/signals/CompareResultCard";
@@ -25,6 +25,7 @@ import { downloadXlsx } from "@/lib/xlsx";
 import { isProEntitled } from "@/lib/entitlements";
 import type {
   AskConversationListItem,
+  AskChatContext,
   AskLimitDetail,
   AskUsageInfo,
   ResearchSearchRow,
@@ -203,6 +204,8 @@ export function AskRedixFi() {
   const closedAtPathRef = useRef<string | null>(null);
   const hasClosedRef = useRef(false);
   const [symbol, setSymbol] = useState<string | null>(null);
+  const [pageSymbol, setPageSymbol] = useState<string | null>(null);
+  const [chatContext, setChatContext] = useState<AskChatContext | null>(null);
   const [results, setResults] = useState<ResearchSearchRow[]>([]);
   const [searching, setSearching] = useState(false);
   const [messages, setMessages] = useState<AskRenderableMessage[]>([]);
@@ -236,11 +239,20 @@ export function AskRedixFi() {
   // tells the loadHistory effect to skip exactly ONE stale pass so it never
   // fetches the pre-fresh-start symbol's conversation.
   const skipNextLoadRef = useRef(false);
+  const freshChatRef = useRef(false);
+  const [dismissedPageConflict, setDismissedPageConflict] = useState<string | null>(null);
+  const effectiveSymbol = symbol ?? pageSymbol;
+
+  useEffect(() => {
+    const sync = () => setPageSymbol(getCurrentSymbol());
+    sync();
+    return onCurrentSymbolChange(sync);
+  }, []);
 
   // Symbol-search suggestions — only while no symbol context is set yet;
   // the same box doubles as "ask anything" once ≥2 chars are typed.
   useEffect(() => {
-    if (symbol || input.trim().length < 2) {
+    if (effectiveSymbol || input.trim().length < 2) {
       setResults([]);
       return;
     }
@@ -255,7 +267,7 @@ export function AskRedixFi() {
       cancelled = true;
       clearTimeout(id);
     };
-  }, [input, symbol]);
+  }, [input, effectiveSymbol]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -285,6 +297,7 @@ export function AskRedixFi() {
 
   function pickSymbol(sym: string) {
     setSymbol(sym);
+    setChatContext({ type: "SINGLE_STOCK", primary_symbol: sym, source: "USER_SELECTED" });
     setResults([]);
     setInput("");
     setMessages([]);
@@ -324,8 +337,9 @@ export function AskRedixFi() {
       const convo = history.conversation;
       if (convo && convo.messages.length > 0) {
         setConversationId(convo.conversation_id);
-        const resumedSymbol = !sym && convo.symbol && convo.symbol !== "_general" ? convo.symbol : sym;
-        if (!sym && resumedSymbol) setSymbol(resumedSymbol);
+        const resumedSymbol = convo.chat_context?.primary_symbol ?? (!sym && convo.symbol && convo.symbol !== "_general" ? convo.symbol : sym);
+        setChatContext(convo.chat_context ?? (resumedSymbol ? { type: "SINGLE_STOCK", primary_symbol: resumedSymbol, source: "LEGACY" } : null));
+        if (resumedSymbol) setSymbol(resumedSymbol);
         setMessages(restoreAskMessages(convo.messages, resumedSymbol));
       }
     } finally {
@@ -340,9 +354,13 @@ export function AskRedixFi() {
     setConversationId(null);
     setLimit(null);
     setShowHistoryList(false);
-    const pageSymbol = getCurrentSymbol();
-    setSymbol(pageSymbol);
-    historyFetchKey.current = pageSymbol ?? "_general";
+    setSymbol(null);
+    setChatContext(null);
+    setInput("");
+    setInitialSuggestions([]);
+    setHistoryLoaded(true);
+    freshChatRef.current = true;
+    historyFetchKey.current = null;
   }
 
   // Real chat-history list, shown as an in-panel slide-over drawer.
@@ -376,7 +394,10 @@ export function AskRedixFi() {
     try {
       const history = await getAskHistory(token, null, item.conversation_id);
       setConversationId(item.conversation_id);
-      setMessages(restoreAskMessages(history.conversation?.messages ?? [], resolvedSymbol));
+      const context = history.conversation?.chat_context ?? (resolvedSymbol ? { type: "SINGLE_STOCK" as const, primary_symbol: resolvedSymbol, source: "LEGACY" as const } : null);
+      setChatContext(context);
+      setSymbol(context?.primary_symbol ?? null);
+      setMessages(restoreAskMessages(history.conversation?.messages ?? [], context?.primary_symbol ?? null));
       setInitialSuggestions(history.initial_suggestions ?? []);
     } finally {
       setHistoryLoaded(true);
@@ -400,13 +421,16 @@ export function AskRedixFi() {
     try {
       const token = await getToken();
       if (!token) return;
-      const result = await askRedixfi(token, { symbol, question: text, conversation_id: conversationId });
+      const result = await askRedixfi(token, {
+        page_context_symbol: pageSymbol,
+        chat_context_symbol: conversationId ? undefined : symbol,
+        question: text,
+        conversation_id: conversationId,
+      });
       setConversationId(result.conversation_id);
-      // A symbol NAMED in the question overrides page/prior context and
-      // becomes the current symbol for the rest of this session.
-      if (result.mode === "symbol" && result.resolved_symbol) {
-        setSymbol(result.resolved_symbol);
-      }
+      freshChatRef.current = false;
+      setChatContext(result.chat_context ?? null);
+      setSymbol(result.chat_context?.primary_symbol ?? null);
       setMessages((prev) => [
         ...prev,
         {
@@ -437,7 +461,7 @@ export function AskRedixFi() {
 
   // Context-tailored suggestions (GET /ask/history) win over the generic
   // per-mode fallback whenever the server had something specific to say.
-  const quickPrompts = symbol
+  const quickPrompts = effectiveSymbol
     ? initialSuggestions.length > 0
       ? initialSuggestions
       : QUICK_PROMPTS_SYMBOL
@@ -456,30 +480,24 @@ export function AskRedixFi() {
     }
   }, [open, pathname]);
 
-  // Presets the current page's symbol into a fresh conversation whenever the
-  // panel opens with none chosen yet.
-  useEffect(() => {
-    if (open && !symbol) {
-      const preset = getCurrentSymbol();
-      if (preset) pickSymbol(preset);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-
   // Loads resumable history once per distinct symbol context whenever the
   // panel is open (skipNextLoadRef skips the one stale pass after a fresh
   // start — see the comment on that ref).
   useEffect(() => {
     if (open && user) {
+      if (freshChatRef.current) {
+        refreshUsage();
+        return;
+      }
       if (skipNextLoadRef.current) {
         skipNextLoadRef.current = false;
         return;
       }
-      loadHistory(symbol);
+      loadHistory(symbol ?? pageSymbol);
       refreshUsage();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, symbol, user]);
+  }, [open, symbol, pageSymbol, user]);
 
   // Mobile bottom-sheet drag-down-to-close. Pointer capture keeps the move
   // events on the handle; `touch-none` on the handle stops page scroll.
@@ -589,8 +607,26 @@ export function AskRedixFi() {
             </div>
           ) : (
             <>
+              {conversationId && symbol && pageSymbol && symbol !== pageSymbol && dismissedPageConflict !== pageSymbol && (
+                <div className="flex items-center justify-between gap-2 border-b border-border bg-amber-bg px-3 py-2 text-xs text-foreground-muted">
+                  <span>Viewing {pageSymbol}; this chat uses {symbol}.</span>
+                  <span className="flex shrink-0 gap-1">
+                    <button
+                      onClick={async () => {
+                        const token = await getToken();
+                        if (!token) return;
+                        const updated = await updateAskContext(token, { conversation_id: conversationId, action: "set", symbol: pageSymbol });
+                        setChatContext(updated.chat_context);
+                        setSymbol(updated.chat_context?.primary_symbol ?? null);
+                      }}
+                      className="rounded border border-border px-1.5 py-0.5 font-medium hover:bg-hover"
+                    >Use {pageSymbol}</button>
+                    <button onClick={() => setDismissedPageConflict(pageSymbol)} className="rounded px-1.5 py-0.5 hover:bg-hover">Keep {symbol}</button>
+                  </span>
+                </div>
+              )}
               <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-3 py-3 md:px-4">
-                {!symbol && results.length > 0 && (
+                {!effectiveSymbol && results.length > 0 && (
                   <ul className="max-h-48 divide-y divide-border overflow-y-auto rounded-lg border border-border">
                     {results.map((r) => (
                       <li key={r.canonicalSymbol}>
@@ -607,7 +643,7 @@ export function AskRedixFi() {
                     ))}
                   </ul>
                 )}
-                {!symbol && searching && <p className="px-1 text-xs text-foreground-faint">Searching…</p>}
+                {!effectiveSymbol && searching && <p className="px-1 text-xs text-foreground-faint">Searching…</p>}
 
                 {messages.length === 0 && !historyLoaded && (
                   <p className="px-1 text-xs text-foreground-faint">Loading…</p>
@@ -837,7 +873,7 @@ export function AskRedixFi() {
               <div className="border-t border-border">
                 <p className="px-3 pt-2 text-center text-[11px] text-foreground-faint">{COMPLIANCE_LINE}</p>
                 <div className="flex items-center gap-2 p-3">
-                  {!symbol && (
+                  {!effectiveSymbol && (
                     <Search size={14} className="shrink-0 text-foreground-faint" aria-hidden />
                   )}
                   <input

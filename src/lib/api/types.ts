@@ -1326,6 +1326,14 @@ export interface AskResult {
   // never re-derived client-side, so the "balance unchanged" footer can
   // never drift from what was actually charged.
   quota_unchanged?: boolean;
+  chat_context?: AskChatContext | null;
+  pending_query?: { question: string } | null;
+}
+
+export interface AskChatContext {
+  type: "SINGLE_STOCK";
+  primary_symbol: string;
+  source: "PAGE_INHERITED" | "USER_SELECTED" | "LEGACY";
 }
 
 /** Shape of ApiError.detail on a 429 from POST /ask (core/metering.py::enforce_ask_usage). */
@@ -1383,6 +1391,8 @@ export interface AskConversation {
   messages: AskConversationMessage[];
   created_at: string;
   updated_at: string;
+  chat_context?: AskChatContext | null;
+  pending_query?: { question: string } | null;
 }
 
 /** Ask panel UI redesign session — one row of the real chat-history list

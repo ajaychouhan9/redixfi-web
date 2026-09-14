@@ -330,7 +330,7 @@ export async function getWatchlistAnomalies(token: string): Promise<AnomalyFlagD
 // passing it explicitly, unchanged.
 export async function askRedixfi(
   token: string,
-  body: { symbol?: string | null; question: string; conversation_id?: string | null }
+  body: { symbol?: string | null; page_context_symbol?: string | null; chat_context_symbol?: string | null; question: string; conversation_id?: string | null }
 ): Promise<AskResult> {
   const env = await apiMutate<AskResult>("/ask", "POST", body, { token });
   return env.data;
@@ -540,6 +540,14 @@ export async function getDailyBriefExport(token: string): Promise<DailyBrief | n
 
 export async function getPublicChannels(token: string): Promise<PublicChannelsResponse> {
   const env = await apiGet<PublicChannelsResponse>("/public-channels", { token });
+  return env.data;
+}
+
+export async function updateAskContext(
+  token: string,
+  body: { conversation_id: string; action: "set" | "clear"; symbol?: string | null },
+): Promise<{ conversation_id: string; chat_context: import("./types").AskChatContext | null; pending_query?: { question: string } | null }> {
+  const env = await apiMutate<{ conversation_id: string; chat_context: import("./types").AskChatContext | null; pending_query?: { question: string } | null }>("/ask/context", "POST", body, { token });
   return env.data;
 }
 
