@@ -11,6 +11,7 @@ import { searchResearch } from "@/lib/api/endpoints";
 import { askRedixfi, getAskConversations, getAskHistory, getUsage, updateAskContext } from "@/lib/api/mutations";
 import { getCurrentSymbol, onCurrentSymbolChange } from "@/lib/current-symbol";
 import { shouldStartFreshOnReopen } from "@/lib/ask-panel/freshStartRule";
+import { mayLoadPageConversation } from "@/lib/ask-panel/conversationSelectionRule";
 import { restoreAskMessages, type AskRenderableMessage } from "@/lib/ask-panel/historyMessage";
 import { CompareResultCard } from "@/components/app/signals/CompareResultCard";
 import { ScoreHistoryChart } from "@/components/app/ask/ScoreHistoryChart";
@@ -240,6 +241,7 @@ export function AskRedixFi() {
   // fetches the pre-fresh-start symbol's conversation.
   const skipNextLoadRef = useRef(false);
   const freshChatRef = useRef(false);
+  const explicitlySelectedConversationRef = useRef<string | null>(null);
   const [dismissedPageConflict, setDismissedPageConflict] = useState<string | null>(null);
   const effectiveSymbol = symbol ?? pageSymbol;
 
@@ -296,6 +298,7 @@ export function AskRedixFi() {
   }
 
   function pickSymbol(sym: string) {
+    explicitlySelectedConversationRef.current = null;
     setSymbol(sym);
     setChatContext({ type: "SINGLE_STOCK", primary_symbol: sym, source: "USER_SELECTED" });
     setResults([]);
@@ -360,6 +363,7 @@ export function AskRedixFi() {
     setInitialSuggestions([]);
     setHistoryLoaded(true);
     freshChatRef.current = true;
+    explicitlySelectedConversationRef.current = null;
     historyFetchKey.current = null;
   }
 
@@ -384,6 +388,7 @@ export function AskRedixFi() {
   async function openConversation(item: AskConversationListItem) {
     const resolvedSymbol = item.symbol === "_general" ? null : item.symbol;
     historyFetchKey.current = resolvedSymbol ?? "_general";
+    explicitlySelectedConversationRef.current = item.conversation_id;
     setShowHistoryList(false);
     setSymbol(resolvedSymbol);
     setResults([]);
@@ -493,11 +498,16 @@ export function AskRedixFi() {
         skipNextLoadRef.current = false;
         return;
       }
+      if (!mayLoadPageConversation({
+        activeConversationId: conversationId,
+        explicitlySelectedConversationId: explicitlySelectedConversationRef.current,
+        freshChat: freshChatRef.current,
+      })) return;
       loadHistory(symbol ?? pageSymbol);
       refreshUsage();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, symbol, pageSymbol, user]);
+  }, [open, symbol, pageSymbol, conversationId, user]);
 
   // Mobile bottom-sheet drag-down-to-close. Pointer capture keeps the move
   // events on the handle; `touch-none` on the handle stops page scroll.
