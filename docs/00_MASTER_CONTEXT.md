@@ -3138,4 +3138,76 @@ full production build (`npm run build`, guards + `tsc --noEmit` clean).
 **Not deployed:** committed locally only — pushing `main` would trigger the
 Vercel production deploy, which this task forbids.
 
+## 2026-09-14 — Ask History complete structured-response restoration
 
+**Root cause (production data + code trace).** Live Ask had two different table-bearing
+response blocks: planner/composed lists use `table`, while the deterministic simple
+ranking fast path uses `screen.results`. Conversation persistence copied text,
+citations, follow-ups and `table`, but never copied `screen` (or the other live
+structured blocks). The History API returned the Mongo message faithfully; the
+frontend then reconstructed only the small persisted subset. A real pre-fix
+production conversation for `Show top 10 stocks by composite score.` proved the
+failure: Mongo and `GET /ask/history` both contained content/citations/follow-ups
+but no `screen`, so its 10-row live ranking could not be recovered. Conversely,
+pre-fix planner conversations with a stored `table` retained columns/rows/
+`total_count` through Mongo and the History API.
+
+**Fix.** `append_conversation_turn` now persists an allowlisted copy of the same
+canonical client-visible response payload returned by POST /ask: mode/resolved
+symbol, compare, screen, table (including `total_count`), web/chart metadata,
+sources, follow-ups, refusal/grounding metadata and quota fields. No query,
+provider, or formatter is invoked by History. Both frontend resume paths now use
+one `restoreAskMessages` adapter and feed the existing live message renderer;
+there is no reduced History renderer or second table format. Legacy sparse
+messages remain text/source-only and are never fabricated or re-executed.
+
+**Tests.** Focused backend persistence/API suite: 36/36; frontend canonical
+deserialization assertions: 18/18; quota regression: 30/30; structured
+correctness: 74/74 and 146/146; Ask UI history regression: 18/18. Frontend
+TypeScript and the full 36-route production build pass. ESLint still reports the
+same three pre-existing `react-hooks/set-state-in-effect` findings in
+AskRedixFi.tsx; no new lint finding. No real provider call occurred in automated
+tests.
+
+**Deployment and production verification.** Backend
+`5665da6d23221f6a8cb35af542a3140f7dcf1b0d` and web
+`8549f3de85539f74a61d4262b5cb5d10b174e4e3` matched each repository's
+`origin/main` and were deployed exactly. Only `redixfi-api` restarted
+(PID 2756974 -> 2762437); scheduler `redixfi` stayed PID 1213460.
+`/healthz` returned ok and `/api/v1/brief/latest` returned Mongo-backed data.
+Vercel reported the exact web commit successful in Production.
+
+A real production browser smoke created a new simple ranking conversation:
+`ranking-guard`, mode `screen`, 10 results, 1 source, 2 follow-ups. Before
+closing, the rendered table had 10 rows and headers Symbol/Sector/Score/Delivery/
+Signals. Reopening that exact entry through History rendered identical headers,
+all 10 identical rows, the same source information and both follow-up chips.
+There was exactly one POST /ask and one ask_log row; persisted `screen` held all
+10 rows/result_count. Provider/planner calls, tokens and estimated cost were all
+zero. The original delivered answer consumed exactly one question (daily 2->3,
+monthly 114->115); reopening left both at 3/115. No migration or data backfill was
+performed. Historical `screen` answers that never stored their block cannot
+recover a table; older messages whose `table` was already stored can recover it.
+
+## 2026-09-14 — Phase 1 generic History selection lifecycle fix
+
+On a stock page, selecting a generic History conversation set the frontend
+`symbol` to `null`; the existing open/symbol/page-symbol effect treated that as
+no selected conversation and loaded the page-symbol conversation. The
+replacement occurred only when such a conversation existed. No backend,
+context mutation, provider call, or quota deduction was involved.
+
+`AskRedixFi` now tracks explicit History selection independently of nullable
+chat symbol state. Automatic page-history lookup runs only with no active
+conversation, no explicit selection, and no pending New Chat state. New Chat
+and intentional symbol selection clear the marker. Generic History therefore
+survives stock pages, close/reopen, and navigation; stock conflict behavior is
+unchanged. Focused lifecycle coverage is 13/13, fresh-start regression passes,
+TypeScript and production build pass, and no backend runtime change was made.
+
+Frontend commit `3784ec029c376a5de3fefe9194bbf6972055569a` matches
+`origin/main` and Vercel reports its Production deployment complete. The
+backend remains at runtime commit `516f80b57fd6fc783a051729fe4cb165a2d19404`;
+no backend or scheduler restart was required. An authenticated production Ask
+browser tab was unavailable in the verification session, so manual smoke
+scenarios A–F remain unverified; automated tests cover the selection guard.
