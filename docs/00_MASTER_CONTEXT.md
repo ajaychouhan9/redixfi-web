@@ -3212,3 +3212,56 @@ no backend or scheduler restart was required. The production browser showed an
 authenticated home-page session, but `/stocks/TCS` rendered guest-mode with no
 Ask drawer. Manual stock-page smoke scenarios A–F therefore remain unverified;
 automated tests cover the selection guard.
+
+## 2026-09-15 — Backend OpenAI usage forensic finding
+
+The backend root `.env` key is named `OPENAI_API_KEY`. Root-level data-pipeline
+scripts load it with `dotenv.load_dotenv()`; the API independently loads
+`api/.env` through `api/app/core/config.py`. The verified root-key callers are
+`data-pipeline/measured_signals_builder.py` (Signal “AI Summary” narratives),
+`daily_brief_builder.py` (morning/close briefs), and
+`marketaux_news_fetcher.py` (batched news classification). The annual-report
+embedder and risk-flag classifier are also capable callers when explicitly run;
+the archived OpenAI annual/concall summarizers are not active scheduler jobs.
+
+The exact same-day “AI Summary” activity was the market-day scheduler run of
+`measured_signals_builder.py` at 16:30 IST. It processed 2,294 measured-signal
+documents, generated 2,092 fresh GPT narratives, carried 202 existing
+narratives, and logged three tense-validation rejections. With the code’s
+10-symbol batch size, this is 210 initial `gpt-4o-mini` chat-completion calls
+plus three one-symbol regeneration calls: 213 requests affecting 2,092
+stocks. The frontend label is `SignalDetailView` → `detail.narrative`; Research
+also exposes the same field as its Signal summary.
+
+The same day’s 16:45 IST `daily_brief_builder.py close` job stored
+`model=gpt-4o-mini`, proving one additional successful OpenAI chat-completion
+caller, but it is a single market brief rather than per-stock generation. The
+08:10 morning brief used the template. Marketaux ran at 08:20, 12:20, and
+16:20; its code can issue batched `gpt-4o-mini` classification requests, but
+its file logs do not record provider usage/tokens, so an exact call count for
+those runs cannot be reconstructed from backend evidence.
+
+The API’s `redixfi_app.openai_cost_daily` record for 2026-09-15 records two
+Ask `answer_generation` calls totaling $0.0019128; the two corresponding Ask
+records are the MANGALAM annual-report question and the STLTECH concall
+question at 14:40–14:41 IST. Ask calls pass through
+`api/app/core/openai_cost_guard.py` and are fully token/cost recorded. The
+data-pipeline callers above call `api.openai.com` directly and bypass that
+guard, so their exact input/output tokens and USD cost are not stored in RedixFi.
+The measured-signals log proves 213 requests, but cannot prove their provider
+token totals or reconcile the dashboard’s approximately $0.013 to the cent.
+
+No OpenAI request was made during this investigation. No production code,
+configuration, service, scheduler, key, or database data was changed.
+
+## 2026-09-15 — NSE fundamentals full refresh, derived rebuild, and scheduler chain
+
+Production preflight confirmed `/home/ubuntu/redixfi-backend/data-pipeline/lists/all_nse_symbols.txt` contains 2,299 valid unique NSE symbols, with no duplicates or invalid entries. Before the run, `fundamentals_raw` had 2,303 documents (2,299 universe symbols; 2,282 `ok`, 21 `empty`) and `fundamentals_derived` had 751 documents (747 universe symbols), with derived data dated around 2026-08-01.
+
+The API-1-only refresh reached 2,267/2,299 attempts before HTTP 429: 2,247 usable, 20 empty, 0 request errors, and 32 remaining. Those 32 were then run exclusively with API credential 3 through a process-only override; API credentials 2 and 4 were not used. API 3 returned 31 usable responses and one empty response (`ZFSTEERING`), with 32 Mongo updates written. Normal four-credential rotation remains intact for scheduled/default fetches.
+
+The derived builder upserted 2,303/2,303 documents (751 matched, 1,552 inserted). Derived coverage is now 2,299/2,299 universe symbols; there are no raw-without-derived or missing-both universe symbols. The builder reported 2,288 parse warnings, 2,180 quarterly records, 2,133 peer records, and 2,279 shareholding records. TCS, INFY, and RELIANCE contain identity, valuation, peers, quarterly, annual, balance, cashflow, events, and shareholding sections. The live `/api/v1/research/{symbol}` endpoint returned HTTP 200 Fundamentals payloads for all three and reads `fundamentals_derived`; existing backend/frontend cache behavior remains enabled.
+
+The scheduler root cause was the missing post-fetch derived-builder job. Production source now registers exactly one 19:30 `fundamentals_fetcher.py` job and one dependent 20:00 `fundamentals_derived_builder.py` job, with a dedicated lock. The scheduler was controlled-restarted: PID 1213460 -> 2931922; `redixfi-api` was not restarted (PID 2842230 unchanged).
+
+Focused verification passed: Python compilation, universe-loader and scheduler assertions, and the fundamentals peer-parity suite (21/21). Code commit: `1b9984782d7e329fb7ba77792422d92b16cd2daa`. Local `origin/main` and production HEAD remain `f97cabbff71a5a7417a4c7c479de5d3567cce007`; production source deployment was limited to the two intended files and the checkout already had unrelated dirty files. Remaining limitation: ZFSTEERING returned no upstream Fundamentals payload; parse warnings and incomplete peer/quarterly sections remain where the source response lacks those sections.
