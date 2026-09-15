@@ -3322,3 +3322,41 @@ The derived builder upserted 2,303/2,303 documents (751 matched, 1,552 inserted)
 The scheduler root cause was the missing post-fetch derived-builder job. Production source now registers exactly one 19:30 `fundamentals_fetcher.py` job and one dependent 20:00 `fundamentals_derived_builder.py` job, with a dedicated lock. The scheduler was controlled-restarted: PID 1213460 -> 2931922; `redixfi-api` was not restarted (PID 2842230 unchanged).
 
 Focused verification passed: Python compilation, universe-loader and scheduler assertions, and the fundamentals peer-parity suite (21/21). Code commit: `1b9984782d7e329fb7ba77792422d92b16cd2daa`. Local `origin/main` and production HEAD remain `f97cabbff71a5a7417a4c7c479de5d3567cce007`; production source deployment was limited to the two intended files and the checkout already had unrelated dirty files. Remaining limitation: ZFSTEERING returned no upstream Fundamentals payload; parse warnings and incomplete peer/quarterly sections remain where the source response lacks those sections.
+
+## 2026-09-15 — Historical Signal AI Summary and Telegram activity audit
+
+Production evidence confirms Signal AI Summary was not newly activated on
+September 15. `measured_signals_builder.py` ran once on each available market
+session: September 9 generated 2,135 narratives, September 10 generated 2,293,
+September 11 generated 2,057, and September 15 generated 2,092. The scheduler
+has one market-day `measured_signals` registration at 16:30 IST, with a
+16:00 `candles_today` dependency and a 120-minute grace window; no duplicate
+builder invocation was found. September 14 was a configured NSE holiday, and
+September 12–13 were weekend days.
+
+The September 15 count was caused by actual measured-input changes compared
+with the latest prior snapshot (September 11), not merely by writing a new
+calendar-date document: 1,572 symbols changed signal-state sets, 1,936 moved
+by at least two composite-score points, and their union was exactly 2,092.
+The eight symbols with identical complete signal payloads were all carried
+forward. Thus the three-session gap amplified an existing daily eligibility
+rule; it was not a newly enabled narrative pipeline or a calendar-date-only
+regeneration defect. Historical alert-worker logs provide signal-delta counts
+of 1, 3, and 6 on September 9, 10, and 11 respectively, and 6 on September
+15; historical OpenAI batch/retry counts are not retained in those logs.
+
+Telegram delivery is a separate alert-channel feature introduced by backend
+commit `dc14d6f` on September 11. It is delivered by the 5-minute market-day
+`alert_worker` repeat job through `deliver_alert()` →
+`send_telegram_message()`, after watchlist/delta/news/behavior eligibility and
+Pro channel gating; inbox deduplication is by user, symbol, trigger, and day.
+On September 15, production logs recorded 15 successful Telegram deliveries
+across alert types. Signal-delta Telegram deliveries were recorded for ABB,
+COFORGE, INFY, and RELIANCE; TCC had no watchlist match, and ADANIPORTS had
+no signal-delta delivery (its stored composite delta was +2). This confirms
+Telegram activity was newly available as a delivery channel, while the signal
+calculation and narrative generation path itself was already operating.
+
+No builders, OpenAI requests, notifications, scheduler changes, services, or
+production data were initiated during this audit. No code or production
+configuration was changed.
