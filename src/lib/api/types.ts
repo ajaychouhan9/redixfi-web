@@ -44,9 +44,19 @@ export interface NewsToday {
   items_flagged_high: number;
 }
 
+export interface MarketSession {
+  calendar_date: string;
+  is_trading_day: boolean;
+  phase: "pre_market" | "live" | "post_market" | "weekend" | "holiday" | string;
+  current_trading_session: string | null;
+  latest_completed_session: string;
+}
+
 export interface MarketOverview {
   market_state: "OPEN" | "CLOSED" | "PRE-OPEN" | string;
   as_of_date: string;
+  market_session?: MarketSession;
+  market_status_label?: string | null;
   nifty: IndexQuote;
   banknifty: IndexQuote;
   sectors_up: number;

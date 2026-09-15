@@ -202,6 +202,9 @@ export function MarketRibbon({
           {overview && (
             <>
               <StateChip state={overview.market_state} />
+              {overview.market_status_label && (
+                <span className="hidden text-foreground-faint lg:inline">{overview.market_status_label}</span>
+              )}
               <span className="flex items-center gap-2 font-mono">
                 <span className="font-sans font-medium text-foreground-muted">NIFTY</span>
                 {/* Font-size fix (2026-08-11): value bumped to 15px per the
