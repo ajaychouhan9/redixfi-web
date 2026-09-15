@@ -3254,6 +3254,63 @@ token totals or reconcile the dashboard’s approximately $0.013 to the cent.
 No OpenAI request was made during this investigation. No production code,
 configuration, service, scheduler, key, or database data was changed.
 
+## 2026-09-15 — Signal AI Summary regeneration frequency finding
+
+The production scheduler runs `measured_signals_builder.py` once per day on
+market days, in the 16:30–18:30 IST due/grace window, with no weekday-only
+restriction. `market_only=True` makes it skip weekends and configured NSE
+holidays; it has a 120-minute grace period, two retries, and depends on the
+16:00 `candles_today` job. Production logs show runs on September 9, 10, 11,
+and 15; no second scheduler registration or concurrent builder invocation was
+found. September 14 was a configured holiday.
+
+Narrative eligibility is explicitly gated in
+`data-pipeline/measured_signals_builder.py::build()`. For each current symbol:
+`regen = (prev is None or not prev.narrative or states_changed or
+abs(delta_1d) >= NARRATIVE_MIN_DELTA)`, where `states_changed` compares the
+current and previous `signal_states` sets and `NARRATIVE_MIN_DELTA` is 2.
+`prev` is the latest prior `measured_signals.date` (not necessarily the prior
+calendar date), and `delta_1d` is the current-minus-previous composite score.
+`generate_narratives()` itself only batches the already-eligible list; it does
+not independently inspect freshness or force regeneration. Therefore the
+design is “regenerate when a measured state changes or composite moves by at
+least two points,” not every scheduler run and not merely because a new date
+document exists.
+
+On September 15, the latest available prior session was September 11. The
+builder processed 2,294 symbols: 2,092 entered the fresh-narrative list and
+202 carried the previous narrative. Mongo comparison of the stored snapshots
+found 1,572 symbols with changed signal-state sets and 1,936 with an absolute
+composite delta of at least 2; their union is exactly 2,092. Eight symbols had
+an identical complete `signals` payload, and all eight were carried. There
+were no eligible symbols with identical signal payloads, and no missing prior
+narratives or new-symbol cases. Thus today’s broad generation was caused by
+real measured-data changes between the September 11 and September 15 session
+snapshots, amplified by the holiday/weekend gap, not by a calendar-date-only
+or stale-cache condition.
+
+The narrative payload sent to `gpt-4o-mini` includes trend, DMA streak,
+sector rank/count, delivery/current average, FII buy-day count, PCR, volume
+ratio, RSI, pledge percentage/trend, insider net value, event-risk presence,
+event categories, and the first conflict text. The eligibility gate is
+narrower than this full payload: it uses only prior narrative presence,
+`signal_states`, and `composite_score` delta. The current run made 210 initial
+10-symbol batches plus 3 validation-regeneration calls for 2,092 fresh
+narratives. Prior logged runs were: September 9 — 2,135 fresh / 157 carried;
+September 10 — 2,293 / 0; September 11 — 2,057 / 237. Historical batch and
+retry counts are not recorded in those logs. The current gate and threshold
+date to the original July 19 implementation; the September 6 candle-history
+threshold change affected eligible measured-symbol coverage, not the narrative
+gate itself.
+
+Generated narratives are stored in `measured_signals`, keyed by
+`symbol` + `date`, with `narrative`, `narrative_model`, and `updated_at`. The
+collection retains one document per symbol per session/day, so daily
+regeneration is not required merely to retain history. Current classification:
+the behavior is **correct but potentially optimizable**—the gate avoids
+unchanged inputs, but a normal post-holiday session can legitimately trigger
+generation for most of the universe. No optimization was implemented.
+
 ## 2026-09-15 — NSE fundamentals full refresh, derived rebuild, and scheduler chain
 
 Production preflight confirmed `/home/ubuntu/redixfi-backend/data-pipeline/lists/all_nse_symbols.txt` contains 2,299 valid unique NSE symbols, with no duplicates or invalid entries. Before the run, `fundamentals_raw` had 2,303 documents (2,299 universe symbols; 2,282 `ok`, 21 `empty`) and `fundamentals_derived` had 751 documents (747 universe symbols), with derived data dated around 2026-08-01.
