@@ -123,6 +123,10 @@ export interface MoverRow {
 export interface SignalsMovers {
   up: MoverRow[];
   down: MoverRow[];
+  // Sep 2026: the actual measured_signals observation date these movers
+  // were computed from (null only when no data exists yet) — use this
+  // instead of a static "today" label.
+  date?: string | null;
 }
 
 export interface SignalDetailSignals {
@@ -296,6 +300,10 @@ export interface SectorSummaryRow {
 export interface SectorSummary {
   summary: string;
   ranked: SectorSummaryRow[];
+  // Sep 2026: the actual measured_signals observation date this
+  // aggregation ran against (null only when no data exists yet) — use
+  // this instead of a static "today" label.
+  date?: string | null;
 }
 
 export interface SignalConflict {

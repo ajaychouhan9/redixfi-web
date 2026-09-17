@@ -3,6 +3,7 @@ import { TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import type { SignalsMovers, MoverRow } from "@/lib/api/types";
 import { ShareCardPopover } from "@/components/app/marketing/ShareCardPopover";
+import { formatObservationDate } from "@/lib/format";
 
 function MoverList({ rows, label, tone }: { rows: MoverRow[]; label: string; tone: "up" | "down" }) {
   const Icon = tone === "up" ? TrendingUp : TrendingDown;
@@ -31,9 +32,14 @@ export function TopSignalChangesCard({ movers }: { movers: SignalsMovers | null 
   const topGainer = movers?.up[0];
   const topDecliner = movers?.down[0];
   const shareStat = topGainer ? `${topGainer.symbol} +${topGainer.delta_1d}` : undefined;
+  // Sep 2026 fix: was a static "Top Signal Changes" with no date, which is
+  // wrong on weekends/holidays/before the day's measured_signals run —
+  // signal_movers() now returns the real observation date.
+  const observedOn = formatObservationDate(movers?.date);
+  const title = observedOn ? `Top Signal Changes · ${observedOn}` : "Top Signal Changes";
   return (
     <Card
-      title="Top Signal Changes"
+      title={title}
       action={
         <div className="flex items-center gap-2">
           <ShareCardPopover

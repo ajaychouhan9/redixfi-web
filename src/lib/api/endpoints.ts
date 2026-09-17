@@ -55,6 +55,13 @@ export const getMarketOverview = (opts?: FetchOpts) =>
 
 export interface SignalsListParams {
   sector?: string;
+  // Sep 2026: separate from `sector` above, which is still the legacy
+  // sector_index (NIFTY-style index-tag) filter. `industry` filters
+  // symbols_master.industry — the genuine per-stock classification the
+  // Industry Standing card groups by — so clicking a card row can filter
+  // by the SAME field it displays, without repointing the existing
+  // sector_index dropdown/param at a different taxonomy.
+  industry?: string;
   score_min?: number;
   score_max?: number;
   event_risk?: boolean;

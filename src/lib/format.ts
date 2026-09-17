@@ -73,6 +73,22 @@ export function formatDataAsOf(asOf: { data_as_of: string; data_as_of_type: stri
   return `Data as of ${formatDateIst(asOf.data_as_of)} · ${formatTimeIst(asOf.data_as_of)} IST`;
 }
 
+/**
+ * Sep 2026 — plain "17 Sep 2026" with no prefix, for card titles like
+ * "Industry standing · 17 Sep 2026" / "Unusual activity · 17 Sep 2026",
+ * replacing a static "today" with the real underlying observation date.
+ * Accepts a plain "YYYY-MM-DD" date (measured_signals' own date format)
+ * or a full ISO timestamp; returns null (render nothing) rather than
+ * fabricating a date when none is available.
+ */
+export function formatObservationDate(dateStr: string | null | undefined): string | null {
+  if (!dateStr) return null;
+  const isoDate = /^\d{4}-\d{2}-\d{2}/.test(dateStr) ? dateStr.slice(0, 10) : dateStr;
+  const parsed = new Date(`${isoDate}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return formatDateIst(parsed.toISOString());
+}
+
 /** Trial expiry in the viewer's browser/device timezone, e.g. "13 Sep, 3:30 PM". */
 export function formatTrialExpiryLocal(iso: string): string {
   return new Intl.DateTimeFormat(undefined, {

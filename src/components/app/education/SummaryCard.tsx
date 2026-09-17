@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Layers } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { DeltaValue } from "@/components/ui/DeltaValue";
+import { formatObservationDate } from "@/lib/format";
 import type { SectorSummary, SectorSummaryRow, WatchlistSummary } from "@/lib/api/types";
 
 /**
@@ -52,15 +53,27 @@ function SymbolGroup({ label, symbols, tone }: { label: string; symbols: string[
 const STRONG_CAP = 4;
 const WEAK_CAP = 3;
 
-function SectorRow({ row }: { row: SectorSummaryRow }) {
+// Sep 2026: rows are `symbols_master.industry` values (the "Sector"→
+// "Industry" terminology fix below), and are now clickable — reusing the
+// EXISTING Signals table/filter (GET /signals?industry=...) rather than a
+// new parallel table, so the stock count shown here and the filtered
+// result set always come from the same classification source.
+function SectorRow({ row, onSelect }: { row: SectorSummaryRow; onSelect?: (industry: string) => void }) {
+  const clickable = !!onSelect;
   return (
-    <div className="flex items-center justify-between px-5 py-2">
+    <button
+      type="button"
+      onClick={clickable ? () => onSelect!(row.sector) : undefined}
+      disabled={!clickable}
+      className={`flex w-full items-center justify-between px-5 py-2 text-left ${clickable ? "hover:bg-hover" : ""}`}
+      title={clickable ? `Filter Signals by ${row.sector}` : undefined}
+    >
       <span className="text-sm">{row.sector}</span>
       <span className="flex items-center gap-3">
         <span className="font-mono text-[12px] text-foreground-faint">{row.count} stocks</span>
         <DeltaValue value={row.avg_delta} className="w-16 justify-end" />
       </span>
-    </div>
+    </button>
   );
 }
 
@@ -74,20 +87,27 @@ function SectorRow({ row }: { row: SectorSummaryRow }) {
  * splits into a compact STRONGEST | WEAKEST two-column view (top ~4 /
  * bottom ~3, shrinking either side so they never overlap when the sector
  * count is small); "View all sectors →" expands to the full ranked list. */
-export function SectorSummaryCard({ data }: { data: SectorSummary }) {
+export function SectorSummaryCard({ data, onSelectIndustry }: { data: SectorSummary; onSelectIndustry?: (industry: string) => void }) {
   const [expanded, setExpanded] = useState(false);
   const total = data.ranked.length;
   const weakCap = Math.min(WEAK_CAP, Math.floor(total / 2));
   const strongCap = Math.min(STRONG_CAP, total - weakCap);
   const strongest = data.ranked.slice(0, strongCap);
   const weakest = data.ranked.slice(total - weakCap).reverse();
+  // Sep 2026: this card groups by symbols_master.industry (95 real
+  // categories, e.g. "Chemical Manufacturing", "Software & Programming"),
+  // not a sector — renamed from "Sector standing" and given the real
+  // observation date instead of a static "today" (data.date comes from
+  // education.py::summary_sectors' own measured_signals date lookup).
+  const observedOn = formatObservationDate(data.date);
+  const title = observedOn ? `Industry standing · ${observedOn}` : "Industry standing";
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-surface-raised">
       <div className="flex items-center gap-2 px-5 py-4">
         <Layers size={14} className="text-accent" />
         <div>
-          <h3 className="text-sm font-semibold">Sector standing today</h3>
+          <h3 className="text-sm font-semibold">{title}</h3>
           <p className="text-[12px] text-foreground-faint">{data.summary}</p>
         </div>
       </div>
@@ -97,15 +117,15 @@ export function SectorSummaryCard({ data }: { data: SectorSummary }) {
           <div className="divide-y divide-border border-b border-border sm:border-b-0 sm:border-r">
             <p className="px-5 pt-2.5 pb-1 font-mono text-[11px] uppercase tracking-wide text-foreground-faint">Strongest</p>
             {strongest.map((r) => (
-              <SectorRow key={r.sector} row={r} />
+              <SectorRow key={r.sector} row={r} onSelect={onSelectIndustry} />
             ))}
           </div>
           <div className="divide-y divide-border">
             <p className="px-5 pt-2.5 pb-1 font-mono text-[11px] uppercase tracking-wide text-foreground-faint">Weakest</p>
             {weakest.length > 0 ? (
-              weakest.map((r) => <SectorRow key={r.sector} row={r} />)
+              weakest.map((r) => <SectorRow key={r.sector} row={r} onSelect={onSelectIndustry} />)
             ) : (
-              <p className="px-5 pb-2.5 text-xs text-foreground-faint">No distinct weakest sector today.</p>
+              <p className="px-5 pb-2.5 text-xs text-foreground-faint">No distinct weakest industry today.</p>
             )}
           </div>
         </div>
@@ -114,7 +134,7 @@ export function SectorSummaryCard({ data }: { data: SectorSummary }) {
       {expanded && (
         <div className="divide-y divide-border border-t border-border">
           {data.ranked.map((r) => (
-            <SectorRow key={r.sector} row={r} />
+            <SectorRow key={r.sector} row={r} onSelect={onSelectIndustry} />
           ))}
         </div>
       )}
@@ -124,7 +144,7 @@ export function SectorSummaryCard({ data }: { data: SectorSummary }) {
           onClick={() => setExpanded((v) => !v)}
           className="block w-full border-t border-border py-2.5 text-center text-xs font-medium text-accent"
         >
-          {expanded ? "Show less ↑" : "View all sectors →"}
+          {expanded ? "Show less ↑" : "View all industries →"}
         </button>
       )}
     </div>

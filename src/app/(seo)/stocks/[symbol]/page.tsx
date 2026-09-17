@@ -6,6 +6,7 @@ import { ApiError } from "@/lib/api/client";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { Sparkline } from "@/components/ui/Sparkline";
 import { NewsList } from "@/components/app/NewsList";
+import { formatDataAsOf } from "@/lib/format";
 
 // Public no-login snapshot — ISR: pre-rendered on first crawl/visit, then
 // revalidated every 5 minutes. Fetched WITHOUT a bearer token, which the
@@ -86,6 +87,12 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
         <span className="text-3xl font-semibold">₹{data.price.last_price.toLocaleString("en-IN")}</span>
         <DeltaValue value={data.price.day_change_pct} kind="pct" />
       </div>
+      {/* Sep 2026 fix: `data` here already carries price.data_as_of (the
+          fresh intraday overlay's real candle timestamp, or the last
+          completed session's date) — every other surface (ResearchDetail,
+          Signal tables) already renders this via formatDataAsOf(); this
+          SEO snapshot page simply never did. */}
+      <p className="mt-1 text-xs text-foreground-faint">{formatDataAsOf(data.price.data_as_of)}</p>
       <div className="mt-3 max-w-xs">
         <div className="h-1.5 w-full rounded-full bg-neutral-bg">
           <div className="h-1.5 rounded-full bg-accent" style={{ width: `${positionPct}%` }} />

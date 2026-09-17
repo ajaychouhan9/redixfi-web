@@ -83,6 +83,32 @@ export function SignalUnlockGate({
     };
   }, [authLoading, user, attempted, getToken, symbol, initialDetail.locked]);
 
+  // Sep 2026 fix (entitlement-flash bug): entitlement has THREE states —
+  // unresolved / entitled / not-entitled — and this render gate used to
+  // collapse the first two into "not entitled", so a genuinely logged-in
+  // Pro subscriber saw this exact "Analytics Pro" upgrade card for the
+  // ~1-3s it takes auth + the real-token re-fetch above to resolve, before
+  // flipping to their actual unlocked content. `authLoading` and the
+  // effect's own `attempted` flag were both already in scope here — they
+  // just weren't checked before this gate.
+  //
+  // Only ambiguous when the anonymous SSR result was itself locked — if
+  // `initialDetail.locked` was already false (symbol not gated at all, or
+  // already in the free-tier unlocked sample), there's nothing to resolve
+  // and content should render immediately regardless of auth timing, same
+  // as before this fix, for both anonymous and logged-in visitors.
+  const stillResolving = initialDetail.locked && (authLoading || (!!user && !attempted));
+
+  if (stillResolving) {
+    return (
+      <div className="mx-auto max-w-3xl animate-pulse space-y-3">
+        <div className="h-6 w-48 rounded bg-hover" />
+        <div className="h-24 rounded-xl bg-hover" />
+        <div className="h-40 rounded-xl bg-hover" />
+      </div>
+    );
+  }
+
   if (detail.locked) {
     return (
       <div className="mx-auto max-w-3xl">

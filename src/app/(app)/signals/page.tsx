@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
-import { SmartScreenerBox } from "@/components/app/signals/SmartScreenerBox";
-import { SignalsExplorer } from "@/components/app/signals/SignalsExplorer";
-import { SectorSummaryCard } from "@/components/app/education/SummaryCard";
+import { SignalsPageBody } from "@/components/app/signals/SignalsPageBody";
 import { getSectorSummary, getSignals, getSharedScreen } from "@/lib/api/endpoints";
 
 export const metadata: Metadata = {
   title: "Signal Dashboard",
-  description: "Measured composite signal scores across 2,000+ NSE stocks — trend, delivery, sector standing and options positioning, factually reported.",
+  description: "Measured composite signal scores across 2,000+ NSE stocks — trend, delivery, industry standing and options positioning, factually reported.",
 };
 
 export default async function SignalsPage({ searchParams }: { searchParams: Promise<{ clone?: string }> }) {
@@ -34,9 +32,7 @@ export default async function SignalsPage({ searchParams }: { searchParams: Prom
           Measured market signals across {trackedCount !== null ? trackedCount.toLocaleString("en-IN") : "2,000+"} tracked stocks
         </p>
       </div>
-      <div className="mb-5">{sectorSummary && <SectorSummaryCard data={sectorSummary} />}</div>
-      <SmartScreenerBox />
-      <SignalsExplorer initialParams={cloneSource?.params} />
+      <SignalsPageBody sectorSummary={sectorSummary} cloneSource={cloneSource} />
     </div>
   );
 }

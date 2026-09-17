@@ -4,6 +4,7 @@ import { getSignalMovers } from "@/lib/api/endpoints";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { Card } from "@/components/ui/Card";
 import type { MoverRow } from "@/lib/api/types";
+import { formatObservationDate } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Signal Movers",
@@ -46,10 +47,15 @@ function MoverList({ rows }: { rows: MoverRow[] }) {
 export default async function SignalMoversPage() {
   const env = await getSignalMovers(undefined, 20);
   const movers = env.data;
+  // Sep 2026 fix: same real observation date TopSignalChangesCard now
+  // shows on the Home card — this detail page must match it, not imply a
+  // different (or no) date.
+  const observedOn = formatObservationDate(movers.date);
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-4 text-xl font-semibold">Signal Movers</h1>
+      <h1 className="mb-1 text-xl font-semibold">Signal Movers</h1>
+      {observedOn && <p className="mb-4 text-sm text-foreground-muted">As of {observedOn}</p>}
       <div className="grid gap-4 sm:grid-cols-2">
         <Card title="Score Gainers">
           <MoverList rows={movers.up} />

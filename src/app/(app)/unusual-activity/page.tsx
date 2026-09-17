@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getAnomalies } from "@/lib/api/endpoints";
 import { AnomalyCard } from "@/components/app/AnomalyCard";
+import { formatObservationDate } from "@/lib/format";
 
 /**
  * Full-list destination for Home's compact "Unusual activity today" tiles.
@@ -21,11 +22,15 @@ export default async function UnusualActivityPage() {
   // endpoint — a transient API failure shows AnomalyCard's existing "not
   // available yet" state instead of crashing the whole page.
   const result = await getAnomalies({ size: 200 }).catch(() => null);
+  // Sep 2026 fix: same real scan date AnomalyCard itself now shows in its
+  // title — this page's own heading must match it, not imply "today"
+  // when the scan may be from a prior completed session.
+  const observedOn = formatObservationDate(result?.page_info.scan?.date);
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
       <div>
-        <h1 className="text-xl font-semibold">Unusual activity today</h1>
+        <h1 className="text-xl font-semibold">{observedOn ? `Unusual activity · ${observedOn}` : "Unusual activity"}</h1>
         <p className="mt-1 text-sm text-foreground-muted">
           Every stock scanned against the same disclosed statistical thresholds — up and down alike, never curated.
         </p>

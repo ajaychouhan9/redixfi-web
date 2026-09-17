@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Activity, ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import type { AnomalyFlagDoc, AnomalyScanMeta, AnomalyType, AnomalyDirection } from "@/lib/api/types";
+import { formatObservationDate } from "@/lib/format";
 
 /**
  * Task 16 Part C — full-universe, disclosed-criteria anomaly scan.
@@ -86,11 +87,18 @@ export function AnomalyCard({
 }) {
   if (!scan) {
     return (
-      <Card title="Unusual activity today">
+      <Card title="Unusual activity">
         <p className="text-sm text-foreground-muted">No anomaly scan available yet.</p>
       </Card>
     );
   }
+
+  // Sep 2026 fix: was a static "Unusual activity today" with no date,
+  // which is wrong on weekends/holidays/before the day's scan runs —
+  // `scan.date` (the real scan date, already returned by the API) was
+  // already available here and simply never rendered.
+  const observedOn = formatObservationDate(scan.date);
+  const title = observedOn ? `Unusual activity · ${observedOn}` : "Unusual activity";
 
   // Bucket by (type, direction) for the symbol lists shown inside each tile
   // (full mode only — compact mode never reads `buckets`).
@@ -113,7 +121,7 @@ export function AnomalyCard({
     <Card
       title={
         <span className="flex items-center gap-2">
-          <Activity size={14} className="text-accent" /> Unusual activity today
+          <Activity size={14} className="text-accent" /> {title}
         </span>
       }
       action={

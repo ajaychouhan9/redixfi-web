@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Search, Filter, ArrowUpDown, SlidersHorizontal } from "lucide-react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { Search, Filter, ArrowUpDown, SlidersHorizontal, X } from "lucide-react";
 import { getSignals } from "@/lib/api/endpoints";
 import type { SignalRow } from "@/lib/api/types";
 import { SIGNAL_SECTORS } from "@/data/sectors";
@@ -37,10 +37,25 @@ const PAGE_SIZE = 50;
 // own state owns the truth, so the clone target can still freely modify
 // and re-save under a new link. Optional/partial because a shared screen
 // may have omitted any given filter.
-export function SignalsExplorer({ initialParams }: { initialParams?: SharedScreenParams } = {}) {
+// Sep 2026: exposed so the Industry Standing card (a sibling component on
+// the same page) can drive this table's filter/scroll without a second
+// Signals table or a page navigation — see SignalsPageBody.tsx.
+export interface SignalsExplorerHandle {
+  filterByIndustry: (industry: string) => void;
+}
+
+export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams?: SharedScreenParams }>(function SignalsExplorer(
+  { initialParams } = {},
+  ref
+) {
   const { user, getToken } = useAuth();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [q, setQ] = useState(initialParams?.q ?? "");
   const [sector, setSector] = useState(initialParams?.sector ?? "");
+  // Separate from `sector` above (the legacy sector_index/NIFTY-style index
+  // dropdown, unchanged) — this filters symbols_master.industry, the SAME
+  // field the Industry Standing card groups by, via GET /signals?industry=.
+  const [industry, setIndustry] = useState<string>("");
   const [scoreMin, setScoreMin] = useState(initialParams?.score_min != null ? String(initialParams.score_min) : "");
   const [scoreMax, setScoreMax] = useState(initialParams?.score_max != null ? String(initialParams.score_max) : "");
   const [eventRiskOnly, setEventRiskOnly] = useState(!!initialParams?.event_risk);
@@ -75,10 +90,18 @@ export function SignalsExplorer({ initialParams }: { initialParams?: SharedScree
     })();
   }, [watchlistOnly, user, getToken]);
 
+  useImperativeHandle(ref, () => ({
+    filterByIndustry: (value: string) => {
+      setIndustry(value);
+      containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    },
+  }));
+
   const params = useMemo(
     () => ({
       q: q || undefined,
       sector: sector || undefined,
+      industry: industry || undefined,
       score_min: scoreMin ? Number(scoreMin) : undefined,
       score_max: scoreMax ? Number(scoreMax) : undefined,
       event_risk: eventRiskOnly ? true : undefined,
@@ -87,7 +110,7 @@ export function SignalsExplorer({ initialParams }: { initialParams?: SharedScree
       page,
       size: PAGE_SIZE,
     }),
-    [q, sector, scoreMin, scoreMax, eventRiskOnly, sort, order, page]
+    [q, sector, industry, scoreMin, scoreMax, eventRiskOnly, sort, order, page]
   );
 
   // Same filter identity as `params` above, minus pagination — what
@@ -138,7 +161,7 @@ export function SignalsExplorer({ initialParams }: { initialParams?: SharedScree
     };
   }, [params, watchlistOnly, watchlistSymbols, getToken]);
 
-  useEffect(() => setPage(1), [q, sector, scoreMin, scoreMax, eventRiskOnly, watchlistOnly, sort, order]);
+  useEffect(() => setPage(1), [q, sector, industry, scoreMin, scoreMax, eventRiskOnly, watchlistOnly, sort, order]);
 
   // Multi-tier restructure (2026-08-08) — CSV export is now Pro-only
   // (was any-paid-tier). "founding" resolves to Pro-equivalent, matching
@@ -209,7 +232,7 @@ export function SignalsExplorer({ initialParams }: { initialParams?: SharedScree
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <div>
+    <div ref={containerRef}>
       {!explorerControlsEnabled && (
         <p className="mb-3 rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-muted">
           Basic shows the full table, sorted A–Z. For a filtered or sorted view, ask Ask-RedixFi AI directly — e.g.
@@ -273,6 +296,19 @@ export function SignalsExplorer({ initialParams }: { initialParams?: SharedScree
               <input type="checkbox" checked={watchlistOnly} onChange={(e) => setWatchlistOnly(e.target.checked)} />
               Watchlist only
             </label>
+          )}
+          {industry && (
+            <span className="flex shrink-0 items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent">
+              Industry: {industry}
+              <button
+                type="button"
+                onClick={() => setIndustry("")}
+                aria-label="Clear industry filter"
+                className="rounded-full hover:bg-accent/20"
+              >
+                <X size={12} />
+              </button>
+            </span>
           )}
 
           <div className="ml-auto flex shrink-0 items-center gap-2">
@@ -395,4 +431,4 @@ export function SignalsExplorer({ initialParams }: { initialParams?: SharedScree
       )}
     </div>
   );
-}
+});
