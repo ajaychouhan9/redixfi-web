@@ -14,6 +14,7 @@ import {
   removeFromComparisonQueue,
 } from "@/lib/comparison-queue";
 import type { SignalRow } from "@/lib/api/types";
+import { formatDataAsOf } from "@/lib/format";
 
 // Column order (2026-08-08, finalized spec): Symbol | Sector | Price |
 // Score | Delivery | Volume | Signals | Event. Symbol/Price/Score are
@@ -108,6 +109,7 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
           {row.symbol}
         </Link>
         <div className="max-w-[16rem] truncate text-[12px] text-foreground-faint">{row.company_name}</div>
+        {row.data_as_of && <div className="whitespace-nowrap text-[10px] text-foreground-faint">{formatDataAsOf(row.data_as_of)}</div>}
       </td>
       {columns.sector && <td className="hidden px-3 py-2.5 text-xs text-foreground-muted md:table-cell">{row.sector}</td>}
       {/* Price: always visible (never hidden by the column picker or by
@@ -119,6 +121,7 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
           primary={row.last_price !== null ? `₹${row.last_price.toLocaleString("en-IN")}` : null}
           subtitle={row.day_change_pct !== null ? <DeltaValue value={row.day_change_pct} kind="pct" className="text-[12px]" /> : undefined}
         />
+        {row.price_data_as_of && <div className="text-[10px] text-foreground-faint">{formatDataAsOf(row.price_data_as_of)}</div>}
       </td>
       {/* Score: always visible — unchanged position/behavior.
           Bug 1 fix (2026-08-22): `locked` here must be ONLY the real B8

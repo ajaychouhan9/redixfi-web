@@ -54,6 +54,14 @@ export function formatDateTimeIst(iso: string): string {
   return `${formatDateIst(iso)}, ${formatTimeIst(iso)}`;
 }
 
+export function formatDataAsOf(asOf: { data_as_of: string; data_as_of_type: string } | null | undefined): string {
+  if (!asOf?.data_as_of) return "Data timestamp unavailable";
+  if (asOf.data_as_of_type === "date" || /^\d{4}-\d{2}-\d{2}$/.test(asOf.data_as_of)) {
+    return `Data as of ${formatDateIst(`${asOf.data_as_of}T00:00:00Z`)}`;
+  }
+  return `Data as of ${formatDateIst(asOf.data_as_of)} · ${formatTimeIst(asOf.data_as_of)} IST`;
+}
+
 /** Trial expiry in the viewer's browser/device timezone, e.g. "13 Sep, 3:30 PM". */
 export function formatTrialExpiryLocal(iso: string): string {
   return new Intl.DateTimeFormat(undefined, {

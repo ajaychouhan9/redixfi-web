@@ -15,9 +15,9 @@ import { AlertCreateButton } from "@/components/app/alerts/AlertCreateButton";
 import { RecordView } from "@/components/app/RecordView";
 import { CompareIndicator } from "@/components/app/CompareIndicator";
 import { CurrentSymbolSync } from "@/components/app/CurrentSymbolSync";
-import { formatShortDate } from "@/lib/format";
+import { formatDataAsOf, formatShortDate } from "@/lib/format";
 import Link from "next/link";
-import type { Candle, DeliveryPoint, FundamentalsBlock, SignalConflict, SignalDetail } from "@/lib/api/types";
+import type { Candle, DeliveryPoint, FundamentalsBlock, SignalConflict, SignalDetail, DataAsOf } from "@/lib/api/types";
 import { ExportButton } from "@/components/ui/ExportButton";
 import { downloadXlsx } from "@/lib/xlsx";
 import { buildSignalDetailSheets } from "@/lib/signal-detail-export";
@@ -88,6 +88,7 @@ export function SignalDetailView({
                 )}
               </div>
             )}
+            <Freshness asOf={detail.price_data_as_of} />
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <ExportButton onExport={exportXlsx} canExport={isProEntitled(user)} label="Download Excel" enabledTitle="Export as Excel" disabledTitle="Upgrade to export Excel" />
@@ -97,6 +98,7 @@ export function SignalDetailView({
           </div>
         </div>
         <p className="mt-1 text-xs text-foreground-faint">A measured summary of observed signals. Not a prediction.</p>
+        <Freshness asOf={detail.signal_freshness?.composite_score} />
         <div className="mt-2 flex flex-wrap gap-1.5">
           {detail.signal_states.map((st) => (
             <SignalStateChip key={st} code={st} />
@@ -133,7 +135,7 @@ export function SignalDetailView({
 
       <Card title="What the data shows">
         <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <DataRow label="Trend (10d)">
+          <DataRow label="Trend (10d)" asOf={detail.signal_freshness?.trend_10d_pct}>
             {s.trend_10d_pct === null ? (
               <span className="text-foreground-faint">Not available</span>
             ) : (
@@ -142,7 +144,7 @@ export function SignalDetailView({
               </ExplainTerm>
             )}
           </DataRow>
-          <DataRow label="Sector standing">
+          <DataRow label="Sector standing" asOf={detail.signal_freshness?.sector_rank}>
             {s.sector_rank === null || s.sector_count === null ? (
               <span className="text-foreground-faint">
                 {detail.industry ? "Not enough peers to rank" : "No industry classification on file yet"}
@@ -153,7 +155,7 @@ export function SignalDetailView({
               </ExplainTerm>
             )}
           </DataRow>
-          <DataRow label="Delivery">
+          <DataRow label="Delivery" asOf={detail.signal_freshness?.delivery_pct}>
             {s.delivery_pct === null || s.delivery_avg20 === null ? (
               <span className="text-foreground-faint">Not available</span>
             ) : (
@@ -162,7 +164,7 @@ export function SignalDetailView({
               </ExplainTerm>
             )}
           </DataRow>
-          <DataRow label="FII flow (5d)">
+          <DataRow label="FII flow (5d)" asOf={detail.signal_freshness?.fii_net_buy_days_5}>
             {s.fii_net_buy_days_5 === null ? (
               <span className="text-foreground-faint">Not available</span>
             ) : (
@@ -171,7 +173,7 @@ export function SignalDetailView({
               </ExplainTerm>
             )}
           </DataRow>
-          <DataRow label="PCR">
+          <DataRow label="PCR" asOf={detail.signal_freshness?.pcr}>
             {s.pcr_available ? (
               <ExplainTerm metricKey="pcr" symbol={detail.symbol} ctx={{ symbol: detail.symbol, pcr: s.pcr }}>
                 {s.pcr} · {s.pcr > 1 ? "put-heavy" : "call-heavy"}
@@ -180,7 +182,7 @@ export function SignalDetailView({
               <span className="text-foreground-faint">Not available</span>
             )}
           </DataRow>
-          <DataRow label="RSI (14)">
+          <DataRow label="RSI (14)" asOf={detail.signal_freshness?.trend_10d_pct}>
             {s.rsi_14 === null ? (
               <span className="text-foreground-faint">Not available</span>
             ) : (
@@ -189,7 +191,7 @@ export function SignalDetailView({
               </ExplainTerm>
             )}
           </DataRow>
-          <DataRow label="Promoter pledge">
+          <DataRow label="Promoter pledge" asOf={detail.signal_freshness?.pledge_pct}>
             {s.pledge_pct === null ? (
               <span className="text-foreground-faint">Not available</span>
             ) : (
@@ -198,7 +200,7 @@ export function SignalDetailView({
               </ExplainTerm>
             )}
           </DataRow>
-          <DataRow label="Insider activity (30d)">
+          <DataRow label="Insider activity (30d)" asOf={detail.signal_freshness?.insider_net_30d}>
             <ExplainTerm
               metricKey="insider_activity"
               symbol={detail.symbol}
@@ -210,7 +212,7 @@ export function SignalDetailView({
               {s.insider_net_30d}
             </ExplainTerm>
           </DataRow>
-          <DataRow label="Event risk (5d)">
+          <DataRow label="Event risk (5d)" asOf={detail.signal_freshness?.event_risk_5d}>
             <ExplainTerm metricKey="event_risk" symbol={detail.symbol} ctx={{ symbol: detail.symbol, event_risk_state: s.event_risk_5d ? "an event was flagged" : "no event flagged" }}>
               {s.event_risk_5d ? `Yes — ${s.event_categories.join(", ")}` : "None"}
             </ExplainTerm>
@@ -250,11 +252,16 @@ export function SignalDetailView({
   );
 }
 
-function DataRow({ label, children }: { label: string; children: React.ReactNode }) {
+function Freshness({ asOf }: { asOf?: DataAsOf | null }) {
+  return <p className="mt-1 text-[11px] text-foreground-faint">{formatDataAsOf(asOf)}</p>;
+}
+
+function DataRow({ label, children, asOf }: { label: string; children: React.ReactNode; asOf?: DataAsOf | null }) {
   return (
     <div className="text-sm">
       <dt className="text-xs font-medium text-foreground-faint">{label}</dt>
       <dd className="mt-0.5">{children}</dd>
+      <Freshness asOf={asOf} />
     </div>
   );
 }

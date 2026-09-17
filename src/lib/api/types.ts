@@ -44,6 +44,11 @@ export interface NewsToday {
   items_flagged_high: number;
 }
 
+export interface DataAsOf {
+  data_as_of: string;
+  data_as_of_type: "date" | "timestamp" | string;
+}
+
 export interface MarketSession {
   calendar_date: string;
   is_trading_day: boolean;
@@ -89,6 +94,8 @@ export interface SignalRow {
   // still present on SignalDetail below, unaffected).
   has_score: boolean;
   date: string | null;
+  data_as_of: DataAsOf | null;
+  price_data_as_of?: DataAsOf | null;
   composite_score: number | null;
   delta_1d: number | null;
   delta_5d: number | null;
@@ -217,6 +224,8 @@ export interface SignalDetail {
   industry: string | null;
   isin: string;
   date: string;
+  signal_freshness?: Record<string, DataAsOf | null>;
+  price_data_as_of?: DataAsOf | null;
   // Same restoration as SignalRow above — never masked when locked.
   last_price: number | null;
   day_change_pct: number | null;
@@ -407,6 +416,7 @@ export interface ScanRow {
   vwap: number;
   vwap_side: "above" | "below" | string;
   range_state: string;
+  data_as_of?: DataAsOf | null;
 }
 
 export interface IntradayScan {
@@ -415,6 +425,7 @@ export interface IntradayScan {
   scan_date: string;
   has_candle_data: boolean;
   results: ScanRow[];
+  data_as_of?: DataAsOf | null;
 }
 
 export interface RecapMoverRow {
@@ -475,6 +486,7 @@ export interface PricePoint {
   week52_high: number;
   week52_low: number;
   week52_position_pct: number;
+  data_as_of?: DataAsOf | null;
 }
 
 export interface DeliveryPoint {
@@ -552,6 +564,8 @@ export interface ResearchSignalSummary {
   composite_score: number | null;
   delta_1d: number | null;
   narrative: string | null;
+  data_as_of?: DataAsOf | null;
+  signal_freshness?: Record<string, DataAsOf | null>;
 }
 
 // ---------- fundamentals (Task 09) ----------
@@ -773,11 +787,14 @@ export interface ResearchDetail {
   isin: string;
   price: PricePoint;
   delivery_30d: DeliveryPoint[];
+  delivery_data_as_of?: DataAsOf | null;
   insider_trades: InsiderTrade[];
   bulk_block_deals: GenericRecord[];
   pledge_history: PledgeHistoryPoint[];
+  pledge_data_as_of?: DataAsOf | null;
   options_pcr_history: OptionsPcrPoint[];
   corporate_events: GenericRecord[];
+  corporate_events_data_as_of?: DataAsOf | null;
   news: NewsItem[];
   signal_summary: ResearchSignalSummary;
   fundamentals: FundamentalsBlock | null;

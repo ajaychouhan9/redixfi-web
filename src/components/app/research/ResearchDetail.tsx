@@ -19,7 +19,7 @@ import { WatchlistButton } from "@/components/app/WatchlistButton";
 import { CurrentSymbolSync } from "@/components/app/CurrentSymbolSync";
 import { ConcallSummary } from "@/components/app/research/ConcallSummary";
 import { AnnualReportSummaryCard } from "@/components/app/research/AnnualReportSummaryCard";
-import { formatDateIst } from "@/lib/format";
+import { formatDataAsOf, formatDateIst } from "@/lib/format";
 
 // Concall tone -> the app's existing semantic color tones (Chip component),
 // same palette Event Risk Today's severity badges use. Real values per
@@ -84,6 +84,7 @@ export function ResearchDetail({
           <span className="text-2xl font-semibold">₹{data.price.last_price.toLocaleString("en-IN")}</span>
           <DeltaValue value={data.price.day_change_pct} kind="pct" />
         </div>
+        <p className="mt-1 text-[11px] text-foreground-faint">{formatDataAsOf(data.price.data_as_of)}</p>
         <div className="mt-2 max-w-xs">
           <div className="h-1.5 w-full rounded-full bg-neutral-bg">
             <div className="h-1.5 rounded-full bg-accent" style={{ width: `${positionPct}%` }} />
@@ -114,6 +115,7 @@ export function ResearchDetail({
             <span className="font-mono text-[11px] uppercase tracking-wide text-foreground-faint">Signal snapshot</span>
             <span className="text-lg font-semibold">{data.signal_summary.composite_score}/100</span>
             {data.signal_summary.delta_1d !== null && <DeltaValue value={data.signal_summary.delta_1d} />}
+            <span className="w-full text-[11px] text-foreground-faint">{formatDataAsOf(data.signal_summary.data_as_of)}</span>
             <Link href={`/signals/${data.symbol}`} className="ml-auto text-xs font-medium text-accent">
               Full signal detail →
             </Link>
@@ -139,6 +141,7 @@ export function ResearchDetail({
           <ErrorBoundary>
             <div>
               <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground-faint">Delivery (30d)</h3>
+              <p className="mb-1 text-[11px] text-foreground-faint">{formatDataAsOf(data.delivery_data_as_of)}</p>
               {data.delivery_30d.length > 1 ? (
                 <div className="text-accent">
                   <Sparkline
@@ -195,6 +198,7 @@ export function ResearchDetail({
           <ErrorBoundary>
             <div>
               <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground-faint">Promoter pledge</h3>
+              <p className="mb-1 text-[11px] text-foreground-faint">{formatDataAsOf(data.pledge_data_as_of)}</p>
               {data.pledge_history.length === 0 ? (
                 <p className="text-sm text-foreground-muted">No pledge data recorded.</p>
               ) : (
@@ -216,6 +220,7 @@ export function ResearchDetail({
           <ErrorBoundary>
             <div>
               <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground-faint">Options PCR</h3>
+              <p className="mb-1 text-[11px] text-foreground-faint">{formatDataAsOf(data.signal_summary.signal_freshness?.pcr)}</p>
               {data.options_pcr_history.length === 0 ? (
                 <p className="text-sm text-foreground-muted">Options data not available.</p>
               ) : (
@@ -236,6 +241,7 @@ export function ResearchDetail({
 
       <ErrorBoundary>
         <Collapsible question="Corporate events">
+          <p className="mb-2 text-[11px] text-foreground-faint">{formatDataAsOf(data.corporate_events_data_as_of)}</p>
           <GenericRecordTable rows={data.corporate_events} emptyText="No upcoming corporate events recorded." />
         </Collapsible>
       </ErrorBoundary>

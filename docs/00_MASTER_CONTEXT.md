@@ -3360,3 +3360,23 @@ calculation and narrative generation path itself was already operating.
 No builders, OpenAI requests, notifications, scheduler changes, services, or
 production data were initiated during this audit. No code or production
 configuration was changed.
+
+## 2026-09-17 — Per-signal source-data freshness metadata
+
+Added additive `data_as_of` / `data_as_of_type` metadata to measured signal
+rows, intraday scan rows, Research price/delivery/pledge/event blocks, and
+Signal Detail's `signal_freshness` map. The API derives these from the source
+records actually used by the existing calculations: historical candles,
+nse_delivery_data, Macro_FI_DI, options_oi_history, promoter_pledge_history,
+filings_insider, news_events, and the measured snapshot date for calculated
+peer ranking. Composite freshness uses the oldest available component source
+date as the limiting freshness; it never uses `now()`, render time, API time,
+or AI-summary generation time. Missing provenance remains unavailable.
+
+The web UI uses one IST formatter. Date-only sources remain date-only; real
+timestamps are converted to Asia/Kolkata. Subtle freshness text is visible on
+Signals rows/detail, Research sections, and Intraday scanner rows. No signal
+values, scores, states, thresholds, or AI Summary behavior changed. Local
+backend compilation and the existing web compliance sweep passed; production
+stock/browser verification remains pending for ADANIPORTS and the requested
+multi-frequency sample.
