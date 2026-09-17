@@ -30,7 +30,10 @@ async function loadResearch(symbol: string) {
     // (2026-08-08) is ResearchViewGate below firing the metering side
     // effect client-side, same SignalUnlockGate-style correction-after-
     // SSR pattern, via the new lightweight POST /research/{symbol}/view.
-    return (await getResearch(symbol, { revalidate: 900 })).data;
+    // Freshness contract bump: Vercel's persistent ISR fetch cache can outlive
+    // an API-only deploy. Keep the existing 15-minute ISR policy, but ensure
+    // this page does not reuse a pre-freshness response lacking source dates.
+    return (await getResearch(symbol, { revalidate: 900, params: { data_as_of_contract: "v1" } })).data;
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) return null;
     throw e;
