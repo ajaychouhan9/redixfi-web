@@ -3383,19 +3383,29 @@ multi-frequency sample.
 
 ## 2026-09-17 — Individual signal freshness deployed and production-verified
 
-Backend freshness commits `8b68134`, `cd82aa1`, `24a429f`, and `3268be7` were
-published to `origin/main`. Because the production checkout intentionally
-contains unrelated local operational work and follows the documented
-diverged-branch deployment pattern, the six API files were applied as reviewed
-patches and only `redixfi-api.service` was restarted. Final runtime commit:
-`3515828`; the service was active after restart. Frontend commit `578aa9c` was
-pushed to `origin/main` for Vercel production.
+Backend freshness commits `8b68134`, `cd82aa1`, `24a429f`, `3268be7`, and
+`8e1a0ee` were published to `origin/main`. Because the production checkout
+intentionally contains unrelated local operational work and follows the
+documented diverged-branch deployment pattern, the reviewed patches were
+applied there and only `redixfi-api.service` was restarted. Final production
+runtime commit: `6d2f149`; the service was active after restart. Frontend
+commits `578aa9c`, `98b34c2`, and `88e90bf` were deployed successfully by
+Vercel.
 
-Production ADANIPORTS verification confirmed the UI/API/source chain for
-price, composite, trend, volume, delivery, options PCR, and promoter pledge.
-Daily candles and date-only feeds render without fabricated time; intraday
-15-minute candles retain their real timestamp and convert to IST. ADANIPORTS
-has no current matched news or canonical recent corporate-event row, so those
-provenance states correctly remain unavailable. No signal values, scores,
-statuses, AI Summary text, or source data were changed. Responsive browser
-smoke passed at desktop and mobile widths.
+Production ADANIPORTS verification confirmed the UI/API/source chain. The
+research UI showed price `16 Sep 2026`, composite `18 Jul 2026`, delivery
+`16 Sep 2026`, pledge `18 Jul 2026`, PCR `11 Sep 2026`, and corporate-event
+`Data timestamp unavailable`; the API returned the same provenance metadata
+for those displayed sections. The signal API additionally returned trend and
+volume freshness on `15 Sep 2026` (daily candle source), with no time shown.
+The intraday scanner showed `10 Sep 2026 · 03:15 pm IST`, matching the
+authoritative ADANIPORTS 15-minute candle at `2026-09-10T15:15:00+05:30`.
+Mixed date formats from source collections are normalized without changing
+their date-only semantics; only real intraday timestamps retain a time.
+
+The measured ADANIPORTS score remains `63`, delta remains `+2`, and the AI
+Summary text is unchanged. No signal calculations, statuses, or source data
+were modified. Desktop production browser rendering was clean, and the
+responsive components remain unchanged apart from freshness text plumbing.
+
+Task complete.
