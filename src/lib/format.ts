@@ -63,7 +63,12 @@ export function formatDataAsOf(asOf: { data_as_of: string; data_as_of_type: stri
     /^\d{4}-\d{2}-\d{2}$/.test(asOf.data_as_of) ||
     /T00:00:00(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/.test(asOf.data_as_of)
   ) {
-    return `Data as of ${formatDateIst(`${asOf.data_as_of}T00:00:00Z`)}`;
+    const isoDate = /^\d{4}-\d{2}-\d{2}/.test(asOf.data_as_of)
+      ? asOf.data_as_of.slice(0, 10)
+      : asOf.data_as_of;
+    const parsed = new Date(`${isoDate}T00:00:00Z`);
+    if (!Number.isNaN(parsed.getTime())) return `Data as of ${formatDateIst(parsed.toISOString())}`;
+    return `Data as of ${asOf.data_as_of}`;
   }
   return `Data as of ${formatDateIst(asOf.data_as_of)} · ${formatTimeIst(asOf.data_as_of)} IST`;
 }
