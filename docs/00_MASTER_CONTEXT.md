@@ -3380,3 +3380,22 @@ values, scores, states, thresholds, or AI Summary behavior changed. Local
 backend compilation and the existing web compliance sweep passed; production
 stock/browser verification remains pending for ADANIPORTS and the requested
 multi-frequency sample.
+
+## 2026-09-17 — Individual signal freshness deployed and production-verified
+
+Backend freshness commits `8b68134`, `cd82aa1`, `24a429f`, and `3268be7` were
+published to `origin/main`. Because the production checkout intentionally
+contains unrelated local operational work and follows the documented
+diverged-branch deployment pattern, the six API files were applied as reviewed
+patches and only `redixfi-api.service` was restarted. Final runtime commit:
+`3515828`; the service was active after restart. Frontend commit `578aa9c` was
+pushed to `origin/main` for Vercel production.
+
+Production ADANIPORTS verification confirmed the UI/API/source chain for
+price, composite, trend, volume, delivery, options PCR, and promoter pledge.
+Daily candles and date-only feeds render without fabricated time; intraday
+15-minute candles retain their real timestamp and convert to IST. ADANIPORTS
+has no current matched news or canonical recent corporate-event row, so those
+provenance states correctly remain unavailable. No signal values, scores,
+statuses, AI Summary text, or source data were changed. Responsive browser
+smoke passed at desktop and mobile widths.
