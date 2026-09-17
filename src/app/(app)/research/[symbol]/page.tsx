@@ -33,7 +33,7 @@ async function loadResearch(symbol: string) {
     // Freshness contract bump: Vercel's persistent fetch cache can outlive an
     // API-only deploy. This request is deliberately uncached so the page does
     // not reuse a pre-freshness response lacking source dates.
-    return (await getResearch(symbol, { params: { data_as_of_contract: "v1" } })).data;
+    return (await getResearch(symbol, { revalidate: 900 })).data;
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) return null;
     throw e;

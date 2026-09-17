@@ -56,7 +56,13 @@ export function formatDateTimeIst(iso: string): string {
 
 export function formatDataAsOf(asOf: { data_as_of: string; data_as_of_type: string } | null | undefined): string {
   if (!asOf?.data_as_of) return "Data timestamp unavailable";
-  if (asOf.data_as_of_type === "date" || /^\d{4}-\d{2}-\d{2}$/.test(asOf.data_as_of)) {
+  // Daily candle documents are stored at midnight even though their
+  // provenance is a trading date. Do not fabricate a 12:00 am timestamp.
+  if (
+    asOf.data_as_of_type === "date" ||
+    /^\d{4}-\d{2}-\d{2}$/.test(asOf.data_as_of) ||
+    /T00:00:00(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/.test(asOf.data_as_of)
+  ) {
     return `Data as of ${formatDateIst(`${asOf.data_as_of}T00:00:00Z`)}`;
   }
   return `Data as of ${formatDateIst(asOf.data_as_of)} · ${formatTimeIst(asOf.data_as_of)} IST`;
