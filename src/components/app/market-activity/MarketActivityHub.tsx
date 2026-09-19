@@ -11,6 +11,7 @@ import type {
   MarketActivityInsiderRow,
   MarketActivityCorporateEventRow,
   MarketActivityBulkBlockRow,
+  MarketActivityRedFlagRow,
 } from "@/lib/api/types";
 import { downloadCsv } from "@/lib/csv";
 import { downloadXlsx } from "@/lib/xlsx";
@@ -18,7 +19,7 @@ import { formatDateIst } from "@/lib/format";
 import { ExportButton } from "@/components/ui/ExportButton";
 import { UnlockBanner } from "@/components/ui/Locked";
 import { MarketActivityTabs, type MarketActivityTabDef } from "./MarketActivityTabs";
-import { ConcallsTable, InsiderTable, CorporateEventsTable, BulkBlockTable, AllActivityTable } from "./CategoryTables";
+import { ConcallsTable, InsiderTable, CorporateEventsTable, BulkBlockTable, RedFlagTable, AllActivityTable } from "./CategoryTables";
 
 /** Market Activity hub (2026-08-15) — cross-stock tabs for concalls,
  * insider trades, corporate events, bulk/block deals: all 4 already
@@ -92,6 +93,7 @@ export function MarketActivityHub() {
         insider: "Insider trade",
         corporate_event: "Corporate event",
         bulk_block: "Bulk/block deal",
+        red_flag: "Red flag",
       };
       return rows.map((row) => {
         let detail = "";
@@ -109,6 +111,9 @@ export function MarketActivityHub() {
           }
           case "corporate_event":
             detail = row.event_type ?? "Corporate event";
+            break;
+          case "red_flag":
+            detail = `${row.category_label} · ${row.source_type_label}`;
             break;
         }
         return { date: row.date, symbol: row.symbol, type: typeLabel[row.type], detail };
@@ -162,6 +167,18 @@ export function MarketActivityHub() {
             date: row.date,
             event_type: row.event_type ?? "",
             headline: row.headline ?? row.summary ?? "",
+          };
+        case "red_flag":
+          return {
+            type: row.type,
+            symbol: row.symbol,
+            company_name: row.company_name ?? "",
+            date: row.date,
+            category: row.category_label,
+            source: row.source_type_label,
+            fiscal_year: row.fiscal_year ?? "",
+            finding: row.finding,
+            source_pdf_url: row.source_pdf_url ?? "",
           };
       }
     });
@@ -292,9 +309,13 @@ export function MarketActivityHub() {
           <div className="p-4">
             <CorporateEventsTable rows={rows.filter((r): r is MarketActivityCorporateEventRow => r.type === "corporate_event")} />
           </div>
-        ) : (
+        ) : tab === "bulk_block" ? (
           <div className="p-4">
             <BulkBlockTable rows={rows.filter((r): r is MarketActivityBulkBlockRow => r.type === "bulk_block")} />
+          </div>
+        ) : (
+          <div className="p-4">
+            <RedFlagTable rows={rows.filter((r): r is MarketActivityRedFlagRow => r.type === "red_flag")} />
           </div>
         )}
 

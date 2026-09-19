@@ -808,6 +808,53 @@ export interface ResearchDetail {
   fundamentals: FundamentalsBlock | null;
   concall_transcripts: ConcallTranscript[];
   annual_report_summary: AnnualReportSummary | null;
+  red_flags: ResearchRedFlags;
+}
+
+// ---------- red flags (Task 2, 2026-09-19) ----------
+// Mirrors core/red_flag_view.py::get_symbol_red_flags() exactly — grouped by
+// category, each with its full chronological occurrence history (never
+// flattened to one statement). `coverage` is null when the symbol has zero
+// embedded AR/Concall chunks at all (distinct from "processed, no risk
+// found" — see that module's docstring); non-null coverage's `complete`
+// field is false while the historical classification backlog still has
+// unprocessed chunks for this symbol.
+
+export interface RedFlagOccurrence {
+  symbol: string;
+  company_name: string | null;
+  category: "auditor_qualification" | "contingent_liability" | "related_party_transaction" | "promoter_pledge";
+  category_label: string;
+  source_type: "annual_report" | "concall_transcript" | "structured_filing";
+  source_type_label: string;
+  fiscal_year: string | null;
+  filing_date: string | null;
+  filing_id: string | null;
+  source_pdf_url: string | null;
+  finding: string;
+  chunk_count: number;
+}
+
+export interface RedFlagCategoryGroup {
+  category: RedFlagOccurrence["category"];
+  category_label: string;
+  occurrence_count: number;
+  latest_occurrence: string | null;
+  first_observed: string | null;
+  sources_present: string[];
+  occurrences: RedFlagOccurrence[];
+}
+
+export interface RedFlagCoverage {
+  total_chunks: number;
+  classified_chunks: number;
+  complete: boolean;
+}
+
+export interface ResearchRedFlags {
+  symbol: string;
+  categories: RedFlagCategoryGroup[];
+  coverage: RedFlagCoverage | null;
 }
 
 // ---------- charts ----------
@@ -1507,7 +1554,7 @@ export interface AnomalyPageInfo extends PageInfo {
 // side for collections — bulk_block_deals, corporate_events — that don't
 // reliably carry it themselves). ----------
 
-export type MarketActivityType = "concall" | "insider" | "corporate_event" | "bulk_block";
+export type MarketActivityType = "concall" | "insider" | "corporate_event" | "bulk_block" | "red_flag";
 
 interface MarketActivityBase {
   type: MarketActivityType;
@@ -1582,11 +1629,32 @@ export type MarketActivityBulkBlockRow = MarketActivityBase &
     deal_strength?: string | null;
   };
 
+// red_flag (Task 2, 2026-09-19): document-level Red Flag occurrences —
+// core/red_flag_view.py::get_market_red_flag_rows(), a zero-LLM-at-request
+// aggregation over chunks already classified by data-pipeline/
+// risk_flag_backfill.py. One row per (symbol, filing document, category) —
+// already deduped server-side, never one row per chunk. `finding` is
+// MODEL-GENERATED text but was generated once, at classification time, not
+// on this request (see that module's docstring) — same posture as
+// concall's own pre-generated `summary`/`tone_label`.
+export type MarketActivityRedFlagRow = MarketActivityBase & {
+  type: "red_flag";
+  category: "auditor_qualification" | "contingent_liability" | "related_party_transaction" | "promoter_pledge";
+  category_label: string;
+  source_type: "annual_report" | "concall_transcript" | "structured_filing";
+  source_type_label: string;
+  fiscal_year: string | null;
+  filing_date: string | null;
+  finding: string;
+  source_pdf_url: string | null;
+};
+
 export type MarketActivityRow =
   | MarketActivityConcallRow
   | MarketActivityInsiderRow
   | MarketActivityCorporateEventRow
-  | MarketActivityBulkBlockRow;
+  | MarketActivityBulkBlockRow
+  | MarketActivityRedFlagRow;
 
 // Deliberately NOT `extends PageInfo` — this endpoint isn't page/size/total
 // paginated (see routers/market_activity.py's own comment: a single-shot,
@@ -1619,6 +1687,7 @@ export interface MarketActivitySummary {
   bulk_block_deals: MarketActivityCategorySummary;
   concalls: MarketActivityCategorySummary;
   corporate_events: MarketActivityCategorySummary;
+  red_flags: MarketActivityCategorySummary;
   // Legacy flat fields, kept for back-compat — each is now that
   // category's OWN latest-date count (not "count on one shared date").
   insider_trades_today: number;

@@ -4,6 +4,7 @@ import type {
   MarketActivityInsiderRow,
   MarketActivityCorporateEventRow,
   MarketActivityBulkBlockRow,
+  MarketActivityRedFlagRow,
   MarketActivityRow,
 } from "@/lib/api/types";
 import { formatDateIst } from "@/lib/format";
@@ -61,6 +62,50 @@ export function ConcallsTable({ rows }: { rows: MarketActivityConcallRow[] }) {
             </a>
           </div>
           <p className="mt-2 text-sm leading-relaxed text-foreground-muted">{c.summary}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Same card pattern as ConcallsTable above (deliberately, per Task 2's
+ * "preserve visual symmetry" requirement) — a chip row + finding text +
+ * source link, one card per document-level occurrence. `finding` is
+ * model-generated but was produced once at classification time by
+ * data-pipeline/risk_flag_backfill.py, never at request time (see
+ * core/red_flag_view.py's module docstring) — same posture as concall's
+ * own pre-generated `summary`. `chunk_count` (when >1) tells the reader
+ * multiple passages in the same filing support this finding, without
+ * rendering them as separate rows. */
+export function RedFlagTable({ rows }: { rows: MarketActivityRedFlagRow[] }) {
+  if (rows.length === 0) return <EmptyState text="No governance red flags identified in filed documents yet." />;
+  return (
+    <div className="space-y-3">
+      {rows.map((r, i) => (
+        <div key={`${r.symbol}-${i}`} className="rounded-lg border border-border bg-surface-raised p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2 text-[13px]">
+              <SymbolLink symbol={r.symbol} companyName={r.company_name} />
+              <span className="rounded-full bg-neutral-bg px-2 py-0.5 font-semibold uppercase tracking-wide text-foreground-muted">
+                {r.category_label}
+              </span>
+              <span className="text-foreground-faint">
+                {r.source_type_label}
+                {r.fiscal_year ? ` · ${r.fiscal_year}` : r.filing_date ? ` · ${formatDateIst(r.filing_date)}` : ""}
+              </span>
+            </div>
+            {r.source_pdf_url && (
+              <a
+                href={r.source_pdf_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex shrink-0 items-center gap-1 rounded-lg border border-border bg-hover px-3 py-1.5 text-[13px] font-medium text-foreground-muted hover:text-foreground"
+              >
+                View source filing →
+              </a>
+            )}
+          </div>
+          <p className="mt-2 text-sm leading-relaxed text-foreground-muted">{r.finding}</p>
         </div>
       ))}
     </div>
@@ -237,6 +282,7 @@ const TYPE_LABEL: Record<MarketActivityRow["type"], string> = {
   insider: "Insider trade",
   corporate_event: "Corporate event",
   bulk_block: "Bulk/block deal",
+  red_flag: "Red flag",
 };
 
 function summaryLine(row: MarketActivityRow): string {
@@ -251,6 +297,8 @@ function summaryLine(row: MarketActivityRow): string {
     }
     case "corporate_event":
       return safeCell(row.event_type) !== "—" ? String(row.event_type) : "Corporate event";
+    case "red_flag":
+      return `${row.category_label} · ${row.source_type_label}`;
   }
 }
 

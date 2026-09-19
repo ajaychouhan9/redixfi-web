@@ -19,6 +19,7 @@ import { WatchlistButton } from "@/components/app/WatchlistButton";
 import { CurrentSymbolSync } from "@/components/app/CurrentSymbolSync";
 import { ConcallSummary } from "@/components/app/research/ConcallSummary";
 import { AnnualReportSummaryCard } from "@/components/app/research/AnnualReportSummaryCard";
+import { RedFlagSection } from "@/components/app/research/RedFlagSection";
 import { formatDataAsOf, formatDateIst } from "@/lib/format";
 
 // Concall tone -> the app's existing semantic color tones (Chip component),
@@ -350,6 +351,10 @@ export function ResearchDetail({
           <AnnualReportSummaryCard data={data.annual_report_summary} />
         </ErrorBoundary>
       )}
+
+      <ErrorBoundary>
+        <RedFlagSection data={data.red_flags} />
+      </ErrorBoundary>
 
       <ErrorBoundary>
         <Card title="Signal summary" titleClassName="text-base" action={data.signal_summary.narrative && <AiLabel />}>

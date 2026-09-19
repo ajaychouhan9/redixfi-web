@@ -23,7 +23,7 @@ import { formatDateIst } from "@/lib/format";
  * own count and its own date, so freshness is never misrepresented for
  * a category that's actually staler (or fresher) than the others.
  */
-type CategoryKey = "insider_trades" | "concalls" | "corporate_events" | "bulk_block_deals";
+type CategoryKey = "insider_trades" | "concalls" | "corporate_events" | "bulk_block_deals" | "red_flags";
 
 const CATEGORIES: Array<{
   key: CategoryKey;
@@ -34,6 +34,7 @@ const CATEGORIES: Array<{
   { key: "concalls", label: "Concalls", unit: (n) => `concall${n === 1 ? "" : "s"}` },
   { key: "corporate_events", label: "Corporate Events", unit: (n) => `event${n === 1 ? "" : "s"}` },
   { key: "bulk_block_deals", label: "Bulk/Block Deals", unit: (n) => `deal${n === 1 ? "" : "s"}` },
+  { key: "red_flags", label: "Red Flags", unit: (n) => `flag${n === 1 ? "" : "s"}` },
 ];
 
 function CategoryRow({
@@ -42,16 +43,21 @@ function CategoryRow({
   unit,
 }: {
   label: string;
-  category: MarketActivityCategorySummary;
+  // Optional defensively (not just per the type): a frontend deploy can
+  // land before the backend restart that adds a new category to this
+  // summary (see 2026-09-19 red_flags rollout), so an older/unreleased
+  // API response may not carry this key yet even though the type says
+  // it always will once both sides are live.
+  category: MarketActivityCategorySummary | undefined;
   unit: (n: number) => string;
 }) {
-  const hasActivity = category.count > 0 && !!category.date;
+  const hasActivity = !!category && category.count > 0 && !!category.date;
   return (
     <div className="flex items-center justify-between gap-3 py-1.5">
       <span className="text-sm text-foreground">{label}</span>
       {hasActivity ? (
         <span className="text-right text-xs text-foreground-faint">
-          {category.count} {unit(category.count)} · Updated {formatDateIst(category.date as string)}
+          {category!.count} {unit(category!.count)} · Updated {formatDateIst(category!.date as string)}
         </span>
       ) : (
         <span className="text-right text-xs text-foreground-faint">No recent activity</span>
@@ -66,7 +72,8 @@ export function MarketActivityCard({ summary }: { summary: MarketActivitySummary
     (summary.insider_trades.count === 0 &&
       summary.bulk_block_deals.count === 0 &&
       summary.concalls.count === 0 &&
-      summary.corporate_events.count === 0);
+      summary.corporate_events.count === 0 &&
+      (summary.red_flags?.count ?? 0) === 0);
 
   return (
     <Card
@@ -79,7 +86,7 @@ export function MarketActivityCard({ summary }: { summary: MarketActivitySummary
       {!summary ? (
         <p className="text-sm text-foreground-muted">Not available right now.</p>
       ) : allEmpty ? (
-        <p className="text-sm text-foreground-muted">No insider trades, bulk/block deals, concalls, or corporate events recorded yet.</p>
+        <p className="text-sm text-foreground-muted">No insider trades, bulk/block deals, concalls, corporate events, or red flags recorded yet.</p>
       ) : (
         <div className="divide-y divide-border">
           {CATEGORIES.map(({ key, label, unit }) => (

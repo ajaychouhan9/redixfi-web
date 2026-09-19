@@ -14,6 +14,7 @@ export const MARKET_ACTIVITY_TABS: MarketActivityTabDef[] = [
   { key: "insider", label: "Insider Trading" },
   { key: "corporate_event", label: "Corporate Events" },
   { key: "bulk_block", label: "Bulk/Block Deals" },
+  { key: "red_flag", label: "Red Flags" },
 ];
 
 /** Same visual pattern as the Account page's tabs
