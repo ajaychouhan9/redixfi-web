@@ -3409,3 +3409,31 @@ were modified. Desktop production browser rendering was clean, and the
 responsive components remain unchanged apart from freshness text plumbing.
 
 Task complete.
+
+## 2026-09-21 — Production XML sitemap
+
+Implemented and deployed the sitemap in the existing RedixFi web stack:
+Next.js 16 App Router on Vercel (`C:\redixfi-web`). The previous chunked
+metadata sitemap and `/sitemap-index.xml` route were removed and replaced by
+one explicit anonymous XML route at `src/app/sitemap.xml/route.ts`.
+
+The stock URL source is the existing anonymous `/api/v1/signals` paginated
+universe, fetched through `getAllSignals()`; that API joins the canonical
+`symbols_master` universe. Sitemap generation deduplicates and sorts symbols,
+filters out raw numeric BSE codes, and retains valid alphanumeric NSE symbols.
+No fabricated `<lastmod>`, `changefreq`, or `priority` values are emitted.
+
+Changed files: `src/app/sitemap.xml/route.ts` (new), `src/app/robots.ts`,
+`src/app/sitemap.ts` (removed), and `src/app/sitemap-index.xml/route.ts`
+(removed). Robots now references `https://www.redixfi.com/sitemap.xml`.
+
+Deployment verification after commit `9319f5b`:
+
+* `https://www.redixfi.com/sitemap.xml`: HTTP 200, `application/xml`, valid
+  sitemap XML, 2,313 unique URLs total — 10 core pages and 2,303 stock pages.
+* No numeric-only stock URLs and no duplicate URLs. Verified entries include
+  `/stocks/RELIANCE`, `/stocks/TCS`, and `/stocks/360ONE`; anonymous GETs for
+  all three stock pages returned HTTP 200.
+* `https://www.redixfi.com/robots.txt`: HTTP 200,
+  `text/plain; charset=utf-8`, with the exact sitemap reference.
+* `npm run build` and `git diff --check` passed.
