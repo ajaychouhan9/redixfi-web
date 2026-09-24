@@ -25,7 +25,9 @@ const plexMono = IBM_Plex_Mono({
 // prefers-color-scheme alone (it's user-overridable here, so it can't be).
 const NO_FLASH_THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("redixfi:theme");if(t!=="dark"&&t!=="light"){t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){}})();`;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://redixfi.com";
+// Production serves the www host; the apex permanently redirects to it.
+// Keep metadata on the same host as robots.txt and sitemap.xml.
+const SITE_URL = "https://www.redixfi.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

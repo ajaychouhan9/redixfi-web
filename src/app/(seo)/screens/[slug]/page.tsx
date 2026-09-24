@@ -75,7 +75,11 @@ export default async function ScreenPage({ params }: { params: Promise<{ slug: s
           <tbody>
             {env.data.map((r) => (
               <tr key={r.symbol} className="border-t border-border">
-                <td className="px-3 py-2 font-medium">{r.symbol}</td>
+                <td className="px-3 py-2 font-medium">
+                  <Link href={`/stocks/${encodeURIComponent(r.symbol)}`} className="text-accent hover:underline">
+                    {r.symbol}
+                  </Link>
+                </td>
                 <td className="px-3 py-2 text-xs text-foreground-muted">{r.sector}</td>
                 <td className="px-3 py-2 tabular-nums">{r.composite_score ?? "—"}</td>
                 <td className="px-3 py-2 tabular-nums">{r.delta_1d !== null ? <DeltaValue value={r.delta_1d} /> : "—"}</td>

@@ -5,6 +5,7 @@ import { ApiError } from "@/lib/api/client";
 import { Card } from "@/components/ui/Card";
 import { SignalUnlockGate } from "@/components/app/signals/SignalUnlockGate";
 import { SignalDetailView } from "@/components/app/signals/SignalDetailView";
+import { retryTransientPublicGet } from "@/lib/api/retry-public-upstream";
 
 export async function generateMetadata({ params }: { params: Promise<{ symbol: string }> }): Promise<Metadata> {
   const { symbol } = await params;
@@ -24,7 +25,10 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
     // — SignalUnlockGate corrects client-side below whenever `locked` is
     // true for a real logged-in entitled user. See that component and
     // the comment just below.
-    detail = (await getSignalDetail(symbol)).data;
+    detail = (await retryTransientPublicGet(
+      () => getSignalDetail(symbol),
+      () => getSignalDetail(symbol, 6, { timeoutMs: 10_000 }),
+    )).data;
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) notFound();
     throw e;

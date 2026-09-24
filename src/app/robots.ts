@@ -7,7 +7,10 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/account", "/account/*", "/api/*"],
+      // Account pages render only an anonymous shell and carry noindex;
+      // crawlers must be able to read that directive. Authenticated data is
+      // fetched with a user token after hydration.
+      disallow: "/api/*",
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };

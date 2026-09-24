@@ -12,6 +12,9 @@ export default function SeoLayout({ children }: { children: React.ReactNode }) {
           <Link href="/signals" className="text-foreground-muted hover:text-foreground">
             Signal Dashboard
           </Link>
+          <Link href="/screens" className="text-foreground-muted hover:text-foreground">
+            Stock Screens
+          </Link>
           <Link href="/pricing" className="text-foreground-muted hover:text-foreground">
             Pricing
           </Link>

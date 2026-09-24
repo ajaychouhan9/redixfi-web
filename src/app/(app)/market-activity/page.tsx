@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { MarketActivityHub } from "@/components/app/market-activity/MarketActivityHub";
+import { getMarketActivitySummary } from "@/lib/api/endpoints";
+import { formatDateIst } from "@/lib/format";
 
 /**
  * Market Activity hub (2026-08-15) — cross-stock consolidation of
@@ -18,7 +20,20 @@ export const metadata: Metadata = {
   description: "Concalls, insider trades, corporate events, and bulk/block deals across every tracked stock — measured facts only, not a recommendation.",
 };
 
-export default function MarketActivityPage() {
+export default async function MarketActivityPage() {
+  // The interactive table still uses the visitor's token. This public rollup
+  // is identical for every tier and gives crawlers useful initial HTML.
+  const summary = await getMarketActivitySummary({ revalidate: 300 })
+    .then((response) => response.data)
+    .catch(() => null);
+  const categories = summary && [
+    ["Concalls", summary.concalls],
+    ["Insider trades", summary.insider_trades],
+    ["Corporate events", summary.corporate_events],
+    ["Bulk/block deals", summary.bulk_block_deals],
+    ["Red flags", summary.red_flags],
+  ] as const;
+
   return (
     <div className="mx-auto max-w-5xl space-y-4">
       <div>
@@ -27,6 +42,21 @@ export default function MarketActivityPage() {
           Concalls, insider trades, corporate events, and bulk/block deals across every tracked stock.
         </p>
       </div>
+      {categories && (
+        <section aria-label="Latest recorded market activity" className="rounded-xl border border-border p-4">
+          <h2 className="mb-2 text-sm font-semibold">Latest recorded activity</h2>
+          <ul className="grid gap-2 text-sm sm:grid-cols-2">
+            {categories.map(([label, category]) => (
+              <li key={label}>
+                <span className="font-medium">{label}:</span>{" "}
+                {category?.date && category.count > 0
+                  ? `${category.count} on ${formatDateIst(category.date)}`
+                  : "No recent activity"}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <MarketActivityHub />
     </div>
   );

@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getResearch } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
+import { stockSymbolFromParam } from "@/lib/seo/stock-symbol";
+import { retryTransientPublicGet } from "@/lib/api/retry-public-upstream";
 
 // Public no-login page — same ISR posture as /stocks/[symbol]: pre-rendered
 // on first crawl/visit, revalidated every 5 minutes, fetched WITHOUT a
@@ -18,7 +20,10 @@ async function loadCompany(symbol: string) {
   try {
     // @auth-ok: public SEO snapshot, ISR-cached and crawlable — see the
     // module docstring above.
-    const env = await getResearch(symbol, { revalidate: 300 });
+    const env = await retryTransientPublicGet(
+      () => getResearch(symbol, { revalidate: 300 }),
+      () => getResearch(symbol, { timeoutMs: 10_000 }),
+    );
     return env.data;
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) return null;
@@ -28,7 +33,9 @@ async function loadCompany(symbol: string) {
 
 export async function generateMetadata({ params }: { params: Promise<{ symbol: string }> }): Promise<Metadata> {
   const { symbol } = await params;
-  const data = await loadCompany(symbol.toUpperCase());
+  const normalizedSymbol = stockSymbolFromParam(symbol);
+  if (!normalizedSymbol) return { title: "Concall summary not found" };
+  const data = await loadCompany(normalizedSymbol);
   // Defensive: `concall_transcripts` is typed as always-present but a real
   // production /research/{symbol} response can omit it entirely (crashed
   // /stocks/[symbol] live with RELIANCE during this task's own testing —
@@ -49,7 +56,7 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
   return {
     title,
     description,
-    alternates: { canonical: `/stocks/${data.symbol}/concall-summary` },
+    alternates: { canonical: `/stocks/${encodeURIComponent(data.symbol)}/concall-summary` },
     openGraph: { title, description, type: "article", images: [{ url: ogImage, width: 1200, height: 630 }] },
     twitter: { card: "summary_large_image", title, description, images: [ogImage] },
   };
@@ -57,7 +64,9 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
 
 export default async function ConcallSummaryPage({ params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = await params;
-  const data = await loadCompany(symbol.toUpperCase());
+  const normalizedSymbol = stockSymbolFromParam(symbol);
+  if (!normalizedSymbol) notFound();
+  const data = await loadCompany(normalizedSymbol);
   if (!data?.concall_transcripts?.length) notFound();
 
   const latest = data.concall_transcripts[0];
@@ -84,7 +93,7 @@ export default async function ConcallSummaryPage({ params }: { params: Promise<{
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       <p className="text-sm text-foreground-muted">
-        <Link href={`/stocks/${data.symbol}`} className="hover:underline">
+        <Link href={`/stocks/${encodeURIComponent(data.symbol)}`} className="hover:underline">
           {data.symbol}
         </Link>{" "}
         · Concall Summary
@@ -145,7 +154,7 @@ export default async function ConcallSummaryPage({ params }: { params: Promise<{
       </div>
 
       <p className="mt-6 text-center text-xs text-foreground-faint">
-        <Link href={`/stocks/${data.symbol}`} className="underline">
+        <Link href={`/stocks/${encodeURIComponent(data.symbol)}`} className="underline">
           Back to {data.symbol} snapshot
         </Link>
       </p>

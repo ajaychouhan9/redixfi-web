@@ -7,6 +7,8 @@ import { DeltaValue } from "@/components/ui/DeltaValue";
 import { Sparkline } from "@/components/ui/Sparkline";
 import { NewsList } from "@/components/app/NewsList";
 import { formatDataAsOf } from "@/lib/format";
+import { stockSymbolFromParam } from "@/lib/seo/stock-symbol";
+import { retryTransientPublicGet } from "@/lib/api/retry-public-upstream";
 
 // Public no-login snapshot — ISR: pre-rendered on first crawl/visit, then
 // revalidated every 5 minutes. Fetched WITHOUT a bearer token, which the
@@ -22,7 +24,10 @@ async function loadCompany(symbol: string) {
     // core/auth.py's own default), never a masking concern here since
     // getResearch's only tier-dependent behavior is the free-tier
     // metering counter, not data masking.
-    const env = await getResearch(symbol, { revalidate: 300 });
+    const env = await retryTransientPublicGet(
+      () => getResearch(symbol, { revalidate: 300 }),
+      () => getResearch(symbol, { timeoutMs: 10_000 }),
+    );
     return env.data;
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) return null;
@@ -32,7 +37,9 @@ async function loadCompany(symbol: string) {
 
 export async function generateMetadata({ params }: { params: Promise<{ symbol: string }> }): Promise<Metadata> {
   const { symbol } = await params;
-  const data = await loadCompany(symbol.toUpperCase());
+  const normalizedSymbol = stockSymbolFromParam(symbol);
+  if (!normalizedSymbol) return { title: "Stock not found" };
+  const data = await loadCompany(normalizedSymbol);
   if (!data) return { title: `${symbol.toUpperCase()} not found` };
   const title = `${data.company_name} (${data.symbol}) — Price, Delivery & News`;
   const description = `${data.company_name} (${data.symbol}): ₹${data.price.last_price}, ${data.price.day_change_pct}% today, 52-week range ₹${data.price.week52_low}–₹${data.price.week52_high}, delivery trend and latest news — measured data, not advice.`;
@@ -47,7 +54,7 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
   return {
     title,
     description,
-    alternates: { canonical: `/stocks/${data.symbol}` },
+    alternates: { canonical: `/stocks/${encodeURIComponent(data.symbol)}` },
     openGraph: {
       title: `${data.company_name} (${data.symbol})`,
       description: `Price, delivery trend and news for ${data.company_name} — measured market data.`,
@@ -60,7 +67,9 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
 
 export default async function StockSnapshotPage({ params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = await params;
-  const data = await loadCompany(symbol.toUpperCase());
+  const normalizedSymbol = stockSymbolFromParam(symbol);
+  if (!normalizedSymbol) notFound();
+  const data = await loadCompany(normalizedSymbol);
   if (!data) notFound();
 
   const positionPct = Math.max(0, Math.min(100, data.price.week52_position_pct));
@@ -125,7 +134,7 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
           of undefined) during this task's own testing. */}
       {(data.concall_transcripts?.length ?? 0) > 0 && (
         <p className="mt-4 text-sm">
-          <Link href={`/stocks/${data.symbol}/concall-summary`} className="font-medium text-accent hover:underline">
+          <Link href={`/stocks/${encodeURIComponent(data.symbol)}/concall-summary`} className="font-medium text-accent hover:underline">
             Read the latest concall summary →
           </Link>
         </p>
