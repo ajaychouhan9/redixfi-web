@@ -7,12 +7,8 @@ import { ApiError } from "@/lib/api/client";
 
 /**
  * Chat-box alternative to the mailto: link on the About & Contact page
- * (2026-09-11) — for a visitor who'd rather not leave the app or doesn't
- * have a working email client. Posts to POST /support/contact
- * (routers/support.py), which just stores the message — there is no
- * live/monitored inbox behind either this form or the mailto: link yet,
- * so both carry the same 24–48h response-time disclaimer rather than a
- * promise this session can't back up.
+ * for a visitor who'd rather not leave the app or doesn't have a working
+ * email client. Posts to POST /support/contact, which delivers to support.
  */
 export function ContactForm() {
   const { user, getToken } = useAuth();
