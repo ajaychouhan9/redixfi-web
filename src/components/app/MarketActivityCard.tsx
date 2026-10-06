@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { LineChart, ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import type { MarketActivityCategorySummary, MarketActivitySummary } from "@/lib/api/types";
+import type { MarketActivityCategorySummary, MarketActivityRedFlagSummary, MarketActivitySummary } from "@/lib/api/types";
 import { formatDateIst } from "@/lib/format";
 
 /**
@@ -23,7 +23,12 @@ import { formatDateIst } from "@/lib/format";
  * own count and its own date, so freshness is never misrepresented for
  * a category that's actually staler (or fresher) than the others.
  */
-type CategoryKey = "insider_trades" | "concalls" | "corporate_events" | "bulk_block_deals" | "red_flags";
+// red_flags is rendered separately (RedFlagsRow, below) -- its shape
+// (windowed total_findings/distinct_filings/latest_date, REDFLAG_CARD_
+// FIX_PLAN_2026-10-05 windowed redesign 2026-10-06) no longer matches
+// the other 4 categories' simple {count, date} shape, so it can't go
+// through the same generic CategoryRow loop.
+type CategoryKey = "insider_trades" | "concalls" | "corporate_events" | "bulk_block_deals";
 
 const CATEGORIES: Array<{
   key: CategoryKey;
@@ -34,7 +39,6 @@ const CATEGORIES: Array<{
   { key: "concalls", label: "Concalls", unit: (n) => `concall${n === 1 ? "" : "s"}` },
   { key: "corporate_events", label: "Corporate Events", unit: (n) => `event${n === 1 ? "" : "s"}` },
   { key: "bulk_block_deals", label: "Bulk/Block Deals", unit: (n) => `deal${n === 1 ? "" : "s"}` },
-  { key: "red_flags", label: "Red Flags", unit: (n) => `flag${n === 1 ? "" : "s"}` },
 ];
 
 function CategoryRow({
@@ -66,6 +70,27 @@ function CategoryRow({
   );
 }
 
+function RedFlagsRow({ redFlags }: { redFlags: MarketActivityRedFlagSummary | undefined }) {
+  const isUpdating = redFlags?.status === "updating";
+  const hasActivity = !!redFlags && redFlags.total_findings > 0 && !isUpdating;
+  return (
+    <div className="flex items-center justify-between gap-3 py-1.5">
+      <span className="text-sm text-foreground">Red Flags</span>
+      {isUpdating ? (
+        <span className="text-right text-xs text-foreground-faint">Updating…</span>
+      ) : hasActivity ? (
+        <span className="text-right text-xs text-foreground-faint">
+          {redFlags!.total_findings} finding{redFlags!.total_findings === 1 ? "" : "s"} /{" "}
+          {redFlags!.distinct_filings} filing{redFlags!.distinct_filings === 1 ? "" : "s"} ·{" "}
+          {redFlags!.window_days}d window
+        </span>
+      ) : (
+        <span className="text-right text-xs text-foreground-faint">No recent activity</span>
+      )}
+    </div>
+  );
+}
+
 export function MarketActivityCard({ summary }: { summary: MarketActivitySummary | null }) {
   const allEmpty =
     !summary ||
@@ -73,7 +98,8 @@ export function MarketActivityCard({ summary }: { summary: MarketActivitySummary
       summary.bulk_block_deals.count === 0 &&
       summary.concalls.count === 0 &&
       summary.corporate_events.count === 0 &&
-      (summary.red_flags?.count ?? 0) === 0);
+      (summary.red_flags?.total_findings ?? 0) === 0 &&
+      summary.red_flags?.status !== "updating");
 
   return (
     <Card
@@ -92,6 +118,7 @@ export function MarketActivityCard({ summary }: { summary: MarketActivitySummary
           {CATEGORIES.map(({ key, label, unit }) => (
             <CategoryRow key={key} label={label} category={summary[key]} unit={unit} />
           ))}
+          <RedFlagsRow redFlags={summary.red_flags} />
         </div>
       )}
       <Link href="/market-activity" className="mt-3 flex items-center gap-0.5 text-xs font-medium text-accent">

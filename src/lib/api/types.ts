@@ -1680,6 +1680,25 @@ export interface MarketActivityCategorySummary {
   date: string | null;
 }
 
+// red_flags is precomputed off the request path (REDFLAG_CARD_FIX_PLAN_
+// 2026-10-05, windowed redesign 2026-10-06) -- a rolling window (total
+// findings, distinct filings, latest filing date), not a single day's
+// count. `status` distinguishes "the precomputed document hasn't been
+// refreshed yet" ("updating") from "genuinely zero findings in the
+// window" ("ready" with total_findings=0 would still be "ready";
+// "updating" only fires when the document is missing or was never
+// successfully computed). `computed_at` is when that document was last
+// built, separate from `latest_date` (the latest ACTIVITY date within
+// the window).
+export interface MarketActivityRedFlagSummary {
+  total_findings: number;
+  distinct_filings: number;
+  latest_date: string | null;
+  window_days: number | null;
+  status?: "ready" | "updating";
+  computed_at?: string | null;
+}
+
 export interface MarketActivitySummary {
   date: string;
   last_updated: string;
@@ -1687,7 +1706,7 @@ export interface MarketActivitySummary {
   bulk_block_deals: MarketActivityCategorySummary;
   concalls: MarketActivityCategorySummary;
   corporate_events: MarketActivityCategorySummary;
-  red_flags: MarketActivityCategorySummary;
+  red_flags: MarketActivityRedFlagSummary;
   // Legacy flat fields, kept for back-compat — each is now that
   // category's OWN latest-date count (not "count on one shared date").
   insider_trades_today: number;
