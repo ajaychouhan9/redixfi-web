@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getResearch } from "@/lib/api/endpoints";
@@ -17,7 +18,11 @@ import { retryTransientPublicGet } from "@/lib/api/retry-public-upstream";
 // because the API restricts it, to preserve the signup funnel.
 export const revalidate = 300;
 
-async function loadCompany(symbol: string) {
+// PERF_ANALYSIS_2026-10-05 fix (2026-10-07): generateMetadata and the page
+// body both invoke loadCompany(sym) for the same request — React's cache()
+// memoizes per-request-per-arguments so the second invocation is free
+// instead of re-issuing the getResearch fetch.
+const loadCompany = cache(async (symbol: string) => {
   try {
     // @auth-ok: public SEO snapshot, ISR-cached and crawlable — see the
     // module docstring above. Anonymous = unmetered (correct per
@@ -33,7 +38,7 @@ async function loadCompany(symbol: string) {
     if (e instanceof ApiError && e.status === 404) return null;
     throw e;
   }
-}
+});
 
 export async function generateMetadata({ params }: { params: Promise<{ symbol: string }> }): Promise<Metadata> {
   const { symbol } = await params;

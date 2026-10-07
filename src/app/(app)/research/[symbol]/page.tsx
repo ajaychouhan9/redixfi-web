@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { getChart, getResearch, getResearchPeers } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
@@ -17,7 +18,11 @@ import { ResearchViewGate } from "@/components/app/research/ResearchViewGate";
 // actually refreshes.
 export const revalidate = 900;
 
-async function loadResearch(symbol: string) {
+// PERF_ANALYSIS_2026-10-05 fix (2026-10-07): generateMetadata and the page
+// body both invoke loadResearch(sym) for the same request — React's cache()
+// memoizes per-request-per-arguments so the second invocation is free
+// instead of re-issuing the getResearch fetch.
+const loadResearch = cache(async (symbol: string) => {
   try {
     // @auth-ok: SSR + ISR-cached (revalidate: 900) — a token could not be
     // attached here even if we wanted to (Server Components can't reach
@@ -38,7 +43,7 @@ async function loadResearch(symbol: string) {
     if (e instanceof ApiError && e.status === 404) return null;
     throw e;
   }
-}
+});
 
 export async function generateMetadata({ params }: { params: Promise<{ symbol: string }> }): Promise<Metadata> {
   const { symbol } = await params;

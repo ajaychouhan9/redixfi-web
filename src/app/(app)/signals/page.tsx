@@ -8,21 +8,26 @@ export const metadata: Metadata = {
 };
 
 export default async function SignalsPage({ searchParams }: { searchParams: Promise<{ clone?: string }> }) {
-  const sectorSummary = await getSectorSummary().then((r) => r.data).catch(() => null);
-  // Real live count for the subtitle below (not hardcoded "2,000+") — same
-  // /signals endpoint SignalsExplorer itself lists from, unfiltered
-  // (size:1, we only need page_info.total). @auth-ok: SSR, anonymous —
-  // the total UNIVERSE size doesn't vary by tier (only which rows are
-  // masked does, per B8), matching the same anonymous-SSR-for-aggregate-
-  // counts pattern already used elsewhere (sitemap.ts's getAllSignals).
-  const trackedCount = await getSignals({ size: 1 }).then((r) => r.page_info.total).catch(() => null);
-
-  // "Clone this screen" (2026-09-11) — ?clone={slug} pre-fills the explorer
-  // from a shared screen's saved params. @auth-ok: public read, see
-  // getSharedScreen's own docstring — only the query is fetched here,
-  // never results, so there's no auth/masking concern at this step.
+  // PERF_ANALYSIS_2026-10-05 fix (2026-10-07): these 3 fetches are mutually
+  // independent (cloneSource depends only on `clone`, not on the other two)
+  // but were previously awaited one at a time, paying each one's full
+  // latency in sequence. Promise.all so they run concurrently.
   const { clone } = await searchParams;
-  const cloneSource = clone ? await getSharedScreen(clone).catch(() => null) : null;
+  const [sectorSummary, trackedCount, cloneSource] = await Promise.all([
+    getSectorSummary().then((r) => r.data).catch(() => null),
+    // Real live count for the subtitle below (not hardcoded "2,000+") — same
+    // /signals endpoint SignalsExplorer itself lists from, unfiltered
+    // (size:1, we only need page_info.total). @auth-ok: SSR, anonymous —
+    // the total UNIVERSE size doesn't vary by tier (only which rows are
+    // masked does, per B8), matching the same anonymous-SSR-for-aggregate-
+    // counts pattern already used elsewhere (sitemap.ts's getAllSignals).
+    getSignals({ size: 1 }).then((r) => r.page_info.total).catch(() => null),
+    // "Clone this screen" (2026-09-11) — ?clone={slug} pre-fills the
+    // explorer from a shared screen's saved params. @auth-ok: public read,
+    // see getSharedScreen's own docstring — only the query is fetched here,
+    // never results, so there's no auth/masking concern at this step.
+    clone ? getSharedScreen(clone).catch(() => null) : Promise.resolve(null),
+  ]);
 
   return (
     <div>
