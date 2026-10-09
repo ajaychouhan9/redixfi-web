@@ -330,7 +330,7 @@ export async function getWatchlistAnomalies(token: string): Promise<AnomalyFlagD
 // passing it explicitly, unchanged.
 export async function askRedixfi(
   token: string,
-  body: { symbol?: string | null; page_context_symbol?: string | null; chat_context_symbol?: string | null; question: string; conversation_id?: string | null }
+  body: { symbol?: string | null; page_context_symbol?: string | null; chat_context_symbol?: string | null; question: string; conversation_id?: string | null; selected_symbol?: string | null }
 ): Promise<AskResult> {
   const env = await apiMutate<AskResult>("/ask", "POST", body, { token });
   return env.data;
