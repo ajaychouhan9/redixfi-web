@@ -833,6 +833,10 @@ export interface RedFlagOccurrence {
   source_pdf_url: string | null;
   finding: string;
   chunk_count: number;
+  // 2026-10-09 — older-than-10-years / small penalty / routine provision
+  // items stay listed but are marked and sorted after real issues.
+  severity?: "normal" | "low";
+  quality_note?: string | null;
 }
 
 export interface RedFlagCategoryGroup {
@@ -1410,12 +1414,31 @@ export interface AskResult {
   quota_unchanged?: boolean;
   chat_context?: AskChatContext | null;
   pending_query?: { question: string } | null;
+  // 2026-10-09 — structured clarification options. Rendered as tappable
+  // buttons; tapping sends `selected_symbol` and the server answers the
+  // ORIGINAL question about that stock.
+  choices?: AskChoice[];
+  // What this answer is about. "market" answers ignore the pinned stock.
+  scope?: AskScope | null;
 }
+
+export interface AskChoice {
+  symbol: string;
+  company_name: string;
+  label: string;
+  action: "select" | "switch" | "stay";
+}
+
+export type AskScope =
+  | { type: "company"; symbol: string }
+  | { type: "compare"; symbols: string[] }
+  | { type: "market" }
+  | { type: "pending" };
 
 export interface AskChatContext {
   type: "SINGLE_STOCK";
   primary_symbol: string;
-  source: "PAGE_INHERITED" | "USER_SELECTED" | "LEGACY";
+  source: "PAGE_INHERITED" | "USER_SELECTED" | "LEGACY" | "QUESTION_RESOLVED";
 }
 
 /** Shape of ApiError.detail on a 429 from POST /ask (core/metering.py::enforce_ask_usage). */
@@ -1464,6 +1487,8 @@ export interface AskConversationMessage {
   web_source_label?: string | null;
   web_source_url?: string | null;
   score_history?: ScoreHistoryPoint[] | null;
+  choices?: AskChoice[];
+  scope?: AskScope | null;
 }
 
 export interface AskConversation {

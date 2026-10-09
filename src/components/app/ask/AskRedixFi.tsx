@@ -20,6 +20,7 @@ import { CompareResultCard } from "@/components/app/signals/CompareResultCard";
 import { ScoreHistoryChart } from "@/components/app/ask/ScoreHistoryChart";
 import { MarkdownAnswer } from "@/components/app/ask/MarkdownAnswer";
 import { SourcesSection } from "@/components/app/ask/SourcesSection";
+import { ScopeTag } from "@/components/app/ask/ScopeTag";
 import { SignalTableRow, type VisibleColumns } from "@/components/app/signals/SignalTableRow";
 import { filterChips } from "@/components/app/signals/SmartScreenerBox";
 import { Chip } from "@/components/ui/Chip";
@@ -479,7 +480,9 @@ export function AskRedixFi() {
     });
   }
 
-  async function send(text: string) {
+  // `selectedSymbol` — set only by a clarification button tap: the server
+  // then answers the ORIGINAL pending question about that stock.
+  async function send(text: string, selectedSymbol?: string) {
     if (!text.trim() || busy || authLoading) return;
     setBusy(true);
     setInput("");
@@ -494,6 +497,7 @@ export function AskRedixFi() {
         chat_context_symbol: conversationId ? undefined : symbol,
         question: text,
         conversation_id: conversationId,
+        selected_symbol: selectedSymbol ?? null,
       });
       setConversationId(result.conversation_id);
       freshChatRef.current = false;
@@ -507,6 +511,7 @@ export function AskRedixFi() {
           webSourced: result.web_sourced, webSourceLabel: result.web_source_label, webSourceUrl: result.web_source_url,
           scoreHistory: result.score_history, resolvedSymbol: result.resolved_symbol, followUps: result.follow_ups,
           quotaUnchanged: result.quota_unchanged,
+          choices: result.choices ?? [], scope: result.scope ?? null,
         },
       ]);
       // This answer was just charged server-side; pull the fresh remaining
@@ -822,6 +827,7 @@ export function AskRedixFi() {
                             : { background: "var(--hover)", color: "var(--foreground)", border: "1px solid var(--border)" }
                         }
                       >
+                        {m.role === "ai" && <ScopeTag scope={m.scope} />}
                         {m.role === "ai" ? <MarkdownAnswer text={m.text} /> : m.text}
                         {m.webSourced && (
                           <div className="mt-2 flex items-center gap-1.5 border-t border-border pt-2 text-[12px] text-foreground-faint">
@@ -962,6 +968,25 @@ export function AskRedixFi() {
                     )}
                     {!m.compare && m.scoreHistory && m.scoreHistory.length > 0 && m.resolvedSymbol && (
                       <ScoreHistoryChart series={[{ symbol: m.resolvedSymbol, points: m.scoreHistory }]} />
+                    )}
+
+                    {/* Clarification choices — tapping answers the ORIGINAL
+                        question about that stock (server keeps it pending).
+                        Only under the most recent answer: an older set of
+                        buttons no longer has a question waiting on it. */}
+                    {m.role === "ai" && i === messages.length - 1 && !busy && m.choices && m.choices.length > 0 && (
+                      <div className="mt-2 flex flex-col gap-1.5 sm:flex-row sm:flex-wrap" role="group" aria-label="Choose a company">
+                        {m.choices.map((c) => (
+                          <button
+                            key={`${c.action}-${c.symbol}`}
+                            onClick={() => send(c.label, c.symbol)}
+                            disabled={authLoading}
+                            className="min-h-[40px] rounded-lg border border-accent bg-hover px-3 py-2 text-left text-[13px] font-medium text-foreground transition-colors hover:bg-accent hover:text-[var(--accent-foreground)] disabled:opacity-50"
+                          >
+                            {c.label}
+                          </button>
+                        ))}
+                      </div>
                     )}
 
                     {/* Follow-up suggestion chips — content is backend-

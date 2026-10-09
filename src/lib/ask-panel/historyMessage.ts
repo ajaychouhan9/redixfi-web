@@ -1,5 +1,7 @@
 import type {
+  AskChoice,
   AskConversationMessage,
+  AskScope,
   AskScreenResult,
   AskTableResult,
   CompareResult,
@@ -23,6 +25,8 @@ export interface AskRenderableMessage {
   resolvedSymbol?: string | null;
   followUps?: string[];
   quotaUnchanged?: boolean;
+  choices?: AskChoice[];
+  scope?: AskScope | null;
 }
 
 /**
@@ -50,6 +54,8 @@ export function restoreAskMessage(
     webSourceLabel: assistant ? message.web_source_label : undefined,
     webSourceUrl: assistant ? message.web_source_url : undefined,
     scoreHistory: assistant ? message.score_history ?? null : undefined,
+    choices: assistant ? message.choices ?? [] : undefined,
+    scope: assistant ? message.scope ?? null : undefined,
   };
 }
 

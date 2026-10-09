@@ -44,6 +44,9 @@ function CategoryBlock({ group }: { group: RedFlagCategoryGroup }) {
                   {occ.source_type_label}
                 </span>
                 <span className="text-foreground-faint">{occurrenceDateLabel(occ.fiscal_year, occ.filing_date)}</span>
+                {occ.quality_note && (
+                  <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-foreground-faint">{occ.quality_note}</span>
+                )}
                 {occ.chunk_count > 1 && (
                   <span className="text-foreground-faint">· {occ.chunk_count} passages</span>
                 )}

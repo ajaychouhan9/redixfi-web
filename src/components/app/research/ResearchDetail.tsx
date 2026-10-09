@@ -208,7 +208,7 @@ export function ResearchDetail({
                     <li key={i} className="flex items-center justify-between">
                       <span className="text-foreground-muted">{p.quarter}</span>
                       <span>
-                        {p.pledged_pct}% · {p.risk_level}
+                        {p.pledged_pct}%{p.as_of_date ? <> · as of {p.as_of_date}</> : null}
                         {p.pledge_trend && <> · {p.pledge_trend.toLowerCase()}</>}
                       </span>
                     </li>
