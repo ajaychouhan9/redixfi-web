@@ -837,6 +837,9 @@ export interface RedFlagOccurrence {
   // items stay listed but are marked and sorted after real issues.
   severity?: "normal" | "low";
   quality_note?: string | null;
+  // 2026-10-10 — filing recency, newest first within each group.
+  recency_group?: "Recent" | "Earlier" | "Older";
+  period_label?: string;
 }
 
 export interface RedFlagCategoryGroup {
@@ -1356,6 +1359,10 @@ export interface AskTableResult {
   rows: Record<string, string | number | null>[];
   row_count: number;
   total_count?: number;
+  // Red-flag tables: rows carry a Recent/Earlier/Older group in this key,
+  // already ordered newest first.
+  group_key?: string;
+  group_order?: string[];
 }
 
 export interface AskResult {

@@ -21,10 +21,17 @@ import { formatDateIst } from "@/lib/format";
  */
 
 function occurrenceDateLabel(fiscalYear: string | null, filingDate: string | null): string {
-  if (fiscalYear) return fiscalYear;
+  if (filingDate && fiscalYear) return `${formatDateIst(filingDate)} (${fiscalYear})`;
   if (filingDate) return formatDateIst(filingDate);
-  return "";
+  if (fiscalYear) return fiscalYear;
+  return "Date not available";
 }
+
+const GROUP_LABELS: Record<string, string> = {
+  Recent: "Recent (last 12 months)",
+  Earlier: "Earlier (1-3 years ago)",
+  Older: "Older (3+ years ago)",
+};
 
 function CategoryBlock({ group }: { group: RedFlagCategoryGroup }) {
   return (
@@ -36,8 +43,19 @@ function CategoryBlock({ group }: { group: RedFlagCategoryGroup }) {
         </span>
       </div>
       <div className="space-y-3">
-        {group.occurrences.map((occ, i) => (
-          <div key={`${occ.filing_id ?? "pledge"}-${i}`} className={i > 0 ? "border-t border-border pt-3" : ""}>
+        {group.occurrences.map((occ, i) => {
+          const grp = occ.recency_group;
+          const prevGrp = i > 0 ? group.occurrences[i - 1].recency_group : undefined;
+          return (
+          <div
+            key={`${occ.filing_id ?? "pledge"}-${i}`}
+            className={`${i > 0 ? "border-t border-border pt-3" : ""} ${grp === "Older" ? "opacity-60" : ""}`}
+          >
+            {grp && grp !== prevGrp && (
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
+                {GROUP_LABELS[grp] ?? grp}
+              </p>
+            )}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2 text-[13px]">
                 <span className="rounded-full bg-neutral-bg px-2 py-0.5 font-semibold uppercase tracking-wide text-foreground-muted">
@@ -64,7 +82,8 @@ function CategoryBlock({ group }: { group: RedFlagCategoryGroup }) {
             </div>
             <p className="mt-2 text-sm leading-relaxed text-foreground">{occ.finding}</p>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
