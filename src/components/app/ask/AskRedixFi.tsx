@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import { Fragment, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sparkles, X, Send, Search, Globe, RotateCcw, History, ChevronLeft, Copy, Check, Columns2, PanelRight, Maximize2, Pin } from "lucide-react";
@@ -32,9 +32,27 @@ import type {
   AskConversationListItem,
   AskChatContext,
   AskLimitDetail,
+  AskTableResult,
   AskUsageInfo,
   ResearchSearchRow,
 } from "@/lib/api/types";
+
+const GROUP_LABELS: Record<string, string> = {
+  Recent: "Recent (last 12 months)",
+  Earlier: "Earlier (1-3 years ago)",
+  Older: "Older (3+ years ago)",
+};
+
+// CSV/Excel rows follow the visible columns; a recency-grouped table also
+// exports its group so the file keeps the same Recent/Earlier/Older split.
+function tableExportRows(table: AskTableResult): Record<string, unknown>[] {
+  return table.rows.map((row) => {
+    const out: Record<string, unknown> = {};
+    for (const col of table.columns) out[col.label] = row[col.key];
+    if (table.group_key) out["Recency"] = row[table.group_key];
+    return out;
+  });
+}
 
 /**
  * RedixFi AI chat UI cleanup session (2026-09-11).
@@ -905,27 +923,15 @@ export function AskRedixFi() {
                           <ExportButton
                             canExport={isProEntitled(user)}
                             onExport={() => {
-                              const rows = m.table!.rows.map((row) => {
-                                const out: Record<string, unknown> = {};
-                                for (const col of m.table!.columns) out[col.label] = row[col.key];
-                                return out;
-                              });
+                              const rows = tableExportRows(m.table!);
                               downloadCsv("redixfi-ask-table.csv", rows);
                             }}
                             onCsv={() => {
-                              const rows = m.table!.rows.map((row) => {
-                                const out: Record<string, unknown> = {};
-                                for (const col of m.table!.columns) out[col.label] = row[col.key];
-                                return out;
-                              });
+                              const rows = tableExportRows(m.table!);
                               downloadCsv("redixfi-ask-table.csv", rows);
                             }}
                             onXlsx={() => {
-                              const rows = m.table!.rows.map((row) => {
-                                const out: Record<string, unknown> = {};
-                                for (const col of m.table!.columns) out[col.label] = row[col.key];
-                                return out;
-                              });
+                              const rows = tableExportRows(m.table!);
                               downloadXlsx("redixfi-ask-table.xlsx", [{ name: "AI Result", rows }]);
                             }}
                             label="Download"
@@ -943,15 +949,30 @@ export function AskRedixFi() {
                               </tr>
                             </thead>
                             <tbody>
-                              {m.table.rows.map((row, i) => (
-                                <tr key={i} className="border-b border-border last:border-0">
-                                  {m.table!.columns.map((col) => (
-                                    <td key={col.key} className="px-3 py-2">
-                                      {row[col.key] ?? "N/A"}
-                                    </td>
-                                  ))}
-                                </tr>
-                              ))}
+                              {m.table.rows.map((row, i) => {
+                                const gk = m.table!.group_key;
+                                const grp = gk ? (row[gk] as string | null | undefined) : null;
+                                const prevGrp = gk && i > 0 ? (m.table!.rows[i - 1][gk] as string | null | undefined) : null;
+                                const dim = grp === "Older";
+                                return (
+                                  <Fragment key={i}>
+                                    {grp && grp !== prevGrp && (
+                                      <tr className="border-b border-border bg-neutral-bg">
+                                        <td colSpan={m.table!.columns.length} className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
+                                          {GROUP_LABELS[grp] ?? grp}
+                                        </td>
+                                      </tr>
+                                    )}
+                                    <tr className={`border-b border-border last:border-0 ${dim ? "opacity-60" : ""}`}>
+                                      {m.table!.columns.map((col) => (
+                                        <td key={col.key} className="px-3 py-2">
+                                          {row[col.key] ?? "N/A"}
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  </Fragment>
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>
