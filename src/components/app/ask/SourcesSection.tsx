@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, FileText } from "lucide-react";
 import type { SourceCitation } from "@/lib/api/types";
+import { formatDateIst } from "@/lib/format";
 
 /**
  * Ask-panel-upgrade session, Phase 1 — Screener-AI-parity source citations
@@ -15,9 +16,49 @@ import type { SourceCitation } from "@/lib/api/types";
  * (same "View source filing →" link pattern as ResearchDetail.tsx); every
  * other source type is a single aggregate row with no link.
  */
-export function SourcesSection({ citations }: { citations: SourceCitation[] }) {
+/**
+ * Answers fetched from a public web page (type "web") are not from RedixFi's
+ * database, so the footer is always visible rather than tucked into the
+ * expandable Sources list.
+ */
+function WebSourceFooter({ citation }: { citation: SourceCitation }) {
+  const name = citation.label.replace(/^Web · /, "");
+  const fetched = citation.fetched_at ? formatDateIst(`${citation.fetched_at}T00:00:00+05:30`) : null;
+  return (
+    <div className="mt-2 border-t border-border pt-2 text-[11.5px] text-foreground-faint">
+      <span>
+        Source: online ({name}), not from RedixFi&apos;s database
+        {fetched ? ` · fetched ${fetched}` : ""}
+      </span>
+      {citation.url && (
+        <a
+          href={citation.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ml-2 font-medium text-accent-dim hover:text-accent"
+        >
+          View source →
+        </a>
+      )}
+      {citation.detail && <p className="mt-0.5">{citation.detail}</p>}
+    </div>
+  );
+}
+
+export function SourcesSection({ citations: allCitations }: { citations: SourceCitation[] }) {
   const [expanded, setExpanded] = useState(false);
-  if (citations.length === 0) return null;
+  const webCitations = allCitations.filter((c) => c.type === "web");
+  const citations = allCitations.filter((c) => c.type !== "web");
+  if (allCitations.length === 0) return null;
+  if (citations.length === 0) {
+    return (
+      <>
+        {webCitations.map((c, i) => (
+          <WebSourceFooter key={i} citation={c} />
+        ))}
+      </>
+    );
+  }
 
   const noun = citations.length === 1 ? "Source" : "Sources";
 
@@ -57,6 +98,9 @@ export function SourcesSection({ citations }: { citations: SourceCitation[] }) {
           ))}
         </ul>
       )}
+      {webCitations.map((c, i) => (
+        <WebSourceFooter key={`web-${i}`} citation={c} />
+      ))}
     </div>
   );
 }
