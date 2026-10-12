@@ -7,10 +7,10 @@ import { RequireAuth } from "@/components/app/account/RequireAuth";
 import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getInboxPage, markInboxRead } from "@/lib/api/mutations";
+import { ALERT_FOOTER_TEXT } from "@/lib/alertFooter";
 import { formatDateTimeIst } from "@/lib/format";
 import type { InboxAlert } from "@/lib/api/types";
 
-const DISCLAIMER = "Measured market data, not investment advice. RedixFi is not a SEBI-registered Research Analyst.";
 
 const KIND_NOUN: Record<string, string> = {
   signal_delta: "composite signal moves",
@@ -171,7 +171,7 @@ function InboxList() {
           )}
         </ul>
       )}
-      <p className="mt-4 text-xs text-foreground-faint">{DISCLAIMER}</p>
+      <p className="mt-4 text-xs text-foreground-faint">{ALERT_FOOTER_TEXT}</p>
     </Card>
   );
 }
