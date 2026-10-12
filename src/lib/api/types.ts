@@ -1147,6 +1147,18 @@ export interface InboxAlert {
   // about one stock; present for the other 3 trigger types (signal_delta,
   // news_watchlist, behavior_state).
   symbol?: string | null;
+  // 2026-10-13 alert presentation: present on alerts created after that
+  // change (absent on older rows). `digest_id` ties together the alerts that
+  // went out as one grouped Telegram/email digest.
+  kind?: string | null;
+  link?: string | null;
+  link_label?: string | null;
+  change?: string | null;
+  measured?: string | null;
+  company?: string | null;
+  digest_id?: string | null;
+  digest_size?: number | null;
+  read_at?: string | null;
   [key: string]: unknown;
 }
 
