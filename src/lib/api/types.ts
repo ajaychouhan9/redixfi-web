@@ -1341,6 +1341,8 @@ export interface SourceCitation {
   detail: string | null;
   url?: string | null;
   subject?: string | null;
+  /** Web-sourced answers only: the date (YYYY-MM-DD) the page was fetched. */
+  fetched_at?: string | null;
 }
 
 /** Shared table shape for TWO distinct Ask AI features: core/tabular_ask.py's
