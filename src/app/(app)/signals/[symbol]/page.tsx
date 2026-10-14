@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { SignalUnlockGate } from "@/components/app/signals/SignalUnlockGate";
 import { SignalDetailView } from "@/components/app/signals/SignalDetailView";
 import { retryTransientPublicGet } from "@/lib/api/retry-public-upstream";
+import { formatDataAsOf } from "@/lib/format";
 
 export async function generateMetadata({ params }: { params: Promise<{ symbol: string }> }): Promise<Metadata> {
   const { symbol } = await params;
@@ -70,6 +71,12 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
             {detail.company_name ?? symbol.toUpperCase()} doesn&apos;t have measured signal data yet. Coverage for
             this symbol is pending — check back after the next scheduled update.
           </p>
+          {detail.last_price != null && detail.price_data_as_of && (
+            <p className="mt-2 text-sm">
+              Last known price ₹{detail.last_price.toLocaleString("en-IN")}
+              <span className="ml-2 text-xs text-foreground-faint">{formatDataAsOf(detail.price_data_as_of)}</span>
+            </p>
+          )}
         </Card>
       </div>
     );
