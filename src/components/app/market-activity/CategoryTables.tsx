@@ -302,7 +302,23 @@ function summaryLine(row: MarketActivityRow): string {
 export function AllActivityTable({ rows }: { rows: MarketActivityRow[] }) {
   if (rows.length === 0) return <EmptyState text="No market activity recorded recently." />;
   return (
-    <div className="overflow-x-auto">
+    <>
+      {/* Phones: one stacked entry per row, so nothing is cut off. */}
+      <ul className="divide-y divide-border sm:hidden">
+        {rows.map((row, i) => (
+          <li key={`m-${row.type}-${row.symbol}-${i}`} className="py-2">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+              <span className="whitespace-nowrap tabular-nums text-foreground-muted">{formatDateIst(row.date)}</span>
+              <SymbolLink symbol={row.symbol} companyName={row.company_name} />
+              <span className="rounded-full bg-neutral-bg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-foreground-muted">
+                {TYPE_LABEL[row.type]}
+              </span>
+            </div>
+            <p className="mt-0.5 break-words text-sm text-foreground-muted">{summaryLine(row)}</p>
+          </li>
+        ))}
+      </ul>
+    <div className="hidden overflow-x-auto sm:block">
       <table className="w-full text-sm">
         <thead className="text-left text-xs font-semibold uppercase tracking-wide text-foreground-faint">
           <tr>
@@ -330,5 +346,6 @@ export function AllActivityTable({ rows }: { rows: MarketActivityRow[] }) {
         </tbody>
       </table>
     </div>
+    </>
   );
 }
