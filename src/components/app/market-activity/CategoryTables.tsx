@@ -169,63 +169,56 @@ function hasResolvedNseSymbol(symbol: string): boolean {
   return !/^\d+$/.test(symbol.trim());
 }
 
-export function CorporateEventsTable({ rows }: { rows: MarketActivityCorporateEventRow[] }) {
+/** Plain event name; never the bare enum ("RESULTS"). */
+export function eventName(r: { event_label?: string | null; event_type?: string | null }): string {
+  if (r.event_label) return r.event_label;
+  const t = (r.event_type ?? "").replace(/_/g, " ").toLowerCase();
+  return t ? t.charAt(0).toUpperCase() + t.slice(1) : "Corporate event";
+}
+
+function ScheduledChip() {
+  return (
+    <span className="ml-1.5 inline-block rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-accent">
+      Scheduled
+    </span>
+  );
+}
+
+export function CorporateEventsTable({
+  rows,
+  emptyText = "No corporate events recorded.",
+}: {
+  rows: MarketActivityCorporateEventRow[];
+  emptyText?: string;
+}) {
   const visibleRows = rows.filter((r) => hasResolvedNseSymbol(r.symbol));
-  if (visibleRows.length === 0) return <EmptyState text="No upcoming corporate events recorded." />;
-  // corporate_events' real field shape (verified against data-pipeline/
-  // corprate_event.py's CorporateEvent dataclass, BUG 6 fix 2026-08-16):
-  // event_type/headline are reliable, known columns — shown explicitly
-  // instead of guessed generic ones. `meta` (a nested object) and any
-  // other non-scalar field are explicitly excluded from the generic
-  // fallback columns below, and safeCell() guards every cell as
-  // defense-in-depth against any other object-valued field this
-  // collection's live shape might still surprise us with.
-  const knownKeys = new Set([
-    "type", "symbol", "company_name", "date", "event_date", "valid_till",
-    "event_type", "headline", "meta", "source_symbol",
-  ]);
-  const extraCols = Array.from(new Set(visibleRows.flatMap((r) => Object.keys(r))))
-    .filter((k) => !knownKeys.has(k))
-    .filter((k) => visibleRows.every((r) => typeof r[k] !== "object" || r[k] === null))
-    .slice(0, 2);
+  if (visibleRows.length === 0) return <EmptyState text={emptyText} />;
+  // Compact three-column layout (Date / Symbol / Event with the headline
+  // underneath) so it fits a 390px phone without sideways scrolling.
   return (
     <div className="overflow-x-auto">
-      {/* table-fixed + explicit widths on every column except Headline stop
-       * long values (e.g. event_type "MANAGEMENT_CHANGE") from stealing
-       * space from — or visually overlapping — neighboring columns. Every
-       * fixed-width column also gets break-words so a long single "word"
-       * (no spaces, e.g. underscored enum values) wraps inside its own
-       * cell instead of overflowing into the next one. Headline is the
-       * only column left unsized, so table-fixed hands it 100% of
-       * whatever width remains. */}
-      <table className="w-full min-w-[720px] table-fixed text-sm">
+      <table className="w-full text-sm">
         <thead className="text-left text-xs font-semibold uppercase tracking-wide text-foreground-faint">
           <tr>
             <th className="w-24 py-1.5 pr-3 sm:w-28">Date</th>
             <th className="w-24 py-1.5 pr-3 sm:w-28">Symbol</th>
-            <th className="w-32 py-1.5 pr-3 sm:w-36">Event type</th>
-            <th className="py-1.5 pr-3">Headline</th>
-            {extraCols.map((c) => (
-              <th key={c} className="w-28 py-1.5 pr-3 sm:w-32">
-                {c.replace(/_/g, " ")}
-              </th>
-            ))}
+            <th className="py-1.5 pr-3">Event</th>
           </tr>
         </thead>
         <tbody>
           {visibleRows.map((r, i) => (
-            <tr key={`${r.symbol}-${i}`} className="border-t border-border">
+            <tr key={`${r.symbol}-${r.date}-${i}`} className="border-t border-border">
               <td className="whitespace-nowrap py-1.5 pr-3 align-top">{formatDateIst(r.date)}</td>
               <td className="break-words py-1.5 pr-3 align-top">
                 <SymbolLink symbol={r.symbol} companyName={r.company_name} />
               </td>
-              <td className="break-words py-1.5 pr-3 align-top">{safeCell(r.event_type)}</td>
-              <td className="break-words py-1.5 pr-3 align-top text-foreground-muted">{safeCell(r.headline ?? r.summary)}</td>
-              {extraCols.map((c) => (
-                <td key={c} className="break-words py-1.5 pr-3 align-top">
-                  {safeCell(r[c])}
-                </td>
-              ))}
+              <td className="break-words py-1.5 pr-3 align-top">
+                <span className="font-medium">{eventName(r)}</span>
+                {r.scheduled && <ScheduledChip />}
+                {r.headline && r.headline !== eventName(r) && (
+                  <div className="mt-0.5 text-xs text-foreground-muted">{safeCell(r.headline)}</div>
+                )}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -296,7 +289,7 @@ function summaryLine(row: MarketActivityRow): string {
       return `${types} · ${row.net_direction ?? "—"} · ${row.net_quantity != null ? Number(row.net_quantity).toLocaleString("en-IN") : "—"} shares`;
     }
     case "corporate_event":
-      return safeCell(row.event_type) !== "—" ? String(row.event_type) : "Corporate event";
+      return eventName(row);
     case "red_flag":
       return `${row.category_label} · ${row.source_type_label}`;
   }
@@ -309,8 +302,24 @@ function summaryLine(row: MarketActivityRow): string {
 export function AllActivityTable({ rows }: { rows: MarketActivityRow[] }) {
   if (rows.length === 0) return <EmptyState text="No market activity recorded recently." />;
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[560px] text-sm">
+    <>
+      {/* Phones: one stacked entry per row, so nothing is cut off. */}
+      <ul className="divide-y divide-border sm:hidden">
+        {rows.map((row, i) => (
+          <li key={`m-${row.type}-${row.symbol}-${i}`} className="py-2">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+              <span className="whitespace-nowrap tabular-nums text-foreground-muted">{formatDateIst(row.date)}</span>
+              <SymbolLink symbol={row.symbol} companyName={row.company_name} />
+              <span className="rounded-full bg-neutral-bg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-foreground-muted">
+                {TYPE_LABEL[row.type]}
+              </span>
+            </div>
+            <p className="mt-0.5 break-words text-sm text-foreground-muted">{summaryLine(row)}</p>
+          </li>
+        ))}
+      </ul>
+    <div className="hidden overflow-x-auto sm:block">
+      <table className="w-full text-sm">
         <thead className="text-left text-xs font-semibold uppercase tracking-wide text-foreground-faint">
           <tr>
             <th className="py-1.5 pr-3">Date</th>
@@ -337,5 +346,6 @@ export function AllActivityTable({ rows }: { rows: MarketActivityRow[] }) {
         </tbody>
       </table>
     </div>
+    </>
   );
 }

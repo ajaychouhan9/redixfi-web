@@ -15,11 +15,12 @@ import type {
 } from "@/lib/api/types";
 import { downloadCsv } from "@/lib/csv";
 import { downloadXlsx } from "@/lib/xlsx";
-import { formatDateIst } from "@/lib/format";
+import { formatDateTimeIst } from "@/lib/format";
+import type { EventKind } from "@/lib/api/types";
 import { ExportButton } from "@/components/ui/ExportButton";
 import { UnlockBanner } from "@/components/ui/Locked";
 import { MarketActivityTabs, type MarketActivityTabDef } from "./MarketActivityTabs";
-import { ConcallsTable, InsiderTable, CorporateEventsTable, BulkBlockTable, RedFlagTable, AllActivityTable } from "./CategoryTables";
+import { ConcallsTable, InsiderTable, CorporateEventsTable, BulkBlockTable, RedFlagTable, AllActivityTable, eventName } from "./CategoryTables";
 
 /** Market Activity hub (2026-08-15) — cross-stock tabs for concalls,
  * insider trades, corporate events, bulk/block deals: all 4 already
@@ -46,6 +47,10 @@ export function MarketActivityHub() {
   const [symbolFilter, setSymbolFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  // Corporate Events tab: two parts. Upcoming (scheduled) is the default.
+  const [eventWhen, setEventWhen] = useState<"upcoming" | "recent">("upcoming");
+  const [eventKind, setEventKind] = useState<EventKind | "">("");
+  const [lastFetchedAt, setLastFetchedAt] = useState<string | null>(null);
 
   const [rows, setRows] = useState<MarketActivityRow[]>([]);
   const [maxRows, setMaxRows] = useState<number | null>(null);
@@ -60,8 +65,10 @@ export function MarketActivityHub() {
       symbol: symbolFilter ? symbolFilter.trim().toUpperCase() : undefined,
       date_from: dateFrom || undefined,
       date_to: dateTo || undefined,
+      when: tab === "corporate_event" ? eventWhen : undefined,
+      event_kind: tab === "corporate_event" && eventKind ? eventKind : undefined,
     }),
-    [tab, symbolFilter, dateFrom, dateTo]
+    [tab, symbolFilter, dateFrom, dateTo, eventWhen, eventKind]
   );
 
   useEffect(() => {
@@ -77,6 +84,7 @@ export function MarketActivityHub() {
           setMaxRows(env.page_info.max_rows);
           setFiltersEnabled(env.page_info.filters_enabled);
           setCsvExportEnabled(env.page_info.csv_export_enabled);
+          setLastFetchedAt(env.page_info.last_fetched_at ?? null);
         })
         .catch((e) => !cancelled && setError(e instanceof Error ? e.message : "Failed to load market activity."))
         .finally(() => !cancelled && setLoading(false));
@@ -110,7 +118,7 @@ export function MarketActivityHub() {
             break;
           }
           case "corporate_event":
-            detail = row.event_type ?? "Corporate event";
+            detail = eventName(row);
             break;
           case "red_flag":
             detail = `${row.category_label} · ${row.source_type_label}`;
@@ -165,7 +173,8 @@ export function MarketActivityHub() {
             symbol: row.symbol,
             company_name: row.company_name ?? "",
             date: row.date,
-            event_type: row.event_type ?? "",
+            status: row.scheduled ? "Scheduled" : "Recorded",
+            event: eventName(row),
             headline: row.headline ?? row.summary ?? "",
           };
         case "red_flag":
@@ -200,13 +209,34 @@ export function MarketActivityHub() {
   // are already sorted most-recent-first (backend BUG 8 fix), so the
   // first row's date is the honest "as of" date for whatever's
   // currently on screen — surfaced explicitly rather than left implicit.
-  const latestDate = rows[0]?.date;
-
   return (
     <div>
       <MarketActivityTabs active={tab} onChange={setTab} />
-      {!loading && !error && latestDate && (
-        <p className="mb-3 text-xs text-foreground-faint">Last updated: {formatDateIst(latestDate)}</p>
+      {/* The time the data was last fetched, from the server. Never a row's
+          event date (a scheduled future event is not an update). Hidden when
+          the server has no fetch time for this view. */}
+      {!loading && !error && lastFetchedAt && (
+        <p className="mb-3 text-xs text-foreground-faint">Last updated: {formatDateTimeIst(lastFetchedAt)}</p>
+      )}
+      {tab === "corporate_event" && (
+        <div className="mb-3 flex gap-1" role="group" aria-label="Corporate events view">
+          {([
+            ["upcoming", "Upcoming (scheduled)"],
+            ["recent", "Recent"],
+          ] as const).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setEventWhen(key)}
+              aria-pressed={eventWhen === key}
+              className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
+                eventWhen === key ? "border-accent bg-accent/10 text-accent" : "border-border bg-hover text-foreground-muted"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       )}
 
       {/* BUG 5 fix (2026-08-16): re-uses SignalsExplorer.tsx's own filter-bar
@@ -243,6 +273,22 @@ export function MarketActivityHub() {
               showIcon={false}
               inputClassName="w-28 shrink-0 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs text-foreground-muted outline-none focus:border-accent"
             />
+            {tab === "corporate_event" && (
+              <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs text-foreground-muted">
+                Event type
+                <select
+                  value={eventKind}
+                  onChange={(e) => setEventKind(e.target.value as EventKind | "")}
+                  className="bg-transparent text-xs text-foreground outline-none"
+                  aria-label="Filter by event type"
+                >
+                  <option value="">All</option>
+                  <option value="results">Results</option>
+                  <option value="dividend">Dividend</option>
+                  <option value="split_bonus">Split/Bonus</option>
+                </select>
+              </label>
+            )}
             <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs text-foreground-muted">
               From
               <input
@@ -307,7 +353,10 @@ export function MarketActivityHub() {
           </div>
         ) : tab === "corporate_event" ? (
           <div className="p-4">
-            <CorporateEventsTable rows={rows.filter((r): r is MarketActivityCorporateEventRow => r.type === "corporate_event")} />
+            <CorporateEventsTable
+              rows={rows.filter((r): r is MarketActivityCorporateEventRow => r.type === "corporate_event")}
+              emptyText={eventWhen === "upcoming" ? "No scheduled corporate events on file." : "No recent corporate events recorded."}
+            />
           </div>
         ) : tab === "bulk_block" ? (
           <div className="p-4">

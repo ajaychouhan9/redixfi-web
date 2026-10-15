@@ -802,6 +802,8 @@ export interface ResearchDetail {
   pledge_data_as_of?: DataAsOf | null;
   options_pcr_history: OptionsPcrPoint[];
   corporate_events: GenericRecord[];
+  /** Scheduled (future-dated) events, nearest first. */
+  upcoming_events?: GenericRecord[];
   corporate_events_data_as_of?: DataAsOf | null;
   news: NewsItem[];
   signal_summary: ResearchSignalSummary;
@@ -1647,6 +1649,10 @@ export type MarketActivityCorporateEventRow = MarketActivityBase &
     headline?: string | null;
     summary?: string | null;
     source?: string | null;
+    /** Plain event name from the server ("Quarterly Results", "Interim Dividend", "Board Meeting" …). */
+    event_label?: string | null;
+    /** True when the event date is after today (IST): scheduled, not recorded. */
+    scheduled?: boolean;
     meta?: Record<string, unknown> | null;
     /** Present only when the server resolved `symbol` from a raw BSE
      * scrip code (e.g. "544634") to a known canonical NSE symbol — the
@@ -1718,7 +1724,14 @@ export interface MarketActivityPageInfo {
   filters_enabled: boolean;
   csv_export_enabled: boolean;
   type: MarketActivityType | null;
+  when?: "upcoming" | "recent" | null;
+  event_kind?: EventKind | null;
+  today?: string;
+  /** When the data was last fetched (UTC ISO). Never an event date. */
+  last_fetched_at?: string | null;
 }
+
+export type EventKind = "results" | "dividend" | "split_bonus";
 
 // BUG 11 fix (2026-08-17): each category now reports its OWN latest
 // date + count independently (routers/market_activity.py::
@@ -1758,6 +1771,8 @@ export interface MarketActivitySummary {
   bulk_block_deals: MarketActivityCategorySummary;
   concalls: MarketActivityCategorySummary;
   corporate_events: MarketActivityCategorySummary;
+  corporate_events_upcoming?: { count: number; next_date: string | null };
+  last_fetched_at?: string | null;
   red_flags: MarketActivityRedFlagSummary;
   // Legacy flat fields, kept for back-compat — each is now that
   // category's OWN latest-date count (not "count on one shared date").

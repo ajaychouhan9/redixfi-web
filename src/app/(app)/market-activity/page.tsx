@@ -98,6 +98,15 @@ export default async function MarketActivityPage() {
                 </li>
               );
             })}
+            {summary?.corporate_events_upcoming && summary.corporate_events_upcoming.count > 0 && (
+              <li key="Scheduled events">
+                <span className="font-medium">Scheduled corporate events:</span>{" "}
+                {summary.corporate_events_upcoming.count} upcoming
+                {summary.corporate_events_upcoming.next_date && (
+                  <>, next on {formatDateIst(summary.corporate_events_upcoming.next_date)}</>
+                )}
+              </li>
+            )}
             {/* Red flags: windowed summary (REDFLAG_CARD_FIX_PLAN_2026-10-05,
                 windowed redesign 2026-10-06), a different shape from the 4
                 single-day categories above -- rendered separately rather

@@ -6,6 +6,7 @@ import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { Sparkline } from "@/components/ui/Sparkline";
 import { GenericRecordTable } from "@/components/ui/GenericRecordTable";
+import { StockEventsList } from "@/components/app/research/StockEventsList";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { Chip } from "@/components/ui/Chip";
 import { NewsList } from "@/components/app/NewsList";
@@ -242,8 +243,11 @@ export function ResearchDetail({
 
       <ErrorBoundary>
         <Collapsible question="Corporate events">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground-muted">Upcoming (scheduled)</p>
+          <StockEventsList rows={data.upcoming_events ?? []} emptyText="No scheduled corporate events on file." />
+          <p className="mb-1 mt-4 text-xs font-semibold uppercase tracking-wide text-foreground-muted">Recent</p>
           <p className="mb-2 text-[11px] text-foreground-faint">{formatDataAsOf(data.corporate_events_data_as_of)}</p>
-          <GenericRecordTable rows={data.corporate_events} emptyText="No upcoming corporate events recorded." />
+          <StockEventsList rows={data.corporate_events} emptyText="No recent corporate events recorded." />
         </Collapsible>
       </ErrorBoundary>
 
