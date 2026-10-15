@@ -24,6 +24,7 @@ import type {
   AnomalyFlagDoc,
   AskResult,
   AskHistoryResult,
+  AskSuggestionsResult,
   AskConversationListItem,
   PromoCodeAdmin,
   AlertRule,
@@ -356,6 +357,13 @@ export async function getAskHistory(
   if (symbol) params.symbol = symbol;
   if (conversationId) params.conversation_id = conversationId;
   const env = await apiGet<AskHistoryResult>("/ask/history", { token, params: Object.keys(params).length ? params : undefined });
+  return env.data;
+}
+
+// Suggested questions for an empty chat (GET /ask/suggestions): read-only,
+// no quota, no model call. `symbol` omitted for market-wide suggestions.
+export async function getAskSuggestions(token: string, symbol?: string | null): Promise<AskSuggestionsResult> {
+  const env = await apiGet<AskSuggestionsResult>("/ask/suggestions", { token, params: symbol ? { symbol } : undefined });
   return env.data;
 }
 
