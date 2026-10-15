@@ -29,6 +29,7 @@ import type {
   MarketActivityRow,
   MarketActivityPageInfo,
   MarketActivityType,
+  EventKind,
   MarketActivitySummary,
   SharedScreen,
 } from "./types";
@@ -258,6 +259,10 @@ export interface MarketActivityListParams {
   symbol?: string;
   date_from?: string;
   date_to?: string;
+  /** corporate_event tab only: upcoming = dated after today, recent = today or earlier. */
+  when?: "upcoming" | "recent";
+  /** corporate_event tab only (Pro). */
+  event_kind?: EventKind;
 }
 
 export interface MarketActivityListResult {
