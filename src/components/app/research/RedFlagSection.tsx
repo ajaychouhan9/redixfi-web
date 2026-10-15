@@ -2,6 +2,7 @@ import type { ResearchRedFlags, RedFlagCategoryGroup } from "@/lib/api/types";
 import { Card } from "@/components/ui/Card";
 import { AiLabel } from "@/components/ui/AiLabel";
 import { formatDateIst } from "@/lib/format";
+import { RED_FLAG_CATEGORY_LABELS } from "@/lib/redFlagCategories";
 
 /**
  * Red Flags (Task 2, 2026-09-19) — core/red_flag_view.py::get_symbol_red_flags().
@@ -37,7 +38,7 @@ function CategoryBlock({ group }: { group: RedFlagCategoryGroup }) {
   return (
     <div className="border-t border-border pt-3 first:border-t-0 first:pt-0">
       <div className="mb-2 flex flex-wrap items-center gap-2">
-        <h3 className="text-sm font-semibold text-foreground">{group.category_label}</h3>
+        <h3 className="text-sm font-semibold text-foreground">{RED_FLAG_CATEGORY_LABELS[group.category] ?? group.category_label}</h3>
         <span className="rounded-full bg-neutral-bg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-foreground-muted">
           {group.occurrence_count} occurrence{group.occurrence_count === 1 ? "" : "s"}
         </span>
