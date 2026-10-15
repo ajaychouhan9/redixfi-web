@@ -1538,10 +1538,16 @@ export interface AskConversationListItem {
 
 export interface AskHistoryResult {
   conversation: AskConversation | null;
-  // Context-tailored empty-state chips for symbol mode (core/ask.py::
-  // compute_initial_suggestions) — [] for the general/no-symbol panel or
-  // a locked symbol.
+  // Same list as GET /ask/suggestions for this context.
   initial_suggestions: string[];
+}
+
+/** GET /ask/suggestions — tested question templates, filtered server-side
+ * to what this stock's data (or the market data) can answer today. */
+export interface AskSuggestionsResult {
+  symbol: string | null;
+  suggestions: string[];
+  has_concall: boolean;
 }
 
 // ---------- Task 16 Part C: anomaly / unusual-activity detection ----------

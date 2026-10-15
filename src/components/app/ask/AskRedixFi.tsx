@@ -8,13 +8,14 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 import { ApiError } from "@/lib/api/client";
 import { searchResearch } from "@/lib/api/endpoints";
-import { askRedixfi, getAskConversations, getAskHistory, getUsage, updateAskContext } from "@/lib/api/mutations";
+import { askRedixfi, getAskConversations, getAskHistory, getAskSuggestions, getUsage, updateAskContext } from "@/lib/api/mutations";
 import { getCurrentSymbol, onCurrentSymbolChange } from "@/lib/current-symbol";
 import { shouldStartFreshOnReopen } from "@/lib/ask-panel/freshStartRule";
 import { mayLoadPageConversation } from "@/lib/ask-panel/conversationSelectionRule";
 import { restoreAskMessages, type AskRenderableMessage } from "@/lib/ask-panel/historyMessage";
 import { ASK_PANEL_WIDTHS, type AskPanelMode } from "@/lib/ask-panel/panelMode";
 import { getStarterQuestions } from "@/lib/ask-panel/starterQuestions";
+import { useMobileViewport } from "@/lib/ask-panel/useMobileViewport";
 import { resolveVisibleChatSymbol } from "@/lib/ask-panel/contextHeader";
 import { CompareResultCard } from "@/components/app/signals/CompareResultCard";
 import { ScoreHistoryChart } from "@/components/app/ask/ScoreHistoryChart";
@@ -103,16 +104,9 @@ const SCREEN_COLUMNS: VisibleColumns = { sector: true, delivery: true, volume: f
 // "Analyzing...") and stops at its last stage rather than implying a stall.
 const STATUS_STAGE_INTERVAL_MS = 1300;
 const STATUS_STAGES = ["Searching signals...", "Analyzing data...", "Composing answer..."];
-// Extra stage shown only when this symbol is known (client-side, no new
-// fetch) to have real concall/investor-transcript data — reuses the exact
-// suggestion string core/ask.py::compute_initial_suggestions already emits
-// for that case (see CONCALL_SUGGESTION_MARKER below), already fetched as
-// part of this panel's existing GET /ask/history request.
+// Extra stage shown only when this symbol has concall data on file
+// (GET /ask/suggestions' has_concall, already fetched for the chips).
 const STATUS_STAGES_WITH_CONCALL = ["Searching signals...", "Reading concall transcript...", "Analyzing data...", "Composing answer..."];
-// Quotes core/ask.py::compute_initial_suggestions' own real emitted
-// suggestion string verbatim (for a string-equality match, not
-// marketing/UI copy) — rewording it would break the match.
-const CONCALL_SUGGESTION_MARKER = "What did management say on the last call?"; // compliance-ignore
 
 // Fixed UI copy (never LLM-generated) shown directly above the input. Uses
 // the approved pre-RA phrase already used across the site.
@@ -233,10 +227,10 @@ export function AskRedixFi() {
   // Live remaining-count mirror from GET /me/usage, refetched on open and
   // after every successful send so it reflects the answer just charged.
   const [usage, setUsage] = useState<AskUsageInfo | null>(null);
-  // Context-tailored empty-state suggestions for THIS symbol
-  // (core/ask.py::compute_initial_suggestions, via GET /ask/history) —
-  // falls back to the generic QUICK_PROMPTS_* set below.
-  const [initialSuggestions, setInitialSuggestions] = useState<string[]>([]);
+  // Suggested questions for the current context (GET /ask/suggestions),
+  // keyed by the context they were fetched for so a stale list never shows.
+  const [suggestionState, setSuggestionState] = useState<{ key: string; list: string[] | null; hasConcall: boolean } | null>(null);
+  const [inputFocused, setInputFocused] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   // Real chat-history list. `null` = "not fetched yet" (distinct from []
   // = "fetched, genuinely none"), so the list can show a loading state.
@@ -321,8 +315,30 @@ export function AskRedixFi() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages]);
 
+  // Suggestions are read-only and free server-side (no quota, no model
+  // usage); refetched whenever the chat's stock context changes.
+  const suggestionKey = open && user ? (effectiveSymbol ?? "_market") : null;
+  useEffect(() => {
+    if (!suggestionKey) return;
+    let cancelled = false;
+    (async () => {
+      const token = await getToken();
+      if (!token || cancelled) return;
+      try {
+        const res = await getAskSuggestions(token, suggestionKey === "_market" ? null : suggestionKey);
+        if (!cancelled) setSuggestionState({ key: suggestionKey, list: res.suggestions, hasConcall: res.has_concall });
+      } catch {
+        if (!cancelled) setSuggestionState({ key: suggestionKey, list: null, hasConcall: false });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [suggestionKey, getToken]);
+  const currentSuggestions = suggestionState && suggestionState.key === suggestionKey ? suggestionState : null;
+
   // Staged status text — resets to stage 0 the instant `busy` goes false.
-  const hasConcallSignal = initialSuggestions.includes(CONCALL_SUGGESTION_MARKER);
+  const hasConcallSignal = currentSuggestions?.hasConcall ?? false;
   useEffect(() => {
     if (!busy) {
       setStatusStageIndex(0);
@@ -353,7 +369,6 @@ export function AskRedixFi() {
     setMessages([]);
     setConversationId(null);
     setLimit(null);
-    setInitialSuggestions([]);
     setHistoryLoaded(false);
     setShowHistoryList(false);
     historyFetchKey.current = null;
@@ -416,7 +431,6 @@ export function AskRedixFi() {
       const token = await getToken();
       if (!token) return;
       const history = await getAskHistory(token, sym);
-      setInitialSuggestions(history.initial_suggestions ?? []);
       const convo = history.conversation;
       if (convo && convo.messages.length > 0) {
         setConversationId(convo.conversation_id);
@@ -441,7 +455,6 @@ export function AskRedixFi() {
     setChatContext(null);
     setPageContextSuppressed(false);
     setInput("");
-    setInitialSuggestions([]);
     setHistoryLoaded(true);
     freshChatRef.current = true;
     explicitlySelectedConversationRef.current = null;
@@ -485,7 +498,6 @@ export function AskRedixFi() {
       setChatContext(context);
       setSymbol(context?.primary_symbol ?? null);
       setMessages(restoreAskMessages(history.conversation?.messages ?? [], context?.primary_symbol ?? null));
-      setInitialSuggestions(history.initial_suggestions ?? []);
     } finally {
       setHistoryLoaded(true);
     }
@@ -550,9 +562,16 @@ export function AskRedixFi() {
     }
   }
 
-  // Stable capability catalogue: rendering is purely local and therefore
-  // consumes neither Ask quota nor an answer-generation provider call.
-  const starterQuestions = getStarterQuestions(effectiveSymbol);
+  const starterQuestions = currentSuggestions ? getStarterQuestions(currentSuggestions.list, effectiveSymbol) : [];
+  // Hidden as soon as the user types or sends; they never cover the input.
+  const showStarters = messages.length === 0 && historyLoaded && !busy && !input.trim() && starterQuestions.length > 0;
+  // Phones: size the sheet from the visible viewport so the input stays
+  // above the on-screen keyboard (iOS shrinks only the visual viewport).
+  const mobileViewport = useMobileViewport();
+  const mobileSheetStyle: CSSProperties = mobileViewport && open ? {
+    height: `${Math.round(inputFocused ? mobileViewport.height - 8 : mobileViewport.height * 0.88)}px`,
+    bottom: `${mobileViewport.bottomInset}px`,
+  } : {};
 
   // UI polish batch, Item 4 — the fresh-vs-resume decision (extracted to
   // shouldStartFreshOnReopen so it can be tested directly). Fires BEFORE the
@@ -634,6 +653,7 @@ export function AskRedixFi() {
         className={panelClass}
         style={{
           "--ask-panel-width": ASK_PANEL_WIDTHS[mode],
+          ...mobileSheetStyle,
           ...(dragY ? { transform: `translateY(${dragY}px)`, transition: "none" } : {}),
         } as CSSProperties}
       >
@@ -740,16 +760,17 @@ export function AskRedixFi() {
           </div>
         )}
 
-        {/* Compact, scannable quota strip (never a dense text line). */}
+        {/* Compact, scannable quota strip (never a dense text line). Hidden
+            on phones while the keyboard is up so the input keeps its room. */}
         {user && (
-          <div className="border-b border-border px-3 py-2 md:px-4">
+          <div className={`border-b border-border px-3 py-2 md:block md:px-4 ${inputFocused && mobileViewport ? "hidden" : ""}`}>
             <AskQuota usage={usage} />
           </div>
         )}
 
         {/* Body is the positioning context for the history slide-over so it
             covers the chat only, leaving the header/quota strip visible. */}
-        <div className="relative flex flex-1 flex-col overflow-hidden">
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           {!user ? (
             <div className="space-y-3 px-4 py-6 text-center">
               <p className="text-sm text-foreground-muted">Log in to ask RedixFi AI questions about any stock, grounded in today&apos;s measured data.</p>
@@ -808,9 +829,12 @@ export function AskRedixFi() {
                   <div>
                     <div className="mb-4">
                       <p className="text-base font-semibold text-foreground">Explore what RedixFi can answer</p>
-                      <p className="mt-1 text-[12px] text-foreground-faint">Choose a research question or write your own below.</p>
+                      <p className="mt-1 text-[12px] text-foreground-faint">
+                        <span className="md:hidden">{showStarters ? "Tap a suggestion below or write your own." : "Write your question below."}</span>
+                        <span className="hidden md:inline">Choose a research question or write your own below.</span>
+                      </p>
                     </div>
-                    <div className={`grid gap-2.5 ${mode === "full" ? "lg:grid-cols-3 xl:grid-cols-4" : mode === "half" ? "lg:grid-cols-2" : "grid-cols-1"}`}>
+                    <div className={`hidden gap-2.5 ${showStarters ? "md:grid" : ""} ${mode === "full" ? "lg:grid-cols-3 xl:grid-cols-4" : mode === "half" ? "lg:grid-cols-2" : "grid-cols-1"}`}>
                       {starterQuestions.map((p) => (
                         <button
                           key={p}
@@ -1045,9 +1069,29 @@ export function AskRedixFi() {
                 </div>
               )}
 
+              {/* Phones: suggestions are one short horizontal row right above
+                  the input (capped at a quarter of the screen), never a
+                  full-height list that pushes the input off screen. */}
+              {showStarters && (
+                <div className="border-t border-border pt-2 md:hidden">
+                  <div className="flex max-h-[25dvh] snap-x gap-2 overflow-x-auto px-3 pb-1" role="group" aria-label="Suggested questions">
+                    {starterQuestions.map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => send(p)}
+                        disabled={authLoading}
+                        className="w-56 shrink-0 snap-start rounded-xl border border-border bg-hover px-3 py-2 text-left text-[12.5px] font-medium leading-snug text-foreground-muted transition-colors hover:border-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50"
+                      >
+                        <span className="line-clamp-2">{p}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Compliance line lives immediately above the input, always
                   visible; the input row below stays uncrowded. */}
-              <div className="border-t border-border">
+              <div className="border-t border-border pb-[env(safe-area-inset-bottom)]">
                 <p className="px-3 pt-2 text-center text-[11px] text-foreground-faint">{COMPLIANCE_LINE}</p>
                 <div className="flex items-center gap-2 p-3">
                   {!effectiveSymbol && (
@@ -1057,6 +1101,8 @@ export function AskRedixFi() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && send(input)}
+                    onFocus={() => setInputFocused(true)}
+                    onBlur={() => setInputFocused(false)}
                     placeholder={authLoading ? "Loading your account…" : "Ask anything — a stock, a sector, or in general…"}
                     disabled={busy || authLoading}
                     className="flex-1 rounded-lg border border-border bg-hover px-3 py-2 text-sm outline-none disabled:opacity-60"
