@@ -35,7 +35,7 @@ export function GovernanceRadarCard() {
         </span>
         <div>
           <div className="font-mono text-[11px] uppercase tracking-widest text-accent">Governance &amp; Red Flag Radar</div>
-          <div className="text-xs text-foreground-faint">AI reads every filing for four categories of governance risk</div>
+          <div className="text-xs text-foreground-faint">AI reads every filing for nine categories of governance risk</div>
         </div>
       </div>
 
@@ -47,11 +47,15 @@ export function GovernanceRadarCard() {
           </div>
         ))}
       </div>
+      <p className="mt-2 text-xs text-foreground-muted">
+        Also: regulatory actions, defaults and covenant breaches, fraud or investigations, internal control
+        weaknesses, and management &amp; board governance.
+      </p>
 
       <div className="mt-4 rounded-lg border border-border bg-surface px-3 py-3">
         <div className="mb-1.5 flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-foreground-faint">
           <span>Real example finding</span>
-          <span className="rounded bg-accent/10 px-1.5 py-0.5 text-accent-dim">related_party_transaction</span>
+          <span className="rounded bg-accent/10 px-1.5 py-0.5 text-accent-dim">Related-party transaction</span>
         </div>
         <p className="text-sm leading-relaxed text-foreground">
           &ldquo;The excerpt discusses related party transactions that are repetitive in nature and states that these
