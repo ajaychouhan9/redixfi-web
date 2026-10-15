@@ -67,8 +67,8 @@ export function VisitorIntroStrip() {
           <span aria-hidden className="mt-0.5 text-accent-dim">ⓘ</span>
           <span>
             RedixFi is a data and analytics product, not an advisor — the same category Screener-style platforms
-            occupy. We report measured, historical and current data; we are not yet SEBI-registered as a Research
-            Analyst, so this is not a recommendation, not a forecast, and not a price target.
+            occupy. We report measured, historical and current data. This is not a recommendation, not a forecast,
+            and not a price target.
           </span>
         </div>
 
