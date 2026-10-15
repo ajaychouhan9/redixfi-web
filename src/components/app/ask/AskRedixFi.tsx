@@ -760,16 +760,17 @@ export function AskRedixFi() {
           </div>
         )}
 
-        {/* Compact, scannable quota strip (never a dense text line). */}
+        {/* Compact, scannable quota strip (never a dense text line). Hidden
+            on phones while the keyboard is up so the input keeps its room. */}
         {user && (
-          <div className="border-b border-border px-3 py-2 md:px-4">
+          <div className={`border-b border-border px-3 py-2 md:block md:px-4 ${inputFocused && mobileViewport ? "hidden" : ""}`}>
             <AskQuota usage={usage} />
           </div>
         )}
 
         {/* Body is the positioning context for the history slide-over so it
             covers the chat only, leaving the header/quota strip visible. */}
-        <div className="relative flex flex-1 flex-col overflow-hidden">
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           {!user ? (
             <div className="space-y-3 px-4 py-6 text-center">
               <p className="text-sm text-foreground-muted">Log in to ask RedixFi AI questions about any stock, grounded in today&apos;s measured data.</p>
