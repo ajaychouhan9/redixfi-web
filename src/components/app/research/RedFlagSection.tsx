@@ -95,12 +95,12 @@ export function RedFlagSection({ data }: { data: ResearchRedFlags | undefined })
   // renders nothing rather than an ErrorBoundary fallback during that gap.
   if (!data) return null;
   const coverage = data.coverage;
+  // `coverage` is null when per-stock coverage isn't measured; that says
+  // nothing about this stock, so no note (the empty state already says "yet").
   const coverageNote =
-    coverage === null
-      ? "Governance classification has not yet run for this stock's filed documents."
-      : !coverage.complete
-        ? `Governance classification is still in progress for this stock (${coverage.classified_chunks} of ${coverage.total_chunks} filed-document sections reviewed so far) — additional flags may surface as it continues.`
-        : null;
+    coverage && !coverage.complete
+      ? `Governance classification is still in progress for this stock (${coverage.classified_chunks} of ${coverage.total_chunks} filed-document sections reviewed so far) — additional flags may surface as it continues.`
+      : null;
 
   return (
     <Card title="Red Flags" titleClassName="text-base" action={<AiLabel />}>

@@ -27,7 +27,7 @@ export default async function HomePage() {
     getSignalMovers(undefined, 3),
     getLatestBrief(),
     getIntradaySession(),
-    getAnomalies({ size: 50 }),
+    getAnomalies({ size: 200 }),
     // @auth-ok: SSR, always anonymous — see the module docstring above.
     // Corrected client-side by EventRiskCard once a real token resolves.
     getNews({ severity: "high", size: 3 }),

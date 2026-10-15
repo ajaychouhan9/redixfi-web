@@ -59,7 +59,7 @@ export function SignalDetailView({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-sm text-foreground-muted">
-              {detail.symbol} · {detail.sector}
+              {[detail.symbol, detail.industry || detail.sector].filter(Boolean).join(" · ")}
             </p>
             <div className="mt-1 flex flex-wrap items-baseline gap-3">
               <ExplainTerm metricKey="composite_score" symbol={detail.symbol} ctx={{ composite_score: detail.composite_score, symbol: detail.symbol }}>
