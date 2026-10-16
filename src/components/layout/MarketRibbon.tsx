@@ -272,7 +272,7 @@ export function MarketRibbon({
 
         <HeaderSearch />
 
-        <div className="flex items-center gap-2 text-foreground-faint sm:gap-3">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-foreground-faint sm:gap-x-3">
           {/* Task 10 A3: signals_as_of tells the user which session's
               composite scores they're looking at (e.g. "Scores as of 21 Jul
               close") — measured_signals now runs post-close (16:30), so
