@@ -76,7 +76,7 @@ export function ResearchDetail({
               nearby RecordView is unrelated, recently-viewed tracking, not
               a watchlist toggle). Added the same real WatchlistButton the
               Signal detail page already uses — not a new component. */}
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             <ResearchExportButton data={data} peers={peers} />
             <CompareIndicator symbol={data.symbol} companyName={data.company_name} />
             <WatchlistButton symbol={data.symbol} />
