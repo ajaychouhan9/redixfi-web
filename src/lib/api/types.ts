@@ -738,6 +738,9 @@ export interface PeerRow {
   percent_change: number | null;
   yhigh: number | null;
   ylow: number | null;
+  // Set when net margin / ROE / D/E / dividend yield were filled from our own
+  // fundamentals because the vendor row carried zeros for missing data.
+  values_source?: string | null;
 }
 
 export interface PeersResponse {
