@@ -2,7 +2,7 @@
 
 import { ShieldAlert } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { RED_FLAG_CATEGORIES } from "@/lib/redFlagCategories";
+import { RED_FLAG_CATEGORIES, RED_FLAG_RADAR_TITLE } from "@/lib/redFlagCategories";
 
 /**
  * Landing preview of the Red Flag Radar (2026-09-11 landing overhaul).
@@ -28,7 +28,7 @@ export function GovernanceRadarCard() {
           <ShieldAlert size={14} className="text-accent" />
         </span>
         <div>
-          <div className="font-mono text-[11px] uppercase tracking-widest text-accent">Governance &amp; Red Flag Radar</div>
+          <div className="font-mono text-[11px] uppercase tracking-widest text-accent">{RED_FLAG_RADAR_TITLE}</div>
           <div className="text-xs text-foreground-faint">AI reads every filing for nine categories of governance risk</div>
         </div>
       </div>

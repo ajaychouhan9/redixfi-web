@@ -13,12 +13,16 @@ export function Card({
   // default for every other Card on every other page.
   titleClassName,
   action,
+  // Optional extra classes for the header row. Used where a long heading and
+  // a badge must wrap instead of squeezing each other on a phone.
+  headerClassName,
 }: {
   children: ReactNode;
   className?: string;
   title?: ReactNode;
   titleClassName?: string;
   action?: ReactNode;
+  headerClassName?: string;
 }) {
   return (
     <section
@@ -28,8 +32,8 @@ export function Card({
       )}
     >
       {(title || action) && (
-        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-          {title && <h2 className={clsx("font-semibold text-foreground", titleClassName ?? "text-sm")}>{title}</h2>}
+        <div className={clsx("flex items-center justify-between gap-3 border-b border-border px-4 py-3", headerClassName)}>
+          {title && <h2 className={clsx("min-w-0 font-semibold text-foreground", titleClassName ?? "text-sm")}>{title}</h2>}
           {action}
         </div>
       )}
