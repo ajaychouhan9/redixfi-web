@@ -120,10 +120,10 @@ export function AskRedixFiTrigger() {
       onClick={() => setOpen(!open)}
       aria-label="RedixFi AI"
       aria-pressed={open}
-      className="flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1.5 text-sm font-semibold transition-transform hover:scale-105 sm:px-3"
+      className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold transition-transform hover:scale-105"
       style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dim))", color: "var(--accent-foreground)" }}
     >
-      <Sparkles size={12} /> <span className="hidden sm:inline">RedixFi AI</span>
+      <Sparkles size={12} /> <span>RedixFi AI</span>
     </button>
   );
 }
