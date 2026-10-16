@@ -44,6 +44,16 @@ export interface NewsToday {
   items_flagged_high: number;
 }
 
+// Set when a stock's price history is not comparable (split or bonus in progress, or an
+// unexplained large price change): the API withholds day change, trend, RSI/volume chips
+// and the score change, and supplies this short note.
+export interface CorporateActionNote {
+  status: "confirmed" | "unconfirmed" | "review";
+  ex_date: string;
+  type?: string | null;
+  note: string;
+}
+
 export interface SlowestInput {
   field: string;
   label: string;
@@ -96,6 +106,7 @@ export interface SignalRow {
   // Restored 2026-08-08 (bug: dropped from every Signals response).
   last_price: number | null;
   day_change_pct: number | null;
+  corporate_action?: CorporateActionNote | null;
   // VWAP removed from the LIST row 2026-08-08 (same-day correction —
   // intraday-only concept, wrong fit for this evening/post-close list;
   // still present on SignalDetail below, unaffected).
@@ -243,8 +254,9 @@ export interface SignalDetail {
   day_change_pct: number | null;
   vwap: number | null;
   composite_score: number;
-  delta_1d: number;
-  delta_5d: number;
+  delta_1d: number | null;
+  delta_5d: number | null;
+  corporate_action?: CorporateActionNote | null;
   signals: SignalDetailSignals;
   signal_states: string[];
   conflicts: SignalConflict[];
@@ -498,7 +510,8 @@ export interface ResearchSearchRow {
 
 export interface PricePoint {
   last_price: number;
-  day_change_pct: number;
+  day_change_pct: number | null;
+  corporate_action?: CorporateActionNote | null;
   week52_high: number;
   week52_low: number;
   week52_position_pct: number;
@@ -806,6 +819,7 @@ export interface ResearchDetail {
   sector: string;
   isin: string;
   price: PricePoint;
+  corporate_action?: CorporateActionNote | null;
   delivery_30d: DeliveryPoint[];
   delivery_data_as_of?: DataAsOf | null;
   insider_trades: InsiderTrade[];

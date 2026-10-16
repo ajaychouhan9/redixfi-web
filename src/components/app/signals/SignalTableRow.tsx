@@ -119,7 +119,7 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
       <td className="px-3 py-2.5">
         <StackedCell
           primary={row.last_price !== null ? `₹${row.last_price.toLocaleString("en-IN")}` : null}
-          subtitle={row.day_change_pct !== null ? <DeltaValue value={row.day_change_pct} kind="pct" className="text-[12px]" /> : undefined}
+          subtitle={row.day_change_pct !== null ? <DeltaValue value={row.day_change_pct} kind="pct" className="text-[12px]" /> : row.corporate_action ? <span className="text-[12px] text-foreground-faint" title={row.corporate_action.note}>— note</span> : undefined}
         />
         {row.price_data_as_of && <div className="text-[10px] text-foreground-faint">{formatDataAsOf(row.price_data_as_of)}</div>}
       </td>

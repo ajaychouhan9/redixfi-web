@@ -47,14 +47,15 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
   const data = await loadCompany(normalizedSymbol);
   if (!data) return { title: `${symbol.toUpperCase()} not found` };
   const title = `${data.company_name} (${data.symbol}) — Price, Delivery & News`;
-  const description = `${data.company_name} (${data.symbol}): ₹${data.price.last_price}, ${data.price.day_change_pct}% today, 52-week range ₹${data.price.week52_low}–₹${data.price.week52_high}, delivery trend and latest news — measured data, not advice.`;
+  const description = `${data.company_name} (${data.symbol}): ₹${data.price.last_price}, ${data.price.day_change_pct === null ? "" : `${data.price.day_change_pct}% today, `}52-week range ₹${data.price.week52_low}–₹${data.price.week52_high}, delivery trend and latest news — measured data, not advice.`;
   const ogImage = `/api/og?${new URLSearchParams({
     type: "stock",
     title: data.symbol,
     subtitle: data.company_name,
     stat: `₹${data.price.last_price.toLocaleString("en-IN")}`,
-    statLabel: `${data.price.day_change_pct >= 0 ? "+" : ""}${data.price.day_change_pct}% today`,
-    direction: data.price.day_change_pct >= 0 ? "up" : "down",
+    // no day change is shown across a split or bonus (price history not comparable)
+    statLabel: data.price.day_change_pct === null ? "Price history not comparable" : `${data.price.day_change_pct >= 0 ? "+" : ""}${data.price.day_change_pct}% today`,
+    direction: data.price.day_change_pct === null || data.price.day_change_pct >= 0 ? "up" : "down",
   }).toString()}`;
   return {
     title,

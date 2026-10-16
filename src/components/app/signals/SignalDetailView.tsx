@@ -1,6 +1,7 @@
 "use client";
 
 import { SlowestInputNote } from "@/components/ui/SlowestInputNote";
+import { CorporateActionNote } from "@/components/ui/CorporateActionNote";
 import { Card } from "@/components/ui/Card";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { AiLabel } from "@/components/ui/AiLabel";
@@ -66,7 +67,7 @@ export function SignalDetailView({
               <ExplainTerm metricKey="composite_score" symbol={detail.symbol} ctx={{ composite_score: detail.composite_score, symbol: detail.symbol }}>
                 <span className="text-3xl font-semibold">{detail.composite_score}/100</span>
               </ExplainTerm>
-              <ExplainTerm metricKey="delta_1d" symbol={detail.symbol} ctx={{ delta_1d: detail.delta_1d, symbol: detail.symbol }}>
+              <ExplainTerm metricKey="delta_1d" symbol={detail.symbol} ctx={{ delta_1d: detail.delta_1d ?? "—", symbol: detail.symbol }}>
                 <DeltaValue value={detail.delta_1d} />
               </ExplainTerm>
               <span className="text-xs text-foreground-faint">5d: <DeltaValue value={detail.delta_5d} /></span>
@@ -100,6 +101,7 @@ export function SignalDetailView({
         </div>
         <p className="mt-1 text-xs text-foreground-faint">A measured summary of observed signals. Not a prediction.</p>
         <Freshness asOf={detail.signal_freshness?.composite_score} />
+        <CorporateActionNote info={detail.corporate_action} />
         <SlowestInputNote input={detail.slowest_input} />
         <div className="mt-2 flex flex-wrap gap-1.5">
           {detail.signal_states.map((st) => (
@@ -113,9 +115,11 @@ export function SignalDetailView({
         )}
       </div>
 
-      <Card title="AI Summary" action={<AiLabel />}>
-        <p className="text-sm leading-relaxed">{detail.narrative}</p>
-      </Card>
+      {detail.narrative && (
+        <Card title="AI Summary" action={<AiLabel />}>
+          <p className="text-sm leading-relaxed">{detail.narrative}</p>
+        </Card>
+      )}
 
       {detail.change_explanation && (
         <Card title="Why did this change?">
