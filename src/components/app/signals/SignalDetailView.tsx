@@ -91,7 +91,7 @@ export function SignalDetailView({
             )}
             <Freshness asOf={detail.price_data_as_of} />
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             <ExportButton onExport={exportXlsx} canExport={isProEntitled(user)} label="Download Excel" enabledTitle="Export as Excel" disabledTitle="Upgrade to export Excel" />
             <WatchlistButton symbol={detail.symbol} />
             <CompareIndicator symbol={detail.symbol} companyName={detail.company_name} />
