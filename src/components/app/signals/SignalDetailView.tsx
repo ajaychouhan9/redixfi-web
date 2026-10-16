@@ -1,5 +1,6 @@
 "use client";
 
+import { SlowestInputNote } from "@/components/ui/SlowestInputNote";
 import { Card } from "@/components/ui/Card";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { AiLabel } from "@/components/ui/AiLabel";
@@ -99,6 +100,7 @@ export function SignalDetailView({
         </div>
         <p className="mt-1 text-xs text-foreground-faint">A measured summary of observed signals. Not a prediction.</p>
         <Freshness asOf={detail.signal_freshness?.composite_score} />
+        <SlowestInputNote input={detail.slowest_input} />
         <div className="mt-2 flex flex-wrap gap-1.5">
           {detail.signal_states.map((st) => (
             <SignalStateChip key={st} code={st} />

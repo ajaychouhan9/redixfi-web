@@ -44,6 +44,13 @@ export interface NewsToday {
   items_flagged_high: number;
 }
 
+export interface SlowestInput {
+  field: string;
+  label: string;
+  data_as_of: string;
+  data_as_of_type: string;
+}
+
 export interface DataAsOf {
   data_as_of: string;
   data_as_of_type: "date" | "timestamp" | string;
@@ -229,6 +236,7 @@ export interface SignalDetail {
   isin: string;
   date: string;
   signal_freshness?: Record<string, DataAsOf | null>;
+  slowest_input?: SlowestInput | null;
   price_data_as_of?: DataAsOf | null;
   // Same restoration as SignalRow above — never masked when locked.
   last_price: number | null;
@@ -574,6 +582,7 @@ export interface ResearchSignalSummary {
   narrative: string | null;
   data_as_of?: DataAsOf | null;
   signal_freshness?: Record<string, DataAsOf | null>;
+  slowest_input?: SlowestInput | null;
 }
 
 // ---------- fundamentals (Task 09) ----------
