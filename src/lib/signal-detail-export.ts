@@ -163,7 +163,10 @@ export function buildSignalSummaryRows(detail: SignalDetail, fundamentals?: Fund
   );
 
   section("AI SUMMARY");
-  rows.push({ kind: "narrative", cells: ["Summary", detail.narrative], merge: [1, 3] }, { kind: "blank" });
+  rows.push({ kind: "narrative", cells: ["Summary", detail.narrative ?? "Not available"], merge: [1, 3] }, { kind: "blank" });
+  if (detail.corporate_action?.note) {
+    rows.push({ kind: "narrative", cells: ["Note", detail.corporate_action.note], merge: [1, 3] }, { kind: "blank" });
+  }
 
   section("WHY DID THIS CHANGE?");
   table(["Factor", "Change", "Explanation"]);
