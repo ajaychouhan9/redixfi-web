@@ -1,3 +1,4 @@
+import { SlowestInputNote } from "@/components/ui/SlowestInputNote";
 import Link from "next/link";
 import type { ResearchDetail as ResearchDetailType, Candle, PeerRow } from "@/lib/api/types";
 import { Card } from "@/components/ui/Card";
@@ -118,6 +119,7 @@ export function ResearchDetail({
             <span className="text-lg font-semibold">{data.signal_summary.composite_score}/100</span>
             {data.signal_summary.delta_1d !== null && <DeltaValue value={data.signal_summary.delta_1d} />}
             <span className="w-full text-[11px] text-foreground-faint">{formatDataAsOf(data.signal_summary.data_as_of)}</span>
+            <div className="w-full -mt-2"><SlowestInputNote input={data.signal_summary.slowest_input} /></div>
             <Link href={`/signals/${data.symbol}`} className="ml-auto text-xs font-medium text-accent">
               Full signal detail →
             </Link>
