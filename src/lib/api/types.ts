@@ -48,7 +48,7 @@ export interface NewsToday {
 // unexplained large price change): the API withholds day change, trend, RSI/volume chips
 // and the score change, and supplies this short note.
 export interface CorporateActionNote {
-  status: "confirmed" | "unconfirmed" | "review";
+  status: "confirmed" | "unconfirmed" | "review" | "adjusted";
   ex_date: string;
   type?: string | null;
   note: string;

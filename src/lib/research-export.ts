@@ -113,6 +113,7 @@ function buildSummaryRows(data: ResearchDetail, peers: PeerRow[] | null): XlsxSu
     { kind: "metadata", cells: ["Symbol", data.symbol, "Company", data.company_name] },
     { kind: "metadata", cells: ["Sector / Industry", `${data.sector || "Not available"} / ${f?.identity.industry ?? "Not available"}`, "Data as of", dateText(f?.as_of)] },
     { kind: "metadata", cells: ["Price", currencyText(data.price.last_price), "Day change", percentText(data.price.day_change_pct)] },
+    ...(data.corporate_action?.note ? [{ kind: "metadata" as const, cells: ["Note", data.corporate_action.note, "", ""] }] : []),
     { kind: "metadata", cells: ["52-week low", currencyText(data.price.week52_low), "52-week high", currencyText(data.price.week52_high)] },
     { kind: "metadata", cells: ["Signal score", data.signal_summary.composite_score === null ? "Not available" : `${data.signal_summary.composite_score}/100`, "Score change", missing(data.signal_summary.delta_1d)] },
     { kind: "blank" },
