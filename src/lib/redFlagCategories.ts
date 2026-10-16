@@ -4,6 +4,9 @@
  * from here, so they cannot drift apart. Keys and labels mirror the API
  * (red_flag_ask.py CATEGORY_LABELS); descriptions are short and factual.
  */
+/** The Red Flags card heading, used by the landing radar card and Research Pro. */
+export const RED_FLAG_RADAR_TITLE = "Governance & Red Flag Radar";
+
 export const RED_FLAG_CATEGORIES: { key: string; label: string; desc: string }[] = [
   { key: "auditor_qualification", label: "Auditor Qualification", desc: "Qualified or adverse opinions, emphasis of matter, key audit matters" },
   { key: "internal_control_weakness", label: "Internal Control Weakness", desc: "Material weaknesses or gaps in internal financial controls" },

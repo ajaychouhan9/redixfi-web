@@ -2,7 +2,7 @@ import type { ResearchRedFlags, RedFlagCategoryGroup } from "@/lib/api/types";
 import { Card } from "@/components/ui/Card";
 import { AiLabel } from "@/components/ui/AiLabel";
 import { formatDateIst } from "@/lib/format";
-import { RED_FLAG_CATEGORY_LABELS } from "@/lib/redFlagCategories";
+import { RED_FLAG_CATEGORY_LABELS, RED_FLAG_RADAR_TITLE } from "@/lib/redFlagCategories";
 
 /**
  * Red Flags (Task 2, 2026-09-19) — core/red_flag_view.py::get_symbol_red_flags().
@@ -104,7 +104,12 @@ export function RedFlagSection({ data }: { data: ResearchRedFlags | undefined })
       : null;
 
   return (
-    <Card title="Red Flags" titleClassName="text-base" action={<AiLabel />}>
+    <Card
+      title={RED_FLAG_RADAR_TITLE}
+      titleClassName="text-base"
+      headerClassName="flex-wrap gap-y-2"
+      action={<AiLabel className="shrink-0 whitespace-nowrap" />}
+    >
       {data.categories.length === 0 ? (
         <p className="text-sm text-foreground-muted">
           No governance flags identified in {data.symbol}&apos;s filed documents{coverage === null ? " yet" : ""}.
