@@ -192,19 +192,30 @@ export function FundamentalsPanels({
                     <td className="py-1.5 pr-3">{fmtNum(valuation.debt_to_equity, 2)}</td>
                     <td className="py-1.5 pr-3">{fmtPct(valuation.dividend_yield_pct)}</td>
                   </tr>
-                  {peers.map((p, i) => (
-                    <tr key={i} className="border-t border-border">
-                      <td className="py-1.5 pr-3">{p.company_name ?? "—"}</td>
-                      <td className="py-1.5 pr-3">{fmtNum(p.pe, 1)}</td>
-                      <td className="py-1.5 pr-3">{fmtNum(p.pb, 1)}</td>
-                      <td className="py-1.5 pr-3">{fmtPct(p.net_margin_ttm)}</td>
-                      <td className="py-1.5 pr-3">{fmtPct(p.roe_ttm)}</td>
-                      <td className="py-1.5 pr-3">{fmtNum(p.debt_to_equity, 2)}</td>
-                      <td className="py-1.5 pr-3">{fmtPct(p.dividend_yield)}</td>
-                    </tr>
-                  ))}
+                  {peers.map((p, i) => {
+                    // The vendor sends 0 for missing data: a row with net margin,
+                    // ROE and D/E all exactly 0 has no data, so show a dash.
+                    const noData = p.net_margin_ttm === 0 && p.roe_ttm === 0 && p.debt_to_equity === 0;
+                    return (
+                      <tr key={i} className="border-t border-border">
+                        <td className="py-1.5 pr-3">
+                          {p.company_name ?? "—"}
+                          {p.values_source ? <sup title={`Values from ${p.values_source}`}> *</sup> : null}
+                        </td>
+                        <td className="py-1.5 pr-3">{fmtNum(p.pe, 1)}</td>
+                        <td className="py-1.5 pr-3">{fmtNum(p.pb, 1)}</td>
+                        <td className="py-1.5 pr-3">{fmtPct(noData ? null : p.net_margin_ttm)}</td>
+                        <td className="py-1.5 pr-3">{fmtPct(noData ? null : p.roe_ttm)}</td>
+                        <td className="py-1.5 pr-3">{fmtNum(noData ? null : p.debt_to_equity, 2)}</td>
+                        <td className="py-1.5 pr-3">{fmtPct(noData ? null : p.dividend_yield)}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
+              {peers.some((p) => p.values_source) && (
+                <p className="mt-2 text-xs text-foreground-faint">* Net margin, ROE, D/E and dividend yield for these companies come from RedixFi fundamentals; the data vendor had no values for them.</p>
+              )}
             </div>
           )}
         </div>
