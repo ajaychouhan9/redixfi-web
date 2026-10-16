@@ -15,13 +15,13 @@ const TABS = [
 export function AccountTabs() {
   const pathname = usePathname();
   return (
-    <div className="mb-4 flex gap-1 border-b border-border">
+    <div className="mb-4 flex gap-1 overflow-x-auto border-b border-border">
       {TABS.map((t) => (
         <Link
           key={t.href}
           href={t.href}
           className={clsx(
-            "border-b-2 px-3 py-2 text-sm font-medium",
+            "shrink-0 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium",
             pathname === t.href ? "border-accent text-accent" : "border-transparent text-foreground-muted"
           )}
         >
