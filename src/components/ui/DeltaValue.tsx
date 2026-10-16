@@ -11,10 +11,14 @@ export function DeltaValue({
   kind = "points",
   className,
 }: {
-  value: number;
+  value: number | null | undefined;
   kind?: "points" | "pct";
   className?: string;
 }) {
+  // No comparable value (e.g. across a split): a dash, not a number.
+  if (value === null || value === undefined) {
+    return <span className={clsx("inline-flex items-center text-foreground-faint", className)}>—</span>;
+  }
   const tone = value > 0 ? "text-up" : value < 0 ? "text-down" : "text-neutral";
   const arrow = value > 0 ? "▲" : value < 0 ? "▼" : "–";
   const text = kind === "pct" ? formatPct(value) : formatDelta(value);

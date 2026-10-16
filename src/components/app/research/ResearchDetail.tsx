@@ -1,4 +1,5 @@
 import { SlowestInputNote } from "@/components/ui/SlowestInputNote";
+import { CorporateActionNote } from "@/components/ui/CorporateActionNote";
 import Link from "next/link";
 import type { ResearchDetail as ResearchDetailType, Candle, PeerRow } from "@/lib/api/types";
 import { Card } from "@/components/ui/Card";
@@ -88,6 +89,7 @@ export function ResearchDetail({
           <DeltaValue value={data.price.day_change_pct} kind="pct" />
         </div>
         <p className="mt-1 text-[11px] text-foreground-faint">{formatDataAsOf(data.price.data_as_of)}</p>
+        <CorporateActionNote info={data.corporate_action} />
         <div className="mt-2 max-w-xs">
           <div className="h-1.5 w-full rounded-full bg-neutral-bg">
             <div className="h-1.5 rounded-full bg-accent" style={{ width: `${positionPct}%` }} />
