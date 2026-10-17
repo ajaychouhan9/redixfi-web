@@ -1,6 +1,7 @@
 import { getSignals } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { unstable_cache } from "next/cache";
+import { CANNED_SCREENS } from "@/data/canned-screens";
 
 // The stock universe comes from the public signals list. A build must not
 // depend on twelve live API pages, and a failed page must never yield a
@@ -120,6 +121,8 @@ export async function GET() {
 
   const urls = [
     ...PUBLIC_CORE_ROUTES.map((route) => `${SITE_URL}${route}`),
+    // The canned screens are a fixed list in this codebase, so they never depend on the API.
+    ...CANNED_SCREENS.map((screen) => `${SITE_URL}/screens/${encodeURIComponent(screen.slug)}`),
     ...stockSymbols.map((symbol) => `${SITE_URL}/stocks/${encodeURIComponent(symbol)}`),
   ];
 
