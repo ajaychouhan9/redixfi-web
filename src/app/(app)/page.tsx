@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getMarketOverview, getSignalMovers, getLatestBrief, getIntradaySession, getAnomalies, getNews, getBillingPlans, getMarketActivitySummary } from "@/lib/api/endpoints";
 import { MarketPulseCard } from "@/components/app/MarketPulseCard";
 import { TopSignalChangesCard } from "@/components/app/TopSignalChangesCard";
@@ -13,6 +14,8 @@ import { HomePricingSection } from "@/components/app/HomePricingSection";
 import { GovernanceRadarCard } from "@/components/app/marketing/GovernanceRadarCard";
 import { AskAiTeaserCard } from "@/components/app/marketing/AskAiTeaserCard";
 import { SmallCapPositioningStrip } from "@/components/app/marketing/SmallCapPositioningStrip";
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 // News IS fetched here now, but only ever with NO token — this is exactly
 // the anonymous/free-tier feed (24h-delayed per B8) any logged-out visitor

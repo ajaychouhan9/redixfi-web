@@ -9,6 +9,7 @@ import { WatchlistSummaryCard } from "@/components/app/education/SummaryCard";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getWatchlist, removeFromWatchlist, getWatchlistSummary, getWatchlistAnomalies } from "@/lib/api/mutations";
 import type { WatchlistResponse, WatchlistSummary, AnomalyFlagDoc } from "@/lib/api/types";
+import { stockPath } from "@/lib/seo/stock-symbol";
 
 function WatchlistManager() {
   const { getToken } = useAuth();
@@ -65,7 +66,7 @@ function WatchlistManager() {
             return (
               <li key={s} className="flex items-center justify-between py-2 text-sm">
                 <div className="flex items-center gap-2">
-                  <Link href={`/signals/${s}`} className="font-medium hover:text-accent">
+                  <Link href={stockPath("/signals", s)} className="font-medium hover:text-accent">
                     {s}
                   </Link>
                   {anomaly && (

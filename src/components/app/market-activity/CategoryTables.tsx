@@ -9,6 +9,7 @@ import type {
 } from "@/lib/api/types";
 import { formatDateIst } from "@/lib/format";
 import { Chip } from "@/components/ui/Chip";
+import { stockPath } from "@/lib/seo/stock-symbol";
 
 /** Per-category tables (2026-08-15) — each reuses the EXACT column
  * choices ResearchDetail.tsx already renders per-stock (insider: date/
@@ -27,7 +28,7 @@ const TONE_CHIP_TONE: Record<string, "up" | "down" | "amber"> = {
 
 function SymbolLink({ symbol, companyName }: { symbol: string; companyName: string | null }) {
   return (
-    <Link href={`/research/${symbol}`} className="font-medium hover:text-accent" title={companyName ?? undefined}>
+    <Link href={stockPath("/research", symbol)} className="font-medium hover:text-accent" title={companyName ?? undefined}>
       {symbol}
     </Link>
   );

@@ -14,6 +14,7 @@ import { formatObservationDate } from "@/lib/format";
  */
 export const metadata: Metadata = {
   title: "Unusual Activity",
+  alternates: { canonical: "/unusual-activity" },
   description: "Every stock that met a disclosed statistical threshold today — volume, options positioning, or a concentrated insider-filing window. Not a recommendation.",
 };
 

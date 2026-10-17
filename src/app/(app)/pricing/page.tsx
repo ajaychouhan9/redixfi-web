@@ -3,7 +3,8 @@ import { getBillingPlans } from "@/lib/api/endpoints";
 import { CheckoutView } from "@/components/app/billing/CheckoutView";
 
 export const metadata: Metadata = {
-  title: "Checkout",
+  title: "Pricing",
+  alternates: { canonical: "/pricing" },
   description: "RedixFi Analytics Pro — measured signals, alerts and screeners across 2,000+ NSE stocks.",
 };
 

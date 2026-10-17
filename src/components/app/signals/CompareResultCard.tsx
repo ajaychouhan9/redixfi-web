@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ExplainTerm } from "@/components/ui/ExplainTerm";
 import { compareExplainerCtx } from "@/lib/compare-explainer";
 import type { CompareResult } from "@/lib/api/types";
+import { stockPath } from "@/lib/seo/stock-symbol";
 
 /** Task 13 — chat-style comparison result card, rendered under the screener
  * bar. Symmetric table (rows = metrics, columns = symbols in the user's own
@@ -54,7 +55,7 @@ export function CompareResultCard({ compare }: { compare: CompareResult }) {
                   <th className="px-3 py-2">Metric</th>
                   {symbols.map((sym) => (
                     <th key={sym} className="px-3 py-2">
-                      <Link href={`/stocks/${sym}`} className="text-accent hover:underline">
+                      <Link href={stockPath("/stocks", sym)} className="text-accent hover:underline">
                         {sym}
                       </Link>
                       {companies[sym]?.company_name && (

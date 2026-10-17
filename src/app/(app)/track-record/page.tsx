@@ -29,6 +29,7 @@ export const revalidate = 21600; // 6h — matches the backend's own TRACK_RECOR
 
 export const metadata: Metadata = {
   title: "Track Record",
+  alternates: { canonical: "/track-record" },
   description:
     "How RedixFi's composite signal score has performed historically, measured relative to each stock's own sector — sample size and date range shown with every figure. Not investment advice.",
 };

@@ -4,6 +4,7 @@ import { getSectorSummary, getSignals, getSharedScreen } from "@/lib/api/endpoin
 
 export const metadata: Metadata = {
   title: "Signal Dashboard",
+  alternates: { canonical: "/signals" },
   description: "Measured composite signal scores across 2,000+ NSE stocks — trend, delivery, industry standing and options positioning, factually reported.",
 };
 

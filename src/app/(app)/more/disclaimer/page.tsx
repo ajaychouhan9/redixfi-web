@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Disclaimer" };
+export const metadata: Metadata = {
+  title: "Disclaimer",
+  description: "RedixFi publishes measured market data and AI-written summaries for information only. It is not investment advice or a recommendation to trade.",
+  alternates: { canonical: "/more/disclaimer" },
+};
 
 export default function DisclaimerPage() {
   return (

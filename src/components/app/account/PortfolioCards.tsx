@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import type { PortfolioAnalytics, PortfolioBrief } from "@/lib/api/types";
+import { stockPath } from "@/lib/seo/stock-symbol";
 
 /**
  * Task 16 Parts A + B — personalized portfolio brief + portfolio-level
@@ -29,7 +30,7 @@ export function PortfolioBriefCard({ brief }: { brief: PortfolioBrief | null }) 
         <ul className="mt-3 divide-y divide-border">
           {brief.biggest_movers.map((m) => (
             <li key={m.symbol} className="flex items-center justify-between py-1.5 text-sm">
-              <Link href={`/signals/${m.symbol}`} className="font-medium hover:text-accent">
+              <Link href={stockPath("/signals", m.symbol)} className="font-medium hover:text-accent">
                 {m.symbol}
               </Link>
               <span className={m.delta_1d > 0 ? "text-up" : m.delta_1d < 0 ? "text-down" : "text-neutral"}>
@@ -95,7 +96,7 @@ export function PortfolioAnalyticsCard({ data }: { data: PortfolioAnalytics }) {
           <ul className="mt-3 divide-y divide-border">
             {event_risk.symbols.map((s) => (
               <li key={s.symbol} className="flex items-center justify-between py-1.5 text-sm">
-                <Link href={`/signals/${s.symbol}`} className="font-medium hover:text-accent">
+                <Link href={stockPath("/signals", s.symbol)} className="font-medium hover:text-accent">
                   {s.symbol}
                 </Link>
                 <span className="text-xs text-foreground-muted">{s.categories.join(", ")}</span>

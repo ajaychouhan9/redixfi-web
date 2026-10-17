@@ -25,6 +25,7 @@ import { downloadXlsx } from "@/lib/xlsx";
 import { buildSignalDetailSheets } from "@/lib/signal-detail-export";
 import { isProEntitled } from "@/lib/entitlements";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { stockPath } from "@/lib/seo/stock-symbol";
 
 /**
  * Bug 2 fix — extracted out of app/(app)/signals/[symbol]/page.tsx (same
@@ -242,7 +243,7 @@ export function SignalDetailView({
             ))}
           </ul>
         )}
-        <Link href={`/track-record/${detail.symbol}`} className="mt-3 inline-block text-sm font-medium text-accent">
+        <Link href={stockPath("/track-record", detail.symbol)} className="mt-3 inline-block text-sm font-medium text-accent">
           See full signal history →
         </Link>
       </Card>

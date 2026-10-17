@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { getInboxPage } from "@/lib/api/mutations";
 import { formatShortDate } from "@/lib/format";
 import type { InboxAlert } from "@/lib/api/types";
+import { stockPath } from "@/lib/seo/stock-symbol";
 
 /**
  * Home's compact preview of the same real inbox alert_worker.py writes to
@@ -58,7 +59,7 @@ export function WatchlistAlertsCard() {
           return (
             <li key={i.alert_id} className={i.read ? "opacity-60" : undefined}>
               {i.symbol ? (
-                <Link href={`/signals/${i.symbol}`} className="block py-2.5 text-sm transition-colors hover:text-accent">
+                <Link href={stockPath("/signals", i.symbol)} className="block py-2.5 text-sm transition-colors hover:text-accent">
                   {body}
                 </Link>
               ) : (

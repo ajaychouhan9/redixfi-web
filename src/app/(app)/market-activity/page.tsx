@@ -17,6 +17,7 @@ import { formatDateIst } from "@/lib/format";
  */
 export const metadata: Metadata = {
   title: "Market Activity",
+  alternates: { canonical: "/market-activity" },
   description: "Concalls, insider trades, corporate events, and bulk/block deals across every tracked stock — measured facts only, not a recommendation.",
 };
 

@@ -4,6 +4,7 @@ import { Activity, ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import type { AnomalyFlagDoc, AnomalyScanMeta, AnomalyType, AnomalyDirection } from "@/lib/api/types";
 import { formatObservationDate } from "@/lib/format";
+import { stockPath } from "@/lib/seo/stock-symbol";
 
 /**
  * Task 16 Part C — full-universe, disclosed-criteria anomaly scan.
@@ -54,7 +55,7 @@ function AnomalyGroup({ label, rows }: { label: string; rows: AnomalyFlagDoc[] }
       <ul className="space-y-1.5">
         {rows.slice(0, 5).map((r) => (
           <li key={r.symbol}>
-            <Link href={`/signals/${r.symbol}`} className="block text-sm hover:text-accent">
+            <Link href={stockPath("/signals", r.symbol)} className="block text-sm hover:text-accent">
               <span className="font-medium">{r.symbol}</span>
             </Link>
           </li>

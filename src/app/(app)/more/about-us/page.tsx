@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { ContactForm } from "@/components/app/ContactForm";
 
-export const metadata: Metadata = { title: "About & Contact" };
+export const metadata: Metadata = {
+  title: "About & Contact",
+  description: "Who builds RedixFi, what it measures across 2,000+ NSE stocks, and how to reach the team. Analytics, not advice.",
+  alternates: { canonical: "/more/about-us" },
+};
 
 const CONTACT_EMAIL = "support@redixfi.com";
 

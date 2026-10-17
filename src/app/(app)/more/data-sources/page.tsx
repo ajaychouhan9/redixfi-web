@@ -3,7 +3,11 @@ import { getMarketOverview } from "@/lib/api/endpoints";
 import { FreshnessDot } from "@/components/ui/FreshnessDot";
 import { Card } from "@/components/ui/Card";
 
-export const metadata: Metadata = { title: "Data sources & update times" };
+export const metadata: Metadata = {
+  title: "Data sources & update times",
+  description: "Where RedixFi's prices, delivery, options, filings and news data come from, and when each one is updated during the trading day.",
+  alternates: { canonical: "/more/data-sources" },
+};
 
 // Cross-checked against prediction_engine/scheduler.py's live DAILY_JOBS
 // (per this task's explicit "verify against the real source script, don't
