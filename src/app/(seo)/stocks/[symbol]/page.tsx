@@ -76,7 +76,8 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
   const data = await loadCompany(normalizedSymbol);
   if (!data) return { title: `${symbol.toUpperCase()} not found` };
   const title = `${data.company_name} (${data.symbol}) — Price, Delivery & News`;
-  const description = `${data.company_name} (${data.symbol}): ₹${data.price.last_price}, ${data.price.day_change_pct === null ? "" : `${data.price.day_change_pct}% today, `}${rangeHidden(data) ? "" : `52-week range ₹${data.price.week52_low}–₹${data.price.week52_high}, `}delivery trend and latest news — measured data, not advice.`;
+  const dc = data.price.day_change_pct;
+  const description = `${data.company_name} (${data.symbol}): ₹${fmtInr(data.price.last_price)}, ${dc === null ? "" : `${dc > 0 ? "+" : ""}${dc.toFixed(2)}% today, `}${rangeHidden(data) ? "" : `52-week range ₹${fmtInr(data.price.week52_low)}–₹${fmtInr(data.price.week52_high)}, `}delivery trend and latest news — measured data, not advice.`;
   const ogImage = `/api/og?${new URLSearchParams({
     type: "stock",
     title: data.symbol,

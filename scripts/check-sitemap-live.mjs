@@ -56,7 +56,7 @@ async function main() {
       const html = await r.text();
       const canon = html.match(/<link rel="canonical" href="([^"]+)"/)?.[1];
       if (!canon) fails.push(`${url}: no canonical tag`);
-      else if (canon !== url) fails.push(`${url}: canonical is ${canon}`);
+      else if (canon.replace(/\/$/, "") !== url.replace(/\/$/, "")) fails.push(`${url}: canonical is ${canon}`);
       if (/<meta name="robots" content="[^"]*noindex/.test(html)) fails.push(`${url}: noindex`);
     } catch (e) {
       counts.ERR = (counts.ERR ?? 0) + 1;

@@ -9,6 +9,7 @@ import { stockPath } from "@/lib/seo/stock-symbol";
 
 export const metadata: Metadata = {
   title: "Signal Movers",
+  alternates: { canonical: "/signals/movers" },
   description: "Today's biggest composite signal score gainers and decliners, reported symmetrically.",
 };
 
