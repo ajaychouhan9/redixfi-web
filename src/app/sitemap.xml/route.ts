@@ -90,18 +90,17 @@ async function completeStockSymbols(): Promise<string[]> {
     }
     return response.data;
   });
-  const symbols = rows.map((row) => row?.symbol);
-  if (symbols.some((symbol) => !isCanonicalPublicSymbol(symbol))) {
-    throw new Error("Invalid stock symbol in signals pagination");
-  }
+  // A malformed symbol is left out on its own; it never empties the stock list.
+  const symbols = rows.map((row) => row?.symbol).filter(isCanonicalPublicSymbol);
+  if (symbols.length !== total) console.warn(`[sitemap] Skipped ${total - symbols.length} malformed stock symbol(s).`);
   const unique = new Set(symbols.map((symbol) => symbol.trim().toUpperCase()));
-  if (unique.size !== total) throw new Error("Duplicate stock symbol in signals pagination");
+  if (unique.size !== symbols.length) throw new Error("Duplicate stock symbol in signals pagination");
   return [...unique].sort();
 }
 
 // Cache only a completely validated stock universe. An exception cannot
 // replace it with an incomplete page range or the 11-route fallback.
-const cachedStockSymbols = unstable_cache(completeStockSymbols, ["sitemap-stock-symbols-v1"], {
+const cachedStockSymbols = unstable_cache(completeStockSymbols, ["sitemap-stock-symbols-v2"], {
   revalidate: 3600,
 });
 

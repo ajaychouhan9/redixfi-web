@@ -24,6 +24,7 @@ import { ConcallSummary } from "@/components/app/research/ConcallSummary";
 import { AnnualReportSummaryCard } from "@/components/app/research/AnnualReportSummaryCard";
 import { RedFlagSection } from "@/components/app/research/RedFlagSection";
 import { formatDataAsOf, formatDateIst } from "@/lib/format";
+import { stockPath } from "@/lib/seo/stock-symbol";
 
 // Concall tone -> the app's existing semantic color tones (Chip component),
 // same palette Event Risk Today's severity badges use. Real values per
@@ -122,7 +123,7 @@ export function ResearchDetail({
             {data.signal_summary.delta_1d !== null && <DeltaValue value={data.signal_summary.delta_1d} />}
             <span className="w-full text-[11px] text-foreground-faint">{formatDataAsOf(data.signal_summary.data_as_of)}</span>
             <div className="w-full -mt-2"><SlowestInputNote input={data.signal_summary.slowest_input} /></div>
-            <Link href={`/signals/${data.symbol}`} className="ml-auto text-xs font-medium text-accent">
+            <Link href={stockPath("/signals", data.symbol)} className="ml-auto text-xs font-medium text-accent">
               Full signal detail →
             </Link>
           </div>
@@ -375,7 +376,7 @@ export function ResearchDetail({
                 {data.signal_summary.delta_1d !== null && <DeltaValue value={data.signal_summary.delta_1d} />}
               </div>
               {data.signal_summary.narrative && <p className="mt-2 text-sm leading-relaxed">{data.signal_summary.narrative}</p>}
-              <Link href={`/signals/${data.symbol}`} className="mt-2 inline-block text-sm font-medium text-accent">
+              <Link href={stockPath("/signals", data.symbol)} className="mt-2 inline-block text-sm font-medium text-accent">
                 Open full Signal Dashboard page →
               </Link>
             </>

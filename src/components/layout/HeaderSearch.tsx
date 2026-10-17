@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SymbolTypeahead } from "@/components/ui/SymbolTypeahead";
+import { stockPath } from "@/lib/seo/stock-symbol";
 
 /**
  * Header global search — reuses the same `searchResearch()` typeahead the
@@ -43,7 +44,7 @@ export function HeaderSearch() {
         onChange={setQ}
         onSelect={(row) => {
           setQ("");
-          router.push(`/research/${row.canonicalSymbol}`);
+          router.push(stockPath("/research", row.canonicalSymbol));
         }}
         placeholder="Search stocks, sectors, news..."
         ariaLabel="Search stocks, sectors, news"

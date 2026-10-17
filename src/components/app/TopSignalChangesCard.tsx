@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/Card";
 import type { SignalsMovers, MoverRow } from "@/lib/api/types";
 import { ShareCardPopover } from "@/components/app/marketing/ShareCardPopover";
 import { formatObservationDate } from "@/lib/format";
+import { stockPath } from "@/lib/seo/stock-symbol";
 
 function MoverList({ rows, label, tone }: { rows: MoverRow[]; label: string; tone: "up" | "down" }) {
   const Icon = tone === "up" ? TrendingUp : TrendingDown;
@@ -13,7 +14,7 @@ function MoverList({ rows, label, tone }: { rows: MoverRow[]; label: string; ton
       <ul className="space-y-2.5">
         {rows.map((r) => (
           <li key={r.symbol}>
-            <Link href={`/signals/${r.symbol}`} className="flex items-center justify-between text-sm hover:text-accent">
+            <Link href={stockPath("/signals", r.symbol)} className="flex items-center justify-between text-sm hover:text-accent">
               <span className="truncate font-medium">{r.symbol}</span>
               <span className={`flex items-center gap-0.5 font-mono text-sm ${tone === "up" ? "text-up" : "text-down"}`}>
                 <Icon size={11} /> {r.delta_1d > 0 ? "+" : ""}

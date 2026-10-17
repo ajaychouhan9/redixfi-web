@@ -8,3 +8,9 @@ export function stockSymbolFromParam(param: string): string | null {
     return null;
   }
 }
+
+// Path for a stock-keyed page. Symbols such as M&M must be percent-encoded so
+// every link, canonical and sitemap entry names the same URL.
+export function stockPath(base: "/stocks" | "/signals" | "/research" | "/track-record", symbol: string): string {
+  return `${base}/${encodeURIComponent(symbol.trim().toUpperCase())}`;
+}

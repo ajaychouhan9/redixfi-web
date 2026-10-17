@@ -6,6 +6,7 @@ import clsx from "clsx";
 import { getIntradayScan, type IntradayScanParams } from "@/lib/api/endpoints";
 import type { ScanRow } from "@/lib/api/types";
 import { formatDataAsOf } from "@/lib/format";
+import { stockPath } from "@/lib/seo/stock-symbol";
 
 const FILTER_CHIPS: { key: string; label: string; params: IntradayScanParams }[] = [
   { key: "vol2x", label: "Vol > 2x", params: { min_volume_ratio: 2 } },
@@ -88,7 +89,7 @@ export function ScannerTab() {
             {rows.map((r) => (
               <tr key={r.symbol} className="border-t border-border">
                 <td className="px-3 py-2">
-                  <Link href={`/signals/${r.symbol}`} className="font-medium hover:text-accent">
+                  <Link href={stockPath("/signals", r.symbol)} className="font-medium hover:text-accent">
                     <div>{r.symbol}</div>
                     <div className="text-[10px] text-foreground-faint">{formatDataAsOf(r.data_as_of)}</div>
                   </Link>

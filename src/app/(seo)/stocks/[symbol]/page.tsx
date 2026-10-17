@@ -8,7 +8,9 @@ import { DeltaValue } from "@/components/ui/DeltaValue";
 import { Sparkline } from "@/components/ui/Sparkline";
 import { NewsList } from "@/components/app/NewsList";
 import { formatDataAsOf } from "@/lib/format";
-import { stockSymbolFromParam } from "@/lib/seo/stock-symbol";
+import { stockPath, stockSymbolFromParam } from "@/lib/seo/stock-symbol";
+import { CorporateActionNote } from "@/components/ui/CorporateActionNote";
+import type { ResearchDetail } from "@/lib/api/types";
 import { retryTransientPublicGet } from "@/lib/api/retry-public-upstream";
 
 // Public no-login snapshot — ISR: pre-rendered on first crawl/visit, then
@@ -40,6 +42,33 @@ const loadCompany = cache(async (symbol: string) => {
   }
 });
 
+// Unresolved corporate actions (unconfirmed / review, e.g. a demerger): the
+// 52-week range mixes prices from before and after the event, so it is not shown.
+function rangeHidden(data: ResearchDetail): boolean {
+  const st = (data.price.corporate_action ?? data.corporate_action)?.status;
+  return st === "unconfirmed" || st === "review";
+}
+
+function fmtInr(n: number): string {
+  return n.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+}
+
+// A few factual sentences from data already on the page, so the HTML carries
+// readable text without JavaScript. Measured values only; no outlook or advice.
+function introSentences(data: ResearchDetail): string[] {
+  const p = data.price;
+  const out = [`${data.company_name} (${data.symbol}) is listed on the NSE${data.sector ? ` and grouped under ${data.sector}` : ""}.`];
+  out.push(`Its latest price is ₹${fmtInr(p.last_price)}${p.day_change_pct === null ? "" : `, ${p.day_change_pct > 0 ? "+" : ""}${p.day_change_pct.toFixed(2)}% from the previous close`}.`);
+  if (!rangeHidden(data) && p.week52_high > 0) {
+    out.push(`Over the past 52 weeks it traded between ₹${fmtInr(p.week52_low)} and ₹${fmtInr(p.week52_high)}; the latest price sits ${Math.round(p.week52_position_pct)}% of the way up that range.`);
+  }
+  const dl = data.delivery_30d.map((d) => d.delivery_pct).filter((v) => Number.isFinite(v));
+  if (dl.length >= 5) {
+    out.push(`Across the last ${dl.length} sessions, an average of ${(dl.reduce((a, b) => a + b, 0) / dl.length).toFixed(1)}% of traded shares were taken for delivery.`);
+  }
+  return out;
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ symbol: string }> }): Promise<Metadata> {
   const { symbol } = await params;
   const normalizedSymbol = stockSymbolFromParam(symbol);
@@ -47,7 +76,7 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
   const data = await loadCompany(normalizedSymbol);
   if (!data) return { title: `${symbol.toUpperCase()} not found` };
   const title = `${data.company_name} (${data.symbol}) — Price, Delivery & News`;
-  const description = `${data.company_name} (${data.symbol}): ₹${data.price.last_price}, ${data.price.day_change_pct === null ? "" : `${data.price.day_change_pct}% today, `}52-week range ₹${data.price.week52_low}–₹${data.price.week52_high}, delivery trend and latest news — measured data, not advice.`;
+  const description = `${data.company_name} (${data.symbol}): ₹${data.price.last_price}, ${data.price.day_change_pct === null ? "" : `${data.price.day_change_pct}% today, `}${rangeHidden(data) ? "" : `52-week range ₹${data.price.week52_low}–₹${data.price.week52_high}, `}delivery trend and latest news — measured data, not advice.`;
   const ogImage = `/api/og?${new URLSearchParams({
     type: "stock",
     title: data.symbol,
@@ -108,6 +137,8 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
           Signal tables) already renders this via formatDataAsOf(); this
           SEO snapshot page simply never did. */}
       <p className="mt-1 text-xs text-foreground-faint">{formatDataAsOf(data.price.data_as_of)}</p>
+      <CorporateActionNote info={data.price.corporate_action ?? data.corporate_action} className="mt-1 text-xs text-foreground-muted" />
+      {!rangeHidden(data) && (
       <div className="mt-3 max-w-xs">
         <div className="h-1.5 w-full rounded-full bg-neutral-bg">
           <div className="h-1.5 rounded-full bg-accent" style={{ width: `${positionPct}%` }} />
@@ -117,6 +148,17 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
           <span>52wk high ₹{data.price.week52_high}</span>
         </div>
       </div>
+      )}
+
+      <p className="mt-5 text-sm leading-relaxed text-foreground-muted">{introSentences(data).join(" ")}</p>
+      <p className="mt-2 text-sm">
+        More on {data.symbol}:{" "}
+        <Link href={stockPath("/research", data.symbol)} className="text-accent hover:underline">research page</Link>
+        {" · "}
+        <Link href={stockPath("/signals", data.symbol)} className="text-accent hover:underline">signal score</Link>
+        {" · "}
+        <Link href={stockPath("/track-record", data.symbol)} className="text-accent hover:underline">signal history</Link>
+      </p>
 
       {sortedDelivery.length > 1 && (
         <div className="mt-6">
@@ -140,7 +182,7 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
           of undefined) during this task's own testing. */}
       {(data.concall_transcripts?.length ?? 0) > 0 && (
         <p className="mt-4 text-sm">
-          <Link href={`/stocks/${encodeURIComponent(data.symbol)}/concall-summary`} className="font-medium text-accent hover:underline">
+          <Link href={`${stockPath("/stocks", data.symbol)}/concall-summary`} className="font-medium text-accent hover:underline">
             Read the latest concall summary →
           </Link>
         </p>

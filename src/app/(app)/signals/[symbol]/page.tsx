@@ -6,17 +6,22 @@ import { Card } from "@/components/ui/Card";
 import { SignalUnlockGate } from "@/components/app/signals/SignalUnlockGate";
 import { SignalDetailView } from "@/components/app/signals/SignalDetailView";
 import { retryTransientPublicGet } from "@/lib/api/retry-public-upstream";
+import { stockPath, stockSymbolFromParam } from "@/lib/seo/stock-symbol";
 
 export async function generateMetadata({ params }: { params: Promise<{ symbol: string }> }): Promise<Metadata> {
-  const { symbol } = await params;
+  const { symbol: raw } = await params;
+  const symbol = stockSymbolFromParam(raw) ?? raw.toUpperCase();
   return {
-    title: `${symbol.toUpperCase()} Signal Score`,
-    description: `Measured composite signal score, trend, delivery, sector standing and options positioning for ${symbol.toUpperCase()} — factual, not a prediction.`,
+    title: `${symbol} Signal Score`,
+    description: `Measured composite signal score, trend, delivery, sector standing and options positioning for ${symbol} — factual, not a prediction.`,
+    alternates: { canonical: stockPath("/signals", symbol) },
   };
 }
 
 export default async function SignalDetailPage({ params }: { params: Promise<{ symbol: string }> }) {
-  const { symbol } = await params;
+  const { symbol: raw } = await params;
+  // Decode once (M%26M -> M&M); the API client encodes it again for its own URL.
+  const symbol = stockSymbolFromParam(raw) ?? raw;
 
   let detail;
   try {

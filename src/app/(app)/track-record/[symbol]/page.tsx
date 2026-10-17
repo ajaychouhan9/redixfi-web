@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { formatShortDate } from "@/lib/format";
 import type { SignalCrossing, TrackRecordSymbolHistory } from "@/lib/api/types";
+import { stockPath, stockSymbolFromParam } from "@/lib/seo/stock-symbol";
 
 // Task 15 bullet 2 — the "Inspectable signal history" per-stock deliverable.
 // Same SSR + ISR pattern Task 14 established. Every crossing distinguishes
@@ -25,11 +26,13 @@ async function loadHistory(symbol: string): Promise<TrackRecordSymbolHistory | n
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ symbol: string }> }): Promise<Metadata> {
-  const { symbol } = await params;
-  const data = await loadHistory(symbol.toUpperCase());
-  if (!data) return { title: `${symbol.toUpperCase()} not found` };
+  const { symbol: raw } = await params;
+  const symbol = stockSymbolFromParam(raw) ?? raw.toUpperCase();
+  const data = await loadHistory(symbol);
+  if (!data) return { title: `${symbol} not found` };
   return {
     title: `${data.symbol} Signal History`,
+    alternates: { canonical: stockPath("/track-record", data.symbol) },
     description: `Full measured signal-crossing and score-change history for ${data.company_name ?? data.symbol} (${data.symbol}) — factual, not investment advice.`,
   };
 }
@@ -59,7 +62,7 @@ function CrossingRow({ c }: { c: SignalCrossing }) {
 
 export default async function TrackRecordSymbolPage({ params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = await params;
-  const sym = symbol.toUpperCase();
+  const sym = stockSymbolFromParam(symbol) ?? symbol.toUpperCase();   // M%26M -> M&M
   const data = await loadHistory(sym);
   if (!data) notFound();
 
@@ -70,7 +73,7 @@ export default async function TrackRecordSymbolPage({ params }: { params: Promis
           {data.symbol} · {data.sector_index ?? "—"}
         </p>
         <h1 className="text-xl font-semibold">{data.company_name ?? data.symbol} — Signal History</h1>
-        <Link href={`/signals/${data.symbol}`} className="mt-1 inline-block text-sm font-medium text-accent">
+        <Link href={stockPath("/signals", data.symbol)} className="mt-1 inline-block text-sm font-medium text-accent">
           ← Back to {data.symbol}&apos;s Signal Dashboard page
         </Link>
       </div>

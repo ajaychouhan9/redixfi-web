@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import type { IntradayRecap, RecapMoverRow, SectorPct } from "@/lib/api/types";
+import { stockPath } from "@/lib/seo/stock-symbol";
 
 // Step A4 polish (2026-08-11): both tables used to hand-roll their own
 // +/-/color logic instead of the shared DeltaValue component every other
@@ -13,7 +14,7 @@ function MoverTable({ rows }: { rows: RecapMoverRow[] }) {
     <ul className="space-y-1">
       {rows.map((r) => (
         <li key={r.symbol} className="flex items-center justify-between text-sm">
-          <Link href={`/signals/${r.symbol}`} className="hover:text-accent">
+          <Link href={stockPath("/signals", r.symbol)} className="hover:text-accent">
             {r.symbol}
           </Link>
           <DeltaValue value={r.pct} kind="pct" />

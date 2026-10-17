@@ -5,6 +5,7 @@ import { DeltaValue } from "@/components/ui/DeltaValue";
 import { Card } from "@/components/ui/Card";
 import type { MoverRow } from "@/lib/api/types";
 import { formatObservationDate } from "@/lib/format";
+import { stockPath } from "@/lib/seo/stock-symbol";
 
 export const metadata: Metadata = {
   title: "Signal Movers",
@@ -26,7 +27,7 @@ function MoverList({ rows }: { rows: MoverRow[] }) {
     <ul className="divide-y divide-border">
       {rows.map((r) => (
         <li key={r.symbol}>
-          <Link href={`/signals/${r.symbol}`} className="flex items-center justify-between py-2.5 text-sm hover:text-accent">
+          <Link href={stockPath("/signals", r.symbol)} className="flex items-center justify-between py-2.5 text-sm hover:text-accent">
             <span>
               <span className="font-medium">{r.symbol}</span>{" "}
               <span className="text-foreground-faint">{r.company_name}</span>

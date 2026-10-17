@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getChart, getResearch, getResearchPeers } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { ResearchViewGate } from "@/components/app/research/ResearchViewGate";
+import { stockPath, stockSymbolFromParam } from "@/lib/seo/stock-symbol";
 
 // Task 14 — SSR fix. This page was client-fetching everything (generic
 // homepage meta + a permanent "Loading…" body in the raw server response,
@@ -46,18 +47,20 @@ const loadResearch = cache(async (symbol: string) => {
 });
 
 export async function generateMetadata({ params }: { params: Promise<{ symbol: string }> }): Promise<Metadata> {
-  const { symbol } = await params;
-  const data = await loadResearch(symbol.toUpperCase());
-  if (!data) return { title: `${symbol.toUpperCase()} not found` };
+  const { symbol: raw } = await params;
+  const symbol = stockSymbolFromParam(raw) ?? raw.toUpperCase();
+  const data = await loadResearch(symbol);
+  if (!data) return { title: `${symbol} not found` };
   return {
     title: `${data.symbol} Research`,
+    alternates: { canonical: stockPath("/research", data.symbol) },
     description: `Company profile, delivery trend, insider activity, pledge history, fundamentals and peer comparison for ${data.company_name} (${data.symbol}) — not investment advice.`,
   };
 }
 
 export default async function ResearchDetailPage({ params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = await params;
-  const sym = symbol.toUpperCase();
+  const sym = stockSymbolFromParam(symbol) ?? symbol.toUpperCase();   // M%26M -> M&M
 
   const data = await loadResearch(sym);
   if (!data) notFound();

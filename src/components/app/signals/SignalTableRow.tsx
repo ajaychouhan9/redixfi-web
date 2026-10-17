@@ -15,6 +15,7 @@ import {
 } from "@/lib/comparison-queue";
 import type { SignalRow } from "@/lib/api/types";
 import { formatDataAsOf } from "@/lib/format";
+import { stockPath } from "@/lib/seo/stock-symbol";
 
 // Column order (2026-08-08, finalized spec): Symbol | Sector | Price |
 // Score | Delivery | Volume | Signals | Event. Symbol/Price/Score are
@@ -105,7 +106,7 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
   return (
     <tr className="border-b border-border last:border-0 hover:bg-hover">
       <td className="whitespace-nowrap px-3 py-2.5">
-        <Link href={`/signals/${row.symbol}`} className="font-mono font-semibold hover:text-accent">
+        <Link href={stockPath("/signals", row.symbol)} className="font-mono font-semibold hover:text-accent">
           {row.symbol}
         </Link>
         <div className="max-w-[16rem] truncate text-[12px] text-foreground-faint">{row.company_name}</div>

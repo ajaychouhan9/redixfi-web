@@ -5,6 +5,7 @@ import type { IntradaySession, IntradaySectors, IntradayRecap } from "@/lib/api/
 
 export const metadata: Metadata = {
   title: "Intraday Monitor",
+  alternates: { canonical: "/intraday" },
   description: "Pre-market movers, a live user-filtered scanner, AI-classified event feed and post-market recap — factual, not trade calls.",
 };
 

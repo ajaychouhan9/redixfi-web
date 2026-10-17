@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { formatObservationDate } from "@/lib/format";
 import type { SectorSummary, SectorSummaryRow, WatchlistSummary } from "@/lib/api/types";
+import { stockPath } from "@/lib/seo/stock-symbol";
 
 /**
  * Surface 3 (Task 12) — summary cards, extending the B11/B12 narrative
@@ -40,7 +41,7 @@ function SymbolGroup({ label, symbols, tone }: { label: string; symbols: string[
       <ul className="mt-1 space-y-0.5">
         {symbols.map((s) => (
           <li key={s}>
-            <Link href={`/signals/${s}`} className="text-sm hover:text-accent">
+            <Link href={stockPath("/signals", s)} className="text-sm hover:text-accent">
               {s}
             </Link>
           </li>

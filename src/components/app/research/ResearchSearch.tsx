@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { searchResearch } from "@/lib/api/endpoints";
 import type { ResearchSearchRow } from "@/lib/api/types";
+import { stockPath } from "@/lib/seo/stock-symbol";
 
 export function ResearchSearch() {
   const [q, setQ] = useState("");
@@ -43,7 +44,7 @@ export function ResearchSearch() {
         <ul className="mt-3 divide-y divide-border rounded-xl border border-border">
           {results.map((r) => (
             <li key={r.canonicalSymbol}>
-              <Link href={`/research/${r.canonicalSymbol}`} className="flex items-center justify-between px-4 py-3 text-sm hover:bg-neutral-bg">
+              <Link href={stockPath("/research", r.canonicalSymbol)} className="flex items-center justify-between px-4 py-3 text-sm hover:bg-neutral-bg">
                 <span>
                   <span className="font-medium">{r.canonicalSymbol}</span>{" "}
                   <span className="text-foreground-faint">{r.company_name}</span>

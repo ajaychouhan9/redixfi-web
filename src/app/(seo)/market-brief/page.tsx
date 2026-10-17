@@ -16,6 +16,7 @@ export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Market Brief Archive",
+  alternates: { canonical: "/market-brief" },
   description: "RedixFi's AI-written daily market recap — measured facts from the day's data, labeled AI-generated.",
 };
 

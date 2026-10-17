@@ -92,3 +92,34 @@ const permanent = await scenario("permanent 404", (page) => page === 1 ? 404 : n
 assert.equal(permanent.calls.get(1), 1);
 await scenario("malformed pagination", (page) => page === 2 ? { page_info: { page: 2, total: symbols.length }, data: [] } : null, 11, true);
 await scenario("midstream 503", (page) => page === 8 ? 503 : null, 11, true);
+
+// A malformed symbol is skipped on its own; the rest of the stock list stays.
+{
+  const bad = (page) => page === 2 ? {
+    page_info: { page: 2, size: 200, total: symbols.length },
+    data: symbols.slice(200, 400).map((symbol, i) => (i === 0 ? { symbol: "BAD$" } : i === 1 ? { symbol: null } : { symbol })),
+  } : null;
+  const warnings = [];
+  const mod = { exports: {} };
+  const calls = new Map();
+  const getSignals = async ({ page, size }) => {
+    calls.set(page, (calls.get(page) ?? 0) + 1);
+    return bad(page) ?? { page_info: { page, size, total: symbols.length }, data: symbols.slice((page - 1) * size, page * size).map((symbol) => ({ symbol })) };
+  };
+  vm.runInNewContext(code, {
+    module: mod, exports: mod.exports, require(id) {
+      if (id === "@/lib/api/endpoints") return { getSignals };
+      if (id === "@/lib/api/client") return { ApiError };
+      if (id === "next/cache") return { unstable_cache: (fn) => fn };
+      throw new Error(`Unexpected module: ${id}`);
+    },
+    Response, setTimeout, console: { warn: (message) => warnings.push(message) },
+  });
+  const xml = await (await mod.exports.GET()).text();
+  const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+  assert.equal(urls.length, 2312, "malformed symbol skipped alone");
+  assert.ok(!xml.includes("BAD"), "malformed symbol not listed");
+  assert.ok(urls.includes("https://www.redixfi.com/stocks/M%26M"));
+  assert.equal(warnings.length, 1);
+  process.stdout.write(`malformed symbol skipped: ${urls.length} URLs, ${warnings.length} warning(s)\n`);
+}

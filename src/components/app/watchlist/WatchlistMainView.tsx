@@ -11,6 +11,7 @@ import { PortfolioBriefCard, PortfolioAnalyticsCard } from "@/components/app/acc
 import { Chip } from "@/components/ui/Chip";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import type { PortfolioAnalytics, PortfolioBrief, SignalDetail, WatchlistBehaviorRow } from "@/lib/api/types";
+import { stockPath } from "@/lib/seo/stock-symbol";
 
 const BEHAVIOR_LABELS: Record<string, { label: string; tone: "up" | "down" | "neutral" }> = {
   sustaining: { label: "Sustaining", tone: "up" },
@@ -244,7 +245,7 @@ export function WatchlistMainView() {
                   return (
                     <tr key={r.symbol} className="border-b border-border last:border-0">
                       <td className="px-4 py-3">
-                        <Link href={`/signals/${r.symbol}`} className="flex items-center gap-1.5 font-mono font-semibold hover:text-accent">
+                        <Link href={stockPath("/signals", r.symbol)} className="flex items-center gap-1.5 font-mono font-semibold hover:text-accent">
                           {r.symbol}
                         </Link>
                         <div className="text-xs text-foreground-faint">{r.company_name ?? "—"}</div>
