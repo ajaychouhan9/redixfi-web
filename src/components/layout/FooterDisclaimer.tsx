@@ -5,6 +5,10 @@ export function FooterDisclaimer() {
     <footer className="border-t border-border bg-surface px-4 py-2 text-center text-[12px] text-foreground-faint">
       RedixFi provides measured market data and analytics only — not investment advice, recommendations, or
       predictions. We are not yet SEBI-registered as a Research Analyst.{" "}
+      <Link href="/how-it-works" className="underline">
+        How the score works
+      </Link>{" "}
+      ·{" "}
       <Link href="/more/disclaimer" className="underline">
         Full disclaimer
       </Link>{" "}
