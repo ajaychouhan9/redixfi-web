@@ -339,6 +339,8 @@ export function ScoreHistorySection({
                 ))}
               </ul>
 
+              <p className="mt-2 text-[10px] text-foreground-faint">▲ improved · ▼ weakened · – unchanged</p>
+
               {locked.length > 0 && (
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-surface px-3 py-2">
                   <p className="flex items-center gap-1.5 text-[11px] text-foreground-muted">
