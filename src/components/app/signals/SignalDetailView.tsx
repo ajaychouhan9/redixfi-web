@@ -9,6 +9,7 @@ import { SignalStateChip } from "@/components/ui/Chip";
 import { ExplainTerm } from "@/components/ui/ExplainTerm";
 import { AnalystChecklist } from "@/components/app/signals/AnalystChecklist";
 import { WhyDidThisChange } from "@/components/app/signals/WhyDidThisChange";
+import { ScoreHistorySection } from "@/components/app/signals/ScoreHistorySection";
 import { InsightChips } from "@/components/app/education/InsightChips";
 import { CandleChart } from "@/components/app/CandleChart";
 import { NewsList } from "@/components/app/NewsList";
@@ -115,6 +116,11 @@ export function SignalDetailView({
           </div>
         )}
       </div>
+
+      {/* Directly under the composite-score card (and never on the Signals or
+          Research lists). A corporate-action hold renders only the existing
+          note above — the component returns null in that case. */}
+      <ScoreHistorySection symbol={detail.symbol} corporateAction={detail.corporate_action} />
 
       {detail.narrative && (
         <Card title="AI Summary" action={<AiLabel />}>

@@ -177,6 +177,63 @@ export interface ChangeLogEntry {
   created_at: string;
 }
 
+/**
+ * One stored session for the stock page's Score history table.
+ * Every value is what measured_signals_builder.py stored that day; nothing is
+ * re-scored in the client and no forward-looking field exists here.
+ */
+export interface ScoreHistoryRow {
+  date: string;
+  price_change_pct: number | null;
+  delivery_pct: number | null;
+  delivery_avg20: number | null;
+  volume_ratio_5d: number | null;
+  trend_10d_pct: number | null;
+  rsi_14: number | null;
+  sector_rank: number | null;
+  sector_count: number | null;
+  fii_net_buy_days_5: number | null;
+  pcr: number | null;
+  pledge_pct: number | null;
+  pledge_trend: string | null;
+  insider_net_30d: number | null;
+  event_risk_5d: boolean | null;
+  event_categories: string[];
+  score: number | null;
+  score_change: number | null;
+  /** up/down/flat per input, using the builder's own deadband decision. */
+  input_directions: Record<string, "up" | "down" | "flat">;
+  /** Plain direction words only, e.g. ["Delivery up", "Price down"]. */
+  reasons: string[];
+  partial: boolean;
+  /** True for days before a corporate action: no score-change claim. */
+  not_comparable: boolean;
+  /** Free-tier placeholder past the visible limit — all values are null. */
+  locked?: boolean;
+}
+
+export interface ScoreHistoryResponse {
+  symbol: string;
+  as_of: string | null;
+  rows: ScoreHistoryRow[];
+  available: number;
+  visible?: number;
+  /** Sessions this caller may read (3 free, 5 Basic, 10 Pro). */
+  limit: number;
+  max_sessions: number;
+  tier?: string;
+  /** Next tier up and its cap — drives the locked-row upgrade prompt. */
+  next_tier?: string | null;
+  next_limit?: number | null;
+  locked?: boolean;
+  /** Corporate-action hold: show the existing note instead of the table. */
+  blocked: boolean;
+  status?: string | null;
+  note?: string | null;
+  comparable_from?: string | null;
+  disclaimer: string;
+}
+
 export interface NewsEntity {
   symbol: string;
   name: string;
