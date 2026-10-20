@@ -4,6 +4,7 @@ import type {
   SignalRow,
   SignalsMovers,
   SignalDetail,
+  ScoreHistoryResponse,
   IntradaySession,
   PremarketRow,
   IntradaySectors,
@@ -107,6 +108,11 @@ export const getSignalDetail = (symbol: string, newsLimit = 6, opts?: FetchOpts)
     ...opts,
     params: { news_limit: newsLimit },
   });
+
+// @auth required — the route mirrors the detail route's free-tier symbol lock
+// and returns 5 sessions for free/Basic, 10 for Pro (server-configured).
+export const getScoreHistory = (symbol: string, opts?: FetchOpts) =>
+  apiGet<ScoreHistoryResponse>(`/signals/${encodeURIComponent(symbol)}/score-history`, opts);
 
 // ---------- intraday ----------
 
