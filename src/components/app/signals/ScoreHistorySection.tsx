@@ -31,11 +31,11 @@ import type { CorporateActionNote, ScoreHistoryResponse, ScoreHistoryRow } from 
 
 /**
  * Link target for "How is this score calculated?".
- *   "explain:<metric>" -> opens the existing score-explainer popup (current).
- *   "/how-it-works"    -> renders a normal link if you add that page later.
+ *   "/how-it-works"    -> normal link to the public explanation page (current).
+ *   "explain:<metric>" -> opens the score-explainer popup instead.
  * One-line switch; nothing else in this component needs to change.
  */
-const SCORE_EXPLAINER_TARGET = "explain:composite_score";
+const SCORE_EXPLAINER_TARGET = "/how-it-works";
 
 const CHIP_INPUTS: { key: string; label: string }[] = [
   { key: "trend", label: "Trend" },

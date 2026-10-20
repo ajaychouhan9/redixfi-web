@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useEducationContent } from "@/lib/education/useEducationContent";
 import { interpolate } from "@/lib/education/interpolate";
 import { logEducationEngagement } from "@/lib/api/mutations";
@@ -54,6 +55,8 @@ export function ExplainTerm({
   const content = useEducationContent(metricKey, open);
 
   useEffect(() => {
+    // Reads a local counter after mount; there is no external system to subscribe to here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpenCount(getOpenCount(metricKey));
   }, [metricKey]);
 
@@ -128,7 +131,7 @@ export function ExplainTerm({
                 <span className="mt-2 block space-y-1.5 border-t border-border pt-2">
                   <span className="block"><b className="font-medium">What it measures:</b> {content.deeper.what}</span>
                   <span className="block"><b className="font-medium">Why traders watch it:</b> {content.deeper.why_traders_watch}</span>
-                  <span className="block"><b className="font-medium">How it's calculated:</b> {content.deeper.how_calculated}</span>
+                  <span className="block"><b className="font-medium">How it&apos;s calculated:</b> {content.deeper.how_calculated}</span>
                   {content.deeper.historical_pattern && (
                     <span className="block"><b className="font-medium">Historical pattern:</b> {content.deeper.historical_pattern}</span>
                   )}
@@ -147,6 +150,15 @@ export function ExplainTerm({
                   <FaqPanel metric={metricKey} symbol={symbol} />
                 </span>
               )}
+              <span className="mt-2 block border-t border-border pt-2">
+                <Link
+                  href="/how-it-works"
+                  onClick={() => setOpen(false)}
+                  className="font-medium text-accent"
+                >
+                  Read the full explanation →
+                </Link>
+              </span>
             </>
           )}
         </span>
