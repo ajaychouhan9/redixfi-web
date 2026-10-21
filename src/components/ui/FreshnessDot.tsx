@@ -4,14 +4,14 @@ import clsx from "clsx";
 export function FreshnessDot({ fresh, className }: { fresh: boolean; className?: string }) {
   return (
     <span
-      title={fresh ? "Data is fresh" : "Data delayed"}
+      title={fresh ? "Market feed is fresh" : "Market feed is delayed"}
       className={clsx("inline-flex items-center gap-1.5 text-xs text-foreground-muted", className)}
     >
       <span
         className={clsx("h-2 w-2 rounded-full", fresh ? "bg-up" : "bg-amber")}
         aria-hidden
       />
-      {fresh ? "Live" : "Data delayed"}
+      {fresh ? "Market feed live" : "Market feed delayed"}
     </span>
   );
 }
