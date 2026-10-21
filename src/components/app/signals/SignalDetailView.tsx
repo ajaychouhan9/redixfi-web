@@ -168,7 +168,7 @@ export function SignalDetailView({
               </ExplainTerm>
             )}
           </DataRow>
-          <DataRow label="Delivery" asOf={detail.signal_freshness?.delivery_pct}>
+          <DataRow label="Delivery (previous session)" asOf={detail.signal_freshness?.delivery_pct}>
             {s.delivery_pct === null || s.delivery_avg20 === null ? (
               <span className="text-foreground-faint">Not available</span>
             ) : (
