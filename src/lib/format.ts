@@ -142,8 +142,11 @@ export function formatPriceAsOf(
   if (!asOf?.data_as_of) return "Last close";
   const raw = asOf.data_as_of;
   const day = raw.slice(0, 10);
-  const hasClockTime = /T\d{2}:\d{2}/.test(raw) && !/T00:00:00/.test(raw);
-  const isTimestamp = asOf.data_as_of_type === "timestamp" || hasClockTime;
+  // A daily candle is stored at midnight and may arrive with type
+  // "timestamp"; it is still a DATE, never a clock time.
+  const isMidnight = /T00:00:00(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/.test(raw);
+  const hasClockTime = /T\d{2}:\d{2}/.test(raw) && !isMidnight;
+  const isTimestamp = !isMidnight && (asOf.data_as_of_type === "timestamp" || hasClockTime);
   if (isTimestamp) {
     const time = formatTimeIst(raw);
     if (day === istToday()) return isMarketOpenNow() ? `Live · ${time} IST` : `Today · ${time} IST`;
