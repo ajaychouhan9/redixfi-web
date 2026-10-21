@@ -105,6 +105,10 @@ const FAQ = [
     q: "Where can I see previous scores?",
     a: "On a stock page, under Score history. Free shows the last 3 sessions, Basic 5 and Pro 10.",
   },
+  {
+    q: "Is volatility part of the score?",
+    a: "No: volatility is a separate measure of how much a stock's closing price has moved from day to day over the last 21 sessions, shown under Volatility on the stock page and in the Volatility ranking, and it does not change the composite score.",
+  },
 ];
 
 export default function HowItWorksPage() {

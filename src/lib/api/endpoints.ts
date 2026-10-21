@@ -5,6 +5,8 @@ import type {
   SignalsMovers,
   SignalDetail,
   ScoreHistoryResponse,
+  VolatilityResponse,
+  VolatilityBoard,
   IntradaySession,
   PremarketRow,
   IntradaySectors,
@@ -113,6 +115,17 @@ export const getSignalDetail = (symbol: string, newsLimit = 6, opts?: FetchOpts)
 // and returns 5 sessions for free/Basic, 10 for Pro (server-configured).
 export const getScoreHistory = (symbol: string, opts?: FetchOpts) =>
   apiGet<ScoreHistoryResponse>(`/signals/${encodeURIComponent(symbol)}/score-history`, opts);
+
+// @auth required — the route mirrors the detail route's free-tier symbol lock; Free reads the 21-session
+// summary, Pro also the 5 and 15 session windows (server-configured).
+export const getVolatility = (symbol: string, opts?: FetchOpts) =>
+  apiGet<VolatilityResponse>(`/signals/${encodeURIComponent(symbol)}/volatility`, opts);
+
+// @auth required — tier-aware: Free reads the first 20 of each list, Pro the whole list.
+export const getVolatilityBoard = (
+  params: { which: "top" | "bottom"; page?: number; size?: number; q?: string },
+  opts?: FetchOpts
+) => apiGet<VolatilityBoard>("/volatility/leaderboard", { ...opts, params });
 
 // ---------- intraday ----------
 

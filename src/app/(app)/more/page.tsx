@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ShieldCheck, Database, UserCircle, CreditCard, Newspaper, ChevronRight, Info, BookOpen } from "lucide-react";
+import { ShieldCheck, Database, UserCircle, CreditCard, Newspaper, ChevronRight, Info, BookOpen, Activity } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 
 export const metadata: Metadata = { title: "More" };
 
 const LINKS = [
   { href: "/how-it-works", label: "How the score works", icon: BookOpen },
+  { href: "/volatility", label: "Volatility ranking", icon: Activity },
   { href: "/more/disclaimer", label: "Full disclaimer", icon: ShieldCheck },
   { href: "/more/data-sources", label: "Data sources & update times", icon: Database },
   { href: "/more/about-us", label: "About & Contact", icon: Info },

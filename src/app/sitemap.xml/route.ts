@@ -27,6 +27,7 @@ const PUBLIC_CORE_ROUTES = [
   "/news",
   "/pricing",
   "/how-it-works",
+  "/volatility",
 ] as const;
 
 function escapeXml(value: string): string {
