@@ -73,35 +73,36 @@ export function ScannerTab() {
           Active Universe: {meta.universe_count} stocks meeting minimum liquidity and price criteria today ({meta.criteria}).
         </p>
       )}
-      <div className="overflow-x-auto rounded-xl border border-border">
+      <p className="mb-1 text-[11px] text-foreground-faint sm:hidden">Swipe sideways for all columns →</p>
+      <div className="max-w-full overflow-x-auto overscroll-x-contain rounded-xl border border-border">
         <table className="w-full min-w-[560px] text-sm">
           <thead className="bg-surface text-left text-xs font-semibold uppercase tracking-wide text-foreground-faint">
             <tr>
-              <th className="px-3 py-2">Symbol</th>
-              <th className="px-3 py-2">Price</th>
-              <th className="px-3 py-2">Day %</th>
-              <th className="px-3 py-2">Vol ratio</th>
-              <th className="px-3 py-2">VWAP side</th>
-              <th className="px-3 py-2">Range</th>
+              <th className="sticky left-0 z-10 border-r border-border bg-surface px-3 py-2 whitespace-nowrap">Symbol</th>
+              <th className="px-3 py-2 whitespace-nowrap">Price</th>
+              <th className="px-3 py-2 whitespace-nowrap">Day %</th>
+              <th className="px-3 py-2 whitespace-nowrap">Vol ratio</th>
+              <th className="px-3 py-2 whitespace-nowrap">VWAP side</th>
+              <th className="px-3 py-2 whitespace-nowrap">Range</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.symbol} className="border-t border-border">
-                <td className="px-3 py-2">
+                <td className="sticky left-0 z-10 border-r border-border bg-surface-raised px-3 py-2">
                   <Link href={stockPath("/signals", r.symbol)} className="font-medium hover:text-accent">
                     <div>{r.symbol}</div>
                     <div className="text-[10px] text-foreground-faint">{formatDataAsOf(r.data_as_of)}</div>
                   </Link>
                 </td>
-                <td className="px-3 py-2 tabular-nums">₹{r.last_price}</td>
-                <td className={clsx("px-3 py-2 tabular-nums", r.day_pct > 0 ? "text-up" : r.day_pct < 0 ? "text-down" : "text-neutral")}>
+                <td className="px-3 py-2 tabular-nums whitespace-nowrap">₹{r.last_price}</td>
+                <td className={clsx("px-3 py-2 tabular-nums whitespace-nowrap", r.day_pct > 0 ? "text-up" : r.day_pct < 0 ? "text-down" : "text-neutral")}>
                   {r.day_pct > 0 ? "+" : ""}
                   {r.day_pct}%
                 </td>
-                <td className="px-3 py-2 tabular-nums">{r.volume_ratio}x</td>
-                <td className="px-3 py-2 capitalize">{r.vwap_side}</td>
-                <td className="px-3 py-2">{r.range_state.replace(/_/g, " ")}</td>
+                <td className="px-3 py-2 tabular-nums whitespace-nowrap">{r.volume_ratio}x</td>
+                <td className="px-3 py-2 capitalize whitespace-nowrap">{r.vwap_side}</td>
+                <td className="px-3 py-2 whitespace-nowrap">{r.range_state.replace(/_/g, " ")}</td>
               </tr>
             ))}
           </tbody>

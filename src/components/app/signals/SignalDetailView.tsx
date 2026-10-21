@@ -18,7 +18,7 @@ import { AlertCreateButton } from "@/components/app/alerts/AlertCreateButton";
 import { RecordView } from "@/components/app/RecordView";
 import { CompareIndicator } from "@/components/app/CompareIndicator";
 import { CurrentSymbolSync } from "@/components/app/CurrentSymbolSync";
-import { formatDataAsOf, formatShortDate } from "@/lib/format";
+import { formatDataAsOf, formatPriceAsOf, formatShortDate } from "@/lib/format";
 import Link from "next/link";
 import type { Candle, DeliveryPoint, FundamentalsBlock, SignalConflict, SignalDetail, DataAsOf } from "@/lib/api/types";
 import { ExportButton } from "@/components/ui/ExportButton";
@@ -92,7 +92,7 @@ export function SignalDetailView({
                 )}
               </div>
             )}
-            <Freshness asOf={detail.price_data_as_of} />
+            <p className="mt-1 text-[11px] text-foreground-faint">{formatPriceAsOf(detail.price_data_as_of)}</p>
           </div>
           <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             <ExportButton onExport={exportXlsx} canExport={isProEntitled(user)} label="Download Excel" enabledTitle="Export as Excel" disabledTitle="Upgrade to export Excel" />

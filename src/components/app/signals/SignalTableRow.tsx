@@ -14,7 +14,7 @@ import {
   removeFromComparisonQueue,
 } from "@/lib/comparison-queue";
 import type { SignalRow } from "@/lib/api/types";
-import { formatDataAsOf } from "@/lib/format";
+import { formatDataAsOf, formatPriceAsOf } from "@/lib/format";
 import { stockPath } from "@/lib/seo/stock-symbol";
 
 // Column order (2026-08-08, finalized spec): Symbol | Sector | Price |
@@ -122,7 +122,7 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
           primary={row.last_price !== null ? `₹${row.last_price.toLocaleString("en-IN")}` : null}
           subtitle={row.day_change_pct !== null ? <DeltaValue value={row.day_change_pct} kind="pct" className="text-[12px]" /> : row.corporate_action ? <span className="text-[12px] text-foreground-faint" title={row.corporate_action.note}>— note</span> : undefined}
         />
-        {row.price_data_as_of && <div className="text-[10px] text-foreground-faint">{formatDataAsOf(row.price_data_as_of)}</div>}
+        {row.price_data_as_of && <div className="text-[10px] text-foreground-faint">{formatPriceAsOf(row.price_data_as_of)}</div>}
       </td>
       {/* Score: always visible — unchanged position/behavior.
           Bug 1 fix (2026-08-22): `locked` here must be ONLY the real B8
