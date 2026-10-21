@@ -221,6 +221,12 @@ export function VolatilitySection({ symbol }: { symbol: string }) {
             </>
           )}
 
+          {ranked && (
+            <p className="mt-3 text-[11px] text-foreground-muted">
+              Average daily range: the average gap between a day&apos;s high and low, which shows movement inside the day.
+            </p>
+          )}
+
           {data && !data.locked && (
             <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-foreground-faint">
               <span>{data.disclaimer}</span>

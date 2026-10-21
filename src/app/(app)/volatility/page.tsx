@@ -66,6 +66,9 @@ export default async function VolatilityPage() {
               Each stock&apos;s page also shows how many of the last 5, 15 and 21 sessions closed down and up, the average
               and largest daily moves, and the average daily high-to-low range as a share of the close.
             </p>
+            <p>
+              Average daily range: the average gap between a day&apos;s high and low, which shows movement inside the day.
+            </p>
             <p className="font-medium text-foreground">Stocks that are not ranked</p>
             <ul className="list-disc space-y-1 pl-5">
               <li>Stocks on hold while a corporate action, demerger or review is checked, because earlier prices are not comparable.</li>
