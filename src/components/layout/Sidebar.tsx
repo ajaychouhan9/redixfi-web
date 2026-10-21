@@ -178,7 +178,7 @@ export function Sidebar({
         <div className="rounded-lg border border-border bg-surface p-2.5 text-xs">
           <div className="flex items-center justify-between gap-2">
             <span className={initialFresh ? "font-medium text-up" : "font-medium text-amber"}>
-              {initialFresh ? "Live" : "Data delayed"}
+              {initialFresh ? "Market feed live" : "Market feed delayed"}
             </span>
             {initialOverview && (
               <span className="text-foreground-faint">

@@ -101,6 +101,57 @@ export function formatTrialExpiryLocal(iso: string): string {
 }
 
 /** e.g. "15 Jul" — used in change logs / recap cards */
+/** Price-label helper (2026-10-21).
+ *
+ * A stock page must never present a previous-session close as "Live". This
+ * turns the API's price_data_as_of into one honest line:
+ *   - a timestamp from today  -> "Live · 13:30 IST" (or "Today · …" after hours)
+ *   - a daily-candle date      -> "Last close, 19 Oct"
+ * It is the same rule on the detail page, the signals list and Research.
+ */
+const IST_DAY = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Kolkata",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+function istToday(): string {
+  return IST_DAY.format(new Date());
+}
+
+function isMarketOpenNow(): boolean {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const weekday = parts.find((p) => p.type === "weekday")?.value ?? "";
+  const hour = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
+  const minute = Number(parts.find((p) => p.type === "minute")?.value ?? "0");
+  if (weekday === "Sat" || weekday === "Sun") return false;
+  const mins = hour * 60 + minute;
+  return mins >= 9 * 60 + 15 && mins <= 15 * 60 + 30;
+}
+
+export function formatPriceAsOf(
+  asOf?: { data_as_of: string; data_as_of_type?: string } | null,
+): string {
+  if (!asOf?.data_as_of) return "Last close";
+  const raw = asOf.data_as_of;
+  const day = raw.slice(0, 10);
+  const hasClockTime = /T\d{2}:\d{2}/.test(raw) && !/T00:00:00/.test(raw);
+  const isTimestamp = asOf.data_as_of_type === "timestamp" || hasClockTime;
+  if (isTimestamp) {
+    const time = formatTimeIst(raw);
+    if (day === istToday()) return isMarketOpenNow() ? `Live · ${time} IST` : `Today · ${time} IST`;
+    return `Last update ${formatDateIst(raw)} · ${time} IST`;
+  }
+  return `Last close, ${formatShortDate(day)}`;
+}
+
 export function formatShortDate(iso: string): string {
   return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" }).format(
     new Date(iso)
