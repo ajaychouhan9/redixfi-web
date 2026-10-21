@@ -216,6 +216,11 @@ export default function HowItWorksPage() {
             available.
           </li>
           <li>
+            <span className="font-medium text-foreground">BE (trade-for-trade) stocks.</span> Delivery in the
+            BE series is close to 100% by construction, so it is not used as a signal and is shown as not
+            applicable.
+          </li>
+          <li>
             <span className="font-medium text-foreground">Data can be delayed or missing.</span> The page
             shows the date of the score it is serving.
           </li>

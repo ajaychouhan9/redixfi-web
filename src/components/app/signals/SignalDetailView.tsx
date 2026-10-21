@@ -58,6 +58,18 @@ export function SignalDetailView({
     <div className="mx-auto max-w-3xl space-y-4">
       <CurrentSymbolSync symbol={detail.symbol} />
       <RecordView symbol={detail.symbol} companyName={detail.company_name} />
+      {detail.limited_data && (
+        <div className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-muted">
+          <span className="font-medium text-foreground">Limited data.</span>{" "}
+          {detail.limited_data_note || "This stock's feed is incomplete; the score is partial."}
+        </div>
+      )}
+      {detail.partial && !detail.limited_data && s.delivery_series !== "BE" && (
+        <div className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-muted">
+          <span className="font-medium text-foreground">Partial score.</span> Some inputs were not
+          available for this session; the score is built from what was measured.
+        </div>
+      )}
 
       <div>
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -168,8 +180,13 @@ export function SignalDetailView({
               </ExplainTerm>
             )}
           </DataRow>
-          <DataRow label="Delivery (previous session)" asOf={detail.signal_freshness?.delivery_pct}>
-            {s.delivery_pct === null || s.delivery_avg20 === null ? (
+          <DataRow
+            label="Delivery (previous session)"
+            asOf={s.delivery_series === "BE" ? null : detail.signal_freshness?.delivery_pct}
+          >
+            {s.delivery_series === "BE" ? (
+              <span className="text-foreground-faint">Delivery not applicable (BE series)</span>
+            ) : s.delivery_pct === null || s.delivery_avg20 === null ? (
               <span className="text-foreground-faint">Not available</span>
             ) : (
               <ExplainTerm metricKey="delivery_pct" symbol={detail.symbol} ctx={{ symbol: detail.symbol, delivery_pct: s.delivery_pct, delivery_avg20: s.delivery_avg20 }}>

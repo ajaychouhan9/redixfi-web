@@ -93,6 +93,8 @@ export interface MarketOverview {
 // ---------- signals ----------
 
 export interface SignalRow {
+  limited_data?: boolean;
+  limited_data_note?: string | null;
   symbol: string;
   company_name: string;
   sector: string;
@@ -154,6 +156,8 @@ export interface SignalDetailSignals {
   sector_count: number;
   delivery_pct: number;
   delivery_avg20: number;
+  /** "BE" means trade-for-trade: delivery is not applicable, not a signal. */
+  delivery_series?: string | null;
   fii_net_buy_days_5: number;
   pcr: number;
   pcr_available: boolean;
@@ -187,6 +191,8 @@ export interface ScoreHistoryRow {
   price_change_pct: number | null;
   delivery_pct: number | null;
   delivery_avg20: number | null;
+  /** "BE" means trade-for-trade: delivery is not applicable, not a signal. */
+  delivery_series?: string | null;
   /** Trading session whose delivery value this score used (usually previous). */
   delivery_as_of?: string | null;
   volume_ratio_5d: number | null;
@@ -294,6 +300,10 @@ export interface InsightChip {
 }
 
 export interface SignalDetail {
+  no_score_reason?: string | null;
+  partial?: boolean;
+  limited_data?: boolean;
+  limited_data_note?: string | null;
   symbol: string;
   company_name: string;
   sector: string;

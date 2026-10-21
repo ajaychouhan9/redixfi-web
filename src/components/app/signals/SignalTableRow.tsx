@@ -109,6 +109,14 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
         <Link href={stockPath("/signals", row.symbol)} className="font-mono font-semibold hover:text-accent">
           {row.symbol}
         </Link>
+        {row.limited_data && (
+          <span
+            className="ml-1.5 rounded bg-surface-raised px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide text-foreground-faint"
+            title={row.limited_data_note ?? "Limited data"}
+          >
+            Limited
+          </span>
+        )}
         <div className="max-w-[16rem] truncate text-[12px] text-foreground-faint">{row.company_name}</div>
         {row.data_as_of && <div className="whitespace-nowrap text-[10px] text-foreground-faint">{formatDataAsOf(row.data_as_of)}</div>}
       </td>

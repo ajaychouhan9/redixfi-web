@@ -71,10 +71,23 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
     return (
       <div className="mx-auto max-w-3xl">
         <Card>
-          <p className="text-sm">
-            {detail.company_name ?? symbol.toUpperCase()} doesn&apos;t have measured signal data yet. Coverage for
-            this symbol is pending — check back after the next scheduled update.
-          </p>
+          {detail.limited_data ? (
+            <p className="text-sm">
+              <span className="font-medium">Limited data.</span>{" "}
+              {detail.limited_data_note || "This stock's feed is incomplete, so the score is not shown."}
+            </p>
+          ) : detail.no_score_reason === "stale_candle" ? (
+            <p className="text-sm">
+              No score is shown for the latest session because the latest daily bar is from an earlier
+              session. The last price above is from that earlier session; coverage resumes when the next
+              daily bar arrives.
+            </p>
+          ) : (
+            <p className="text-sm">
+              {detail.company_name ?? symbol.toUpperCase()} doesn&apos;t have measured signal data yet.
+              Coverage for this symbol is pending — check back after the next scheduled update.
+            </p>
+          )}
         </Card>
       </div>
     );
