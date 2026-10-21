@@ -285,6 +285,9 @@ export function ScoreHistorySection({
                           {r.delivery_avg20 !== null && (
                             <span className="block text-[10px] text-foreground-faint">avg {fmtPct(r.delivery_avg20)}</span>
                           )}
+                          {r.delivery_as_of && (
+                            <span className="block text-[10px] text-foreground-faint">of {formatShortDate(r.delivery_as_of)}</span>
+                          )}
                         </td>
                         <td className="py-1.5 text-foreground-muted">{fmtRatio(r.volume_ratio_5d)}</td>
                         <td className="py-1.5">
@@ -321,7 +324,7 @@ export function ScoreHistorySection({
                     </div>
                     <div className="mt-1 grid grid-cols-3 gap-x-2 gap-y-1 text-[11px] text-foreground-muted">
                       <span>Price <DeltaValue value={r.price_change_pct} kind="pct" /></span>
-                      <span>Delivery {fmtPct(r.delivery_pct)}</span>
+                      <span>Delivery {fmtPct(r.delivery_pct)}{r.delivery_as_of ? ` · ${formatShortDate(r.delivery_as_of)}` : ""}</span>
                       <span>Vol {fmtRatio(r.volume_ratio_5d)}</span>
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-1">
@@ -339,6 +342,10 @@ export function ScoreHistorySection({
                 ))}
               </ul>
 
+              <p className="mt-3 text-[10px] text-foreground-faint">
+                Delivery is NSE end-of-day data published after the score run, so each row uses the
+                latest delivery available at that run — usually the previous session.
+              </p>
               <p className="mt-2 text-[10px] text-foreground-faint">▲ improved · ▼ weakened · – unchanged</p>
 
               {locked.length > 0 && (

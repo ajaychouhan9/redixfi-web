@@ -187,6 +187,8 @@ export interface ScoreHistoryRow {
   price_change_pct: number | null;
   delivery_pct: number | null;
   delivery_avg20: number | null;
+  /** Trading session whose delivery value this score used (usually previous). */
+  delivery_as_of?: string | null;
   volume_ratio_5d: number | null;
   trend_10d_pct: number | null;
   rsi_14: number | null;

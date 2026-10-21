@@ -31,7 +31,7 @@ const INPUT_GROUPS = [
   {
     name: "Delivery",
     weight: "a larger part",
-    what: "How much of the day's traded quantity was actually delivered, compared with the stock's own recent average.",
+    what: "How much of the traded quantity in the latest delivery session available at the score run was actually delivered, compared with the stock's own recent average.",
     example: "Delivery well above its 20-session average.",
   },
   {
@@ -68,7 +68,7 @@ const INPUT_GROUPS = [
 
 const SOURCES = [
   ["Prices and volume", "Daily exchange data for the completed session."],
-  ["Delivery", "NSE end-of-day delivery data."],
+  ["Delivery", "NSE end-of-day delivery data. It is published after the daily score run, so the score uses the latest delivery available at run time — usually the previous session."],
   ["Industry", "The industry classification for the stock, used to build its peer group."],
   ["Options", "Daily open-interest data. A reading older than seven days is ignored."],
   ["Promoter pledge", "Company filings, latest reading compared with an earlier reading in the past few months."],
@@ -83,7 +83,11 @@ const FAQ = [
   },
   {
     q: "What does a higher score mean?",
-    a: "More of the measured inputs are favourable than unfavourable. It is not a probability, and it does not say what happens next.",
+    a: "More of the measured inputs currently read stronger than weaker. It is not a probability, and it does not say what happens next.",
+  },
+  {
+    q: "Which session's delivery does the score use?",
+    a: "NSE publishes end-of-day delivery data after the daily score run. The score uses the latest delivery available at run time, which is usually the previous session. The stock page and Score history show the delivery date where it is known.",
   },
   {
     q: "Why can the score change from one day to the next?",
