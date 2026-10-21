@@ -17,7 +17,11 @@ import { stockPath, stockSymbolFromParam } from "@/lib/seo/stock-symbol";
 // (api/app/routers/research.py: cache.get_or_set(..., 900, ...)) — no
 // point revalidating the Next-side cache more often than the origin data
 // actually refreshes.
-export const revalidate = 900;
+// 2026-10-21: was 900s, which froze the intraday price overlay for up to 15
+// minutes (one page could show a live price while Signals showed the last
+// close). The heavy research body is still cached server-side for 900s; only
+// the page response is re-read once a minute so the price label is honest.
+export const revalidate = 60;
 
 // PERF_ANALYSIS_2026-10-05 fix (2026-10-07): generateMetadata and the page
 // body both invoke loadResearch(sym) for the same request — React's cache()
@@ -39,7 +43,7 @@ const loadResearch = cache(async (symbol: string) => {
     // Freshness contract bump: Vercel's persistent fetch cache can outlive an
     // API-only deploy. This request is deliberately uncached so the page does
     // not reuse a pre-freshness response lacking source dates.
-    return (await getResearch(symbol, { revalidate: 900 })).data;
+    return (await getResearch(symbol, { revalidate: 60 })).data;
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) return null;
     throw e;
