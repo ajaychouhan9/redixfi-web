@@ -242,6 +242,84 @@ export interface ScoreHistoryResponse {
   disclaimer: string;
 }
 
+// ---------- volatility (past price movement) ----------
+export interface VolatilityWindow {
+  sessions: number;
+  /** Placeholder for a window this tier cannot read: no numbers are sent. */
+  locked?: boolean;
+  /** Cheapest tier that reads this window (only on a locked placeholder). */
+  unlock?: string;
+  up?: number;
+  down?: number;
+  flat?: number;
+  avg_up_pct?: number | null;
+  avg_down_pct?: number | null;
+  max_up_pct?: number | null;
+  max_down_pct?: number | null;
+  avg_range_pct?: number | null;
+}
+
+export interface VolatilityResponse {
+  symbol: string;
+  locked: boolean;
+  available: boolean;
+  eligible: boolean;
+  as_of: string | null;
+  latest_session?: string | null;
+  tier?: string;
+  next_tier?: string | null;
+  /** Why the stock is not ranked (shown instead of numbers). */
+  note?: string | null;
+  excluded_reason?: string | null;
+  /** Position in the ranking (1 = most volatile). Sent as vol_rank: the API strips any key named rank. */
+  vol_rank?: number;
+  ranked_of?: number;
+  top_share_pct?: number;
+  band?: string;
+  band_text?: string;
+  std_21?: number;
+  windows?: Record<"w21" | "w15" | "w5", VolatilityWindow | null>;
+  /** The 21 daily close-to-close % moves, oldest first: [date, %]. */
+  moves?: [string, number][];
+  last_close?: number;
+  disclaimer: string;
+  how: string;
+}
+
+export interface VolatilityBoardRow {
+  symbol: string;
+  /** Outside the caller's range: symbol only, no numbers. */
+  locked?: boolean;
+  vol_rank?: number;
+  std_21?: number | null;
+  band?: string;
+  band_text?: string;
+  up?: number | null;
+  down?: number | null;
+  max_up_pct?: number | null;
+  max_down_pct?: number | null;
+  avg_range_pct?: number | null;
+}
+
+export interface VolatilityBoard {
+  available: boolean;
+  which?: "top" | "bottom";
+  as_of: string | null;
+  latest_session?: string | null;
+  rows: VolatilityBoardRow[];
+  total: number;
+  page?: number;
+  size?: number;
+  search?: string | null;
+  /** Rows per list this caller may read; 0 = the whole list. */
+  cap?: number;
+  ranked_of?: number;
+  tier?: string;
+  next_tier?: string | null;
+  disclaimer: string;
+  how: string;
+}
+
 export interface NewsEntity {
   symbol: string;
   name: string;

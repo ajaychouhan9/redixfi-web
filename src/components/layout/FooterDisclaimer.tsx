@@ -9,6 +9,10 @@ export function FooterDisclaimer() {
         How the score works
       </Link>{" "}
       ·{" "}
+      <Link href="/volatility" className="underline">
+        Volatility ranking
+      </Link>{" "}
+      ·{" "}
       <Link href="/more/disclaimer" className="underline">
         Full disclaimer
       </Link>{" "}

@@ -10,6 +10,7 @@ import { ExplainTerm } from "@/components/ui/ExplainTerm";
 import { AnalystChecklist } from "@/components/app/signals/AnalystChecklist";
 import { WhyDidThisChange } from "@/components/app/signals/WhyDidThisChange";
 import { ScoreHistorySection } from "@/components/app/signals/ScoreHistorySection";
+import { VolatilitySection } from "@/components/app/signals/VolatilitySection";
 import { InsightChips } from "@/components/app/education/InsightChips";
 import { CandleChart } from "@/components/app/CandleChart";
 import { NewsList } from "@/components/app/NewsList";
@@ -133,6 +134,7 @@ export function SignalDetailView({
           Research lists). A corporate-action hold renders only the existing
           note above — the component returns null in that case. */}
       <ScoreHistorySection symbol={detail.symbol} corporateAction={detail.corporate_action} />
+      <VolatilitySection symbol={detail.symbol} />
 
       {detail.narrative && (
         <Card title="AI Summary" action={<AiLabel />}>
