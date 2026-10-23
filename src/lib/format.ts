@@ -151,6 +151,11 @@ function isAfterCloseNow(): boolean {
   return hour * 60 + minute > 15 * 60 + 30;
 }
 
+/** True when the value carries a real clock time: a plain date or a midnight stamp (a daily candle) does not. */
+export function hasBarTime(iso: string): boolean {
+  return /T\d{2}:\d{2}/.test(iso) && !/T00:00:00(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/.test(iso);
+}
+
 /** True when a 15-minute bar stamped with its OPEN time is the last one of the session (15:15 or later). */
 export function isClosingBar(iso: string): boolean {
   const m = /T(\d{2}):(\d{2})/.exec(iso);
@@ -160,7 +165,7 @@ export function isClosingBar(iso: string): boolean {
 /** "Close · 3:30 pm IST" for the session's last bar, otherwise "Last bar · hh:mm IST" (the time is always shown). */
 export function formatCloseOrBar(iso: string): string {
   // a plain date (today's daily candle) is the close itself; a bar is the close only when it is the session's last
-  if (!/T\d{2}:\d{2}/.test(iso) || isClosingBar(iso)) return "Close \u00b7 3:30 pm IST";
+  if (!hasBarTime(iso) || isClosingBar(iso)) return "Close \u00b7 3:30 pm IST";
   return `Last bar \u00b7 ${formatTimeIst(iso)} IST`;
 }
 
