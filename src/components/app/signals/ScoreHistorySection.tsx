@@ -26,7 +26,7 @@ import { DeltaValue } from "@/components/ui/DeltaValue";
 import { ExplainTerm } from "@/components/ui/ExplainTerm";
 import { getScoreHistory } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { formatShortDate, formatTimeIst, isClosingBar } from "@/lib/format";
+import { formatShortDate, formatTimeIst, hasBarTime, isClosingBar } from "@/lib/format";
 import type { CorporateActionNote, ScoreHistoryResponse, ScoreHistoryRow, ScoreHistoryTodayRow } from "@/lib/api/types";
 
 /**
@@ -107,7 +107,7 @@ function ScoreLine({ rows }: { rows: ScoreHistoryRow[] }) {
 
 /** "<today> · in progress": today's price change so far, with a time; no score and no score change. */
 function todayPriceLabel(t: ScoreHistoryTodayRow): string {
-  if (!/T\d{2}:\d{2}/.test(t.price_as_of)) return "close · 3:30 pm IST";
+  if (!hasBarTime(t.price_as_of)) return "close · 3:30 pm IST";
   if (t.final) return isClosingBar(t.price_as_of) ? "close · 3:30 pm IST" : `last bar ${formatTimeIst(t.price_as_of)} IST`;
   return `as of ${formatTimeIst(t.price_as_of)} IST`;
 }
