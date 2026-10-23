@@ -3,7 +3,8 @@ import { TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import type { SignalsMovers, MoverRow } from "@/lib/api/types";
 import { ShareCardPopover } from "@/components/app/marketing/ShareCardPopover";
-import { formatObservationDate } from "@/lib/format";
+import { SessionLabel } from "@/components/app/SessionLabel";
+import type { MarketState } from "@/lib/api/types";
 import { stockPath } from "@/lib/seo/stock-symbol";
 
 function MoverList({ rows, label, tone }: { rows: MoverRow[]; label: string; tone: "up" | "down" }) {
@@ -23,21 +24,21 @@ function MoverList({ rows, label, tone }: { rows: MoverRow[]; label: string; ton
             </Link>
           </li>
         ))}
-        {rows.length === 0 && <li className="text-sm text-foreground-faint">No movers yet today.</li>}
+        {rows.length === 0 && <li className="text-sm text-foreground-faint">No score changes for this session.</li>}
       </ul>
     </div>
   );
 }
 
-export function TopSignalChangesCard({ movers }: { movers: SignalsMovers | null }) {
+export function TopSignalChangesCard({ movers, marketState }: { movers: SignalsMovers | null; marketState?: MarketState | null }) {
   const topGainer = movers?.up[0];
   const topDecliner = movers?.down[0];
   const shareStat = topGainer ? `${topGainer.symbol} +${topGainer.delta_1d}` : undefined;
   // Sep 2026 fix: was a static "Top Signal Changes" with no date, which is
   // wrong on weekends/holidays/before the day's measured_signals run —
   // signal_movers() now returns the real observation date.
-  const observedOn = formatObservationDate(movers?.date);
-  const title = observedOn ? `Top Signal Changes · ${observedOn}` : "Top Signal Changes";
+  // Live-vs-end-of-day fix (Oct 2026): the session date is a "Last session · <date>" label inside the card.
+  const title = "Top Signal Changes";
   return (
     <Card
       title={title}
@@ -59,6 +60,7 @@ export function TopSignalChangesCard({ movers }: { movers: SignalsMovers | null 
         </div>
       }
     >
+      <SessionLabel dataDate={movers?.date} initial={marketState} />
       <div className="grid grid-cols-2 gap-x-6">
         <MoverList rows={movers?.up.slice(0, 3) ?? []} label="Gainers" tone="up" />
         <MoverList rows={movers?.down.slice(0, 3) ?? []} label="Decliners" tone="down" />

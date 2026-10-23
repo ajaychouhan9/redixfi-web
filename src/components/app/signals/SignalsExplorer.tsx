@@ -1,5 +1,6 @@
 "use client";
 
+import { ListSessionNote } from "@/components/app/signals/ListSessionNote";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { Search, Filter, ArrowUpDown, SlidersHorizontal, X } from "lucide-react";
 import { getSignals } from "@/lib/api/endpoints";
@@ -370,6 +371,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
         </div>
       </div>
 
+      <ListSessionNote />
       <div className="overflow-hidden rounded-xl border border-border bg-surface-raised">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[680px] text-sm">
