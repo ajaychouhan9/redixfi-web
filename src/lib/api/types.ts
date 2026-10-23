@@ -344,8 +344,13 @@ export interface MarketState {
   /** Trading day whose score is still to come: "updates after today's close". */
   score_updates_after_close: boolean;
   show_live: boolean;
+  /** The Today card is shown: live during market hours, "Today's session · Market closed" until the score run. */
+  show_today_card: boolean;
+  card_mode: "live" | "closed" | null;
   live_symbols: number;
   live_as_of: string | null;
+  /** Newest bar behind the Today card (live or the session's last bar). */
+  card_as_of: string | null;
   closing_data_updating: boolean;
   score_note: string;
 }
@@ -363,6 +368,9 @@ export interface LiveToday extends MarketState {
   gainers: LiveTodayRow[];
   decliners: LiveTodayRow[];
   universe: number;
+  /** Stocks trading at volume_multiple times their 20-day average volume or more today. */
+  volume_spikes?: number;
+  volume_multiple?: number;
   list_size?: number;
   liquidity_rule?: string;
   disclaimer?: string;
@@ -374,6 +382,8 @@ export interface ScoreHistoryTodayRow {
   price_change_pct: number;
   /** A bar time while the market is open, or the plain date once the day's candle is stored. */
   price_as_of: string;
+  /** After the close, waiting for the score run: the change is the session's close. */
+  final?: boolean;
   note: string;
 }
 

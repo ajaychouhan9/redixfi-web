@@ -136,6 +136,34 @@ function isMarketOpenNow(): boolean {
   return mins >= 9 * 60 + 15 && mins <= 15 * 60 + 30;
 }
 
+function isAfterCloseNow(): boolean {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const weekday = parts.find((p) => p.type === "weekday")?.value ?? "";
+  const hour = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
+  const minute = Number(parts.find((p) => p.type === "minute")?.value ?? "0");
+  if (weekday === "Sat" || weekday === "Sun") return false;
+  return hour * 60 + minute > 15 * 60 + 30;
+}
+
+/** True when a 15-minute bar stamped with its OPEN time is the last one of the session (15:15 or later). */
+export function isClosingBar(iso: string): boolean {
+  const m = /T(\d{2}):(\d{2})/.exec(iso);
+  return !!m && Number(m[1]) * 60 + Number(m[2]) >= 15 * 60 + 15;
+}
+
+/** "Close · 3:30 pm IST" for the session's last bar, otherwise "Last bar · hh:mm IST" (the time is always shown). */
+export function formatCloseOrBar(iso: string): string {
+  // a plain date (today's daily candle) is the close itself; a bar is the close only when it is the session's last
+  if (!/T\d{2}:\d{2}/.test(iso) || isClosingBar(iso)) return "Close \u00b7 3:30 pm IST";
+  return `Last bar \u00b7 ${formatTimeIst(iso)} IST`;
+}
+
 export function formatPriceAsOf(
   asOf?: { data_as_of: string; data_as_of_type?: string } | null,
 ): string {
@@ -149,9 +177,16 @@ export function formatPriceAsOf(
   const isTimestamp = !isMidnight && (asOf.data_as_of_type === "timestamp" || hasClockTime);
   if (isTimestamp) {
     const time = formatTimeIst(raw);
-    if (day === istToday()) return isMarketOpenNow() ? `Live · ${time} IST` : `Today · ${time} IST`;
+    if (day === istToday()) {
+      if (isMarketOpenNow()) return `Live · ${time} IST`;
+      // after the close today's last bar is the session's final price
+      if (isAfterCloseNow() && isClosingBar(raw)) return "Today\u2019s close \u00b7 3:30 pm IST";
+      return `Today · ${time} IST`;
+    }
     return `Last update ${formatDateIst(raw)} · ${time} IST`;
   }
+  // today's daily candle after the close (16:00 job): the session's close, with the exchange close time
+  if (day === istToday() && isAfterCloseNow()) return "Today\u2019s close \u00b7 3:30 pm IST";
   return `Last close, ${formatShortDate(day)}`;
 }
 

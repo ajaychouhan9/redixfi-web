@@ -13,8 +13,11 @@ export function ListSessionNote() {
     <p className="mb-2 text-[11px] leading-snug text-foreground-faint">
       <span className="font-medium text-foreground-muted">Score: {date} close</span>
       {state.score_updates_after_close ? " · updates after today’s close" : ""}.{" "}
-      <span className="font-medium text-foreground-muted">Price: {state.state === "live" ? "Live" : "last close"}</span>
-      {state.state === "live" ? " (each row shows the time of its latest 15-minute bar)" : ""}.
+      <span className="font-medium text-foreground-muted">
+        Price: {state.state === "live" ? "Live" : state.phase === "post_market" ? "Today\u2019s close" : "last close"}
+      </span>
+      {state.state === "live" ? " (each row shows the time of its latest 15-minute bar)" : ""}
+      {state.phase === "post_market" ? " (3:30 pm IST)" : ""}.
     </p>
   );
 }
