@@ -3,7 +3,8 @@ import type { ReactNode } from "react";
 import { Activity, ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import type { AnomalyFlagDoc, AnomalyScanMeta, AnomalyType, AnomalyDirection } from "@/lib/api/types";
-import { formatObservationDate } from "@/lib/format";
+import { SessionLabel } from "@/components/app/SessionLabel";
+import type { MarketState } from "@/lib/api/types";
 import { stockPath } from "@/lib/seo/stock-symbol";
 
 /**
@@ -81,10 +82,12 @@ export function AnomalyCard({
   results,
   scan,
   compact = false,
+  marketState,
 }: {
   results: AnomalyFlagDoc[];
   scan: AnomalyScanMeta | null;
   compact?: boolean;
+  marketState?: MarketState | null;
 }) {
   if (!scan) {
     return (
@@ -98,8 +101,9 @@ export function AnomalyCard({
   // which is wrong on weekends/holidays/before the day's scan runs —
   // `scan.date` (the real scan date, already returned by the API) was
   // already available here and simply never rendered.
-  const observedOn = formatObservationDate(scan.date);
-  const title = observedOn ? `Unusual activity · ${observedOn}` : "Unusual activity";
+  // Live-vs-end-of-day fix (Oct 2026): the date now sits in a "Last session · <date>" label inside the card, so
+  // it can never be read as today's live data on a trading day.
+  const title = "Unusual activity";
 
   // Bucket by (type, direction) for the symbol lists shown inside each tile
   // (full mode only — compact mode never reads `buckets`).
@@ -131,9 +135,10 @@ export function AnomalyCard({
         </Link>
       }
     >
+      <SessionLabel dataDate={scan.date} initial={marketState} />
       <p className="mb-3 text-xs text-foreground-faint">
         {scan.flagged_symbol_count} of {scan.universe_count} tracked stocks met a disclosed statistical threshold
-        today (volume ≥ {scan.thresholds.volume_ratio_anomaly_min}x its own 20-day norm, options positioning ≥{" "}
+        in that session (volume ≥ {scan.thresholds.volume_ratio_anomaly_min}x its own 20-day norm, options positioning ≥{" "}
         {scan.thresholds.pcr_z_anomaly_min} standard deviations from its own norm, or a concentrated insider-filing
         window) — every stock is scanned against the same rule, up and down alike.
       </p>

@@ -6,6 +6,8 @@ import type {
   SignalDetail,
   ScoreHistoryResponse,
   VolatilityResponse,
+  MarketState,
+  LiveToday,
   VolatilityBoard,
   IntradaySession,
   PremarketRow,
@@ -126,6 +128,12 @@ export const getVolatilityBoard = (
   params: { which: "top" | "bottom"; page?: number; size?: number; q?: string },
   opts?: FetchOpts
 ) => apiGet<VolatilityBoard>("/volatility/leaderboard", { ...opts, params });
+
+// @auth public — the market state is the same for every caller.
+export const getMarketState = (opts?: FetchOpts) => apiGet<MarketState>("/market/state", opts);
+
+// @auth public — free for every tier; live prices only while the market is open and the feed is fresh.
+export const getLiveToday = (opts?: FetchOpts) => apiGet<LiveToday>("/market/live-today", opts);
 
 // ---------- intraday ----------
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { getMarketOverview, getSignalMovers, getLatestBrief, getIntradaySession, getAnomalies, getNews, getBillingPlans, getMarketActivitySummary } from "@/lib/api/endpoints";
+import { getMarketOverview, getSignalMovers, getLatestBrief, getIntradaySession, getAnomalies, getMarketState, getLiveToday, getNews, getBillingPlans, getMarketActivitySummary } from "@/lib/api/endpoints";
 import { MarketPulseCard } from "@/components/app/MarketPulseCard";
+import { LiveTodayCard } from "@/components/app/LiveTodayCard";
 import { TopSignalChangesCard } from "@/components/app/TopSignalChangesCard";
 import { AiDailyBriefCard } from "@/components/app/AiDailyBriefCard";
 import { EventRiskCard } from "@/components/app/EventRiskCard";
@@ -25,7 +26,7 @@ export const metadata: Metadata = { alternates: { canonical: "/" } };
 // docstring) — this fetch never sees a paid user's data, so it can't leak
 // the mistake this pattern originally guarded against.
 export default async function HomePage() {
-  const [overviewR, moversR, briefR, sessionR, anomaliesR, newsR, plansR, marketActivityR] = await Promise.allSettled([
+  const [overviewR, moversR, briefR, sessionR, anomaliesR, newsR, plansR, marketActivityR, marketStateR, liveTodayR] = await Promise.allSettled([
     getMarketOverview(),
     getSignalMovers(undefined, 3),
     getLatestBrief(),
@@ -40,6 +41,9 @@ export default async function HomePage() {
     // @auth-ok: public — market_activity_summary()'s rollup counts are
     // identical for every tier (no B8 masking on these 4 data types).
     getMarketActivitySummary(),
+    // @auth-ok: public — the market state and the live-today list are the same for every caller.
+    getMarketState(),
+    getLiveToday(),
   ]);
 
   const overview = overviewR.status === "fulfilled" ? overviewR.value.data : null;
@@ -50,6 +54,8 @@ export default async function HomePage() {
   const newsItems = newsR.status === "fulfilled" ? newsR.value.data : null;
   const plans = plansR.status === "fulfilled" ? plansR.value.data : [];
   const marketActivity = marketActivityR.status === "fulfilled" ? marketActivityR.value.data : null;
+  const marketState = marketStateR.status === "fulfilled" ? marketStateR.value.data : null;
+  const liveToday = liveTodayR.status === "fulfilled" ? liveTodayR.value.data : null;
 
   return (
     // Widened from `mx-auto max-w-6xl` (2026-08-11): that cap centered a
@@ -59,6 +65,9 @@ export default async function HomePage() {
     // width up to the sidebar's edge on one side and the viewport edge on
     // the other, instead of floating centered with dead space either side.
     <div className="w-full max-w-[1800px] space-y-5">
+      {/* Live today: only while the market is open and the live feed is fresh (renders nothing otherwise). The
+          end-of-day cards further down are labelled with their own session date. */}
+      <LiveTodayCard initial={liveToday} />
       {/* Server-rendered for every visitor by default (no session cookie in
           this app to branch on — see VisitorIntroStrip's own docstring for
           why that's the correct, non-cloaking default). Hides itself
@@ -94,8 +103,8 @@ export default async function HomePage() {
           compact (tiles + counts only, no expanded stock lists) variant —
           the full per-stock breakdown lives on /unusual-activity. */}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-        <TopSignalChangesCard movers={movers} />
-        <AnomalyCard compact results={anomalies?.data ?? []} scan={anomalies?.page_info.scan ?? null} />
+        <TopSignalChangesCard movers={movers} marketState={marketState} />
+        <AnomalyCard compact results={anomalies?.data ?? []} scan={anomalies?.page_info.scan ?? null} marketState={marketState} />
         <EventRiskCard newsToday={overview?.news_today ?? null} initialItems={newsItems} />
       </div>
 

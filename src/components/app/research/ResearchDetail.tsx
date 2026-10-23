@@ -1,6 +1,7 @@
 import { SlowestInputNote } from "@/components/ui/SlowestInputNote";
 import { CorporateActionNote } from "@/components/ui/CorporateActionNote";
 import Link from "next/link";
+import { ScoreAsOf } from "@/components/app/signals/ScoreAsOf";
 import type { ResearchDetail as ResearchDetailType, Candle, PeerRow } from "@/lib/api/types";
 import { Card } from "@/components/ui/Card";
 import { AiLabel } from "@/components/ui/AiLabel";
@@ -121,7 +122,7 @@ export function ResearchDetail({
             <span className="font-mono text-[11px] uppercase tracking-wide text-foreground-faint">Signal snapshot</span>
             <span className="text-lg font-semibold">{data.signal_summary.composite_score}/100</span>
             {data.signal_summary.delta_1d !== null && <DeltaValue value={data.signal_summary.delta_1d} />}
-            <span className="w-full text-[11px] text-foreground-faint">{formatDataAsOf(data.signal_summary.data_as_of)}</span>
+            <ScoreAsOf className="w-full text-[11px] text-foreground-faint" scoreDate={data.signal_summary.data_as_of?.data_as_of} />
             <div className="w-full -mt-2"><SlowestInputNote input={data.signal_summary.slowest_input} /></div>
             <Link href={stockPath("/signals", data.symbol)} className="ml-auto text-xs font-medium text-accent">
               Full signal detail →

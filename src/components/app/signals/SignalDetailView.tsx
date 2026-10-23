@@ -9,6 +9,7 @@ import { SignalStateChip } from "@/components/ui/Chip";
 import { ExplainTerm } from "@/components/ui/ExplainTerm";
 import { AnalystChecklist } from "@/components/app/signals/AnalystChecklist";
 import { WhyDidThisChange } from "@/components/app/signals/WhyDidThisChange";
+import { ScoreAsOf } from "@/components/app/signals/ScoreAsOf";
 import { ScoreHistorySection } from "@/components/app/signals/ScoreHistorySection";
 import { VolatilitySection } from "@/components/app/signals/VolatilitySection";
 import { InsightChips } from "@/components/app/education/InsightChips";
@@ -115,7 +116,7 @@ export function SignalDetailView({
           </div>
         </div>
         <p className="mt-1 text-xs text-foreground-faint">A measured summary of observed signals. Not a prediction.</p>
-        <Freshness asOf={detail.signal_freshness?.composite_score} />
+        <ScoreAsOf scoreDate={detail.signal_freshness?.composite_score?.data_as_of} />
         <CorporateActionNote info={detail.corporate_action} />
         <SlowestInputNote input={detail.slowest_input} />
         <div className="mt-2 flex flex-wrap gap-1.5">

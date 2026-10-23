@@ -240,6 +240,8 @@ export interface ScoreHistoryResponse {
   note?: string | null;
   comparable_from?: string | null;
   disclaimer: string;
+  /** "<today> · in progress": live change so far, no score and no score change; null when there is none. */
+  today_row?: ScoreHistoryTodayRow | null;
 }
 
 // ---------- volatility (past price movement) ----------
@@ -318,6 +320,61 @@ export interface VolatilityBoard {
   next_tier?: string | null;
   disclaimer: string;
   how: string;
+}
+
+// ---------- live versus end-of-day ----------
+export type MarketStateKey =
+  | "live"
+  | "live_stale"
+  | "closing_data_updating"
+  | "closed_scored"
+  | "pre_market"
+  | "holiday"
+  | "weekend";
+
+export interface MarketState {
+  state: MarketStateKey;
+  phase: string;
+  today: string;
+  is_trading_day: boolean;
+  latest_completed_session: string;
+  /** Date of the newest stored score (the same date Signals, Research and Volatility show). */
+  score_date: string | null;
+  scored_today: boolean;
+  /** Trading day whose score is still to come: "updates after today's close". */
+  score_updates_after_close: boolean;
+  show_live: boolean;
+  live_symbols: number;
+  live_as_of: string | null;
+  closing_data_updating: boolean;
+  score_note: string;
+}
+
+export interface LiveTodayRow {
+  symbol: string;
+  company_name?: string | null;
+  last_price: number;
+  day_change_pct: number;
+  /** Time of the 15-minute bar the price comes from. */
+  as_of: string;
+}
+
+export interface LiveToday extends MarketState {
+  gainers: LiveTodayRow[];
+  decliners: LiveTodayRow[];
+  universe: number;
+  list_size?: number;
+  liquidity_rule?: string;
+  disclaimer?: string;
+}
+
+export interface ScoreHistoryTodayRow {
+  date: string;
+  in_progress: true;
+  price_change_pct: number;
+  /** A bar time while the market is open, or the plain date once the day's candle is stored. */
+  price_as_of: string;
+  note: string;
 }
 
 export interface NewsEntity {

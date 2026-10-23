@@ -26,8 +26,8 @@ import { DeltaValue } from "@/components/ui/DeltaValue";
 import { ExplainTerm } from "@/components/ui/ExplainTerm";
 import { getScoreHistory } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { formatShortDate } from "@/lib/format";
-import type { CorporateActionNote, ScoreHistoryResponse, ScoreHistoryRow } from "@/lib/api/types";
+import { formatShortDate, formatTimeIst } from "@/lib/format";
+import type { CorporateActionNote, ScoreHistoryResponse, ScoreHistoryRow, ScoreHistoryTodayRow } from "@/lib/api/types";
 
 /**
  * Link target for "How is this score calculated?".
@@ -102,6 +102,25 @@ function ScoreLine({ rows }: { rows: ScoreHistoryRow[] }) {
         {formatShortDate(last.date)} over {points.length} stored sessions.
       </p>
     </div>
+  );
+}
+
+/** "<today> · in progress": today's price change so far, with a time; no score and no score change. */
+function todayPriceLabel(t: ScoreHistoryTodayRow): string {
+  return /T\d{2}:\d{2}/.test(t.price_as_of) ? `as of ${formatTimeIst(t.price_as_of)} IST` : `close, ${formatShortDate(t.price_as_of)}`;
+}
+
+function TodayCard({ t }: { t: ScoreHistoryTodayRow }) {
+  return (
+    <li className="rounded-lg border border-dashed border-border px-3 py-2">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-xs font-medium text-foreground-muted">{formatShortDate(t.date)} · in progress</span>
+        <span className="text-[11px] text-foreground-faint">{t.note}</span>
+      </div>
+      <p className="mt-1 text-[11px] text-foreground-muted">
+        Price today <DeltaValue value={t.price_change_pct} kind="pct" /> <span className="text-foreground-faint">({todayPriceLabel(t)})</span>
+      </p>
+    </li>
   );
 }
 
@@ -270,6 +289,16 @@ export function ScoreHistorySection({
                     </tr>
                   </thead>
                   <tbody>
+                    {data.today_row && (
+                      <tr className="border-t border-border align-top">
+                        <td className="py-1.5 text-foreground-muted">{formatShortDate(data.today_row.date)}</td>
+                        <td className="py-1.5">
+                          <DeltaValue value={data.today_row.price_change_pct} kind="pct" />
+                          <span className="block text-[10px] text-foreground-faint">{todayPriceLabel(data.today_row)}</span>
+                        </td>
+                        <td colSpan={6} className="py-1.5 text-foreground-faint">In progress · {data.today_row.note}</td>
+                      </tr>
+                    )}
                     {rows.map((r) => r.locked ? (
                       <tr key={r.date} className="border-t border-border">
                         <td colSpan={8} className="relative py-2">
@@ -320,6 +349,7 @@ export function ScoreHistorySection({
 
               {/* Phone cards — one compact card per session, no horizontal scroll. */}
               <ul className="space-y-2 sm:hidden">
+                {data.today_row && <TodayCard t={data.today_row} />}
                 {rows.map((r) => r.locked ? (
                   <LockedRow key={r.date} date={r.date} tierLabel={data.next_tier ?? "Pro"} asCard />
                 ) : (
