@@ -8,7 +8,6 @@ import { AiLabel } from "@/components/ui/AiLabel";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { Sparkline } from "@/components/ui/Sparkline";
-import { GenericRecordTable } from "@/components/ui/GenericRecordTable";
 import { StockEventsList } from "@/components/app/research/StockEventsList";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { Chip } from "@/components/ui/Chip";
@@ -136,7 +135,14 @@ export function ResearchDetail({
       </ErrorBoundary>
 
       <ErrorBoundary>
-        <FundamentalsPanels symbol={data.symbol} fundamentals={data.fundamentals} peers={peers} peersError={peersError} />
+        <FundamentalsPanels
+          symbol={data.symbol}
+          fundamentals={data.fundamentals}
+          peers={peers}
+          peersError={peersError}
+          insiderTrades={data.insider_trades}
+          bulkDeals={data.bulk_block_deals}
+        />
       </ErrorBoundary>
 
       {/* B3 (2026-08-11): was a plain always-open Card — task expects this
@@ -164,47 +170,6 @@ export function ResearchDetail({
 
           <ErrorBoundary>
             <div>
-              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground-faint">Insider trades</h3>
-              {data.insider_trades.length === 0 ? (
-                <p className="text-sm text-foreground-muted">No insider filings recorded.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[520px] text-sm">
-                    <thead className="text-left text-xs font-semibold uppercase tracking-wide text-foreground-faint">
-                      <tr>
-                        <th className="py-1.5 pr-3">Date</th>
-                        <th className="py-1.5 pr-3">Insider</th>
-                        <th className="py-1.5 pr-3">Type</th>
-                        <th className="py-1.5 pr-3">Qty</th>
-                        <th className="py-1.5 pr-3">Value</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.insider_trades.slice(0, 10).map((t) => (
-                        <tr key={t.filing_id} className="border-t border-border">
-                          <td className="py-1.5 pr-3">{formatDateIst(t.trade_date)}</td>
-                          <td className="py-1.5 pr-3">{t.insider_name || "—"}</td>
-                          <td className="py-1.5 pr-3">{t.transaction_type}</td>
-                          <td className="py-1.5 pr-3 tabular-nums">{t.quantity.toLocaleString("en-IN")}</td>
-                          <td className="py-1.5 pr-3 tabular-nums">₹{t.value_amount.toLocaleString("en-IN")}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </ErrorBoundary>
-
-          <ErrorBoundary>
-            <div>
-              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground-faint">Bulk/block deals</h3>
-              <GenericRecordTable rows={data.bulk_block_deals} emptyText="No bulk/block deals recorded recently." />
-            </div>
-          </ErrorBoundary>
-
-          <ErrorBoundary>
-            <div>
               <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground-faint">Promoter pledge</h3>
               <p className="mb-1 text-[11px] text-foreground-faint">{formatDataAsOf(data.pledge_data_as_of)}</p>
               {data.pledge_history.length === 0 ? (
@@ -227,20 +192,14 @@ export function ResearchDetail({
 
           <ErrorBoundary>
             <div>
-              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground-faint">Options PCR</h3>
+              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground-faint">Options PCR trend</h3>
               <p className="mb-1 text-[11px] text-foreground-faint">{formatDataAsOf(data.signal_summary.signal_freshness?.pcr)}</p>
               {data.options_pcr_history.length === 0 ? (
                 <p className="text-sm text-foreground-muted">Options data not available.</p>
               ) : (
-                <>
-                  <p className="text-sm">
-                    Latest: <span className="font-medium tabular-nums">{data.options_pcr_history[0].pcr}</span>{" "}
-                    <span className="text-foreground-faint">({data.options_pcr_history[0].pcr > 1 ? "put-heavy" : "call-heavy"})</span>
-                  </p>
-                  <div className="mt-1 text-accent">
-                    <Sparkline values={[...data.options_pcr_history].reverse().map((p) => p.pcr)} />
-                  </div>
-                </>
+                <div className="mt-1 text-accent">
+                  <Sparkline values={[...data.options_pcr_history].reverse().map((p) => p.pcr)} />
+                </div>
               )}
             </div>
           </ErrorBoundary>
@@ -366,24 +325,11 @@ export function ResearchDetail({
         <RedFlagSection data={data.red_flags} />
       </ErrorBoundary>
 
-      <ErrorBoundary>
-        <Card title="Signal summary" titleClassName="text-base" action={data.signal_summary.narrative && <AiLabel />}>
-          {data.signal_summary.composite_score === null ? (
-            <p className="text-sm text-foreground-muted">Signal score not yet computed for this stock.</p>
-          ) : (
-            <>
-              <div className="flex items-baseline gap-3">
-                <span className="text-xl font-semibold">{data.signal_summary.composite_score}/100</span>
-                {data.signal_summary.delta_1d !== null && <DeltaValue value={data.signal_summary.delta_1d} />}
-              </div>
-              {data.signal_summary.narrative && <p className="mt-2 text-sm leading-relaxed">{data.signal_summary.narrative}</p>}
-              <Link href={stockPath("/signals", data.symbol)} className="mt-2 inline-block text-sm font-medium text-accent">
-                Open full Signal Dashboard page →
-              </Link>
-            </>
-          )}
-        </Card>
-      </ErrorBoundary>
+      <p className="text-sm">
+        <Link href={stockPath("/signals", data.symbol)} className="font-medium text-accent">
+          Open full Signal Dashboard →
+        </Link>
+      </p>
     </div>
   );
 }

@@ -3,7 +3,9 @@ import { ExplainTerm } from "@/components/ui/ExplainTerm";
 import { Chip } from "@/components/ui/Chip";
 import { Sparkline } from "@/components/ui/Sparkline";
 import { formatDateIst, formatCr } from "@/lib/format";
-import type { FundamentalsBlock, FundamentalsShareholding, PeerRow } from "@/lib/api/types";
+import type { FundamentalsBlock, FundamentalsShareholding, GenericRecord, InsiderTrade, PeerRow } from "@/lib/api/types";
+import { OwnershipActivity } from "@/components/app/research/OwnershipActivity";
+import { VolatilityRankCard } from "@/components/app/research/VolatilityRankCard";
 
 // Factual, symmetric labels only — no "good"/"bad" framing (compliance
 // symmetry rule). A flag being present is a measured fact about the
@@ -47,11 +49,15 @@ export function FundamentalsPanels({
   fundamentals,
   peers,
   peersError,
+  insiderTrades = [],
+  bulkDeals = [],
 }: {
   symbol: string;
   fundamentals: FundamentalsBlock | null;
   peers: PeerRow[] | null;
   peersError: boolean;
+  insiderTrades?: InsiderTrade[];
+  bulkDeals?: GenericRecord[];
 }) {
   if (!fundamentals) {
     return (
@@ -61,7 +67,7 @@ export function FundamentalsPanels({
     );
   }
 
-  const { identity, quarterly, valuation, shareholding, events, flags, coverage } = fundamentals;
+  const { quarterly, valuation, shareholding, events, flags, coverage } = fundamentals;
 
   return (
     <div className="space-y-3">
@@ -256,6 +262,7 @@ export function FundamentalsPanels({
             />
           </div>
         )}
+        <OwnershipActivity insiderTrades={insiderTrades} bulkDeals={bulkDeals} />
       </Collapsible>
 
       {/* ---- What's coming up? ---- */}
@@ -307,17 +314,10 @@ export function FundamentalsPanels({
       </Collapsible>
 
       {/* ---- How volatile is it? ---- */}
+      {/* Oct 2026: shows the same volatility rank card as the Signals page; the stored risk label and its
+          standard deviation are no longer shown here (the fields stay in the data). */}
       <Collapsible question="How volatile is it?">
-        <div className="text-sm">
-          <ExplainTerm
-            metricKey="risk_category"
-            symbol={symbol}
-            ctx={{ symbol, risk_category: identity.risk_category ?? "unclassified", volatility_stddev: fmtNum(identity.volatility_stddev, 2) }}
-          >
-            <span className="font-medium">{identity.risk_category ?? "Not classified"}</span>
-            {identity.volatility_stddev !== null && <span className="ml-1 text-foreground-faint">(std. dev. {fmtNum(identity.volatility_stddev, 2)})</span>}
-          </ExplainTerm>
-        </div>
+        <VolatilityRankCard symbol={symbol} />
       </Collapsible>
 
       {/* ---- Raw filed figures, behind an expander ---- */}

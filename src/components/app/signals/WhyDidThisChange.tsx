@@ -1,6 +1,9 @@
 import type { ChangeExplanation, ComponentChange } from "@/lib/api/types";
 
-const ARROW: Record<string, string> = { up: "⬆", down: "⬇", flat: "➡" };
+// Same markers and meaning as the Score history table: ▲ improved, ▼ weakened, – unchanged (the builder's own
+// direction for each input).
+const ARROW: Record<string, string> = { up: "▲", down: "▼", flat: "–" };
+const ARROW_TONE: Record<string, string> = { up: "text-up", down: "text-down", flat: "text-foreground-faint" };
 
 const COMPONENT_LABEL: Record<string, string> = {
   trend: "Price trend",
@@ -55,7 +58,9 @@ export function WhyDidThisChange({
         <ul className="space-y-1">
           {componentChanges.map((c, i) => (
             <li key={i} className="flex items-start gap-2">
-              <span className="w-4 shrink-0 text-center">{ARROW[c.direction] ?? "•"}</span>
+              <span className={`w-4 shrink-0 text-center ${ARROW_TONE[c.direction] ?? ""}`} aria-label={c.direction === "up" ? "improved" : c.direction === "down" ? "weakened" : "unchanged"}>
+                {ARROW[c.direction] ?? "•"}
+              </span>
               <span>
                 {COMPONENT_LABEL[c.signal] ?? c.signal}: {displayNote(c.signal, c.note)}
               </span>
@@ -63,6 +68,7 @@ export function WhyDidThisChange({
           ))}
         </ul>
       )}
+      {componentChanges.length > 0 && <p className="text-[10px] text-foreground-faint">▲ improved · ▼ weakened · – unchanged</p>}
       <div className="border-t border-border pt-2 text-foreground-muted">
         {explanation.cause ? (
           <p>
