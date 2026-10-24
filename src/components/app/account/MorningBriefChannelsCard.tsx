@@ -44,6 +44,10 @@ export function MorningBriefChannelsCard() {
     };
   }, [user, getToken]);
 
+  // Shown only once at least one channel is live; a block of "Coming soon" rows is hidden (2026-10-25).
+  const live = (l: PublicChannelLink | null | undefined) => !!(l?.configured && l.url);
+  if (!live(channels?.whatsapp) && !live(channels?.telegram)) return null;
+
   return (
     <div id={MORNING_BRIEF_CHANNELS_ANCHOR_ID} className="scroll-mt-24">
       <Card title="Morning Brief channels">
@@ -55,16 +59,12 @@ export function MorningBriefChannelsCard() {
           <p className="text-sm text-foreground-muted">Channel details are temporarily unavailable. Please try again later.</p>
         ) : (
           <ul className="divide-y divide-border">
-            <ChannelRow
-              label="WhatsApp channel"
-              help="Manual daily copy of the Morning Brief."
-              link={channels?.whatsapp ?? null}
-            />
-            <ChannelRow
-              label="Telegram channel"
-              help="Published automatically from the same Morning Brief."
-              link={channels?.telegram ?? null}
-            />
+            {live(channels?.whatsapp) && (
+              <ChannelRow label="WhatsApp channel" help="Manual daily copy of the Morning Brief." link={channels?.whatsapp ?? null} />
+            )}
+            {live(channels?.telegram) && (
+              <ChannelRow label="Telegram channel" help="Published automatically from the same Morning Brief." link={channels?.telegram ?? null} />
+            )}
           </ul>
         )}
       </Card>
@@ -88,9 +88,7 @@ function ChannelRow({ label, help, link }: { label: string; help: string; link: 
         >
           Follow / Open
         </a>
-      ) : (
-        <span className="shrink-0 text-xs text-foreground-faint">Coming soon</span>
-      )}
+      ) : null}
     </li>
   );
 }

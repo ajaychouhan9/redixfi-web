@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { Card } from "@/components/ui/Card";
 import { getAlertRules, updateAlertRule, deleteAlertRule } from "@/lib/api/mutations";
 import { AlertCreateButton } from "@/components/app/alerts/AlertCreateButton";
+import { directionLabel } from "@/lib/alert-thresholds";
 import type { AlertMetric, AlertRule, AlertRulesList } from "@/lib/api/types";
 
 const METRIC_LABELS: Record<AlertMetric, string> = {
@@ -104,7 +105,12 @@ export function AlertRulesSection() {
             <li key={rule.rule_id} className="flex items-center justify-between gap-3 py-3">
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">
-                  {rule.symbol} · {METRIC_LABELS[rule.metric]} {rule.direction} {formatValue(rule.metric, rule.target_value)}
+                  {rule.symbol} · {METRIC_LABELS[rule.metric]} {directionLabel(rule.direction)} {formatValue(rule.metric, rule.target_value)}
+                  {rule.out_of_range && (
+                    <span className="ml-2 rounded-full bg-amber-bg px-2 py-0.5 text-[11px] font-medium text-amber" title="This saved threshold is outside the sensible range for this metric, so it can never be crossed as intended. Delete it and set a new one.">
+                      Out of range
+                    </span>
+                  )}
                 </p>
                 <p className="text-xs text-foreground-faint">
                   Current: {formatValue(rule.metric, rule.current_value)}

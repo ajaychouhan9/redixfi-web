@@ -18,6 +18,7 @@ import { ResearchChart } from "@/components/app/research/ResearchChart";
 import { ResearchExportButton } from "@/components/app/research/ResearchExportButton";
 import { AlertCreateButton } from "@/components/app/alerts/AlertCreateButton";
 import { CompareIndicator } from "@/components/app/CompareIndicator";
+import { displayName } from "@/lib/company-name";
 import { WatchlistButton } from "@/components/app/WatchlistButton";
 import { CurrentSymbolSync } from "@/components/app/CurrentSymbolSync";
 import { ConcallSummary } from "@/components/app/research/ConcallSummary";
@@ -71,7 +72,7 @@ export function ResearchDetail({
       <div>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm text-foreground-muted">
-            {data.symbol} · {data.sector}
+            {[data.symbol, displayName(data.company_name), data.sector].filter(Boolean).join(" · ")}
           </p>
           {/* B2: task's 3 buttons are Compare / Add to Watchlist / Set Alert
               — audit found "Add to Watchlist" genuinely missing here (the

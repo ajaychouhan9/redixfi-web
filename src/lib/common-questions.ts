@@ -19,7 +19,7 @@ export const COMMON_QUESTION_GROUPS: CommonQuestionGroup[] = [
       {
         "id": "composite_score_q1",
         "q": "What counts as a 'good' score?",
-        "a": "There is no fixed good/bad cutoff — the score is a summary of measured agreement across signals, not a grade. A score near 80 usually means most underlying signals lined up the same way; a score near 20 means the opposite. Scores in the middle usually mean the signals disagreed with each other, which the Tension panel explains directly."
+        "a": "There is no 'good' score. A higher score means more of the measured signals lined up in the same way; a lower score means fewer did. It describes the measured signals, not future price."
       },
       {
         "id": "composite_score_q2",
@@ -59,7 +59,7 @@ export const COMMON_QUESTION_GROUPS: CommonQuestionGroup[] = [
       {
         "id": "delta_1d_q4",
         "q": "Does a string of positive deltas mean anything special?",
-        "a": "A same-direction streak has historically been read differently from a single one-off jump by traders who watch this kind of data, since it suggests the underlying signals kept agreeing over several sessions rather than shifting once. It is still a description of what already happened, not a projection of what comes next."
+        "a": "It shows the underlying signals kept moving in the same direction over several sessions rather than shifting once."
       }
     ]
   },
@@ -74,7 +74,7 @@ export const COMMON_QUESTION_GROUPS: CommonQuestionGroup[] = [
       {
         "id": "delivery_pct_q2",
         "q": "Is high delivery always a good sign?",
-        "a": "No — it depends on which direction the price moved alongside it, and both readings carry equal weight. Rising price with rising delivery has historically been read as conviction-based buying; falling price with rising delivery has historically been read as conviction-based selling. High delivery on its own says only that more of that day's volume was held, not which side was doing the holding."
+        "a": "Delivery shows the share of traded volume that was taken and held rather than squared off the same day. The same delivery level can come with a price rise or a price fall, so it is read together with price and volume and compared with the stock's own average."
       },
       {
         "id": "delivery_pct_q3",
@@ -144,7 +144,7 @@ export const COMMON_QUESTION_GROUPS: CommonQuestionGroup[] = [
       {
         "id": "rsi_14_q2",
         "q": "Does an overbought reading mean the price will fall?",
-        "a": "Not reliably — stocks in strong phases have historically stayed at extreme RSI readings for extended periods without reversing. The label describes how one-sided recent price action has been, not a forecast of what happens next."
+        "a": "RSI measures recent price momentum. Readings above 70 are conventionally called overbought, but RSI describes what has already happened; it does not show what comes next. In strong phases it has stayed at high readings for extended periods."
       },
       {
         "id": "rsi_14_q3",
@@ -214,7 +214,7 @@ export const COMMON_QUESTION_GROUPS: CommonQuestionGroup[] = [
       {
         "id": "pcr_q6",
         "q": "Does PCR always indicate direction?",
-        "a": "No — the same reading has historically been read two opposite ways. A high PCR can mean caution (many puts bought as protection) or it can mean support (many puts written by sellers who expect the price to hold). Because one number carries both readings, traders have typically used it alongside price and volume rather than alone."
+        "a": "PCR is total put open interest divided by total call open interest. A high or low reading can be explained in more than one way (for example puts bought as protection, or puts written by sellers), so PCR alone does not show a direction."
       }
     ]
   },
@@ -234,7 +234,7 @@ export const COMMON_QUESTION_GROUPS: CommonQuestionGroup[] = [
       {
         "id": "event_risk_q3",
         "q": "Does an event flag mean the stock will move a lot?",
-        "a": "Stocks with active high-severity events have historically shown wider price ranges than usual — a documented tendency, not a rule for every case. The flag reports that something was classified, not what the price will do about it."
+        "a": "Stocks with active high-severity events have historically shown wider price ranges than usual, in either direction. This is a documented tendency, not a rule for every case."
       },
       {
         "id": "event_risk_q4",

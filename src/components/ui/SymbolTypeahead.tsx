@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Search } from "lucide-react";
 import { searchResearch } from "@/lib/api/endpoints";
 import type { ResearchSearchRow } from "@/lib/api/types";
+import { displayName } from "@/lib/company-name";
 
 /**
  * Shared symbol/company typeahead (BUG 4 fix, 2026-08-16) — extracted
@@ -25,6 +27,7 @@ export function SymbolTypeahead({
   wrapperClassName = "relative",
   showIcon = true,
   minChars = 2,
+  links,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -35,6 +38,8 @@ export function SymbolTypeahead({
   wrapperClassName?: string;
   showIcon?: boolean;
   minChars?: number;
+  /** Small links shown next to each stock name (for example Signals and Research); the name itself uses onSelect. */
+  links?: (row: ResearchSearchRow) => { label: string; href: string }[];
 }) {
   const [results, setResults] = useState<ResearchSearchRow[]>([]);
   const [open, setOpen] = useState(false);
@@ -89,17 +94,35 @@ export function SymbolTypeahead({
       {open && value.trim().length >= minChars && results.length > 0 && (
         <ul className="absolute left-0 top-full z-50 mt-1 w-full min-w-[260px] divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface-raised shadow-lg">
           {results.map((r) => (
-            <li key={r.canonicalSymbol}>
+            <li key={r.canonicalSymbol} className="flex items-center hover:bg-hover">
               <button
                 onClick={() => select(r)}
-                className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs hover:bg-hover"
+                className="flex min-w-0 flex-1 items-center justify-between gap-2 px-3 py-2 text-left text-xs"
               >
-                <span>
+                <span className="min-w-0 truncate">
                   <span className="font-semibold">{r.canonicalSymbol}</span>{" "}
-                  <span className="text-foreground-faint">{r.company_name}</span>
+                  <span className="text-foreground-faint">{displayName(r.company_name)}</span>
                 </span>
-                <span className="shrink-0 text-foreground-faint">{r.sector_index}</span>
+                {!links && <span className="shrink-0 text-foreground-faint">{r.sector_index}</span>}
               </button>
+              {links && (
+                <span className="flex shrink-0 items-center gap-2 pr-3 text-[11px]">
+                  {links(r).map((l) => (
+                    <Link
+                      key={l.label}
+                      href={l.href}
+                      onClick={() => {
+                        setResults([]);
+                        setOpen(false);
+                        onChange("");
+                      }}
+                      className="font-medium text-accent underline-offset-2 hover:underline"
+                    >
+                      {l.label}
+                    </Link>
+                  ))}
+                </span>
+              )}
             </li>
           ))}
         </ul>

@@ -9,6 +9,7 @@ import { Chip } from "@/components/ui/Chip";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import type { WatchlistBehaviorRow } from "@/lib/api/types";
 import { stockPath } from "@/lib/seo/stock-symbol";
+import { displayName } from "@/lib/company-name";
 
 // GET /intraday/watchlist-states now exists (built in the Task 11 gap-fill
 // session) — reuses alert_worker.classify_behavior() unchanged, which only
@@ -85,7 +86,7 @@ export function WatchlistTab() {
                 <Link href={stockPath("/signals", r.symbol)} className="flex items-center justify-between py-2 text-sm hover:text-accent">
                   <span>
                     <span className="font-medium">{r.symbol}</span>{" "}
-                    <span className="text-foreground-faint">{r.company_name}</span>
+                    <span className="text-foreground-faint">{displayName(r.company_name)}</span>
                   </span>
                   <span className="flex items-center gap-3">
                     {r.last_price !== null && <span className="tabular-nums text-foreground-muted">₹{r.last_price.toLocaleString("en-IN")}</span>}

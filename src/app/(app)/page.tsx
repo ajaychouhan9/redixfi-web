@@ -98,31 +98,33 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* Row 2 — Top Signal Changes / Unusual Activity / Event Risk, 3-across
-          desktop, 2-up tablet, 1 column mobile. Unusual Activity is the
-          compact (tiles + counts only, no expanded stock lists) variant —
-          the full per-stock breakdown lives on /unusual-activity. */}
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-        <TopSignalChangesCard movers={movers} marketState={marketState} />
-        <AnomalyCard compact results={anomalies?.data ?? []} scan={anomalies?.page_info.scan ?? null} marketState={marketState} />
-        <EventRiskCard newsToday={overview?.news_today ?? null} initialItems={newsItems} />
-      </div>
-
-      {/* Row 3 — Intraday / Continue Research / Watchlist Alerts / Market
-          Activity, same 3-across/2-up/1-col responsive pattern (4th card
-          reflows onto its own row on desktop). The middle two are client
-          components that render nothing when there's no real data (no
-          recently-viewed stocks, no logged-in user, no alerts) — the grid
-          reflows naturally around whichever are present. Market Activity
-          (2026-08-15) is the one new Home card this hub adds — a compact
-          rollup of concalls/insider trades/corporate events/bulk-block
-          deals with a single "View all" link to /market-activity, per the
-          locked spec (no individual per-category links from Home). */}
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-        <IntradayNowCard session={session} />
-        <ContinueResearchCard />
-        <WatchlistAlertsCard />
-        <MarketActivityCard summary={marketActivity} />
+      {/* Rows 2 and 3 as one masonry flow (2026-10-25): the cards have different heights, and a plain grid left empty
+          gaps under the shorter ones (under Top Signal Changes and Intraday now). CSS columns pack them top to bottom,
+          3 across on desktop, 2 on tablet, 1 on mobile. A client card that renders nothing leaves an empty wrapper,
+          which is hidden (empty:hidden) so it cannot leave a gap either. Unusual Activity is the compact variant (the
+          full per-stock breakdown lives on /unusual-activity); Market Activity is the rollup with one "View all" link. */}
+      <div className="columns-1 gap-5 md:columns-2 lg:columns-3">
+        <div className="mb-5 break-inside-avoid empty:hidden">
+          <TopSignalChangesCard movers={movers} marketState={marketState} />
+        </div>
+        <div className="mb-5 break-inside-avoid empty:hidden">
+          <AnomalyCard compact results={anomalies?.data ?? []} scan={anomalies?.page_info.scan ?? null} marketState={marketState} />
+        </div>
+        <div className="mb-5 break-inside-avoid empty:hidden">
+          <EventRiskCard newsToday={overview?.news_today ?? null} initialItems={newsItems} />
+        </div>
+        <div className="mb-5 break-inside-avoid empty:hidden">
+          <IntradayNowCard session={session} />
+        </div>
+        <div className="mb-5 break-inside-avoid empty:hidden">
+          <ContinueResearchCard />
+        </div>
+        <div className="mb-5 break-inside-avoid empty:hidden">
+          <WatchlistAlertsCard />
+        </div>
+        <div className="mb-5 break-inside-avoid empty:hidden">
+          <MarketActivityCard summary={marketActivity} />
+        </div>
       </div>
 
       <HomePricingSection plans={plans} />

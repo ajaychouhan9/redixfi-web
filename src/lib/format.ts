@@ -116,7 +116,8 @@ const IST_DAY = new Intl.DateTimeFormat("en-CA", {
   day: "2-digit",
 });
 
-function istToday(): string {
+/** Today's date in India, YYYY-MM-DD. */
+export function istToday(): string {
   return IST_DAY.format(new Date());
 }
 

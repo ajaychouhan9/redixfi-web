@@ -14,6 +14,7 @@ import { HeaderSearch } from "@/components/layout/HeaderSearch";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { RedixFiLogo } from "@/components/brand/RedixFiLogo";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { formatShortDate, istToday } from "@/lib/format";
 
 const POLL_MS = 60_000;
 
@@ -246,7 +247,7 @@ export function MarketRibbon({
               {volatile && (
                 <span className="rounded-full bg-amber-bg px-2 py-0.5 font-medium text-amber">
                   <span className="sm:hidden">Volatile</span>
-                  <span className="hidden sm:inline">Volatility elevated</span>
+                  <span className="hidden sm:inline" title={`India VIX moved ${overview.india_vix_change_pct.toFixed(1)}% on the day (shown when it is above 5%)`}>Volatility elevated</span>
                 </span>
               )}
               {/* 2026-08-16: was static text — now a link to the same "See
@@ -263,7 +264,10 @@ export function MarketRibbon({
                   className="rounded-full bg-amber-bg px-2 py-0.5 font-medium text-amber underline decoration-dotted underline-offset-2 hover:decoration-solid"
                 >
                   <span className="sm:hidden">{overview.news_today.items_flagged_high} event(s)</span>
-                  <span className="hidden sm:inline">{overview.news_today.items_flagged_high} high-severity event(s) today</span>
+                  <span className="hidden sm:inline">
+                    {overview.news_today.items_flagged_high} high-severity event(s)
+                    {overview.news_today.session_date && overview.news_today.session_date !== istToday() ? ` · ${formatShortDate(overview.news_today.session_date)}` : " today"}
+                  </span>
                 </Link>
               )}
             </>

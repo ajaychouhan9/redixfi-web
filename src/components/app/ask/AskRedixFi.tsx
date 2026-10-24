@@ -16,6 +16,7 @@ import { restoreAskMessages, type AskRenderableMessage } from "@/lib/ask-panel/h
 import { ASK_PANEL_WIDTHS, type AskPanelMode } from "@/lib/ask-panel/panelMode";
 import { getStarterQuestions } from "@/lib/ask-panel/starterQuestions";
 import { COMMON_QUESTION_CHIPS } from "@/lib/common-questions";
+import { displayName } from "@/lib/company-name";
 import { useMobileViewport } from "@/lib/ask-panel/useMobileViewport";
 import { resolveVisibleChatSymbol } from "@/lib/ask-panel/contextHeader";
 import { CompareResultCard } from "@/components/app/signals/CompareResultCard";
@@ -750,7 +751,7 @@ export function AskRedixFi() {
                       <li key={row.canonicalSymbol}>
                         <button onClick={() => changeChatContext(row.canonicalSymbol)} className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm hover:bg-hover focus-visible:outline-2 focus-visible:outline-accent">
                           <span className="font-semibold">{row.canonicalSymbol}</span>
-                          <span className="ml-3 truncate text-foreground-faint">{row.company_name}</span>
+                          <span className="ml-3 truncate text-foreground-faint">{displayName(row.company_name)}</span>
                         </button>
                       </li>
                     ))}
@@ -814,7 +815,7 @@ export function AskRedixFi() {
                         >
                           <span>
                             <span className="font-semibold">{r.canonicalSymbol}</span>{" "}
-                            <span className="text-foreground-faint">{r.company_name}</span>
+                            <span className="text-foreground-faint">{displayName(r.company_name)}</span>
                           </span>
                         </button>
                       </li>

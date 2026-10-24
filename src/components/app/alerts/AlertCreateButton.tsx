@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getAlertRules, createAlertRule } from "@/lib/api/mutations";
 import { ApiError } from "@/lib/api/client";
+import { thresholdError } from "@/lib/alert-thresholds";
 import type { AlertCapabilities, AlertDirection, AlertMetric } from "@/lib/api/types";
 
 const METRIC_LABELS: Record<AlertMetric, string> = {
@@ -69,8 +70,13 @@ export function AlertCreateButton({ symbol, onCreated }: { symbol?: string; onCr
   async function submit() {
     const sym = symbolInput.trim().toUpperCase();
     const value = Number(targetValue);
-    if (!sym || !Number.isFinite(value)) {
+    if (!sym || !Number.isFinite(value) || targetValue.trim() === "") {
       setError("Enter a symbol and a numeric threshold.");
+      return;
+    }
+    const bad = thresholdError(metric, value);
+    if (bad) {
+      setError(bad);
       return;
     }
     setBusy(true);

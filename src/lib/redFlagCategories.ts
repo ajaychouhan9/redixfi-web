@@ -19,6 +19,8 @@ export const RED_FLAG_CATEGORIES: { key: string; label: string; desc: string }[]
   { key: "promoter_pledge", label: "Promoter Share Pledge", desc: "Shares pledged or released against promoter holdings" },
 ];
 
-export const RED_FLAG_CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
-  RED_FLAG_CATEGORIES.map((c) => [c.key, c.label]),
-);
+export const RED_FLAG_CATEGORY_LABELS: Record<string, string> = {
+  ...Object.fromEntries(RED_FLAG_CATEGORIES.map((c) => [c.key, c.label])),
+  // Display-only heading the API uses for disputed tax / statutory dues under appeal (not a loan default).
+  statutory_dues_dispute: "Statutory dues in dispute",
+};

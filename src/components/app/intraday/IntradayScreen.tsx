@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import clsx from "clsx";
 import { getIntradaySession, getIntradaySectors, getIntradayRecap } from "@/lib/api/endpoints";
 import type { IntradaySession, IntradaySectors, IntradayRecap } from "@/lib/api/types";
+import { formatShortDate } from "@/lib/format";
 import { PremarketTable } from "./PremarketTable";
 import { SectorHeatmap } from "./SectorHeatmap";
 import { ScannerTab } from "./ScannerTab";
@@ -85,8 +86,16 @@ export function IntradayScreen({
           {session.state === "live" && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-up" aria-hidden />}
           Session: {session.state === "live" ? "LIVE" : session.state === "premarket" ? "PRE-MARKET" : "CLOSED"}
         </span>
-        {session.risk_off && <span className="rounded-full bg-amber-bg px-2.5 py-1 text-amber">Risk-off tone</span>}
-        <span className="text-foreground-muted">{session.high_severity_events_today} high-severity event(s) today</span>
+        {session.breadth_line && (
+          <span className="rounded-full bg-neutral-bg px-2.5 py-1 text-foreground-muted">
+            {session.breadth_line}
+            {session.breadth_date ? ` · ${formatShortDate(session.breadth_date)}` : ""}
+          </span>
+        )}
+        <span className="text-foreground-muted">
+          {session.high_severity_events_today} high-severity event(s)
+          {session.event_session_date ? ` · session of ${formatShortDate(session.event_session_date)}` : " today"}
+        </span>
       </div>
 
       {session.state === "premarket" && (

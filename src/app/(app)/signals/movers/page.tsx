@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/company-name";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getSignalMovers } from "@/lib/api/endpoints";
@@ -31,7 +32,7 @@ function MoverList({ rows }: { rows: MoverRow[] }) {
           <Link href={stockPath("/signals", r.symbol)} className="flex items-center justify-between py-2.5 text-sm hover:text-accent">
             <span>
               <span className="font-medium">{r.symbol}</span>{" "}
-              <span className="text-foreground-faint">{r.company_name}</span>
+              <span className="text-foreground-faint">{displayName(r.company_name)}</span>
               <div className="text-xs text-foreground-faint">{CAUSE_LABEL[r.cause] ?? r.cause}</div>
             </span>
             <span className="flex items-center gap-3">

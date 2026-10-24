@@ -9,7 +9,7 @@ import { stockPath } from "@/lib/seo/stock-symbol";
 // page (Signals, Home) already uses for a numeric delta — same data,
 // genuinely more consistent styling (adds the up/down arrow glyph too),
 // not a data or logic change.
-function MoverTable({ rows }: { rows: RecapMoverRow[] }) {
+function MoverTable({ rows, showVolume = false }: { rows: RecapMoverRow[]; showVolume?: boolean }) {
   return (
     <ul className="space-y-1">
       {rows.map((r) => (
@@ -17,7 +17,12 @@ function MoverTable({ rows }: { rows: RecapMoverRow[] }) {
           <Link href={stockPath("/signals", r.symbol)} className="hover:text-accent">
             {r.symbol}
           </Link>
-          <DeltaValue value={r.pct} kind="pct" />
+          <span className="flex items-center gap-3">
+            {showVolume && r.volume_ratio != null && (
+              <span className="text-xs text-foreground-faint">volume {r.volume_ratio.toLocaleString("en-IN", { maximumFractionDigits: 1 })}× its 20-day average</span>
+            )}
+            <DeltaValue value={r.pct} kind="pct" />
+          </span>
         </li>
       ))}
       {rows.length === 0 && <li className="text-sm text-foreground-faint">None.</li>}
@@ -59,6 +64,7 @@ export function PostmarketRecap({ recap }: { recap: IntradayRecap | null }) {
         <p className="mt-1 text-xs text-foreground-faint">
           NIFTY 500: {recap.advancers} advanced · {recap.decliners} declined · {recap.unchanged} unchanged
         </p>
+        {recap.breadth_line && <p className="mt-1 text-sm text-foreground-muted">{recap.breadth_line}</p>}
       </Card>
       <div className="grid gap-4 sm:grid-cols-2">
         <Card title="Top gainers">
@@ -75,7 +81,7 @@ export function PostmarketRecap({ recap }: { recap: IntradayRecap | null }) {
         </Card>
       </div>
       <Card title="Volume anomalies">
-        <MoverTable rows={recap.volume_anomalies} />
+        <MoverTable rows={recap.volume_anomalies} showVolume />
       </Card>
     </div>
   );

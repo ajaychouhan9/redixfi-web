@@ -12,7 +12,8 @@ import { ScoreAsOf } from "@/components/app/signals/ScoreAsOf";
 import { ScoreHistorySection } from "@/components/app/signals/ScoreHistorySection";
 import { VolatilitySection } from "@/components/app/signals/VolatilitySection";
 import { QuickRead } from "@/components/app/signals/QuickRead";
-import { isTradeForTrade } from "@/lib/stock-clarity";
+import { chartCaption, isTradeForTrade, visibleChangeLog } from "@/lib/stock-clarity";
+import { displayName } from "@/lib/company-name";
 import { CandleChart } from "@/components/app/CandleChart";
 import { NewsList } from "@/components/app/NewsList";
 import { WatchlistButton } from "@/components/app/WatchlistButton";
@@ -77,7 +78,7 @@ export function SignalDetailView({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-sm text-foreground-muted">
-              {[detail.symbol, detail.industry || detail.sector].filter(Boolean).join(" · ")}
+              {[detail.symbol, displayName(detail.company_name), detail.industry || detail.sector].filter(Boolean).join(" · ")}
             </p>
             <div className="mt-1 flex flex-wrap items-baseline gap-3">
               <ExplainTerm metricKey="composite_score" symbol={detail.symbol} ctx={{ composite_score: detail.composite_score, symbol: detail.symbol }}>
@@ -247,11 +248,11 @@ export function SignalDetailView({
       <AnalystChecklist detail={detail} fundamentals={fundamentals} />
 
       <Card title="Signal Change Log">
-        {detail.change_log.length === 0 ? (
+        {visibleChangeLog(detail.change_log, detail.corporate_action).length === 0 ? (
           <p className="text-sm text-foreground-muted">No signal changes logged yet.</p>
         ) : (
           <ul className="divide-y divide-border">
-            {detail.change_log.map((c, i) => (
+            {visibleChangeLog(detail.change_log, detail.corporate_action).map((c, i) => (
               <li key={i} className="flex items-center justify-between py-2 text-sm">
                 <span className="text-foreground-muted">{formatShortDate(c.date)}</span>
                 <DeltaValue value={c.delta} className="w-14" />
@@ -266,6 +267,9 @@ export function SignalDetailView({
       </Card>
 
       <Card title="Chart (3M daily)">
+        {chartCaption(detail.corporate_action) && (
+          <p className="mb-2 text-xs text-foreground-muted" data-testid="chart-caption">{chartCaption(detail.corporate_action)}</p>
+        )}
         <CandleChart candles={candles} delivery={delivery30d} />
       </Card>
 

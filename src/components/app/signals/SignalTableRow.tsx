@@ -16,6 +16,7 @@ import {
 import type { SignalRow } from "@/lib/api/types";
 import { formatDataAsOf, formatPriceAsOf } from "@/lib/format";
 import { stockPath } from "@/lib/seo/stock-symbol";
+import { displayName } from "@/lib/company-name";
 
 // Column order (2026-08-08, finalized spec): Symbol | Sector | Price |
 // Score | Delivery | Volume | Signals | Event. Symbol/Price/Score are
@@ -117,7 +118,7 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
             Limited
           </span>
         )}
-        <div className="max-w-[16rem] truncate text-[12px] text-foreground-faint">{row.company_name}</div>
+        <div className="max-w-[16rem] truncate text-[12px] text-foreground-faint">{displayName(row.company_name)}</div>
         {row.data_as_of && <div className="whitespace-nowrap text-[10px] text-foreground-faint">{formatDataAsOf(row.data_as_of)}</div>}
       </td>
       {columns.sector && <td className="hidden px-3 py-2.5 text-xs text-foreground-muted md:table-cell">{row.sector}</td>}
@@ -214,5 +215,46 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
         </button>
       </td>
     </tr>
+  );
+}
+
+/** Phone layout (below md): one compact row per stock, nothing cut off and no sideways scroll. Left: symbol and company
+ *  name. Right: the price with its full day change, and a compact score badge with its change. Same data as the table row;
+ *  a locked (free-tier) score keeps the lock treatment. The badge is neutral on purpose (no colour for a high or low score). */
+export function SignalMobileRow({ row }: { row: SignalRow }) {
+  return (
+    <li className="flex items-center gap-3 px-3 py-2.5" data-testid="signal-mobile-row">
+      <Link href={stockPath("/signals", row.symbol)} className="min-w-0 flex-1">
+        <span className="font-mono text-sm font-semibold">{row.symbol}</span>
+        {row.limited_data && <span className="ml-1.5 rounded bg-surface-raised px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide text-foreground-faint">Limited</span>}
+        <div className="truncate text-[12px] text-foreground-faint">{displayName(row.company_name)}</div>
+      </Link>
+      <div className="shrink-0 text-right">
+        {row.last_price !== null ? (
+          <div className="whitespace-nowrap font-mono text-sm font-semibold">₹{row.last_price.toLocaleString("en-IN")}</div>
+        ) : (
+          <div className="text-foreground-faint">—</div>
+        )}
+        {row.day_change_pct !== null && (
+          <div className="whitespace-nowrap">
+            <DeltaValue value={row.day_change_pct} kind="pct" className="text-[12px]" />
+          </div>
+        )}
+      </div>
+      <div className="flex w-14 shrink-0 flex-col items-end gap-0.5">
+        {row.locked ? (
+          <LockedInline title="Unlock all 2,000+ measured scores">
+            <span className="rounded-md bg-neutral-bg px-2 py-0.5 font-mono text-sm font-semibold">--</span>
+          </LockedInline>
+        ) : row.composite_score === null ? (
+          <span className="text-foreground-faint">—</span>
+        ) : (
+          <span className="rounded-md bg-neutral-bg px-2 py-0.5 font-mono text-sm font-semibold" aria-label={`Score ${row.composite_score}`}>
+            {row.composite_score}
+          </span>
+        )}
+        {!row.locked && row.delta_1d !== null && <DeltaValue value={row.delta_1d} className="text-[11px]" />}
+      </div>
+    </li>
   );
 }

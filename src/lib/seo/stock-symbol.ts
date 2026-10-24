@@ -9,6 +9,12 @@ export function stockSymbolFromParam(param: string): string | null {
   }
 }
 
+/** Where the header search sends the user: a Research stock page stays in Research, a Signals stock page and every
+ *  other page (Home, Alerts, Watchlist, Intraday, More, the Research landing page ...) go to Signals. */
+export function searchTargetBase(pathname: string | null | undefined): "/signals" | "/research" {
+  return /^\/research\/[^/]+/.test(pathname ?? "") ? "/research" : "/signals";
+}
+
 // Path for a stock-keyed page. Symbols such as M&M must be percent-encoded so
 // every link, canonical and sitemap entry names the same URL.
 export function stockPath(base: "/stocks" | "/signals" | "/research" | "/track-record", symbol: string): string {

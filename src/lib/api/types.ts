@@ -42,6 +42,8 @@ export interface NewsToday {
   items_read: number;
   items_flagged: number;
   items_flagged_high: number;
+  /** The session the counts cover (current, or the last completed one while the market is closed). */
+  session_date?: string | null;
 }
 
 // Set when a stock's price history is not comparable (split or bonus in progress, or an
@@ -629,6 +631,11 @@ export interface IntradaySession {
   state: "premarket" | "live" | "postmarket" | string;
   risk_off: boolean;
   high_severity_events_today: number;
+  /** The session the event count covers (current session, or the last completed one while the market is closed). */
+  event_session_date?: string | null;
+  /** "More stocks fell (1,947) than rose (298)", from the latest session's advancers and decliners. */
+  breadth_line?: string | null;
+  breadth_date?: string | null;
   india_vix_change_pct: number;
 }
 
@@ -695,6 +702,7 @@ export interface IntradayRecap {
   market_line: string;
   sector_leaders: SectorPct[];
   sector_laggards: SectorPct[];
+  breadth_line?: string | null;
   top_gainers: RecapMoverRow[];
   top_losers: RecapMoverRow[];
   volume_anomalies: RecapMoverRow[];
@@ -1310,6 +1318,8 @@ export interface AlertRule {
   last_fired_at: string | null;
   /** Latest measured value for this rule's (symbol, metric) — server-computed, for display only. */
   current_value: number | null;
+  /** The saved threshold is outside the sensible range for its metric (marked, never changed). */
+  out_of_range?: boolean;
 }
 
 export interface AlertCapabilities {

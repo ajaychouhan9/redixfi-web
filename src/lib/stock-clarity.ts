@@ -75,6 +75,30 @@ export function quickReadParts(i: QuickReadInput): string[] {
   return parts.length >= 3 ? parts : [];
 }
 
+/** Change-log families that come from price history. */
+const PRICE_BASED_LOG_FAMILIES = new Set(["trend", "volume", "rsi"]);
+
+/** The Signal Change Log lines to show. For a stock held while a corporate action is checked, lines dated before the
+ *  event that are price- or trend-based are hidden (earlier prices are not comparable). Display only. */
+export function visibleChangeLog<T extends { date: string; changed_signal: string }>(
+  entries: T[],
+  action: { status?: string | null; ex_date?: string | null } | null | undefined,
+): T[] {
+  if (!action || !isHeldStatus(action.status) || !action.ex_date) return entries;
+  const ex = action.ex_date.slice(0, 10);
+  return entries.filter((e) => !(String(e.date).slice(0, 10) < ex && PRICE_BASED_LOG_FAMILIES.has(e.changed_signal)));
+}
+
+/** "Prices before 11 Sep 2026 are not adjusted, so earlier prices are not comparable." (held stocks only), else null. */
+export function chartCaption(action: { status?: string | null; ex_date?: string | null } | null | undefined): string | null {
+  if (!action || !isHeldStatus(action.status) || !action.ex_date) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(action.ex_date);
+  if (!m) return null;
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const label = `${Number(m[3])} ${months[Number(m[2]) - 1]} ${m[1]}`;
+  return `Prices before ${label} are not adjusted, so earlier prices are not comparable.`;
+}
+
 /** One chip in the Quick read card. */
 export interface QuickReadChip {
   key: string;

@@ -6,7 +6,7 @@ import { Search, Filter, ArrowUpDown, SlidersHorizontal, X } from "lucide-react"
 import { getSignals } from "@/lib/api/endpoints";
 import type { SignalRow } from "@/lib/api/types";
 import { SIGNAL_SECTORS } from "@/data/sectors";
-import { SignalTableRow, type VisibleColumns } from "./SignalTableRow";
+import { SignalMobileRow, SignalTableRow, type VisibleColumns } from "./SignalTableRow";
 import { UnlockBanner } from "@/components/ui/Locked";
 import { ExportButton } from "@/components/ui/ExportButton";
 import { ShareScreenButton } from "./ShareScreenButton";
@@ -18,6 +18,8 @@ import { getWatchlist } from "@/lib/api/mutations";
 import type { SharedScreenParams } from "@/lib/api/types";
 
 const SORT_OPTIONS = [
+  // Default (2026-10-25): the size of today's score change, up or down alike; every other order is still here.
+  { value: "abs_delta_1d", label: "Biggest score change (up or down)" },
   { value: "name", label: "Name (A–Z)" },
   // Task 09: genuinely market-cap-ordered now (symbols_master.market_cap,
   // backfilled from fundamentals_raw) — rows without a market_cap yet sort
@@ -62,12 +64,11 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   const [eventRiskOnly, setEventRiskOnly] = useState(!!initialParams?.event_risk);
   const [watchlistOnly, setWatchlistOnly] = useState(false);
   const [watchlistSymbols, setWatchlistSymbols] = useState<string[] | null>(null);
-  // Default sort is name — NEVER score by default (compliance CURATION
-  // TEST) — but a CLONED screen's sort is the original creator's own
-  // explicit choice, not an unset default, same as a canned screen
-  // (/screens/[slug]) already legitimately sorting by delta_1d.
-  const [sort, setSort] = useState<string>(initialParams?.sort ?? "name");
-  const [order, setOrder] = useState<"asc" | "desc">(initialParams?.order ?? "asc");
+  // Default sort (2026-10-25): the biggest absolute score change today, up or down alike (neither name A-Z nor
+  // highest score first, so no direction is favoured). A CLONED screen's sort is the original creator's own explicit
+  // choice, not an unset default, same as a canned screen (/screens/[slug]) already legitimately sorting by delta_1d.
+  const [sort, setSort] = useState<string>(initialParams?.sort ?? "abs_delta_1d");
+  const [order, setOrder] = useState<"asc" | "desc">(initialParams?.order ?? (initialParams?.sort ? "asc" : "desc"));
   const [page, setPage] = useState(1);
   // Column spec (2026-08-08, finalized): Symbol/Price/Score are always on
   // (not in this picker state at all). VWAP removed — intraday-only,
@@ -236,7 +237,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
     <div ref={containerRef}>
       {!explorerControlsEnabled && (
         <p className="mb-3 rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-muted">
-          Basic shows the full table, sorted A–Z. For a filtered or sorted view, ask Ask-RedixFi AI directly — e.g.
+          Basic shows the full table, ordered by the biggest score change today (up or down). For a filtered or sorted view, ask Ask-RedixFi AI directly — e.g.
           &quot;highest composite score today&quot; or &quot;IT sector stocks with high delivery&quot;.
         </p>
       )}
@@ -373,7 +374,13 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
 
       <ListSessionNote />
       <div className="overflow-hidden rounded-xl border border-border bg-surface-raised">
-        <div className="overflow-x-auto">
+        {/* phones: a compact list (symbol, price with its full change, score badge); the table is for md and up */}
+        <ul className="divide-y divide-border md:hidden">
+          {rows.map((row) => (
+            <SignalMobileRow key={row.symbol} row={row} />
+          ))}
+        </ul>
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[680px] text-sm">
             {/* Font-size audit (2026-08-11): header row was text-[11px] —
                 well below the task's 13px "secondary labels" floor, and

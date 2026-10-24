@@ -12,6 +12,7 @@ import { Chip } from "@/components/ui/Chip";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import type { PortfolioAnalytics, PortfolioBrief, SignalDetail, WatchlistBehaviorRow } from "@/lib/api/types";
 import { stockPath } from "@/lib/seo/stock-symbol";
+import { displayName } from "@/lib/company-name";
 
 const BEHAVIOR_LABELS: Record<string, { label: string; tone: "up" | "down" | "neutral" }> = {
   sustaining: { label: "Sustaining", tone: "up" },
@@ -163,6 +164,10 @@ export function WatchlistMainView() {
     );
   }
 
+  // The Behavior column appears only when at least one row has behavior data (no empty "Not available" column).
+  const showBehavior = rows.some((r) => r.behavior && r.behavior.state !== "no_data");
+  const colCount = 5 + (showBehavior ? 1 : 0);
+
   return (
     <div className="mx-auto max-w-3xl space-y-4">
       <div className="flex items-center justify-between">
@@ -206,7 +211,7 @@ export function WatchlistMainView() {
       )}
 
       <div className="overflow-hidden rounded-xl border border-border bg-surface-raised">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto sm:overflow-x-auto">
           <table className="w-full text-sm">
             {/* Font-size audit (2026-08-11): was text-[11px], bumped to
                 text-[13px] per the task's 13px "secondary labels" floor —
@@ -218,20 +223,20 @@ export function WatchlistMainView() {
                 <th className="px-3 py-3">Price</th>
                 <th className="px-3 py-3">Score</th>
                 <th className="hidden px-3 py-3 sm:table-cell">Delivery</th>
-                <th className="px-3 py-3">Behavior</th>
-                <th className="px-4 py-3" />
+                {showBehavior && <th className="px-3 py-3">Behavior</th>}
+                <th className="hidden px-4 py-3 sm:table-cell" />
               </tr>
             </thead>
             <tbody>
               {symbols === null || rowsLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-6 text-center text-sm text-foreground-muted">
+                  <td colSpan={colCount} className="px-4 py-6 text-center text-sm text-foreground-muted">
                     Loading…
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-6 text-center text-sm text-foreground-muted">
+                  <td colSpan={colCount} className="px-4 py-6 text-center text-sm text-foreground-muted">
                     No stocks yet.{" "}
                     <Link href="/signals" className="font-medium text-accent">
                       Browse the Signal Dashboard
@@ -248,7 +253,16 @@ export function WatchlistMainView() {
                         <Link href={stockPath("/signals", r.symbol)} className="flex items-center gap-1.5 font-mono font-semibold hover:text-accent">
                           {r.symbol}
                         </Link>
-                        <div className="text-xs text-foreground-faint">{r.company_name ?? "—"}</div>
+                        <div className="text-xs text-foreground-faint">{r.company_name ? displayName(r.company_name) : "—"}</div>
+                        {/* phones: Remove sits under the name so it is always reachable without sideways scroll */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemove(r.symbol)}
+                          aria-label={`Remove ${r.symbol} from watchlist`}
+                          className="mt-1 text-xs font-medium text-foreground-faint hover:text-down sm:hidden"
+                        >
+                          Remove
+                        </button>
                       </td>
                       <td className="hidden px-3 py-3 text-xs text-foreground-muted sm:table-cell">{r.industry ?? "—"}</td>
                       <td className="px-3 py-3">
@@ -285,14 +299,16 @@ export function WatchlistMainView() {
                           </div>
                         )}
                       </td>
-                      <td className="px-3 py-3">
-                        {behavior ? (
-                          <Chip tone={behavior.tone}>{behavior.label}</Chip>
-                        ) : (
-                          <span className="text-xs text-foreground-faint">Not available</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-right">
+                      {showBehavior && (
+                        <td className="px-3 py-3">
+                          {behavior ? (
+                            <Chip tone={behavior.tone}>{behavior.label}</Chip>
+                          ) : (
+                            <span className="text-xs text-foreground-faint">Not available</span>
+                          )}
+                        </td>
+                      )}
+                      <td className="hidden px-4 py-3 text-right sm:table-cell">
                         <button
                           type="button"
                           onClick={() => handleRemove(r.symbol)}

@@ -6,6 +6,7 @@ import { formatDateIst, formatCr } from "@/lib/format";
 import type { FundamentalsBlock, FundamentalsShareholding, GenericRecord, InsiderTrade, PeerRow } from "@/lib/api/types";
 import { OwnershipActivity } from "@/components/app/research/OwnershipActivity";
 import { VolatilityRankCard } from "@/components/app/research/VolatilityRankCard";
+import { displayName } from "@/lib/company-name";
 
 // Factual, symmetric labels only — no "good"/"bad" framing (compliance
 // symmetry rule). A flag being present is a measured fact about the
@@ -205,7 +206,7 @@ export function FundamentalsPanels({
                     return (
                       <tr key={i} className="border-t border-border">
                         <td className="py-1.5 pr-3">
-                          {p.company_name ?? "—"}
+                          {p.company_name ? displayName(p.company_name) : "—"}
                           {p.values_source ? <sup title={`Values from ${p.values_source}`}> *</sup> : null}
                         </td>
                         <td className="py-1.5 pr-3">{fmtNum(p.pe, 1)}</td>

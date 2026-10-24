@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Clock } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import { formatShortDate } from "@/lib/format";
 import type { IntradaySession } from "@/lib/api/types";
 
 const STATE_LABEL: Record<string, string> = {
@@ -19,8 +20,9 @@ export function IntradayNowCard({ session }: { session: IntradaySession | null }
             <div>
               <p className="text-sm font-semibold">Intraday now — {STATE_LABEL[session.state] ?? session.state}</p>
               <p className="mt-0.5 text-xs text-foreground-faint">
-                {session.high_severity_events_today} high-severity event(s) today
-                {session.risk_off && " · risk-off tone"}
+                {session.high_severity_events_today} high-severity event(s)
+                {session.event_session_date ? ` · session of ${formatShortDate(session.event_session_date)}` : " today"}
+                {session.breadth_line && ` · ${session.breadth_line}`}
               </p>
             </div>
           </div>

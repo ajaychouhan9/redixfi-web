@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { SymbolTypeahead } from "@/components/ui/SymbolTypeahead";
-import { stockPath } from "@/lib/seo/stock-symbol";
+import { searchTargetBase, stockPath } from "@/lib/seo/stock-symbol";
 
 /**
  * Header global search — reuses the same `searchResearch()` typeahead the
@@ -24,6 +24,7 @@ import { stockPath } from "@/lib/seo/stock-symbol";
  */
 export function HeaderSearch() {
   const router = useRouter();
+  const pathname = usePathname();
   const [q, setQ] = useState("");
 
   return (
@@ -44,8 +45,13 @@ export function HeaderSearch() {
         onChange={setQ}
         onSelect={(row) => {
           setQ("");
-          router.push(stockPath("/research", row.canonicalSymbol));
+          // stays in context: Research stock page -> Research, anywhere else -> Signals
+          router.push(stockPath(searchTargetBase(pathname), row.canonicalSymbol));
         }}
+        links={(row) => [
+          { label: "Signals", href: stockPath("/signals", row.canonicalSymbol) },
+          { label: "Research", href: stockPath("/research", row.canonicalSymbol) },
+        ]}
         placeholder="Search stocks, sectors, news..."
         ariaLabel="Search stocks, sectors, news"
         wrapperClassName="relative w-full"

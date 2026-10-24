@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { AiLabel } from "@/components/ui/AiLabel";
-import { formatTimeIst } from "@/lib/format";
+import { formatShortDate, formatTimeIst } from "@/lib/format";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getNews } from "@/lib/api/endpoints";
 import type { NewsItem, NewsToday } from "@/lib/api/types";
@@ -45,7 +45,7 @@ export function EventRiskCard({
       // feed we already have IS the correct feed for them — no refetch.
       if (!token && items !== null) return;
       try {
-        const env = await getNews({ severity: "high", size: 3 }, { token });
+        const env = await getNews({ severity: "high", size: 20 }, { token });
         if (!cancelled) setItems(env.data);
       } catch {
         if (!cancelled) setItems((prev) => prev ?? []);
@@ -57,30 +57,44 @@ export function EventRiskCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getToken]);
 
+  // One window for the header badge, this text and the list: the current trading session, or the last completed one.
+  const since = newsToday?.session_date ?? null;
+  // the same filter as the count: high severity, market or sector scope, current or last session (newest three)
+  const shown = (items ?? [])
+    .filter((n) => (!since || n.published_at.slice(0, 10) >= since) && (n.scope === "market" || n.scope === "sector"))
+    .slice(0, 3);
+  const highCount = newsToday?.items_flagged_high ?? 0;
   return (
     <Card title="Event Risk Today" action={<AiLabel />}>
       {newsToday && (
         <p className="mb-2 text-xs text-foreground-muted">
-          AI read {newsToday.items_read} item(s) today — <span className="text-accent">{newsToday.items_flagged} flagged</span>.
+          {since ? `Session of ${formatShortDate(since)}: ` : "Today: "}AI read {newsToday.items_read} item(s) —{" "}
+          <span className="text-accent">{newsToday.items_flagged} flagged</span>, {highCount} high-severity (market or sector-wide).
         </p>
       )}
       {items === null ? (
         <p className="text-sm text-foreground-faint">Loading…</p>
       ) : (
         <ul className="space-y-2">
-          {items.map((n) => (
+          {shown.map((n) => (
             <li key={n.uuid} className="text-sm">
               <div className="mb-0.5 flex items-center gap-2 text-xs text-foreground-faint">
                 <Chip tone={SEVERITY_TONE[(n.severity as keyof typeof SEVERITY_TONE) ?? "none"] ?? "neutral"}>{n.severity}</Chip>
                 {n.category !== "none" && <Chip tone="accent">{n.category.replace(/_/g, " ")}</Chip>}
-                <span className="font-mono">{formatTimeIst(n.published_at)}</span>
+                <span className="font-mono">{formatShortDate(n.published_at)} · {formatTimeIst(n.published_at)}</span>
               </div>
               <a href={n.url} target="_blank" rel="noopener noreferrer" className="hover:text-accent">
                 {n.headline}
               </a>
             </li>
           ))}
-          {items.length === 0 && <li className="text-sm text-foreground-faint">No flagged events right now.</li>}
+          {shown.length === 0 && (
+            <li className="text-sm text-foreground-faint">
+              {highCount > 0
+                ? "The high-severity items of this session are not listed here yet (free plans see news after a delay); see all news for the full list."
+                : "No high-severity events in this session."}
+            </li>
+          )}
         </ul>
       )}
       <div className="mt-3 flex items-center gap-1 border-t border-border pt-3">

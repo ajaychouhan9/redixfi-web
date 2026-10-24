@@ -167,3 +167,75 @@ console.log("stock-page clarity helpers: ok");
   assert.ok(heldAt > 0 && heldAt < quick.indexOf("quickReadChips("), "the held check comes before the chips are built");
   console.log("held stocks: ok");
 }
+
+// ---- 2026-10-25 page polish ----
+{
+  const rd = (f) => readFileSync(new URL(f, import.meta.url), "utf8");
+  const { searchTargetBase } = load("../src/lib/seo/stock-symbol.ts");
+  // search stays in context: a Research stock page -> Research; Signals stock page and every other page -> Signals
+  for (const [p, want] of [["/research/TCS", "/research"], ["/research/M%26M", "/research"], ["/signals/TCS", "/signals"], ["/", "/signals"],
+    ["/account/alerts", "/signals"], ["/watchlist", "/signals"], ["/intraday", "/signals"], ["/more", "/signals"], ["/research", "/signals"],
+    ["/signals", "/signals"], ["/signals/movers", "/signals"], [null, "/signals"]]) assert.equal(searchTargetBase(p), want, String(p));
+
+  // held stocks: price- and trend-based change-log lines dated before the event are hidden; the rest stays
+  const { visibleChangeLog, chartCaption } = load("../src/lib/stock-clarity.ts");
+  const log = [
+    { date: "2026-10-08", changed_signal: "trend", note: "10-day trend turned negative" },
+    { date: "2026-10-08", changed_signal: "volume", note: "volume fell below its recent norm" },
+    { date: "2026-10-08", changed_signal: "delivery", note: "delivery signal strengthened" },
+    { date: "2026-10-12", changed_signal: "event", note: "event state cleared" },
+    { date: "2026-10-20", changed_signal: "trend", note: "after the event" },
+  ];
+  const held = { status: "review", ex_date: "2026-10-15" };
+  assert.deepEqual(visibleChangeLog(log, held).map((e) => e.changed_signal + e.date.slice(-2)), ["delivery08", "event12", "trend20"]);
+  assert.equal(visibleChangeLog(log, { status: "confirmed", ex_date: "2026-10-15" }).length, 5, "a confirmed, adjusted stock keeps its log");
+  assert.equal(visibleChangeLog(log, null).length, 5);
+  assert.equal(chartCaption(held), "Prices before 15 Oct 2026 are not adjusted, so earlier prices are not comparable.");
+  assert.equal(chartCaption({ status: "unconfirmed", ex_date: "2026-09-11" }), "Prices before 11 Sep 2026 are not adjusted, so earlier prices are not comparable.");
+  assert.equal(chartCaption({ status: "confirmed", ex_date: "2026-09-11" }), null);
+  assert.equal(chartCaption(null), null);
+
+  // alert thresholds
+  const { thresholdError, directionLabel } = load("../src/lib/alert-thresholds.ts");
+  for (const [m, v] of [["delivery", 890], ["delivery", 317], ["delivery", -1], ["score", 101], ["volume", 0], ["volume", 101], ["price", 0], ["price", -4], ["price", NaN]])
+    assert.ok(thresholdError(m, v), `${m} ${v}`);
+  for (const [m, v] of [["delivery", 0], ["delivery", 100], ["score", 55], ["volume", 2.5], ["price", 0.5]]) assert.equal(thresholdError(m, v), null, `${m} ${v}`);
+  assert.equal(thresholdError("delivery", 890), "Delivery % must be between 0 and 100.");
+  assert.equal(directionLabel("above"), "crosses above");
+  assert.equal(directionLabel("below"), "crosses below");
+
+  // red-flag heading
+  const { RED_FLAG_CATEGORY_LABELS } = load("../src/lib/redFlagCategories.ts");
+  assert.equal(RED_FLAG_CATEGORY_LABELS.statutory_dues_dispute, "Statutory dues in dispute");
+  assert.equal(RED_FLAG_CATEGORY_LABELS.default_or_covenant, "Default / Covenant Breach");
+
+  // structure
+  const wl = rd("../src/components/app/watchlist/WatchlistMainView.tsx");
+  assert.ok(wl.includes("showBehavior") && wl.includes('sm:hidden') && wl.includes("Remove"), "watchlist: Behavior only with data, Remove reachable on phones");
+  const alerts = rd("../src/components/app/account/MorningBriefChannelsCard.tsx");
+  assert.ok(alerts.includes("return null") && !/Coming soon/.test(alerts.replace(/\/\/.*$/gm, "")), "Morning Brief block hidden until live");
+  const rs = rd("../src/components/app/research/ResearchSearch.tsx");
+  assert.ok(rs.includes("Recently viewed") && rs.includes("Your watchlist") && rs.includes("Stocks you open will appear here."));
+  const ex = rd("../src/components/app/signals/SignalsExplorer.tsx");
+  assert.ok(ex.includes('"abs_delta_1d"') && ex.includes("SignalMobileRow") && ex.includes('"name"'), "list: new default sort, mobile list, other sorts kept");
+  const hdr = rd("../src/components/layout/HeaderSearch.tsx");
+  assert.ok(hdr.includes("searchTargetBase(pathname)") && hdr.includes('label: "Signals"') && hdr.includes('label: "Research"'));
+  const cmp = rd("../src/components/app/signals/CompareResultCard.tsx");
+  assert.ok(cmp.includes("sticky left-0") && cmp.includes("Swipe") && cmp.includes("shortName("), "compare: sticky metric column, swipe hint, short names");
+  const home = rd("../src/app/(app)/page.tsx");
+  assert.ok(home.includes("columns-1") && home.includes("break-inside-avoid"), "home: masonry cards, no empty gaps");
+  const ev = rd("../src/components/app/EventRiskCard.tsx");
+  assert.ok(ev.includes("session_date") && ev.includes("formatShortDate(n.published_at)"), "event card: one window, a date on each item");
+  const intr = rd("../src/components/app/intraday/IntradayScreen.tsx");
+  assert.ok(!/Risk-off tone/.test(intr) && intr.includes("breadth_line"), "risk-off label replaced by a breadth line");
+  const rec = rd("../src/components/app/intraday/PostmarketRecap.tsx");
+  assert.ok(rec.includes("its 20-day average") && rec.includes("showVolume"), "volume anomalies show the multiple of the 20-day average");
+
+  // forbidden words in the strings added here
+  const added = [chartCaption(held), "Recently viewed Your watchlist Stocks you open will appear here. Add stocks to your watchlist to find them here. Log in to see your watchlist here.",
+    "Out of range Swipe Statutory dues in dispute Biggest score change (up or down) Delivery % must be between 0 and 100. Price must be above 0.",
+    "More stocks fell than rose volume its 20-day average session of high-severity (market or sector-wide)"].join("\n");
+  const hits = added.match(/\b(buy|sell|target|likely|expected|bullish|bearish|recommend\w*|predict\w*)\b/gi) ?? [];
+  assert.deepEqual(hits, []);
+  console.log("page polish: ok");
+}
