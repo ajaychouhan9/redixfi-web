@@ -12,6 +12,8 @@ import { WhyDidThisChange } from "@/components/app/signals/WhyDidThisChange";
 import { ScoreAsOf } from "@/components/app/signals/ScoreAsOf";
 import { ScoreHistorySection } from "@/components/app/signals/ScoreHistorySection";
 import { VolatilitySection } from "@/components/app/signals/VolatilitySection";
+import { QuickRead } from "@/components/app/signals/QuickRead";
+import { HowToReadPage } from "@/components/app/signals/HowToReadPage";
 import { InsightChips } from "@/components/app/education/InsightChips";
 import { CandleChart } from "@/components/app/CandleChart";
 import { NewsList } from "@/components/app/NewsList";
@@ -117,6 +119,8 @@ export function SignalDetailView({
         </div>
         <p className="mt-1 text-xs text-foreground-faint">A measured summary of observed signals. Not a prediction.</p>
         <ScoreAsOf scoreDate={detail.signal_freshness?.composite_score?.data_as_of} />
+        <QuickRead detail={detail} />
+        <div className="mt-2"><HowToReadPage /></div>
         <CorporateActionNote info={detail.corporate_action} />
         <SlowestInputNote input={detail.slowest_input} />
         <div className="mt-2 flex flex-wrap gap-1.5">

@@ -270,6 +270,8 @@ export interface VolatilityResponse {
   latest_session?: string | null;
   tier?: string;
   next_tier?: string | null;
+  /** NSE series of the stock in the volatility document (EQ, BE, BZ). */
+  series?: string | null;
   /** Why the stock is not ranked (shown instead of numbers). */
   note?: string | null;
   excluded_reason?: string | null;

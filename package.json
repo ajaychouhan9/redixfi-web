@@ -11,6 +11,7 @@
     "check:auth-fetch": "node scripts/check-auth-fetch.mjs",
     "check:no-change-stock": "node scripts/check-no-change-stock-button.mjs",
     "test:sitemap": "node scripts/test-sitemap.mjs && node scripts/test-sitemap-url-rules.mjs",
+    "test:stock-clarity": "node scripts/test-stock-clarity.mjs",
     "check:sitemap-live": "node scripts/check-sitemap-live.mjs"
   },
   "dependencies": {

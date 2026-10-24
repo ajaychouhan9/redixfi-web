@@ -15,6 +15,7 @@ import Link from "next/link";
 import clsx from "clsx";
 import { ChevronDown, Lock } from "lucide-react";
 
+import { VolatilityRankLines } from "@/components/app/signals/VolatilityRankLines";
 import { getVolatility } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { formatShortDate } from "@/lib/format";
@@ -189,15 +190,7 @@ export function VolatilitySection({ symbol }: { symbol: string }) {
           {ranked && data && (
             <>
               <p className="text-[11px] text-foreground-faint">Data as of {formatShortDate(data.as_of ?? "")}</p>
-              <div className="mt-2 rounded-lg border border-border bg-surface px-3 py-2">
-                <p className="text-sm font-semibold text-foreground">{data.band_text}</p>
-                <p className="mt-0.5 text-[12px] text-foreground-muted">
-                  Rank <span className="tabular-nums font-medium text-foreground">{data.vol_rank?.toLocaleString("en-IN")}</span> of{" "}
-                  <span className="tabular-nums">{data.ranked_of?.toLocaleString("en-IN")}</span> ranked stocks (1 = the most
-                  volatile). Daily moves over the last 21 sessions varied by{" "}
-                  <span className="tabular-nums font-medium text-foreground">{data.std_21?.toFixed(2)}%</span> (standard deviation).
-                </p>
-              </div>
+              <div className="mt-2"><VolatilityRankLines data={data} /></div>
 
               <div className="mt-3">
                 <MoveBars moves={data.moves ?? []} />
