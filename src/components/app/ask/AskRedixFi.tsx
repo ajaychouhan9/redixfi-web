@@ -15,6 +15,7 @@ import { mayLoadPageConversation } from "@/lib/ask-panel/conversationSelectionRu
 import { restoreAskMessages, type AskRenderableMessage } from "@/lib/ask-panel/historyMessage";
 import { ASK_PANEL_WIDTHS, type AskPanelMode } from "@/lib/ask-panel/panelMode";
 import { getStarterQuestions } from "@/lib/ask-panel/starterQuestions";
+import { COMMON_QUESTION_CHIPS } from "@/lib/common-questions";
 import { useMobileViewport } from "@/lib/ask-panel/useMobileViewport";
 import { resolveVisibleChatSymbol } from "@/lib/ask-panel/contextHeader";
 import { CompareResultCard } from "@/components/app/signals/CompareResultCard";
@@ -845,6 +846,24 @@ export function AskRedixFi() {
                           {p}
                         </button>
                       ))}
+                    </div>
+                    {/* Built-in common questions: fixed answers, no model call, no question used, on every plan. */}
+                    <div className="mt-4" data-testid="common-questions">
+                      <p className="mb-1.5 text-[12px] font-medium text-foreground-muted">
+                        Common questions <span className="font-normal text-foreground-faint">· instant, free</span>
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {COMMON_QUESTION_CHIPS.map((q) => (
+                          <button
+                            key={q}
+                            onClick={() => send(q)}
+                            disabled={authLoading}
+                            className="rounded-full border border-border bg-hover px-3 py-1.5 text-left text-[12.5px] font-medium leading-snug text-foreground-muted transition-colors hover:border-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50"
+                          >
+                            {q}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}

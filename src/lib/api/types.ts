@@ -417,7 +417,10 @@ export interface NewsItem {
 
 export interface ComponentChange {
   signal: string;
-  direction: "up" | "down" | "flat" | string;
+  /** The builder's decision for this input, same classification as Score history. ("direction" is a field name the
+   *  API's response filter removes, so the API sends it as `change`.) */
+  change?: "up" | "down" | "flat" | null;
+  direction?: "up" | "down" | "flat" | string;
   note: string;
 }
 

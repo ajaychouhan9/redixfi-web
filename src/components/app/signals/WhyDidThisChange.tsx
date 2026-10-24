@@ -56,16 +56,19 @@ export function WhyDidThisChange({
       <p>{explanation.descriptive}</p>
       {componentChanges.length > 0 && (
         <ul className="space-y-1">
-          {componentChanges.map((c, i) => (
-            <li key={i} className="flex items-start gap-2">
-              <span className={`w-4 shrink-0 text-center ${ARROW_TONE[c.direction] ?? ""}`} aria-label={c.direction === "up" ? "improved" : c.direction === "down" ? "weakened" : "unchanged"}>
-                {ARROW[c.direction] ?? "•"}
-              </span>
-              <span>
-                {COMPONENT_LABEL[c.signal] ?? c.signal}: {displayNote(c.signal, c.note)}
-              </span>
-            </li>
-          ))}
+          {componentChanges.map((c, i) => {
+            const dir = c.change ?? (typeof c.direction === "string" ? c.direction : "");
+            return (
+              <li key={i} className="flex items-start gap-2">
+                <span className={`w-4 shrink-0 text-center ${ARROW_TONE[dir] ?? ""}`} aria-label={dir === "up" ? "improved" : dir === "down" ? "weakened" : "unchanged"} data-testid="change-marker">
+                  {ARROW[dir] ?? "–"}
+                </span>
+                <span>
+                  {COMPONENT_LABEL[c.signal] ?? c.signal}: {displayNote(c.signal, c.note)}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       )}
       {componentChanges.length > 0 && <p className="text-[10px] text-foreground-faint">▲ improved · ▼ weakened · – unchanged</p>}

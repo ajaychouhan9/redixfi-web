@@ -5,14 +5,18 @@
  * (the score and its changes, delivery against its 20-day average, volume against its norm, the volatility rank).
  * A template, not generated text; past and measured facts only. Shown only when at least three parts exist, and
  * never for stocks on a corporate-action hold, limited-data stocks, BE/BZ stocks or when the score is missing.
+ * The flag chips (state chips and computed-fact chips, one per topic, at most six) sit in the same card.
  * A change that is blank (including one blanked as a catch-up against stale prices) is simply not shown.
  */
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { getVolatility } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { quickReadParts } from "@/lib/stock-clarity";
+import { Chip } from "@/components/ui/Chip";
+import { signalStateLabel, signalStateTone } from "@/lib/signal-state-labels";
+import { quickReadChips, quickReadParts } from "@/lib/stock-clarity";
 import type { SignalDetail, VolatilityResponse } from "@/lib/api/types";
 
 export function QuickRead({ detail }: { detail: SignalDetail }) {
@@ -55,14 +59,39 @@ export function QuickRead({ detail }: { detail: SignalDetail }) {
     corporate_action_status: detail.corporate_action?.status ?? null,
     limited_data: detail.limited_data,
   });
-  if (parts.length === 0) return null;
+  const chips = quickReadChips(
+    {
+      signal_states: detail.signal_states,
+      insight_chips: detail.insight_chips,
+      delivery_pct: s?.delivery_pct,
+      delivery_avg20: s?.delivery_avg20,
+      volume_ratio_5d: s?.volume_ratio_5d,
+      delivery_series: s?.delivery_series,
+      series: vol?.series ?? null,
+    },
+    signalStateLabel,
+    signalStateTone,
+  );
+  if (parts.length === 0 && chips.length === 0) return null;
   return (
-    <div className="mt-2 rounded-lg border border-border bg-surface px-3 py-2">
-      <p className="text-[13px] leading-snug text-foreground">
-        <span className="mr-1.5 font-mono text-[11px] uppercase tracking-wide text-foreground-faint">Quick read</span>
-        {parts.join(" · ")}
+    <div className="mt-2 rounded-lg border border-border bg-surface px-3 py-2" data-testid="quick-read-card">
+      {parts.length > 0 && (
+        <p className="text-[13px] leading-snug text-foreground">
+          <span className="mr-1.5 font-mono text-[11px] uppercase tracking-wide text-foreground-faint">Quick read</span>
+          {parts.join(" · ")}
+        </p>
+      )}
+      {chips.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5" data-testid="quick-read-chips">
+          {chips.map((c) => (
+            <Chip key={c.key} tone={c.tone}>{c.text}</Chip>
+          ))}
+        </div>
+      )}
+      <p className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 text-[10px] text-foreground-faint">
+        <span>Measured market data, not investment advice.</span>
+        <Link href="/how-it-works" className="font-medium text-accent underline">How is this score calculated?</Link>
       </p>
-      <p className="mt-1 text-[10px] text-foreground-faint">Measured market data, not investment advice.</p>
     </div>
   );
 }

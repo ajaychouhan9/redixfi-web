@@ -26,7 +26,7 @@ export function getWhyDidThisChangeRows(detail: SignalDetail): DetailTextRow[] {
   rows.push(
     ...detail.component_changes.map((change) => ({
       label: COMPONENT_LABEL[change.signal] ?? change.signal,
-      value: `${ARROW[change.direction] ?? "•"} ${change.note}`,
+      value: `${ARROW[change.change ?? change.direction ?? ""] ?? "–"} ${change.note}`,
     }))
   );
   rows.push({

@@ -89,3 +89,67 @@ console.log("stock-page clarity helpers: ok");
   assert.equal(allowed({ ...base, delivery_series: "EQ" }), true);
   console.log("BE/BZ rule: ok");
 }
+
+// Quick read card: flag chips in the same card, one per topic, fixed order, at most six
+{
+  const { quickReadChips, MAX_QUICK_READ_CHIPS } = load("../src/lib/stock-clarity.ts");
+  const { signalStateLabel, signalStateTone } = load("../src/lib/signal-state-labels.ts");
+  const run = (o) => quickReadChips({ signal_states: [], insight_chips: [], delivery_pct: 42.9, delivery_avg20: 48.9, volume_ratio_5d: 0.5,
+    delivery_series: "EQ", series: "EQ", ...o }, signalStateLabel, signalStateTone);
+  const fact = (metric, text) => ({ type: "computed_fact", metric, text });
+  // the same thing said twice keeps the shorter wording
+  const dup = run({
+    signal_states: ["TREND_DOWN_10D", "BELOW_20DMA", "DELIVERY_DOWN", "VOLUME_MUTED"],
+    insight_chips: [fact("delivery_pct", "Below its 20-day delivery average"), fact("volume_ratio", "Trading well below its usual volume"),
+      { type: "entry_point", metric: "delivery_pct", text: "Common misreading: is high delivery always bullish?", faq_id: "delivery_pct_q2" }],
+  });
+  assert.deepEqual(dup.map((c) => c.text), ["Trend down (10d)", "Below 20-DMA", "Delivery down", "Volume muted"]);
+  assert.deepEqual(dup.map((c) => c.tone), ["down", "down", "down", "neutral"], "existing colours kept");
+  assert.ok(!dup.some((c) => /misreading|Learn how/i.test(c.text)), "no Q&A chips");
+  // more than six topics: six, in the fixed order
+  const many = run({
+    signal_states: ["EVENT_RISK", "PCR_CALL_HEAVY", "FII_BUY_STREAK", "RSI_OVERSOLD_ZONE", "VOLUME_MUTED", "DELIVERY_DOWN", "ABOVE_20DMA", "TREND_UP_10D"],
+    insight_chips: [fact("sector_rank", "Among the top-ranked stocks in its industry today"), fact("delta_1d", "Changed the most in the last 5 days today")],
+  });
+  assert.equal(many.length, MAX_QUICK_READ_CHIPS);
+  assert.deepEqual(many.map((c) => c.key), ["TREND_UP_10D", "ABOVE_20DMA", "DELIVERY_DOWN", "VOLUME_MUTED", "RSI_OVERSOLD_ZONE", "FII_BUY_STREAK"]);
+  // a shorter computed fact replaces a longer state label and keeps that state's colour
+  const sh = run({ signal_states: ["PCR_PUT_HEAVY"], insight_chips: [fact("pcr", "Put-heavy")] });
+  assert.deepEqual(sh.map((c) => c.text), ["Put-heavy"]);
+  // never contradicts the Quick read numbers; BE/BZ get no delivery chip
+  assert.equal(run({ signal_states: ["DELIVERY_UP"] }).length, 0, "delivery 42.9 vs 48.9 average: no 'Delivery up'");
+  assert.equal(run({ signal_states: ["VOLUME_ELEVATED"], volume_ratio_5d: 0.5 }).length, 0);
+  assert.equal(run({ signal_states: ["DELIVERY_DOWN"], delivery_series: "BE" }).length, 0);
+  assert.equal(run({ signal_states: ["DELIVERY_DOWN"], series: "BZ", insight_chips: [fact("delivery_pct", "Below its 20-day delivery average")] }).length, 0);
+  assert.deepEqual(run({}), []);
+  console.log("Quick read chips: ok");
+}
+
+// page structure: order of the cards, removed blocks, markers, FAQ, Ask panel chips
+{
+  const rd = (f) => readFileSync(new URL(f, import.meta.url), "utf8");
+  const view = rd("../src/components/app/signals/SignalDetailView.tsx");
+  const idx = ["<QuickRead", 'title="AI Summary"', 'title="Why did this change?"', "<ScoreHistorySection", "<VolatilitySection", 'title="Tension in the data"', 'title="What the data shows"'].map((m) => view.indexOf(m));
+  assert.ok(idx.every((n) => n > 0), `all cards present: ${idx}`);
+  assert.deepEqual([...idx].sort((a, b) => a - b), idx, "card order");
+  assert.ok(!/HowToReadPage|InsightChips|SignalStateChip/.test(view), "How to read, Q&A chips and the separate flags block are gone");
+  const quick = rd("../src/components/app/signals/QuickRead.tsx");
+  assert.ok(quick.includes("quickReadChips") && quick.includes('href="/how-it-works"') && quick.includes("How is this score calculated?"));
+  const why = rd("../src/components/app/signals/WhyDidThisChange.tsx");
+  assert.ok(why.includes("c.change ??") && why.includes('data-testid="change-marker"') && !why.includes('?? "•"'), "each line starts with its marker");
+  const page = rd("../src/app/(app)/how-it-works/page.tsx");
+  assert.ok(page.includes("Common questions") && page.includes("COMMON_QUESTION_GROUPS") && page.includes("<details"));
+  const cq = load("../src/lib/common-questions.ts");
+  const n = cq.COMMON_QUESTION_GROUPS.reduce((a, g) => a + g.items.length, 0);
+  assert.ok(n >= 30 && cq.COMMON_QUESTION_CHIPS.length === 6, `faq items: ${n}`);
+  const text = JSON.stringify(cq.COMMON_QUESTION_GROUPS.map((g) => g.items.map((i) => i.a)));
+  assert.ok(!/\b\d+(\.\d+)? ?(points|pts)\b|weights? of/i.test(text), "no internal weights");
+  const panel = rd("../src/components/app/ask/AskRedixFi.tsx");
+  assert.ok(panel.includes("COMMON_QUESTION_CHIPS") && panel.includes('data-testid="common-questions"'));
+  // forbidden words in the strings added here (the reviewed Q&A text itself is existing content and is excluded)
+  const added = [quick, "Common questions · instant, free", cq.COMMON_QUESTION_NOTE, ...cq.COMMON_QUESTION_CHIPS.filter((q) => !/buy|sell/i.test(q))].join("\n");
+  const visible = added.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  const hits = visible.match(/\b(buy|sell|target|likely|expected|bullish|bearish|recommend\w*|predict\w*)\b/gi) ?? [];
+  assert.deepEqual(hits, [], hits.join(","));
+  console.log("page structure, FAQ, markers: ok");
+}

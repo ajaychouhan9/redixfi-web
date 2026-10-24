@@ -5,7 +5,6 @@ import { CorporateActionNote } from "@/components/ui/CorporateActionNote";
 import { Card } from "@/components/ui/Card";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { AiLabel } from "@/components/ui/AiLabel";
-import { SignalStateChip } from "@/components/ui/Chip";
 import { ExplainTerm } from "@/components/ui/ExplainTerm";
 import { AnalystChecklist } from "@/components/app/signals/AnalystChecklist";
 import { WhyDidThisChange } from "@/components/app/signals/WhyDidThisChange";
@@ -14,8 +13,6 @@ import { ScoreHistorySection } from "@/components/app/signals/ScoreHistorySectio
 import { VolatilitySection } from "@/components/app/signals/VolatilitySection";
 import { QuickRead } from "@/components/app/signals/QuickRead";
 import { isTradeForTrade } from "@/lib/stock-clarity";
-import { HowToReadPage } from "@/components/app/signals/HowToReadPage";
-import { InsightChips } from "@/components/app/education/InsightChips";
 import { CandleChart } from "@/components/app/CandleChart";
 import { NewsList } from "@/components/app/NewsList";
 import { WatchlistButton } from "@/components/app/WatchlistButton";
@@ -121,26 +118,9 @@ export function SignalDetailView({
         <p className="mt-1 text-xs text-foreground-faint">A measured summary of observed signals. Not a prediction.</p>
         <ScoreAsOf scoreDate={detail.signal_freshness?.composite_score?.data_as_of} />
         <QuickRead detail={detail} />
-        <div className="mt-2"><HowToReadPage /></div>
         <CorporateActionNote info={detail.corporate_action} />
         <SlowestInputNote input={detail.slowest_input} />
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {detail.signal_states.map((st) => (
-            <SignalStateChip key={st} code={st} />
-          ))}
-        </div>
-        {(detail.insight_chips ?? []).length > 0 && (
-          <div className="mt-3">
-            <InsightChips chips={detail.insight_chips} symbol={detail.symbol} />
-          </div>
-        )}
       </div>
-
-      {/* Directly under the composite-score card (and never on the Signals or
-          Research lists). A corporate-action hold renders only the existing
-          note above — the component returns null in that case. */}
-      <ScoreHistorySection symbol={detail.symbol} corporateAction={detail.corporate_action} />
-      <VolatilitySection symbol={detail.symbol} />
 
       {detail.narrative && (
         <Card title="AI Summary" action={<AiLabel />}>
@@ -153,6 +133,12 @@ export function SignalDetailView({
           <WhyDidThisChange componentChanges={detail.component_changes ?? []} explanation={detail.change_explanation} />
         </Card>
       )}
+
+      {/* Directly under the composite-score card (and never on the Signals or
+          Research lists). A corporate-action hold renders only the existing
+          note above — the component returns null in that case. */}
+      <ScoreHistorySection symbol={detail.symbol} corporateAction={detail.corporate_action} />
+      <VolatilitySection symbol={detail.symbol} />
 
       {detail.conflicts.length > 0 && (
         <Card title="Tension in the data" action={<AiLabel />}>

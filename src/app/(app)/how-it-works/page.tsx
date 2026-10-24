@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
+import { COMMON_QUESTION_GROUPS, COMMON_QUESTION_NOTE } from "@/lib/common-questions";
 
 export const metadata: Metadata = {
   title: "How the composite score works",
@@ -115,7 +116,7 @@ export default function HowItWorksPage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: FAQ.map((item) => ({
+    mainEntity: [...FAQ, ...COMMON_QUESTION_GROUPS.flatMap((g) => g.items.map((it) => ({ q: it.q, a: it.a })))].map((item) => ({
       "@type": "Question",
       name: item.q,
       acceptedAnswer: { "@type": "Answer", text: item.a },
@@ -195,6 +196,31 @@ export default function HowItWorksPage() {
           </li>
         </ul>
       </Card>
+
+      <section id="common-questions" aria-labelledby="common-questions-title" className="space-y-3">
+        <div>
+          <h2 id="common-questions-title" className="text-base font-semibold">Common questions</h2>
+          <p className="mt-1 text-sm text-foreground-muted">
+            Short explanations of the measures on a stock page. The same answers are available in Ask AI at no cost to your question
+            allowance. {COMMON_QUESTION_NOTE}
+          </p>
+        </div>
+        {COMMON_QUESTION_GROUPS.map((g) => (
+          <Card key={g.topic} title={g.topic}>
+            <div className="divide-y divide-border">
+              {g.items.map((it) => (
+                <details key={it.id} className="group py-2 first:pt-0 last:pb-0">
+                  <summary className="flex cursor-pointer list-none items-start justify-between gap-3 text-sm font-medium text-foreground">
+                    <span className="min-w-0">{it.q}</span>
+                    <span aria-hidden className="shrink-0 text-foreground-faint transition-transform group-open:rotate-180">▾</span>
+                  </summary>
+                  <p className="mt-1.5 text-sm leading-relaxed text-foreground-muted">{it.a}</p>
+                </details>
+              ))}
+            </div>
+          </Card>
+        ))}
+      </section>
 
       <Card title="What the score is not">
         <ul className="space-y-2 text-sm text-foreground-muted">

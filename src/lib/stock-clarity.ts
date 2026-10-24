@@ -69,6 +69,80 @@ export function quickReadParts(i: QuickReadInput): string[] {
   return parts.length >= 3 ? parts : [];
 }
 
+/** One chip in the Quick read card. */
+export interface QuickReadChip {
+  key: string;
+  text: string;
+  tone: "up" | "down" | "amber" | "neutral";
+}
+
+export interface QuickReadChipInput {
+  signal_states: string[] | null | undefined;
+  /** The computed-fact chips from the API (entry-point chips are never used). */
+  insight_chips: { type: string; metric: string; text: string }[] | null | undefined;
+  delivery_pct: number | null | undefined;
+  delivery_avg20: number | null | undefined;
+  volume_ratio_5d: number | null | undefined;
+  delivery_series: string | null | undefined;
+  series: string | null | undefined;
+}
+
+export const MAX_QUICK_READ_CHIPS = 6;
+/** Fixed order in which topics are kept when there are more than six. */
+export const CHIP_TOPIC_ORDER = ["trend", "dma", "delivery", "volume", "rsi", "fii", "pcr", "sector", "delta", "event"] as const;
+
+const STATE_TOPIC: [RegExp, string][] = [
+  [/^TREND_/, "trend"], [/_20DMA$/, "dma"], [/^DELIVERY_/, "delivery"], [/^VOLUME_/, "volume"], [/^RSI_/, "rsi"],
+  [/^FII_/, "fii"], [/^PCR_/, "pcr"], [/^EVENT_RISK$/, "event"],
+];
+const METRIC_TOPIC: Record<string, string> = {
+  delivery_pct: "delivery", volume_ratio: "volume", rsi_14: "rsi", sector_rank: "sector", delta_1d: "delta", pcr: "pcr",
+};
+
+/** The flag chips for the Quick read card: the state chips and the computed-fact chips together, one per topic (the
+ *  shorter wording wins when two say the same thing), in a fixed priority order, at most six. A delivery chip is left
+ *  out for BE/BZ stocks, and a delivery or volume chip that would contradict the Quick read numbers is left out. */
+export function quickReadChips(i: QuickReadChipInput, labelOf: (code: string) => string, toneOf: (code: string) => QuickReadChip["tone"]): QuickReadChip[] {
+  const tft = isTradeForTrade(i.delivery_series) || isTradeForTrade(i.series);
+  const cands: (QuickReadChip & { topic: string })[] = [];
+  for (const code of i.signal_states ?? []) {
+    const topic = STATE_TOPIC.find(([re]) => re.test(code))?.[1];
+    if (topic) cands.push({ key: code, text: labelOf(code), tone: toneOf(code), topic });
+  }
+  for (const c of i.insight_chips ?? []) {
+    const topic = METRIC_TOPIC[c.metric];
+    if (c.type === "computed_fact" && topic) cands.push({ key: `fact-${c.metric}`, text: c.text, tone: "neutral", topic });
+  }
+  const contradicts = (c: { key: string; topic: string }) => {
+    if (c.topic === "delivery") {
+      if (tft) return true;
+      if (num(i.delivery_pct) && num(i.delivery_avg20)) {
+        if (c.key === "DELIVERY_UP" && i.delivery_pct < i.delivery_avg20) return true;
+        if (c.key === "DELIVERY_DOWN" && i.delivery_pct > i.delivery_avg20) return true;
+      }
+    }
+    if (c.topic === "volume" && num(i.volume_ratio_5d)) {
+      if (c.key === "VOLUME_ELEVATED" && i.volume_ratio_5d < 1) return true;
+      if (c.key === "VOLUME_MUTED" && i.volume_ratio_5d > 1) return true;
+    }
+    return false;
+  };
+  const best = new Map<string, QuickReadChip & { topic: string }>();
+  for (const c of cands) {
+    if (contradicts(c)) continue;
+    const cur = best.get(c.topic);
+    if (!cur || c.text.length < cur.text.length) best.set(c.topic, c);
+  }
+  return CHIP_TOPIC_ORDER.flatMap((t) => (best.has(t) ? [best.get(t)!] : []))
+    .slice(0, MAX_QUICK_READ_CHIPS)
+    .map(({ key, text, tone, topic }) => ({
+      key,
+      text,
+      // a shorter computed-fact wording keeps the colour of the state chip it replaces
+      tone: key.startsWith("fact-") ? (cands.find((c) => c.topic === topic && !c.key.startsWith("fact-") && !contradicts(c))?.tone ?? tone) : tone,
+    }));
+}
+
 /** Rupees as a readable value: crore for large amounts, lakh and plain rupees for small ones. */
 export function formatRupeesCompact(value: number | null | undefined): string {
   if (!num(value)) return "—";
