@@ -18,7 +18,7 @@ const js = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.Co
 const mod = { exports: {} };
 new Function("module", "exports", js)(mod, mod.exports);
 const rules = mod.exports.renamedSymbolRedirects();
-assert.equal(rules.length, 3 * 4 * 2, "3 stocks x 4 pages x (page, sub-page)");
+assert.equal(rules.length, 4 * 4 * 2, "4 stocks x 4 pages x (page, sub-page)");
 assert.ok(rules.every((r) => r.statusCode === 301), "all permanent");
 const hit = (path) => {
   for (const r of rules) {
