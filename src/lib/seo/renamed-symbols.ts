@@ -7,6 +7,7 @@ export const RENAMED_SYMBOLS: Record<string, string> = {
   SILLYMONKS: "CRESTO",   // Silly Monks Entertainment -> Cresto Techno, 10 Sep 2026
   HEG: "HEGAM",           // HEG -> HEG Advanced Materials, 22 Sep 2026
   MANBRO: "KDGREEN",      // Manbro Industries -> KD Green Industries, 3 Sep 2026
+  ICICIPRULI: "ICICILIFE", // ICICI Prudential Life Insurance -> ICICI Life Insurance, Oct 2026 (ISIN INE726G01019)
 };
 
 const STOCK_PAGES = ["stocks", "signals", "research", "track-record"] as const;
