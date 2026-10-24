@@ -116,6 +116,23 @@ const IST_DAY = new Intl.DateTimeFormat("en-CA", {
   day: "2-digit",
 });
 
+/** "2026-09-15" -> "15 Sep 2026" (no time zone involved); "" when the input is not a date. */
+export function formatYmd(ymd: string | null | undefined): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd ?? "");
+  if (!m) return "";
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${Number(m[3])} ${months[Number(m[2]) - 1]} ${m[1]}`;
+}
+
+/** Whole days between a YYYY-MM-DD day and today (India), or null. */
+export function daysSinceYmd(ymd: string | null | undefined): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd ?? "");
+  if (!m) return null;
+  const t = /^(\d{4})-(\d{2})-(\d{2})/.exec(istToday());
+  if (!t) return null;
+  return Math.round((Date.UTC(+t[1], +t[2] - 1, +t[3]) - Date.UTC(+m[1], +m[2] - 1, +m[3])) / 86400000);
+}
+
 /** Today's date in India, YYYY-MM-DD. */
 export function istToday(): string {
   return IST_DAY.format(new Date());

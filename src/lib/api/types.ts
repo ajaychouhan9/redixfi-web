@@ -575,6 +575,8 @@ export interface CompareCompany {
   sector: string | null;
   has_score: boolean;
   has_fundamentals: boolean;
+  /** The day this company's own latest fundamentals record was fetched (YYYY-MM-DD). */
+  fundamentals_as_of?: string | null;
   locked: boolean;
 }
 
@@ -954,6 +956,8 @@ export interface FundamentalsEvents {
 export interface FundamentalsBlock {
   symbol: string;
   as_of: string;
+  /** The day this company's own latest fundamentals record was fetched (YYYY-MM-DD). */
+  fetched_on?: string | null;
   identity: FundamentalsIdentity;
   quarterly: FundamentalsQuarterly;
   annual: FundamentalsAnnual;

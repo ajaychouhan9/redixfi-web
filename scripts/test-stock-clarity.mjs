@@ -239,3 +239,20 @@ console.log("stock-page clarity helpers: ok");
   assert.deepEqual(hits, []);
   console.log("page polish: ok");
 }
+
+// ---- follow-up: fundamentals date, recap basis ----
+{
+  const rd = (f) => readFileSync(new URL(f, import.meta.url), "utf8");
+  const { formatYmd } = load("../src/lib/format.ts");
+  assert.equal(formatYmd("2026-09-15"), "15 Sep 2026");
+  assert.equal(formatYmd("2026-10-05T10:00:00"), "5 Oct 2026");
+  assert.equal(formatYmd(null), "");
+  assert.equal(formatYmd("not a date"), "");
+  const fp = rd("../src/components/app/research/FundamentalsPanels.tsx");
+  assert.ok(fp.includes("Fundamentals as of") && fp.includes('data-testid="fundamentals-as-of"') && fp.indexOf("fundamentals-as-of") < fp.indexOf("Is it growing?"), "date shown above the growth and valuation blocks");
+  const cmp = rd("../src/components/app/signals/CompareResultCard.tsx");
+  assert.ok(cmp.includes("Fundamentals as of") && cmp.includes("fundamentals_as_of"), "compare table row");
+  const added = "Fundamentals as of the company's own latest record is days old official close";
+  assert.deepEqual(added.match(/\b(buy|sell|target|likely|expected|bullish|bearish|recommend\w*|predict\w*)\b/gi) ?? [], []);
+  console.log("follow-up checks: ok");
+}

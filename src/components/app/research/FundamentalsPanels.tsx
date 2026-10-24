@@ -2,7 +2,7 @@ import { Collapsible } from "@/components/ui/Collapsible";
 import { ExplainTerm } from "@/components/ui/ExplainTerm";
 import { Chip } from "@/components/ui/Chip";
 import { Sparkline } from "@/components/ui/Sparkline";
-import { formatDateIst, formatCr } from "@/lib/format";
+import { daysSinceYmd, formatDateIst, formatCr, formatYmd } from "@/lib/format";
 import type { FundamentalsBlock, FundamentalsShareholding, GenericRecord, InsiderTrade, PeerRow } from "@/lib/api/types";
 import { OwnershipActivity } from "@/components/app/research/OwnershipActivity";
 import { VolatilityRankCard } from "@/components/app/research/VolatilityRankCard";
@@ -70,8 +70,16 @@ export function FundamentalsPanels({
 
   const { quarterly, valuation, shareholding, events, flags, coverage } = fundamentals;
 
+  const asOf = formatYmd(fundamentals.fetched_on);
+  const ageDays = daysSinceYmd(fundamentals.fetched_on);
   return (
     <div className="space-y-3">
+      {asOf && (
+        <p className="text-xs text-foreground-faint" data-testid="fundamentals-as-of">
+          Fundamentals as of {asOf}
+          {ageDays !== null && ageDays > 30 ? ` · the company's own latest record is ${ageDays} days old` : ""}
+        </p>
+      )}
       {flags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {flags.map((f) => (

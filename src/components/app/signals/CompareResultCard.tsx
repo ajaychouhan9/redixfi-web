@@ -7,6 +7,7 @@ import { compareExplainerCtx } from "@/lib/compare-explainer";
 import type { CompareResult } from "@/lib/api/types";
 import { stockPath } from "@/lib/seo/stock-symbol";
 import { displayName, shortName } from "@/lib/company-name";
+import { formatYmd } from "@/lib/format";
 
 /** Task 13 — chat-style comparison result card, rendered under the screener
  * bar. Symmetric table (rows = metrics, columns = symbols in the user's own
@@ -127,6 +128,15 @@ export function CompareResultCard({ compare }: { compare: CompareResult }) {
                     })}
                   </tr>
                 ))}
+                {/* each company's own record date: fundamentals are fetched on a rolling cycle, so dates can differ */}
+                <tr className="border-t border-border" data-testid="fundamentals-as-of-row">
+                  <td className="sticky left-0 z-10 bg-surface px-3 py-2 text-foreground-muted">Fundamentals as of</td>
+                  {symbols.map((sym) => (
+                    <td key={sym} className="px-3 py-2 text-foreground-muted">
+                      {formatYmd(companies[sym]?.fundamentals_as_of) || <span className="text-foreground-faint">Not available</span>}
+                    </td>
+                  ))}
+                </tr>
               </tbody>
             </table>
           </div>
