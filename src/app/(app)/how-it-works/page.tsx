@@ -220,9 +220,9 @@ export default function HowItWorksPage() {
             available.
           </li>
           <li>
-            <span className="font-medium text-foreground">BE (trade-for-trade) stocks.</span> Delivery in the
-            BE series is close to 100% by construction, so it is not used as a signal and is shown as not
-            applicable.
+            <span className="font-medium text-foreground">BE and BZ (trade-for-trade) stocks.</span> Delivery in
+            the BE and BZ series is close to 100% by construction, so it is not used as a signal and is shown
+            as not applicable.
           </li>
           <li>
             <span className="font-medium text-foreground">Data can be delayed or missing.</span> The page

@@ -73,7 +73,7 @@ export default async function VolatilityPage() {
             <ul className="list-disc space-y-1 pl-5">
               <li>Stocks on hold while a corporate action, demerger or review is checked, because earlier prices are not comparable.</li>
               <li>Stocks with limited price data, fewer than 21 stored sessions, or a missing session in the window.</li>
-              <li>Stocks that trade in the BE (trade-for-trade) series, where a daily price band limits how far the price can move.</li>
+              <li>Stocks that trade in the BE or BZ (trade-for-trade) series, where a daily price band limits how far the price can move.</li>
               <li>Stocks with a very large one-day price step that has not been explained.</li>
             </ul>
             <p className="text-xs text-foreground-faint">

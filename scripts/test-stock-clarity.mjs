@@ -77,3 +77,15 @@ for (const f of files) {
   assert.deepEqual(hits, [], `${f}: ${hits.join(", ")}`);
 }
 console.log("stock-page clarity helpers: ok");
+
+// BZ is handled like BE everywhere delivery is concerned
+{
+  const { isTradeForTrade, quickReadAllowed: allowed } = load("../src/lib/stock-clarity.ts");
+  assert.equal(isTradeForTrade("BE"), true);
+  assert.equal(isTradeForTrade("BZ"), true);
+  assert.equal(isTradeForTrade("EQ"), false);
+  assert.equal(isTradeForTrade(null), false);
+  assert.equal(allowed({ ...base, delivery_series: "BZ" }), false, "a BZ stock gets no Quick read");
+  assert.equal(allowed({ ...base, delivery_series: "EQ" }), true);
+  console.log("BE/BZ rule: ok");
+}

@@ -21,6 +21,11 @@ export interface QuickReadInput {
 }
 
 const HELD_STATUSES = new Set(["unconfirmed", "review"]);
+
+/** BE and BZ are trade-for-trade series: delivery is close to 100% by construction and is not applicable. */
+export function isTradeForTrade(series: string | null | undefined): boolean {
+  return series === "BE" || series === "BZ";
+}
 const num = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 
 function signed(v: number): string {
@@ -37,8 +42,7 @@ export function quickReadAllowed(i: QuickReadInput): boolean {
   if (!num(i.composite_score)) return false;
   if (i.limited_data) return false;
   if (i.corporate_action_status && HELD_STATUSES.has(i.corporate_action_status)) return false;
-  if (i.delivery_series === "BE") return false;
-  if (i.series === "BE" || i.series === "BZ") return false;
+  if (isTradeForTrade(i.delivery_series) || isTradeForTrade(i.series)) return false;
   return true;
 }
 

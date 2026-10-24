@@ -163,7 +163,7 @@ export function VolatilityBoard({ initialTop, initialBottom }: { initialTop: Boa
           {found && !busy && found.rows.length === 0 && (
             <p className="text-sm text-foreground-muted">
               No ranked stock matches “{q.trim()}”. A stock that is on hold for a corporate action, has limited data, fewer than 21
-              stored sessions or trades in the BE series is not ranked.
+              stored sessions or trades in the BE or BZ series is not ranked.
             </p>
           )}
           {found && found.rows.length > 0 && <ul className="space-y-2">{found.rows.map((r) => <Row key={r.symbol} r={r} />)}</ul>}
