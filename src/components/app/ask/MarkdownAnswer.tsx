@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Fragment } from "react";
 
 /**
@@ -11,8 +12,17 @@ import { Fragment } from "react";
  * dependency exists in this repo yet (checked package.json first).
  */
 function renderInline(text: string, keyPrefix: string) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g).filter((p) => p !== "");
+  const parts = text.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\(\/[A-Za-z0-9/_-]*\))/g).filter((p) => p !== "");
   return parts.map((part, i) => {
+    // Same-site link only, e.g. [See plans](/pricing) in the Pro-feature message
+    const link = /^\[([^\]]+)\]\((\/[A-Za-z0-9/_-]*)\)$/.exec(part);
+    if (link) {
+      return (
+        <Link key={`${keyPrefix}-${i}`} href={link[2]} className="font-semibold underline">
+          {link[1]}
+        </Link>
+      );
+    }
     if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
       return (
         <strong key={`${keyPrefix}-${i}`} className="font-semibold text-foreground">
