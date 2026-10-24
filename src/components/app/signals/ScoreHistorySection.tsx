@@ -27,6 +27,7 @@ import { ExplainTerm } from "@/components/ui/ExplainTerm";
 import { getScoreHistory } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { formatShortDate, formatTimeIst, hasBarTime, isClosingBar } from "@/lib/format";
+import { isTradeForTrade } from "@/lib/stock-clarity";
 import type { CorporateActionNote, ScoreHistoryResponse, ScoreHistoryRow, ScoreHistoryTodayRow } from "@/lib/api/types";
 
 /**
@@ -312,8 +313,8 @@ export function ScoreHistorySection({
                         <td className="py-1.5 text-foreground-muted">{formatShortDate(r.date)}</td>
                         <td className="py-1.5"><DeltaValue value={r.price_change_pct} kind="pct" /></td>
                         <td className="py-1.5 text-foreground-muted">
-                          {r.delivery_series === "BE" ? (
-                            <span className="text-foreground-faint">n/a (BE)</span>
+                          {isTradeForTrade(r.delivery_series) ? (
+                            <span className="text-foreground-faint">n/a ({r.delivery_series})</span>
                           ) : (
                             <>
                               {fmtPct(r.delivery_pct)}
@@ -363,8 +364,8 @@ export function ScoreHistorySection({
                     <div className="mt-1 grid grid-cols-3 gap-x-2 gap-y-1 text-[11px] text-foreground-muted">
                       <span>Price <DeltaValue value={r.price_change_pct} kind="pct" /></span>
                       <span>
-                        Delivery {r.delivery_series === "BE" ? "n/a (BE)" : fmtPct(r.delivery_pct)}
-                        {r.delivery_series !== "BE" && r.delivery_as_of ? ` · ${formatShortDate(r.delivery_as_of)}` : ""}
+                        Delivery {isTradeForTrade(r.delivery_series) ? `n/a (${r.delivery_series})` : fmtPct(r.delivery_pct)}
+                        {!isTradeForTrade(r.delivery_series) && r.delivery_as_of ? ` · ${formatShortDate(r.delivery_as_of)}` : ""}
                       </span>
                       <span>Vol {fmtRatio(r.volume_ratio_5d)}</span>
                     </div>

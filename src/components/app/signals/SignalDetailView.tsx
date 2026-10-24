@@ -13,6 +13,7 @@ import { ScoreAsOf } from "@/components/app/signals/ScoreAsOf";
 import { ScoreHistorySection } from "@/components/app/signals/ScoreHistorySection";
 import { VolatilitySection } from "@/components/app/signals/VolatilitySection";
 import { QuickRead } from "@/components/app/signals/QuickRead";
+import { isTradeForTrade } from "@/lib/stock-clarity";
 import { HowToReadPage } from "@/components/app/signals/HowToReadPage";
 import { InsightChips } from "@/components/app/education/InsightChips";
 import { CandleChart } from "@/components/app/CandleChart";
@@ -68,7 +69,7 @@ export function SignalDetailView({
           {detail.limited_data_note || "This stock's feed is incomplete; the score is partial."}
         </div>
       )}
-      {detail.partial && !detail.limited_data && s.delivery_series !== "BE" && (
+      {detail.partial && !detail.limited_data && !isTradeForTrade(s.delivery_series) && (
         <div className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-muted">
           <span className="font-medium text-foreground">Partial score.</span> Some inputs were not
           available for this session; the score is built from what was measured.
@@ -189,10 +190,10 @@ export function SignalDetailView({
           </DataRow>
           <DataRow
             label="Delivery (previous session)"
-            asOf={s.delivery_series === "BE" ? null : detail.signal_freshness?.delivery_pct}
+            asOf={isTradeForTrade(s.delivery_series) ? null : detail.signal_freshness?.delivery_pct}
           >
-            {s.delivery_series === "BE" ? (
-              <span className="text-foreground-faint">Delivery not applicable (BE series)</span>
+            {isTradeForTrade(s.delivery_series) ? (
+              <span className="text-foreground-faint">Delivery not applicable ({s.delivery_series} series)</span>
             ) : s.delivery_pct === null || s.delivery_avg20 === null ? (
               <span className="text-foreground-faint">Not available</span>
             ) : (
