@@ -153,3 +153,17 @@ console.log("stock-page clarity helpers: ok");
   assert.deepEqual(hits, [], hits.join(","));
   console.log("page structure, FAQ, markers: ok");
 }
+
+// held / under review stocks: no Quick read card at all (line, chips and link)
+{
+  const { isHeldStatus, quickReadAllowed: allowed } = load("../src/lib/stock-clarity.ts");
+  assert.equal(isHeldStatus("unconfirmed"), true);
+  assert.equal(isHeldStatus("review"), true);
+  assert.equal(isHeldStatus("confirmed"), false, "a confirmed split is adjusted, not held");
+  assert.equal(isHeldStatus(null), false);
+  assert.equal(allowed({ ...base, corporate_action_status: "review" }), false);
+  const quick = readFileSync(new URL("../src/components/app/signals/QuickRead.tsx", import.meta.url), "utf8");
+  const heldAt = quick.indexOf("isHeldStatus(detail.corporate_action?.status)) return null");
+  assert.ok(heldAt > 0 && heldAt < quick.indexOf("quickReadChips("), "the held check comes before the chips are built");
+  console.log("held stocks: ok");
+}

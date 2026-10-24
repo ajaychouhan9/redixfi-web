@@ -5,6 +5,7 @@
  * (the score and its changes, delivery against its 20-day average, volume against its norm, the volatility rank).
  * A template, not generated text; past and measured facts only. Shown only when at least three parts exist, and
  * never for stocks on a corporate-action hold, limited-data stocks, BE/BZ stocks or when the score is missing.
+ * A stock held for a corporate-action check gets no card at all.
  * The flag chips (state chips and computed-fact chips, one per topic, at most six) sit in the same card.
  * A change that is blank (including one blanked as a catch-up against stale prices) is simply not shown.
  */
@@ -16,7 +17,7 @@ import { getVolatility } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { Chip } from "@/components/ui/Chip";
 import { signalStateLabel, signalStateTone } from "@/lib/signal-state-labels";
-import { quickReadChips, quickReadParts } from "@/lib/stock-clarity";
+import { isHeldStatus, quickReadChips, quickReadParts } from "@/lib/stock-clarity";
 import type { SignalDetail, VolatilityResponse } from "@/lib/api/types";
 
 export function QuickRead({ detail }: { detail: SignalDetail }) {
@@ -41,6 +42,8 @@ export function QuickRead({ detail }: { detail: SignalDetail }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [detail.symbol]);
 
+  // held / under review: no Quick read card at all (no line, no flag chips, no link); the corporate-action note says why
+  if (isHeldStatus(detail.corporate_action?.status)) return null;
   // wait for the volatility answer so a BE/BZ stock is never shown a line first and then loses it
   if (!settled) return null;
   const s = detail.signals;

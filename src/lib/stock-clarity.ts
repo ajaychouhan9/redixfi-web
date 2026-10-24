@@ -22,6 +22,12 @@ export interface QuickReadInput {
 
 const HELD_STATUSES = new Set(["unconfirmed", "review"]);
 
+/** A stock held while a corporate action is checked (unconfirmed / under review): the whole Quick read card is hidden
+ *  (line, flag chips and link); only the corporate-action note is shown. */
+export function isHeldStatus(status: string | null | undefined): boolean {
+  return !!status && HELD_STATUSES.has(status);
+}
+
 /** BE and BZ are trade-for-trade series: delivery is close to 100% by construction and is not applicable. */
 export function isTradeForTrade(series: string | null | undefined): boolean {
   return series === "BE" || series === "BZ";
@@ -41,7 +47,7 @@ export function moreVolatileThanPct(rank: number, rankedOf: number): number {
 export function quickReadAllowed(i: QuickReadInput): boolean {
   if (!num(i.composite_score)) return false;
   if (i.limited_data) return false;
-  if (i.corporate_action_status && HELD_STATUSES.has(i.corporate_action_status)) return false;
+  if (isHeldStatus(i.corporate_action_status)) return false;
   if (isTradeForTrade(i.delivery_series) || isTradeForTrade(i.series)) return false;
   return true;
 }
