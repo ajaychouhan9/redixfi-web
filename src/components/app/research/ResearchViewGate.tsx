@@ -90,7 +90,7 @@ export function ResearchViewGate({
     return (
       <Card>
         <p className="text-sm">
-          {gateMessage} Analytics Pro includes unlimited Research access.
+          {gateMessage} Pro includes unlimited Research access.
         </p>
         <Link href="/pricing" className="mt-2 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
           View plans

@@ -4,6 +4,7 @@ import { AiDockShell } from "@/components/layout/AiDockShell";
 import { FooterDisclaimer } from "@/components/layout/FooterDisclaimer";
 import { TrialStatusBar } from "@/components/layout/TrialStatusBar";
 import { ChannelDiscoveryBanner } from "@/components/app/ChannelDiscoveryBanner";
+import { InstallBanner } from "@/components/app/pwa/InstallBanner";
 import { getMarketOverview } from "@/lib/api/endpoints";
 
 // CLS fix (2026-08-08) — see MarketRibbon.tsx's own docstring for the
@@ -85,6 +86,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             required in-app discovery notice and it only POINTS at the
             dedicated section inside Account → Alerts. */}
         <ChannelDiscoveryBanner />
+        <InstallBanner />
         <main className="mb-14 flex-1 px-4 py-4 md:mb-0 md:px-6 md:py-6">{children}</main>
         <FooterDisclaimer />
       </AiDockShell>

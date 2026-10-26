@@ -24,7 +24,7 @@ export const PLAN_LABEL: Record<string, string> = {
   pro_399: "Pro",
   basic_annual_2399: "Basic Annual",
   pro_annual_3999: "Pro Annual",
-  monthly_249: "Analytics Pro",
+  monthly_249: "Pro",
   annual_2499: "Annual",
   founding_1799: "Founding Annual",
 };
@@ -66,7 +66,7 @@ export function PlanCard({
    * caller PER PLAN (validated against THIS card's own plan id — never a
    * different plan's result reused across cards, the root cause of a live
    * bug where Founding Annual showed a false 100%-off/₹0 preview for a
-   * code that only ever applied to Analytics Pro; see CheckoutView.tsx).
+   * code that only ever applied to Pro; see CheckoutView.tsx).
    * `applicable: false` renders an honest "doesn't apply to this plan"
    * notice instead of a number the user won't actually be charged.
    */

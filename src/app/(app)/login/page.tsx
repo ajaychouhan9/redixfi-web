@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { trialLabel, useTrialDays } from "@/lib/trial";
 import { useEffect, useState } from "react";
 import { getFirebaseAuth, describeAuthError } from "@/lib/auth/firebase";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -50,6 +51,7 @@ function toE164(raw: string): string {
 
 export default function LoginPage() {
   const router = useRouter();
+  const trialDays = useTrialDays();
   const { loginWithFirebaseToken } = useAuth();
 
   const [mode, setMode] = useState<Mode>("signin");
@@ -91,7 +93,9 @@ export default function LoginPage() {
 
   async function finishLogin(idToken: string) {
     await loginWithFirebaseToken(idToken);
-    router.push("/account");
+    // back to the page the visitor came from when it was a same-site path (for example the stock they were opening)
+    const next = new URLSearchParams(window.location.search).get("next");
+    router.push(next && next.startsWith("/") && !next.startsWith("//") ? next : "/account");
   }
 
   async function signInWithGoogle() {
@@ -181,8 +185,8 @@ export default function LoginPage() {
       </div>
       <h1 className="mb-4 text-xl font-semibold">{mode === "signup" ? "Create your account" : "Log in"}</h1>
       <p className="mb-4 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-foreground">
-        <span className="font-semibold">Login to get 2 days of free Pro Trial access.</span>{" "}
-        One-time offer for eligible accounts; your 48 hours start after your first successful login.
+        <span className="font-semibold">Login to get {trialLabel(trialDays)} of free Pro Trial access.</span>{" "}
+        One-time offer for eligible accounts; your {trialLabel(trialDays)} start after your first successful login.
       </p>
       <Card>
         <div className="space-y-4">

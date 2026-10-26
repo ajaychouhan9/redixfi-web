@@ -1,4 +1,5 @@
 import type { ApiEnvelope, PagedEnvelope } from "./types";
+import { getVisitorId, lookupGrantHeader, needsLookupHeaders } from "@/lib/lookup-grants";
 
 // Usable from both Server and Client Components: the API is public-CORS
 // (nginx allows Vercel origins) and takes a bearer JWT, not a cookie
@@ -60,6 +61,13 @@ async function rawFetch(path: string, opts: FetchOpts = {}): Promise<Response> {
   const headers: Record<string, string> = {};
   if (opts.token) headers["Authorization"] = `Bearer ${opts.token}`;
   if (opts.body !== undefined) headers["Content-Type"] = "application/json";
+  // free stock lookups: the visitor id and today's grants, only on the stock-level Signals requests and /lookups
+  if (typeof window !== "undefined" && needsLookupHeaders(path)) {
+    const vid = getVisitorId();
+    if (vid) headers["X-Visitor-Id"] = vid;
+    const grants = lookupGrantHeader();
+    if (grants) headers["X-Lookup-Grant"] = grants;
+  }
 
   const fetchInit: RequestInit & { next?: { revalidate?: number } } = {
     method: opts.method ?? "GET",

@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth/AuthContext";
 import { ThemeProvider } from "@/lib/theme/ThemeContext";
 import { AskPanelProvider } from "@/lib/ask-panel/AskPanelContext";
+import { PwaProvider } from "@/components/app/pwa/PwaProvider";
 
 // Design system (locked 2026-08 UI reframe): IBM Plex Sans for prose, IBM
 // Plex Mono for every financial figure (scores, prices, deltas, %).
@@ -48,6 +49,10 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
   },
+  // "Add to Home Screen" (the manifest itself is app/manifest.ts)
+  applicationName: "RedixFi",
+  appleWebApp: { capable: true, title: "RedixFi", statusBarStyle: "black-translucent" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
 };
 
 // Android Chrome: the on-screen keyboard resizes the layout viewport, so
@@ -57,6 +62,10 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   interactiveWidget: "resizes-content",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f7f8fb" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0f1a" },
+  ],
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -68,7 +77,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className="min-h-full bg-background font-sans text-foreground">
         <ThemeProvider>
           <AuthProvider>
-            <AskPanelProvider>{children}</AskPanelProvider>
+            <AskPanelProvider>
+              <PwaProvider>{children}</PwaProvider>
+            </AskPanelProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

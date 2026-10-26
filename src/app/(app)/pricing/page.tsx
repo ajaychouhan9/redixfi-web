@@ -5,7 +5,7 @@ import { CheckoutView } from "@/components/app/billing/CheckoutView";
 export const metadata: Metadata = {
   title: "Pricing",
   alternates: { canonical: "/pricing" },
-  description: "RedixFi Analytics Pro — measured signals, alerts and screeners across 2,000+ NSE stocks.",
+  description: "RedixFi Pro — measured signals, alerts and screeners across 2,000+ NSE stocks.",
 };
 
 export default async function CheckoutPage() {

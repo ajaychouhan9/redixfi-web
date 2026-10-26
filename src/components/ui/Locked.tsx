@@ -5,7 +5,7 @@ import Link from "next/link";
  * Same pattern across every locked surface (mockup's LockedCell/LockedRow) —
  * defined once here instead of re-implemented per component. Inline variant
  * for table cells, block variant for a full row. */
-export function LockedInline({ children, title = "Unlock with Analytics Pro" }: { children: React.ReactNode; title?: string }) {
+export function LockedInline({ children, title = "Unlock with Pro" }: { children: React.ReactNode; title?: string }) {
   return (
     <span className="relative inline-flex max-w-full items-center" title={title}>
       <span aria-hidden className="pointer-events-none select-none blur-[3px] opacity-60">
@@ -16,7 +16,7 @@ export function LockedInline({ children, title = "Unlock with Analytics Pro" }: 
   );
 }
 
-export function LockedRow({ children, title = "Unlock with Analytics Pro" }: { children: React.ReactNode; title?: string }) {
+export function LockedRow({ children, title = "Unlock with Pro" }: { children: React.ReactNode; title?: string }) {
   return (
     <div className="relative" title={title}>
       <div aria-hidden className="pointer-events-none select-none blur-[3px] opacity-60">

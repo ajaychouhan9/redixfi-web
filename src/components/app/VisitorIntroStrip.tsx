@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ShieldAlert, FileSearch, TrendingUp } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { trialLabel, useTrialDays } from "@/lib/trial";
 
 /**
  * Server-rendered by default for every request — including Googlebot's —
@@ -32,6 +33,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
  * that on is a separate, not-yet-scheduled piece of work.
  */
 export function VisitorIntroStrip() {
+  const trialDays = useTrialDays();
   const { user } = useAuth();
   if (user) return null;
 
@@ -60,7 +62,7 @@ export function VisitorIntroStrip() {
           </Link>
         </div>
         <p className="mt-2 text-xs font-medium text-accent">
-          Login to get 2 days of free Pro Trial access — a one-time offer for eligible accounts.
+          Login to get {trialLabel(trialDays)} of free Pro Trial access — a one-time offer for eligible accounts.
         </p>
 
         <div className="mt-5 inline-flex max-w-2xl items-start gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs leading-relaxed text-foreground-muted">

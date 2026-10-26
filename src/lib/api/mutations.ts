@@ -110,6 +110,23 @@ export async function updateAskPreferences(token: string, skip_confirm: boolean)
   return env.data;
 }
 
+export interface LookupResult {
+  allowed: boolean;
+  unlimited: boolean;
+  already: boolean;
+  used: number;
+  limit: number | null;
+  grant: string | null;
+  reason?: string | null;
+  tier: string;
+}
+
+/** Count one free stock lookup (shared by Signals and Research). Never throws on a refusal: `allowed` says it. */
+export async function postLookup(symbol: string, token?: string | null): Promise<LookupResult> {
+  const env = await apiMutate<LookupResult>(`/lookups/${encodeURIComponent(symbol)}`, "POST", undefined, { token: token ?? undefined });
+  return env.data;
+}
+
 export async function getWatchlist(token: string): Promise<WatchlistResponse> {
   const env = await apiGet<WatchlistResponse>("/me/watchlist", { token });
   return env.data;

@@ -43,6 +43,10 @@ export function ChannelDiscoveryBanner() {
       if (!token) return;
       try {
         const res = await getPublicChannels(token);
+        // Only while a public channel is actually live: "View channels" must open a real link, and a banner that
+        // points at nothing is hidden for everyone (2026-10-26; neither the WhatsApp nor the Telegram channel is set up yet).
+        const live = (l?: { configured?: boolean; url?: string | null } | null) => !!(l?.configured && l.url);
+        if (!live(res.channels?.telegram) && !live(res.channels?.whatsapp)) return;
         if (cancelled || !shouldShowChannelDiscovery(res.discovery)) return;
         setVisible(true);
         // Record that today's notification was displayed (once-per-day).
