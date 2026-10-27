@@ -616,6 +616,34 @@ export interface CompareResult {
   score_history: Record<string, ScoreHistoryPoint[]>;
 }
 
+export interface Near52WeekHighRow {
+  symbol: string;
+  company_name: string | null;
+  sector: string | null;
+  last_price: number | null;
+  week52_high: number | null;
+  pct_below_52w_high: number | null;
+  volume_ratio_5_20: number | null;
+  delivery_pct: number | null;
+  delivery_series?: string | null;
+  volatility_rank: number | null;
+  volatility_ranked_of: number | null;
+  volatility_text: string | null;
+  history_sessions: number;
+  less_than_52w: boolean;
+  locked: boolean;
+}
+
+export interface Near52WeekHighResponse {
+  as_of: string;
+  filter: { min_pct: number | null; max_pct: number | null; sort: string; order: "asc" | "desc" };
+  results: Near52WeekHighRow[];
+  result_count: number;
+  short_history_count: number;
+  excluded_count: number;
+  disclaimer: string;
+}
+
 export interface SmartScreenResult {
   query: string;
   intent: "screen" | "compare";

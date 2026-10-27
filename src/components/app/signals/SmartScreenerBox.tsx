@@ -6,6 +6,7 @@ import { AiLabel } from "@/components/ui/AiLabel";
 import { Chip } from "@/components/ui/Chip";
 import { SignalTableRow, type VisibleColumns } from "./SignalTableRow";
 import { CompareResultCard } from "./CompareResultCard";
+import { Near52WeekHighFilter } from "./Near52WeekHighFilter";
 import { smartScreen } from "@/lib/api/mutations";
 import { useAuth } from "@/lib/auth/AuthContext";
 import {
@@ -248,6 +249,7 @@ export function SmartScreenerBox() {
             )}
           </div>
         )}
+        <Near52WeekHighFilter />
       </div>
     </div>
   );
