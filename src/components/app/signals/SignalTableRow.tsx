@@ -39,6 +39,8 @@ export interface VisibleColumns {
   volume: boolean;
   chips: boolean;
   eventRisk: boolean;
+  from52: boolean;
+  volatility: boolean;
 }
 
 /** The stacked primary-value + faint-context-line cell pattern this table
@@ -178,6 +180,26 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
           />
         </td>
       )}
+      {columns.from52 && (
+        <td className="hidden whitespace-nowrap px-3 py-2.5 sm:table-cell">
+          <StackedCell
+            locked={locked}
+            lockedFallback="--"
+            primary={row.pct_below_52w_high !== null ? `${row.pct_below_52w_high.toFixed(1)}% below` : "n/a"}
+            subtitle={row.week52_high !== null ? `high ₹${row.week52_high.toLocaleString("en-IN")}` : undefined}
+          />
+        </td>
+      )}
+      {columns.volatility && (
+        <td className="hidden whitespace-nowrap px-3 py-2.5 md:table-cell">
+          <StackedCell
+            locked={locked}
+            lockedFallback="--"
+            primary={row.vol_pct_more !== null ? `More volatile than ${row.vol_pct_more}%` : "n/a"}
+            subtitle={row.vol_rank !== null && row.vol_ranked_of !== null ? `Rank ${row.vol_rank} of ${row.vol_ranked_of}` : undefined}
+          />
+        </td>
+      )}
       {columns.chips && (
         <td className="hidden px-3 py-2.5 lg:table-cell">
           {!locked && (
@@ -223,7 +245,7 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
  *  a locked (free-tier) score keeps the lock treatment. The badge is neutral on purpose (no colour for a high or low score). */
 export function SignalMobileRow({ row }: { row: SignalRow }) {
   return (
-    <li className="flex items-center gap-3 px-3 py-2.5" data-testid="signal-mobile-row">
+    <li className="flex flex-wrap items-center gap-3 px-3 py-2.5" data-testid="signal-mobile-row">
       <Link href={stockPath("/signals", row.symbol)} className="min-w-0 flex-1">
         <span className="font-mono text-sm font-semibold">{row.symbol}</span>
         {row.limited_data && <span className="ml-1.5 rounded bg-surface-raised px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide text-foreground-faint">Limited</span>}
@@ -255,6 +277,12 @@ export function SignalMobileRow({ row }: { row: SignalRow }) {
         )}
         {!row.locked && row.delta_1d !== null && <DeltaValue value={row.delta_1d} className="text-[11px]" />}
       </div>
+      {(row.pct_below_52w_high !== null || row.vol_pct_more !== null) && (
+        <div className="mt-1 flex w-full flex-wrap gap-x-2 text-[11px] text-foreground-faint">
+          {row.pct_below_52w_high !== null && <span>{row.pct_below_52w_high.toFixed(1)}% below 52w high</span>}
+          {row.vol_pct_more !== null && <span>More volatile than {row.vol_pct_more}%</span>}
+        </div>
+      )}
     </li>
   );
 }

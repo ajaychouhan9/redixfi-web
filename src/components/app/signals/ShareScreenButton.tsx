@@ -62,7 +62,7 @@ export function ShareScreenButton({ params, disabled }: { params: SharedScreenPa
         disabled={disabled}
         onClick={() => setOpen((o) => !o)}
         title="Share this screen"
-        className="flex items-center gap-1 rounded-lg border border-border bg-hover px-2 py-1.5 text-xs text-foreground-muted disabled:opacity-40"
+        className="flex h-9 items-center gap-1 rounded-lg border border-border bg-hover px-2 text-xs text-foreground-muted disabled:opacity-40"
       >
         <Share2 size={13} />
         Share

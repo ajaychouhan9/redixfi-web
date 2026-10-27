@@ -2,9 +2,9 @@
 
 import { ListSessionNote } from "@/components/app/signals/ListSessionNote";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { Search, Filter, ArrowUpDown, SlidersHorizontal, X } from "lucide-react";
+import { Search, Filter, ArrowUpDown, SlidersHorizontal, X, ChevronDown } from "lucide-react";
 import { getSignals } from "@/lib/api/endpoints";
-import type { SignalRow } from "@/lib/api/types";
+import type { SignalRow, SignalsPageInfo, SharedScreenParams } from "@/lib/api/types";
 import { SIGNAL_SECTORS } from "@/data/sectors";
 import { SignalMobileRow, SignalTableRow, type VisibleColumns } from "./SignalTableRow";
 import { UnlockBanner } from "@/components/ui/Locked";
@@ -15,37 +15,54 @@ import { downloadXlsx } from "@/lib/xlsx";
 import { isProEntitled } from "@/lib/entitlements";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getWatchlist } from "@/lib/api/mutations";
-import type { SharedScreenParams } from "@/lib/api/types";
+import type { SmartFilterPatch } from "./smartFilterPatch";
 
 const SORT_OPTIONS = [
-  // Default (2026-10-25): the size of today's score change, up or down alike; every other order is still here.
   { value: "abs_delta_1d", label: "Biggest score change (up or down)" },
   { value: "name", label: "Name (A–Z)" },
-  // Task 09: genuinely market-cap-ordered now (symbols_master.market_cap,
-  // backfilled from fundamentals_raw) — rows without a market_cap yet sort
-  // last regardless of direction.
   { value: "market_cap", label: "Market cap" },
   { value: "composite_score", label: "Composite score" },
   { value: "delta_1d", label: "Score change" },
   { value: "delivery_pct", label: "Delivery %" },
   { value: "sector_rank", label: "Sector rank" },
   { value: "volume_ratio", label: "Volume ratio" },
+  { value: "pct_below_52w_high", label: "From 52-week high" },
+  { value: "vol_pct_more", label: "Volatility" },
 ] as const;
 
 const PAGE_SIZE = 50;
+const DISCLAIMER = "Shows stocks that meet the chosen condition. This is data, not a recommendation.";
+const FROM52_OPTIONS = [
+  { value: "", label: "Any" },
+  { value: "2", label: "Within 2%" },
+  { value: "5", label: "Within 5%" },
+  { value: "10", label: "Within 10%" },
+  { value: "20", label: "Within 20%" },
+  { value: "custom", label: "Custom maximum" },
+];
+const VOLATILITY_OPTIONS = [
+  { value: "", label: "Any" },
+  { value: "lower", label: "Lower (below 25%)" },
+  { value: "lower_middle", label: "Lower-middle (25-50%)" },
+  { value: "upper_middle", label: "Upper-middle (50-75%)" },
+  { value: "higher", label: "Higher (75% and above)" },
+  { value: "custom", label: "Custom range" },
+];
 
-// "Clone this screen" (2026-09-11 task) — a shared screen's saved params,
-// pre-filling the SAME filter state a user typing it in by hand would
-// reach. Purely an initial-value source: once mounted, this component's
-// own state owns the truth, so the clone target can still freely modify
-// and re-save under a new link. Optional/partial because a shared screen
-// may have omitted any given filter.
-// Sep 2026: exposed so the Industry Standing card (a sibling component on
-// the same page) can drive this table's filter/scroll without a second
-// Signals table or a page navigation — see SignalsPageBody.tsx.
 export interface SignalsExplorerHandle {
   filterByIndustry: (industry: string) => void;
+  applySmartFilters: (patch: SmartFilterPatch) => void;
 }
+
+function asNumber(value: string): number | undefined {
+  if (!value.trim()) return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+const control =
+  "h-9 w-full rounded-lg border border-border bg-hover px-2 text-xs text-foreground outline-none focus:border-accent/60";
+const label = "flex flex-col gap-1 text-[11px] text-foreground-muted";
 
 export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams?: SharedScreenParams }>(function SignalsExplorer(
   { initialParams } = {},
@@ -55,32 +72,53 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   const containerRef = useRef<HTMLDivElement>(null);
   const [q, setQ] = useState(initialParams?.q ?? "");
   const [sector, setSector] = useState(initialParams?.sector ?? "");
-  // Separate from `sector` above (the legacy sector_index/NIFTY-style index
-  // dropdown, unchanged) — this filters symbols_master.industry, the SAME
-  // field the Industry Standing card groups by, via GET /signals?industry=.
   const [industry, setIndustry] = useState<string>("");
   const [scoreMin, setScoreMin] = useState(initialParams?.score_min != null ? String(initialParams.score_min) : "");
   const [scoreMax, setScoreMax] = useState(initialParams?.score_max != null ? String(initialParams.score_max) : "");
   const [eventRiskOnly, setEventRiskOnly] = useState(!!initialParams?.event_risk);
   const [watchlistOnly, setWatchlistOnly] = useState(false);
   const [watchlistSymbols, setWatchlistSymbols] = useState<string[] | null>(null);
-  // Default sort (2026-10-25): the biggest absolute score change today, up or down alike (neither name A-Z nor
-  // highest score first, so no direction is favoured). A CLONED screen's sort is the original creator's own explicit
-  // choice, not an unset default, same as a canned screen (/screens/[slug]) already legitimately sorting by delta_1d.
+
+  const [from52Preset, setFrom52Preset] = useState<string>(
+    (initialParams?.from_52w_max != null || initialParams?.from_52w_min != null) ? "custom" : ""
+  );
+  const [from52Custom, setFrom52Custom] = useState(
+    initialParams?.from_52w_max != null ? String(initialParams.from_52w_max) : ""
+  );
+  const [from52Min, setFrom52Min] = useState(
+    initialParams?.from_52w_min != null ? String(initialParams.from_52w_min) : ""
+  );
+  const [volatilityBand, setVolatilityBand] = useState<string>(
+    initialParams?.volatility_band ?? (initialParams?.volatility_min != null || initialParams?.volatility_max != null ? "custom" : "")
+  );
+  const [volMin, setVolMin] = useState(initialParams?.volatility_min != null ? String(initialParams.volatility_min) : "");
+  const [volMax, setVolMax] = useState(initialParams?.volatility_max != null ? String(initialParams.volatility_max) : "");
+  const [volumeMin, setVolumeMin] = useState(initialParams?.volume_ratio_min != null ? String(initialParams.volume_ratio_min) : "");
+  const [deliveryState, setDeliveryState] = useState(initialParams?.delivery_state ?? "");
+  const [deltaMin, setDeltaMin] = useState(initialParams?.delta_1d_min != null ? String(initialParams.delta_1d_min) : "");
+  const [dmaState, setDmaState] = useState(initialParams?.dma_state ?? "");
+  const [pcrBand, setPcrBand] = useState(initialParams?.pcr_band ?? "");
+  const [anomalyOnly, setAnomalyOnly] = useState(!!initialParams?.anomaly);
+  const [moreOpen, setMoreOpen] = useState(false);
+
   const [sort, setSort] = useState<string>(initialParams?.sort ?? "abs_delta_1d");
   const [order, setOrder] = useState<"asc" | "desc">(initialParams?.order ?? (initialParams?.sort ? "asc" : "desc"));
   const [page, setPage] = useState(1);
-  // Column spec (2026-08-08, finalized): Symbol/Price/Score are always on
-  // (not in this picker state at all). VWAP removed — intraday-only,
-  // wrong fit for this evening/post-close table (stays on the Intraday
-  // Scanner page). Volume (5d ratio) added.
-  const [columns, setColumns] = useState<VisibleColumns>({ sector: true, delivery: true, volume: true, chips: true, eventRisk: true });
+  const [columns, setColumns] = useState<VisibleColumns>({
+    sector: true, delivery: true, volume: true, chips: true, eventRisk: true,
+    from52: false, volatility: true,
+  });
   const [columnPickerOpen, setColumnPickerOpen] = useState(false);
 
   const [rows, setRows] = useState<SignalRow[]>([]);
   const [total, setTotal] = useState(0);
+  const [shortHistoryCount, setShortHistoryCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const from52Max = from52Preset === "custom" ? asNumber(from52Custom) : asNumber(from52Preset);
+  const volatilityMin = volatilityBand === "custom" ? asNumber(volMin) : undefined;
+  const volatilityMax = volatilityBand === "custom" ? asNumber(volMax) : undefined;
 
   useEffect(() => {
     if (!watchlistOnly || !user) return;
@@ -92,11 +130,85 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
     })();
   }, [watchlistOnly, user, getToken]);
 
+  useEffect(() => {
+    if (!columnPickerOpen) return;
+    const close = () => setColumnPickerOpen(false);
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, [columnPickerOpen]);
+
+  const clearAll = useCallback(() => {
+    setQ("");
+    setSector("");
+    setIndustry("");
+    setScoreMin("");
+    setScoreMax("");
+    setFrom52Preset("");
+    setFrom52Custom("");
+    setFrom52Min("");
+    setVolatilityBand("");
+    setVolMin("");
+    setVolMax("");
+    setVolumeMin("");
+    setDeliveryState("");
+    setDeltaMin("");
+    setDmaState("");
+    setPcrBand("");
+    setAnomalyOnly(false);
+    setEventRiskOnly(false);
+    setWatchlistOnly(false);
+    setPage(1);
+  }, []);
+
+  const applySmartFilters = useCallback((patch: SmartFilterPatch) => {
+    setQ("");
+    setSector("");
+    setIndustry(patch.sector ?? "");
+    setScoreMin(patch.score_min != null ? String(patch.score_min) : "");
+    setScoreMax(patch.score_max != null ? String(patch.score_max) : "");
+    if (patch.from_52w_max != null || patch.from_52w_min != null) {
+      setFrom52Preset("custom");
+      setFrom52Custom(patch.from_52w_max != null ? String(patch.from_52w_max) : "");
+    } else {
+      setFrom52Preset("");
+      setFrom52Custom("");
+    }
+    setFrom52Min(patch.from_52w_min != null ? String(patch.from_52w_min) : "");
+    if (patch.volatility_band) {
+      setVolatilityBand(patch.volatility_band);
+      setVolMin("");
+      setVolMax("");
+    } else if (patch.volatility_min != null || patch.volatility_max != null) {
+      setVolatilityBand("custom");
+      setVolMin(patch.volatility_min != null ? String(patch.volatility_min) : "");
+      setVolMax(patch.volatility_max != null ? String(patch.volatility_max) : "");
+    } else {
+      setVolatilityBand("");
+      setVolMin("");
+      setVolMax("");
+    }
+    setVolumeMin(patch.volume_ratio_min != null ? String(patch.volume_ratio_min) : "");
+    setDeliveryState(patch.delivery_state ?? "");
+    setDeltaMin(patch.delta_1d_min != null ? String(patch.delta_1d_min) : "");
+    setDmaState(patch.dma_state ?? "");
+    setPcrBand(patch.pcr_band ?? "");
+    setAnomalyOnly(!!patch.anomaly);
+    setEventRiskOnly(!!patch.event_risk);
+    setWatchlistOnly(!!patch.watchlist_only && !!user);
+    const advanced = patch.volume_ratio_min != null || patch.delivery_state != null
+      || patch.delta_1d_min != null || patch.dma_state != null || patch.pcr_band != null
+      || patch.anomaly != null || patch.event_risk != null || patch.watchlist_only != null;
+    setMoreOpen(advanced);
+    setPage(1);
+    containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [user]);
+
   useImperativeHandle(ref, () => ({
     filterByIndustry: (value: string) => {
       setIndustry(value);
       containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     },
+    applySmartFilters,
   }));
 
   const params = useMemo(
@@ -104,44 +216,59 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
       q: q || undefined,
       sector: sector || undefined,
       industry: industry || undefined,
-      score_min: scoreMin ? Number(scoreMin) : undefined,
-      score_max: scoreMax ? Number(scoreMax) : undefined,
+      score_min: asNumber(scoreMin),
+      score_max: asNumber(scoreMax),
       event_risk: eventRiskOnly ? true : undefined,
+      from_52w_max: from52Max,
+      from_52w_min: asNumber(from52Min),
+      volatility_band: volatilityBand && volatilityBand !== "custom" ? (volatilityBand as "lower" | "lower_middle" | "upper_middle" | "higher") : undefined,
+      volatility_min: volatilityMin,
+      volatility_max: volatilityMax,
+      volume_ratio_min: asNumber(volumeMin),
+      delivery_state: (deliveryState || undefined) as "above_avg" | "below_avg" | undefined,
+      delta_1d_min: asNumber(deltaMin),
+      dma_state: (dmaState || undefined) as "above_20dma" | "below_20dma" | undefined,
+      pcr_band: (pcrBand || undefined) as "low" | "neutral" | "high" | undefined,
+      anomaly: anomalyOnly ? true : undefined,
       sort,
       order,
       page,
       size: PAGE_SIZE,
     }),
-    [q, sector, industry, scoreMin, scoreMax, eventRiskOnly, sort, order, page]
+    [q, sector, industry, scoreMin, scoreMax, eventRiskOnly, from52Max, from52Min,
+     volatilityBand, volatilityMin, volatilityMax, volumeMin, deliveryState, deltaMin,
+     dmaState, pcrBand, anomalyOnly, sort, order, page]
   );
 
-  // Same filter identity as `params` above, minus pagination — what
-  // "Share this screen" persists. Page/size aren't part of a screen's
-  // identity (a viewer always starts at page 1, same as opening /screens
-  // or /signals fresh).
   const shareParams: SharedScreenParams = useMemo(
     () => ({
       q: q || undefined,
       sector: sector || undefined,
-      score_min: scoreMin ? Number(scoreMin) : undefined,
-      score_max: scoreMax ? Number(scoreMax) : undefined,
+      score_min: asNumber(scoreMin),
+      score_max: asNumber(scoreMax),
       event_risk: eventRiskOnly ? true : undefined,
+      from_52w_max: from52Max,
+      from_52w_min: asNumber(from52Min),
+      volatility_band: volatilityBand && volatilityBand !== "custom" ? (volatilityBand as SharedScreenParams["volatility_band"]) : undefined,
+      volatility_min: volatilityMin,
+      volatility_max: volatilityMax,
+      volume_ratio_min: asNumber(volumeMin),
+      delivery_state: (deliveryState || undefined) as SharedScreenParams["delivery_state"],
+      delta_1d_min: asNumber(deltaMin),
+      dma_state: (dmaState || undefined) as SharedScreenParams["dma_state"],
+      pcr_band: (pcrBand || undefined) as SharedScreenParams["pcr_band"],
+      anomaly: anomalyOnly ? true : undefined,
       sort,
       order,
     }),
-    [q, sector, scoreMin, scoreMax, eventRiskOnly, sort, order]
+    [q, sector, scoreMin, scoreMax, eventRiskOnly, from52Max, from52Min, volatilityBand,
+     volatilityMin, volatilityMax, volumeMin, deliveryState, deltaMin, dmaState, pcrBand, anomalyOnly, sort, order]
   );
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    // Bug fix: this fetch never sent the caller's auth token, so B8's
-    // per-tier masking always saw an anonymous/free request here — a
-    // logged-in paid user's Signal Dashboard list showed the same masked
-    // composite_score/locked rows a free visitor would. getToken()
-    // resolves to null when logged out, matching the previous (correct)
-    // anonymous behavior for that case.
     (async () => {
       const token = await getToken();
       getSignals(params, { token })
@@ -154,6 +281,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
           }
           setRows(data);
           setTotal(env.page_info.total);
+          setShortHistoryCount((env.page_info as SignalsPageInfo).short_history_count ?? null);
         })
         .catch((e) => !cancelled && setError(e instanceof Error ? e.message : "Failed to load signals."))
         .finally(() => !cancelled && setLoading(false));
@@ -163,35 +291,16 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
     };
   }, [params, watchlistOnly, watchlistSymbols, getToken]);
 
-  useEffect(() => setPage(1), [q, sector, industry, scoreMin, scoreMax, eventRiskOnly, watchlistOnly, sort, order]);
+  useEffect(() => setPage(1), [
+    q, sector, industry, scoreMin, scoreMax, eventRiskOnly, watchlistOnly, from52Preset,
+    from52Custom, from52Min, volatilityBand, volMin, volMax, volumeMin, deliveryState,
+    deltaMin, dmaState, pcrBand, anomalyOnly, sort, order,
+  ]);
 
-  // Multi-tier restructure (2026-08-08) — CSV export is now Pro-only
-  // (was any-paid-tier). "founding" resolves to Pro-equivalent, matching
-  // core/plan_limits.py::resolve_tier() server-side (a founding
-  // subscriber shouldn't lose a capability they already had while their
-  // account awaits the founder's manual decision).
   const canExport = isProEntitled(user);
-  // The core new differentiation mechanic: Basic sees the full, unmasked
-  // table but with NO sort/filter/search controls — server-side
-  // (routers/signals.py) already ignores these params for a Basic
-  // caller and forces the fixed default order regardless of what this
-  // component sends, so hiding the controls here is a UX match for that
-  // real enforcement, not the enforcement itself. "paid" (legacy,
-  // pre-migration) treated the same as "basic" — matches
-  // core/plan_limits.py::resolve_tier() server-side. Unaffected for
-  // free/anonymous, per the task's own "confirm free tier unaffected"
-  // instruction.
   const explorerControlsEnabled = user?.tier !== "basic" && user?.tier !== "paid";
 
   const fetchExportRows = useCallback(async () => {
-    // Bug fix (2026-08-08) — this fetch never sent the caller's auth
-    // token (the 4th occurrence of this project's recurring auth-token
-    // bug pattern, caught during this session's explicit audit): every
-    // export request hit the backend anonymously, so a paying Pro
-    // subscriber's CSV silently came back free-tier-masked (locked rows,
-    // composite_score/etc. nulled outside the fixed unlocked sample) even
-    // though the button itself is gated on `canExport`. Same getToken()
-    // pattern the main list-fetch effect above already uses correctly.
     const token = await getToken();
     const size = 200;
     const first = await getSignals({ ...params, page: 1, size }, { token });
@@ -202,36 +311,62 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
       )
     );
     const all = [first, ...rest].flatMap((p) => p.data);
-    // Column spec (2026-08-08, finalized) — a fuller set than the table's
-    // own 8 visible columns, since a CSV should give more than a
-    // screenshot would. Signal Chips flattened to one comma-separated
-    // field (not one column per possible chip) so the CSV stays tabular.
     return all.map((r) => ({
-        symbol: r.symbol,
-        company_name: r.company_name,
-        sector: r.sector,
-        industry: r.industry ?? "",
-        price: r.last_price ?? "",
-        day_change_pct: r.day_change_pct ?? "",
-        score: r.composite_score ?? "",
-        score_change_1d: r.delta_1d ?? "",
-        delivery_pct: r.delivery_pct ?? "",
-        delivery_avg20: r.delivery_avg20 ?? "",
-        volume_ratio_5d: r.volume_ratio_5d ?? "",
-        signal_chips: r.signal_states.join(", "),
-        event_risk: r.event_risk ?? "",
-      }));
+      symbol: r.symbol,
+      company_name: r.company_name,
+      sector: r.sector,
+      industry: r.industry ?? "",
+      price: r.last_price ?? "",
+      day_change_pct: r.day_change_pct ?? "",
+      score: r.composite_score ?? "",
+      score_change_1d: r.delta_1d ?? "",
+      delivery_pct: r.delivery_pct ?? "",
+      delivery_avg20: r.delivery_avg20 ?? "",
+      volume_ratio_5d: r.volume_ratio_5d ?? "",
+      from_52_week_high: r.pct_below_52w_high !== null ? `${r.pct_below_52w_high.toFixed(1)}% below` : "n/a",
+      week_52_high: r.week52_high ?? "",
+      volatility: r.volatility_text ?? "n/a",
+      volatility_rank: r.vol_rank ?? "",
+      volatility_ranked_of: r.vol_ranked_of ?? "",
+      signal_chips: r.signal_states.join(", "),
+      event_risk: r.event_risk ?? "",
+    }));
   }, [params, getToken]);
 
   const exportCsv = useCallback(async () => {
-    downloadCsv(`redixfi-signals-${new Date().toISOString().slice(0, 10)}.csv`, await fetchExportRows());
+    downloadCsv(`redixfi-signals-${new Date().toISOString().slice(0, 10)}.csv`, await fetchExportRows(), [DISCLAIMER]);
   }, [fetchExportRows]);
 
   const exportXlsx = useCallback(async () => {
-    downloadXlsx(`redixfi-signals-${new Date().toISOString().slice(0, 10)}.xlsx`, [{ name: "Signals", rows: await fetchExportRows() }]);
+    downloadXlsx(`redixfi-signals-${new Date().toISOString().slice(0, 10)}.xlsx`, [
+      { name: "Signals", rows: await fetchExportRows(), notes: [DISCLAIMER] },
+    ]);
   }, [fetchExportRows]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  const activeFilters: { key: string; text: string; clear: () => void }[] = [];
+  if (q) activeFilters.push({ key: "q", text: `Search: ${q}`, clear: () => setQ("") });
+  if (sector) activeFilters.push({ key: "sector", text: `Sector: ${sector}`, clear: () => setSector("") });
+  if (industry) activeFilters.push({ key: "industry", text: `Industry: ${industry}`, clear: () => setIndustry("") });
+  if (scoreMin) activeFilters.push({ key: "smin", text: `Score ≥ ${scoreMin}`, clear: () => setScoreMin("") });
+  if (scoreMax) activeFilters.push({ key: "smax", text: `Score ≤ ${scoreMax}`, clear: () => setScoreMax("") });
+  if (from52Max !== undefined) activeFilters.push({ key: "f52", text: `From 52-week high ≤ ${from52Max}%`, clear: () => { setFrom52Preset(""); setFrom52Custom(""); } });
+  if (asNumber(from52Min) !== undefined) activeFilters.push({ key: "f52min", text: `From 52-week high ≥ ${from52Min}%`, clear: () => setFrom52Min("") });
+  if (volatilityBand) {
+    const text = volatilityBand === "custom"
+      ? `Volatility ${volMin || 0}-${volMax || 100}%`
+      : VOLATILITY_OPTIONS.find((o) => o.value === volatilityBand)?.label ?? volatilityBand;
+    activeFilters.push({ key: "vol", text: `Volatility: ${text}`, clear: () => { setVolatilityBand(""); setVolMin(""); setVolMax(""); } });
+  }
+  if (volumeMin) activeFilters.push({ key: "volmin", text: `Volume ≥ ${volumeMin}× 20d avg`, clear: () => setVolumeMin("") });
+  if (deliveryState) activeFilters.push({ key: "delivery", text: `Delivery: ${deliveryState.replace("_", " ")}`, clear: () => setDeliveryState("") });
+  if (deltaMin) activeFilters.push({ key: "delta", text: `Score change ≥ ${deltaMin}`, clear: () => setDeltaMin("") });
+  if (dmaState) activeFilters.push({ key: "dma", text: `DMA: ${dmaState.replace("_", " ")}`, clear: () => setDmaState("") });
+  if (pcrBand) activeFilters.push({ key: "pcr", text: `PCR: ${pcrBand}`, clear: () => setPcrBand("") });
+  if (anomalyOnly) activeFilters.push({ key: "anomaly", text: "Unusual activity", clear: () => setAnomalyOnly(false) });
+  if (eventRiskOnly) activeFilters.push({ key: "event", text: "Event risk", clear: () => setEventRiskOnly(false) });
+  if (watchlistOnly) activeFilters.push({ key: "watch", text: "Watchlist only", clear: () => setWatchlistOnly(false) });
 
   return (
     <div ref={containerRef}>
@@ -241,154 +376,196 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
           &quot;highest composite score today&quot; or &quot;IT sector stocks with high delivery&quot;.
         </p>
       )}
-      {/* Step 5 polish (2026-08-11): wrapped in a card (border+background+
-          padding) so the filter bar reads as one cohesive design-system
-          element instead of a bare row of pills — each control keeps its
-          own border but now sits on `bg-hover` for depth against the
-          card's `bg-surface-raised`, same layering SmartScreenerBox's own
-          input row already uses. All filter logic below is unchanged. */}
-      <div className="mb-3 rounded-xl border border-border bg-surface-raised p-3">
-        <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1">
-          {explorerControlsEnabled && (
-            <>
-              <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs text-foreground-muted">
-                <Search size={12} />
-                <input
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="Search company or symbol"
-                  className="w-36 bg-transparent outline-none sm:w-44"
-                />
-              </label>
-              <select
-                value={sector}
-                onChange={(e) => setSector(e.target.value)}
-                className="shrink-0 rounded-lg border border-border bg-hover px-2 py-1.5 text-xs text-foreground-muted"
-              >
-                <option value="">All sectors</option>
-                {SIGNAL_SECTORS.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-              <input
-                value={scoreMin}
-                onChange={(e) => setScoreMin(e.target.value)}
-                placeholder="Score min"
-                type="number"
-                className="w-20 shrink-0 rounded-lg border border-border bg-hover px-2 py-1.5 text-xs"
-              />
-              <input
-                value={scoreMax}
-                onChange={(e) => setScoreMax(e.target.value)}
-                placeholder="Score max"
-                type="number"
-                className="w-20 shrink-0 rounded-lg border border-border bg-hover px-2 py-1.5 text-xs"
-              />
-              <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs text-foreground-muted">
-                <Filter size={12} />
-                <input type="checkbox" checked={eventRiskOnly} onChange={(e) => setEventRiskOnly(e.target.checked)} />
-                Event risk
-              </label>
-            </>
-          )}
-          {user && (
-            <label className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs text-foreground-muted">
-              <input type="checkbox" checked={watchlistOnly} onChange={(e) => setWatchlistOnly(e.target.checked)} />
-              Watchlist only
-            </label>
-          )}
-          {industry && (
-            <span className="flex shrink-0 items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent">
-              Industry: {industry}
-              <button
-                type="button"
-                onClick={() => setIndustry("")}
-                aria-label="Clear industry filter"
-                className="rounded-full hover:bg-accent/20"
-              >
-                <X size={12} />
-              </button>
-            </span>
-          )}
 
-          <div className="ml-auto flex shrink-0 items-center gap-2">
-            {explorerControlsEnabled && (
+      <div className="mb-3 rounded-xl border border-border bg-surface-raised p-3">
+        {explorerControlsEnabled && (
+          <div className="grid grid-cols-2 items-end gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+            <label className={`${label} col-span-2 sm:col-span-1`}>
+              Search
+              <span className="relative">
+                <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-foreground-faint" />
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Company or symbol" className={`${control} pl-6`} />
+              </span>
+            </label>
+            <label className={label}>
+              Sector
+              <select value={sector} onChange={(e) => setSector(e.target.value)} className={control}>
+                <option value="">All sectors</option>
+                {SIGNAL_SECTORS.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </label>
+            <label className={label}>
+              Min score
+              <input value={scoreMin} onChange={(e) => setScoreMin(e.target.value)} type="number" placeholder="0" className={control} />
+            </label>
+            <label className={label}>
+              Max score
+              <input value={scoreMax} onChange={(e) => setScoreMax(e.target.value)} type="number" placeholder="100" className={control} />
+            </label>
+            <label className={label}>
+              From 52-week high
+              <select value={from52Preset} onChange={(e) => setFrom52Preset(e.target.value)} className={control}>
+                {FROM52_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </label>
+            {from52Preset === "custom" && (
+              <label className={label}>
+                Max % below
+                <input value={from52Custom} onChange={(e) => setFrom52Custom(e.target.value)} type="number" min={0} max={100} placeholder="e.g. 3" className={control} />
+              </label>
+            )}
+            <label className={label}>
+              Volatility
+              <select value={volatilityBand} onChange={(e) => setVolatilityBand(e.target.value)} className={control}>
+                {VOLATILITY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </label>
+            {volatilityBand === "custom" && (
               <>
-                <select
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value)}
-                  className="rounded-lg border border-border bg-hover px-2 py-1.5 text-xs text-foreground-muted"
-                >
-                  {SORT_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      Sort: {o.label}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={() => setOrder((o) => (o === "asc" ? "desc" : "asc"))}
-                  className="flex items-center gap-1 rounded-lg border border-border bg-hover px-2 py-1.5 text-xs text-foreground-muted"
-                  title="Toggle sort order"
-                >
-                  <ArrowUpDown size={11} /> {order === "asc" ? "↑" : "↓"}
-                </button>
+                <label className={label}>
+                  Min more-volatile %
+                  <input value={volMin} onChange={(e) => setVolMin(e.target.value)} type="number" min={0} max={100} placeholder="e.g. 25" className={control} />
+                </label>
+                <label className={label}>
+                  Max more-volatile %
+                  <input value={volMax} onChange={(e) => setVolMax(e.target.value)} type="number" min={0} max={100} placeholder="e.g. 50" className={control} />
+                </label>
               </>
             )}
-            <div className="relative">
-              <button
-                onClick={() => setColumnPickerOpen((o) => !o)}
-                className="flex items-center gap-1 rounded-lg border border-border bg-hover px-2 py-1.5 text-xs text-foreground-muted"
-              >
-                <SlidersHorizontal size={11} /> Columns
-              </button>
-              {columnPickerOpen && (
-                <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-border bg-surface-raised p-2 text-sm shadow-lg">
-                  {(Object.keys(columns) as (keyof VisibleColumns)[]).map((k) => (
-                    <label key={k} className="flex items-center gap-2 py-1 capitalize">
-                      <input
-                        type="checkbox"
-                        checked={columns[k]}
-                        onChange={(e) => setColumns((c) => ({ ...c, [k]: e.target.checked }))}
-                      />
-                      {k === "eventRisk" ? "Event risk" : k}
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-            <ExportButton
-              onExport={exportCsv}
-              onCsv={exportCsv}
-              onXlsx={exportXlsx}
-              canExport={!!canExport}
-              label="Download"
-              enabledTitle="Export current filter as CSV"
-              className="flex items-center gap-1 rounded-lg border border-border bg-hover px-2 py-1.5 text-xs text-foreground-muted disabled:opacity-40"
-            />
-            {explorerControlsEnabled && <ShareScreenButton params={shareParams} />}
           </div>
+        )}
+
+        {explorerControlsEnabled && (
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={() => setMoreOpen((o) => !o)}
+              className="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-hover px-3 text-xs text-foreground-muted"
+            >
+              <Filter size={12} /> More filters <ChevronDown size={12} className={moreOpen ? "rotate-180" : ""} />
+            </button>
+            {moreOpen && (
+              <div className="mt-2 grid grid-cols-2 items-end gap-2 rounded-lg border border-border/70 p-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+                <label className={label}>
+                  Volume ≥ 20d avg
+                  <input value={volumeMin} onChange={(e) => setVolumeMin(e.target.value)} type="number" min={0} step="0.1" placeholder="e.g. 1.0" className={control} />
+                </label>
+                <label className={label}>
+                  Delivery
+                  <select value={deliveryState} onChange={(e) => setDeliveryState(e.target.value)} className={control}>
+                    <option value="">Any</option>
+                    <option value="above_avg">Above 20d avg</option>
+                    <option value="below_avg">Below 20d avg</option>
+                  </select>
+                </label>
+                <label className={label}>
+                  Score change ≥
+                  <input value={deltaMin} onChange={(e) => setDeltaMin(e.target.value)} type="number" step="0.1" placeholder="e.g. 2" className={control} />
+                </label>
+                <label className={label}>
+                  DMA position
+                  <select value={dmaState} onChange={(e) => setDmaState(e.target.value)} className={control}>
+                    <option value="">Any</option>
+                    <option value="above_20dma">Above 20DMA</option>
+                    <option value="below_20dma">Below 20DMA</option>
+                  </select>
+                </label>
+                <label className={label}>
+                  PCR band
+                  <select value={pcrBand} onChange={(e) => setPcrBand(e.target.value)} className={control}>
+                    <option value="">Any</option>
+                    <option value="low">Low</option>
+                    <option value="neutral">Neutral</option>
+                    <option value="high">High</option>
+                  </select>
+                </label>
+                <label className="flex h-9 items-center gap-2 rounded-lg border border-border bg-hover px-2 text-xs text-foreground-muted">
+                  <input type="checkbox" checked={eventRiskOnly} onChange={(e) => setEventRiskOnly(e.target.checked)} /> Event risk
+                </label>
+                <label className="flex h-9 items-center gap-2 rounded-lg border border-border bg-hover px-2 text-xs text-foreground-muted">
+                  <input type="checkbox" checked={anomalyOnly} onChange={(e) => setAnomalyOnly(e.target.checked)} /> Unusual activity
+                </label>
+                {user && (
+                  <label className="flex h-9 items-center gap-2 rounded-lg border border-border bg-hover px-2 text-xs text-foreground-muted">
+                    <input type="checkbox" checked={watchlistOnly} onChange={(e) => setWatchlistOnly(e.target.checked)} /> Watchlist only
+                  </label>
+                )}
+                {from52Preset === "custom" && (
+                  <label className={label}>
+                    Min % below
+                    <input value={from52Min} onChange={(e) => setFrom52Min(e.target.value)} type="number" min={0} max={100} placeholder="optional" className={control} />
+                  </label>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeFilters.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            {activeFilters.map((f) => (
+              <span key={f.key} className="flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-[11px] text-accent">
+                {f.text}
+                <button type="button" onClick={f.clear} aria-label={`Clear ${f.text}`}><X size={11} /></button>
+              </span>
+            ))}
+            <button type="button" onClick={clearAll} className="text-[11px] text-foreground-faint underline-offset-2 hover:text-foreground hover:underline">Clear all</button>
+          </div>
+        )}
+
+        <p className="mt-3 text-[11px] text-foreground-faint">{DISCLAIMER}</p>
+        {shortHistoryCount !== null && shortHistoryCount > 0 && (
+          <p className="mt-1 text-[11px] text-foreground-faint">
+            {shortHistoryCount.toLocaleString("en-IN")} stocks have less than 52 weeks of data and are not matched by the 52-week filter.
+          </p>
+        )}
+
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
+          {explorerControlsEnabled && (
+            <>
+              <select value={sort} onChange={(e) => setSort(e.target.value)} className="h-9 w-auto rounded-lg border border-border bg-hover px-2 text-xs text-foreground-muted">
+                {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>Sort: {o.label}</option>)}
+              </select>
+              <button onClick={() => setOrder((o) => (o === "asc" ? "desc" : "asc"))} className="flex h-9 w-auto items-center gap-1 rounded-lg border border-border bg-hover px-2 text-xs text-foreground-muted" title="Toggle sort order">
+                <ArrowUpDown size={11} /> {order === "asc" ? "Ascending" : "Descending"}
+              </button>
+            </>
+          )}
+          <div className="relative" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setColumnPickerOpen((o) => !o)} className="flex h-9 w-auto items-center gap-1 rounded-lg border border-border bg-hover px-2 text-xs text-foreground-muted">
+              <SlidersHorizontal size={11} /> Columns
+            </button>
+            {columnPickerOpen && (
+              <div className="absolute left-0 top-full z-20 mt-1 w-48 rounded-lg border border-border bg-surface-raised p-2 text-sm shadow-lg">
+                {(Object.keys(columns) as (keyof VisibleColumns)[]).map((k) => (
+                  <label key={k} className="flex items-center gap-2 py-1 capitalize">
+                    <input type="checkbox" checked={columns[k]} onChange={(e) => setColumns((c) => ({ ...c, [k]: e.target.checked }))} />
+                    {k === "eventRisk" ? "Event risk" : k === "from52" ? "From 52-week high" : k === "volatility" ? "Volatility" : k}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+          <ExportButton
+            onExport={exportCsv}
+            onCsv={exportCsv}
+            onXlsx={exportXlsx}
+            canExport={!!canExport}
+            label="Download"
+            enabledTitle="Export current filter as CSV"
+            className="flex h-9 w-auto items-center gap-1 rounded-lg border border-border bg-hover px-2 text-xs text-foreground-muted disabled:opacity-40"
+          />
+          {explorerControlsEnabled && <ShareScreenButton params={shareParams} />}
         </div>
       </div>
 
       <ListSessionNote />
       <div className="overflow-hidden rounded-xl border border-border bg-surface-raised">
-        {/* phones: a compact list (symbol, price with its full change, score badge); the table is for md and up */}
         <ul className="divide-y divide-border md:hidden">
-          {rows.map((row) => (
-            <SignalMobileRow key={row.symbol} row={row} />
-          ))}
+          {rows.map((row) => <SignalMobileRow key={row.symbol} row={row} />)}
         </ul>
         <div className="hidden overflow-x-auto md:block">
-          <table className="w-full min-w-[680px] text-sm">
-            {/* Font-size audit (2026-08-11): header row was text-[11px] —
-                well below the task's 13px "secondary labels" floor, and
-                the most layout-sensitive spot in the app (7 columns).
-                Bumped to text-[13px]; verified reasoning in the session's
-                completion note that single-word headers + this table's
-                existing overflow-x-auto/min-w-[680px] safety net absorb
-                the extra width without breaking at 1280px. */}
+          <table className="w-full min-w-[900px] text-sm">
             <thead>
               <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wider text-foreground-faint">
                 <th className="px-4 py-3">Symbol</th>
@@ -397,6 +574,8 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
                 <th className="px-3 py-3">Score</th>
                 {columns.delivery && <th className="hidden px-3 py-3 sm:table-cell">Delivery</th>}
                 {columns.volume && <th className="hidden px-3 py-3 sm:table-cell">Volume</th>}
+                {(columns.from52 || from52Max !== undefined) && <th className="hidden px-3 py-3 sm:table-cell">From 52-week high</th>}
+                {columns.volatility && <th className="hidden px-3 py-3 md:table-cell">Volatility</th>}
                 {columns.chips && <th className="hidden px-3 py-3 lg:table-cell">Signals</th>}
                 {columns.eventRisk && <th className="hidden px-3 py-3 text-center sm:table-cell">Event</th>}
                 <th className="px-3 py-3" />
@@ -404,7 +583,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
             </thead>
             <tbody>
               {rows.map((row) => (
-                <SignalTableRow key={row.symbol} row={row} columns={columns} />
+                <SignalTableRow key={row.symbol} row={row} columns={{ ...columns, from52: columns.from52 || from52Max !== undefined }} />
               ))}
             </tbody>
           </table>
@@ -414,11 +593,6 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
         {error && <div className="p-4 text-center text-sm text-down">{error}</div>}
 
         {!user?.tier || user.tier === "free" ? (
-          // B5: was silent on WHICH 20 stay unlocked, which read as an
-          // implied "top by market cap" selection — the free-tier unlock
-          // set is a fixed A–Z sample regardless of sort (Task 04's
-          // free_tier_unlocked_symbols, name-asc so it can't be gamed by
-          // re-sorting), so the real rule is stated plainly here.
           <UnlockBanner label="Locked rows show 🔒 in place of scores — a fixed sample of 20 stocks (A–Z) stays visible on the free tier." />
         ) : null}
       </div>
@@ -429,12 +603,8 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
             {total.toLocaleString("en-IN")} stocks · page {page} of {totalPages}
           </span>
           <div className="flex gap-2">
-            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="rounded border border-border px-2 py-1 disabled:opacity-40">
-              Prev
-            </button>
-            <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="rounded border border-border px-2 py-1 disabled:opacity-40">
-              Next
-            </button>
+            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="rounded border border-border px-2 py-1 disabled:opacity-40">Prev</button>
+            <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="rounded border border-border px-2 py-1 disabled:opacity-40">Next</button>
           </div>
         </div>
       )}

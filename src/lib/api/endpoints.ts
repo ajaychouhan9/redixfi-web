@@ -37,7 +37,6 @@ import type {
   EventKind,
   MarketActivitySummary,
   SharedScreen,
-  Near52WeekHighResponse,
 } from "./types";
 
 // Every exported fetch function below MUST carry an `@auth public` or
@@ -72,6 +71,17 @@ export interface SignalsListParams {
   score_min?: number;
   score_max?: number;
   event_risk?: boolean;
+  from_52w_max?: number;
+  from_52w_min?: number;
+  volatility_band?: "lower" | "lower_middle" | "upper_middle" | "higher";
+  volatility_min?: number;
+  volatility_max?: number;
+  volume_ratio_min?: number;
+  delivery_state?: "above_avg" | "below_avg";
+  delta_1d_min?: number;
+  dma_state?: "above_20dma" | "below_20dma";
+  pcr_band?: "low" | "neutral" | "high";
+  anomaly?: boolean;
   q?: string;
   sort?: string;
   order?: "asc" | "desc";
@@ -113,13 +123,6 @@ export const getSignalDetail = (symbol: string, newsLimit = 6, opts?: FetchOpts)
     ...opts,
     params: { news_limit: newsLimit },
   });
-
-// @auth required — the response depends on the caller tier: anonymous/free
-// rows are masked server-side, paid rows are full. Read-only; no LLM call.
-export const getNear52WeekHigh = (
-  params: { min_pct?: number; max_pct?: number; sort?: string; order?: "asc" | "desc" },
-  opts?: FetchOpts
-) => apiGet<Near52WeekHighResponse>("/signals/near-52w-high", { ...opts, params });
 
 // @auth required — the route mirrors the detail route's free-tier symbol lock
 // and returns 5 sessions for free/Basic, 10 for Pro (server-configured).

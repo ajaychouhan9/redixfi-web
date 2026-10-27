@@ -31,6 +31,12 @@ export interface PagedEnvelope<T> {
   page_info: PageInfo;
 }
 
+/** The Signals list adds the session-wide short-history count to page_info. */
+export interface SignalsPageInfo extends PageInfo {
+  short_history_count?: number;
+  extras_as_of?: string | null;
+}
+
 // ---------- market ----------
 
 export interface IndexQuote {
@@ -126,6 +132,15 @@ export interface SignalRow {
   sector_rank: number | null;
   sector_count: number | null;
   volume_ratio_5d: number | null;
+  // Measured extras attached by the main /signals list (read-only; n/a for
+  // fewer than 252 sessions, BE/BZ, held, review-flagged or limited-data).
+  week52_high: number | null;
+  pct_below_52w_high: number | null;
+  vol_pct_more: number | null;
+  vol_rank: number | null;
+  vol_ranked_of: number | null;
+  volatility_text: string | null;
+  vol_as_of?: string | null;
   signal_states: string[];
   event_risk: boolean | null;
   // Task 16 Part C — written by data-pipeline/anomaly_detector.py directly
@@ -565,6 +580,11 @@ export interface SmartScreenFilters {
   event_risk: boolean | null;
   anomaly: boolean | null;
   watchlist_only: boolean | null;
+  from_52w_max: number | null;
+  from_52w_min: number | null;
+  volatility_band: "lower" | "lower_middle" | "upper_middle" | "higher" | null;
+  volatility_min: number | null;
+  volatility_max: number | null;
 }
 
 // ---------- Task 13: compare intent ----------
@@ -614,34 +634,6 @@ export interface CompareResult {
   // symbol is OMITTED from this map entirely (B8 masking parity with
   // `rows`' own measured-layer masking), never a partial/teaser series.
   score_history: Record<string, ScoreHistoryPoint[]>;
-}
-
-export interface Near52WeekHighRow {
-  symbol: string;
-  company_name: string | null;
-  sector: string | null;
-  last_price: number | null;
-  week52_high: number | null;
-  pct_below_52w_high: number | null;
-  volume_ratio_5_20: number | null;
-  delivery_pct: number | null;
-  delivery_series?: string | null;
-  volatility_rank: number | null;
-  volatility_ranked_of: number | null;
-  volatility_text: string | null;
-  history_sessions: number;
-  less_than_52w: boolean;
-  locked: boolean;
-}
-
-export interface Near52WeekHighResponse {
-  as_of: string;
-  filter: { min_pct: number | null; max_pct: number | null; sort: string; order: "asc" | "desc" };
-  results: Near52WeekHighRow[];
-  result_count: number;
-  short_history_count: number;
-  excluded_count: number;
-  disclaimer: string;
 }
 
 export interface SmartScreenResult {
@@ -2144,6 +2136,18 @@ export interface SharedScreenParams {
   market_cap_max?: number | null;
   fundamental_flag?: string | null;
   q?: string | null;
+  from_52w_max?: number | null;
+  from_52w_min?: number | null;
+  volatility_band?: "lower" | "lower_middle" | "upper_middle" | "higher" | null;
+  volatility_min?: number | null;
+  volatility_max?: number | null;
+  volume_ratio_min?: number | null;
+  delivery_state?: "above_avg" | "below_avg" | null;
+  delta_1d_min?: number | null;
+  dma_state?: "above_20dma" | "below_20dma" | null;
+  pcr_band?: "low" | "neutral" | "high" | null;
+  anomaly?: boolean | null;
+  watchlist_only?: boolean | null;
   sort: string;
   order: "asc" | "desc";
 }

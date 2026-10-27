@@ -7,6 +7,8 @@ const TEXT_BLACK = "000000";
 export interface XlsxSheet {
   name: string;
   rows: Record<string, unknown>[];
+  /** Optional note rows appended below the data (e.g. a disclaimer). */
+  notes?: string[];
   summaryRows?: XlsxSummaryRow[];
 }
 
@@ -73,13 +75,16 @@ function sheetXml(sheet: XlsxSheet): string {
   const rows = normalizeExportRows(sheet.rows);
   const headers = rows.length ? Object.keys(rows[0]) : [];
   const lastColumn = columnName(Math.max(headers.length - 1, 0));
+  const notes = sheet.notes ?? [];
   const body = [
     `<row r="1" ht="20"><c r="A1" s="1" t="inlineStr"><is><t>RedixFi — Market. Simplified. | redixfi.com</t></is></c></row>`,
     `<row r="2">${headers.map((h, i) => `<c r="${columnName(i)}2" s="3" t="inlineStr"><is><t>${xmlEscape(formatExportHeader(h))}</t></is></c>`).join("")}</row>`,
     ...rows.map((row, rowIndex) => `<row r="${rowIndex + 3}">${headers.map((key, columnIndex) => cellXml(row[key], key, `${columnName(columnIndex)}${rowIndex + 3}`)).join("")}</row>`),
+    ...notes.map((note, index) => `<row r="${rows.length + 3 + index}"><c r="A${rows.length + 3 + index}" t="inlineStr"><is><t xml:space="preserve">${xmlEscape(note)}</t></is></c></row>`),
   ].join("");
-  const lastRow = Math.max(rows.length + 2, 2);
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:${lastColumn}${lastRow}"/><sheetViews><sheetView workbookViewId="0"><pane ySplit="2" topLeftCell="A3" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols>${headers.map((h, i) => `<col min="${i + 1}" max="${i + 1}" width="${Math.min(34, Math.max(12, h.length + 3))}" customWidth="1"/>`).join("")}</cols><sheetData>${body}</sheetData><autoFilter ref="A2:${lastColumn}${lastRow}"/><mergeCells count="1"><mergeCell ref="A1:${lastColumn}1"/></mergeCells></worksheet>`;
+  const lastDataRow = Math.max(rows.length + 2, 2);
+  const lastRow = Math.max(lastDataRow + notes.length, 2);
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:${lastColumn}${lastRow}"/><sheetViews><sheetView workbookViewId="0"><pane ySplit="2" topLeftCell="A3" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols>${headers.map((h, i) => `<col min="${i + 1}" max="${i + 1}" width="${Math.min(34, Math.max(12, h.length + 3))}" customWidth="1"/>`).join("")}</cols><sheetData>${body}</sheetData><autoFilter ref="A2:${lastColumn}${lastDataRow}"/><mergeCells count="1"><mergeCell ref="A1:${lastColumn}1"/></mergeCells></worksheet>`;
 }
 
 function summarySheetXml(sheet: XlsxSheet): string {

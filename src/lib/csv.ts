@@ -56,7 +56,7 @@ export function normalizeExportRows(rows: Record<string, unknown>[]): Record<str
   return rows.map(normalizeExportRow);
 }
 
-export function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
+export function downloadCsv(filename: string, rows: Record<string, unknown>[], notes: string[] = []) {
   if (rows.length === 0) return;
   const normalizedRows = normalizeExportRows(rows);
   const headers = Object.keys(normalizedRows[0]);
@@ -64,7 +64,11 @@ export function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
     const s = v === null || v === undefined ? "" : String(v);
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  const lines = [headers.map(formatExportHeader).join(","), ...normalizedRows.map((r) => headers.map((h) => escape(r[h])).join(","))];
+  const lines = [
+    headers.map(formatExportHeader).join(","),
+    ...normalizedRows.map((r) => headers.map((h) => escape(r[h])).join(",")),
+    ...notes.map((note) => escape(note)),
+  ];
   const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

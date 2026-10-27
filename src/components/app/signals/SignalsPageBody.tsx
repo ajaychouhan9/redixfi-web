@@ -33,7 +33,7 @@ export function SignalsPageBody({
           />
         )}
       </div>
-      <SmartScreenerBox />
+      <SmartScreenerBox onApplyFilters={(patch) => explorerRef.current?.applySmartFilters(patch)} />
       <SignalsExplorer ref={explorerRef} initialParams={cloneSource?.params} />
     </>
   );

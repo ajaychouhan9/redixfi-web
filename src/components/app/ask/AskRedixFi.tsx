@@ -98,7 +98,7 @@ const PANEL_MODE_OPTIONS: { mode: AskPanelMode; label: string; icon: typeof Pane
 // scope for the 2026-08-08 Signals column changes (explicitly scoped to
 // the Signals list table). Symbol/Price/Score render unconditionally now
 // (VisibleColumns no longer has price/marketCap/vwap fields).
-const SCREEN_COLUMNS: VisibleColumns = { sector: true, delivery: true, volume: false, chips: true, eventRisk: false };
+const SCREEN_COLUMNS: VisibleColumns = { sector: true, delivery: true, volume: false, chips: true, eventRisk: false, from52: false, volatility: false };
 
 // Client-side staged status text, played while `busy` is true. This is a UX
 // device, NOT real backend progress — POST /ask is one synchronous JSON
