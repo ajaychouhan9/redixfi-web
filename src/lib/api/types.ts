@@ -780,6 +780,7 @@ export interface PricePoint {
   week52_high: number | null;
   week52_low: number | null;
   week52_position_pct: number | null;
+  pct_below_52w_high?: number | null;
   data_as_of?: DataAsOf | null;
 }
 

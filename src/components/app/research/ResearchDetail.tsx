@@ -66,9 +66,10 @@ export function ResearchDetail({
   const lastPrice = data.price.last_price;
   const high52 = data.price.week52_high;
   const low52 = data.price.week52_low;
-  const belowHighPct = high52 != null && high52 > 0 && lastPrice != null
-    ? Math.max(0, (1 - lastPrice / high52) * 100)
-    : null;
+  const belowHighPct = data.price.pct_below_52w_high
+    ?? (high52 != null && high52 > 0 && lastPrice != null
+      ? Math.max(0, (1 - lastPrice / high52) * 100)
+      : null);
 
   return (
     <div className="space-y-4">
