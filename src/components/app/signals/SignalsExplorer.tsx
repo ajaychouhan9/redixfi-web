@@ -113,7 +113,10 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
 
   const [rows, setRows] = useState<SignalRow[]>([]);
   const [total, setTotal] = useState(0);
-  const [shortHistoryCount, setShortHistoryCount] = useState<number | null>(null);
+  const [notMatchedCount, setNotMatchedCount] = useState<number | null>(null);
+  const [recentlyListedCount, setRecentlyListedCount] = useState<number | null>(null);
+  const [incompleteHistoryCount, setIncompleteHistoryCount] = useState<number | null>(null);
+  const [excludedInMasterCount, setExcludedInMasterCount] = useState<number | null>(null);
   const [extrasAsOf, setExtrasAsOf] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -283,8 +286,12 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
           }
           setRows(data);
           setTotal(env.page_info.total);
-          setShortHistoryCount((env.page_info as SignalsPageInfo).short_history_count ?? null);
-          setExtrasAsOf((env.page_info as SignalsPageInfo).extras_as_of ?? null);
+          const info = env.page_info as SignalsPageInfo;
+          setNotMatchedCount(info.not_matched_count ?? info.short_history_count ?? null);
+          setRecentlyListedCount(info.recently_listed_count ?? null);
+          setIncompleteHistoryCount(info.incomplete_history_count ?? null);
+          setExcludedInMasterCount(info.excluded_in_master_count ?? null);
+          setExtrasAsOf(info.extras_as_of ?? null);
         })
         .catch((e) => !cancelled && setError(e instanceof Error ? e.message : "Failed to load signals."))
         .finally(() => !cancelled && setLoading(false));
@@ -517,9 +524,16 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
         )}
 
         <p className="mt-3 text-[11px] text-foreground-faint">{DISCLAIMER}</p>
-        {shortHistoryCount !== null && shortHistoryCount > 0 && (
+        {notMatchedCount !== null && notMatchedCount > 0 && (
           <p className="mt-1 text-[11px] text-foreground-faint">
-            {shortHistoryCount.toLocaleString("en-IN")} {shortHistoryCount === 1 ? "stock has" : "stocks have"} less than 52 weeks of data and {shortHistoryCount === 1 ? "is" : "are"} not matched by the 52-week filter.
+            {notMatchedCount.toLocaleString("en-IN")} {notMatchedCount === 1 ? "stock is" : "stocks are"} not matched:{" "}
+            {recentlyListedCount?.toLocaleString("en-IN") ?? "0"} recently listed,{" "}
+            {incompleteHistoryCount?.toLocaleString("en-IN") ?? "0"} with incomplete price history.
+          </p>
+        )}
+        {excludedInMasterCount !== null && excludedInMasterCount > 0 && (
+          <p className="mt-1 text-[11px] text-foreground-faint">
+            {excludedInMasterCount.toLocaleString("en-IN")} held, BE/BZ, review-flagged or limited-data {excludedInMasterCount === 1 ? "stock is" : "stocks are"} excluded from this filter.
           </p>
         )}
         {extrasAsOf && (

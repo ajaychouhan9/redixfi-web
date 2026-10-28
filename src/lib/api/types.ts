@@ -34,6 +34,11 @@ export interface PagedEnvelope<T> {
 /** The Signals list adds the session-wide short-history count to page_info. */
 export interface SignalsPageInfo extends PageInfo {
   short_history_count?: number;
+  matched_count?: number;
+  not_matched_count?: number;
+  recently_listed_count?: number;
+  incomplete_history_count?: number;
+  excluded_in_master_count?: number;
   extras_as_of?: string | null;
 }
 
