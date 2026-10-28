@@ -10,6 +10,7 @@ import { AnalystChecklist } from "@/components/app/signals/AnalystChecklist";
 import { WhyDidThisChange } from "@/components/app/signals/WhyDidThisChange";
 import { ScoreAsOf } from "@/components/app/signals/ScoreAsOf";
 import { ScoreHistorySection } from "@/components/app/signals/ScoreHistorySection";
+import { Week52Range } from "@/components/app/signals/Week52Range";
 import { VolatilitySection } from "@/components/app/signals/VolatilitySection";
 import { QuickRead } from "@/components/app/signals/QuickRead";
 import { chartCaption, isTradeForTrade, visibleChangeLog } from "@/lib/stock-clarity";
@@ -120,6 +121,7 @@ export function SignalDetailView({
         <ScoreAsOf scoreDate={detail.signal_freshness?.composite_score?.data_as_of} />
         <QuickRead detail={detail} />
         <CorporateActionNote info={detail.corporate_action} />
+        <Week52Range week52={detail.week52} lastPrice={detail.last_price} />
         <SlowestInputNote input={detail.slowest_input} />
       </div>
 

@@ -471,6 +471,16 @@ export interface InsightChip {
   faq_id?: string;
 }
 
+export interface Week52Detail {
+  week52_high: number | null;
+  week52_low: number | null;
+  last_close: number | null;
+  pct_below_52w_high: number | null;
+  history_sessions: number;
+  as_of: string | null;
+  reason: string | null;
+}
+
 export interface SignalDetail {
   no_score_reason?: string | null;
   partial?: boolean;
@@ -490,6 +500,7 @@ export interface SignalDetail {
   signal_freshness?: Record<string, DataAsOf | null>;
   slowest_input?: SlowestInput | null;
   price_data_as_of?: DataAsOf | null;
+  week52?: Week52Detail | null;
   // Same restoration as SignalRow above — never masked when locked.
   last_price: number | null;
   day_change_pct: number | null;
@@ -928,6 +939,8 @@ export interface FundamentalsValuation {
   sector_pe: number | null;
   pe_vs_sector: "above" | "below" | "inline" | null;
   dividend_yield_pct: number | null;
+  /** Existing vendor P/S (TTM) read from the safe valuation scalar. */
+  ps_ttm?: number | null;
 }
 
 export interface FundamentalsShareholdingSeriesPoint {

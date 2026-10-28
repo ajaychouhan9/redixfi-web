@@ -5,6 +5,7 @@ import { ApiError } from "@/lib/api/client";
 import { Card } from "@/components/ui/Card";
 import { SignalUnlockGate } from "@/components/app/signals/SignalUnlockGate";
 import { SignalDetailView } from "@/components/app/signals/SignalDetailView";
+import { Week52Range } from "@/components/app/signals/Week52Range";
 import { retryTransientPublicGet } from "@/lib/api/retry-public-upstream";
 import { stockPath, stockSymbolFromParam } from "@/lib/seo/stock-symbol";
 
@@ -89,6 +90,7 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
             </p>
           )}
         </Card>
+        {detail.week52 && <Week52Range week52={detail.week52} lastPrice={detail.last_price} className="mt-3 max-w-md" />}
       </div>
     );
   }

@@ -18,6 +18,13 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { getWatchlist } from "@/lib/api/mutations";
 import type { SmartFilterPatch } from "./smartFilterPatch";
 
+const SIGNALS_COLUMNS_KEY = "redixfi:signals-columns:v1";
+const FROM52_DEFAULT_MIGRATION_KEY = "redixfi:signals-columns:from52-default:v1";
+const DEFAULT_SIGNALS_COLUMNS: VisibleColumns = {
+  sector: true, delivery: true, volume: true, chips: true, eventRisk: true,
+  from52: true, volatility: true,
+};
+
 const SORT_OPTIONS = [
   { value: "abs_delta_1d", label: "Biggest score change (up or down)" },
   { value: "name", label: "Name (A–Z)" },
@@ -107,9 +114,45 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   const [page, setPage] = useState(1);
   const [columns, setColumns] = useState<VisibleColumns>({
     sector: true, delivery: true, volume: true, chips: true, eventRisk: true,
-    from52: false, volatility: true,
+    from52: true, volatility: true,
   });
   const [columnPickerOpen, setColumnPickerOpen] = useState(false);
+  const columnsHydrated = useRef(false);
+
+  useEffect(() => {
+    let saved: Partial<VisibleColumns> | null = null;
+    try {
+      const raw = window.localStorage.getItem(SIGNALS_COLUMNS_KEY);
+      saved = raw ? JSON.parse(raw) : null;
+    } catch {
+      saved = null;
+    }
+    const next: VisibleColumns = { ...DEFAULT_SIGNALS_COLUMNS, ...(saved ?? {}) };
+    try {
+      if (!window.localStorage.getItem(FROM52_DEFAULT_MIGRATION_KEY)) {
+        next.from52 = true;
+        window.localStorage.setItem(FROM52_DEFAULT_MIGRATION_KEY, "1");
+      }
+    } catch {
+      // Storage can be unavailable in private modes; defaults still show the column.
+    }
+    setColumns(next);
+    columnsHydrated.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!columnsHydrated.current) return;
+    try {
+      window.localStorage.setItem(SIGNALS_COLUMNS_KEY, JSON.stringify(columns));
+    } catch {
+      // No-op when storage is unavailable.
+    }
+  }, [columns]);
+
+  function toggleSort(field: string) {
+    setSort(field);
+    setOrder(sort === field && order === "asc" ? "desc" : "asc");
+  }
 
   const [rows, setRows] = useState<SignalRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -597,7 +640,14 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
                 <th className="px-3 py-3">Score</th>
                 {columns.delivery && <th className="hidden px-3 py-3 sm:table-cell">Delivery</th>}
                 {columns.volume && <th className="hidden px-3 py-3 sm:table-cell">Volume</th>}
-                {(columns.from52 || from52Max !== undefined) && <th className="hidden px-3 py-3 sm:table-cell">From 52-week high</th>}
+                {(columns.from52 || from52Max !== undefined) && (
+                  <th className="hidden px-3 py-3 sm:table-cell" aria-sort={sort === "pct_below_52w_high" ? (order === "asc" ? "ascending" : "descending") : "none"}>
+                    <button type="button" onClick={() => toggleSort("pct_below_52w_high")} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-foreground" title="Sort by distance from 52-week high">
+                      From 52-week high
+                      <ArrowUpDown size={10} />
+                    </button>
+                  </th>
+                )}
                 {columns.volatility && <th className="hidden px-3 py-3 md:table-cell">Volatility</th>}
                 {columns.chips && <th className="hidden px-3 py-3 lg:table-cell">Signals</th>}
                 {columns.eventRisk && <th className="hidden px-3 py-3 text-center sm:table-cell">Event</th>}

@@ -153,6 +153,16 @@ export function buildSignalSummaryRows(detail: SignalDetail, fundamentals?: Fund
   const scoreMovement = detail.delta_1d == null
     ? "Composite score movement: Not available."
     : `Composite score moved from ${detail.composite_score - detail.delta_1d} to ${detail.composite_score} today (${detail.delta_1d > 0 ? "+" : ""}${detail.delta_1d}).`;
+  const week52 = detail.week52;
+  section("52-week range");
+  items(week52?.week52_high != null
+    ? [
+        { label: "52-week low", value: week52.week52_low != null ? `₹${week52.week52_low}` : "Not available from data source" },
+        { label: "52-week high", value: `₹${week52.week52_high}` },
+        { label: "Distance from high", value: week52.pct_below_52w_high != null ? `${week52.pct_below_52w_high.toFixed(1)}% below` : "Not available from data source" },
+        { label: "As of", value: week52.as_of ?? "Not available from data source" },
+      ]
+    : [{ label: "52-week range", value: week52?.reason ?? "Price history incomplete" }]);
 
   rows.push(
     { kind: "title", cells: ["RedixFi — Market. Simplified."] , merge: [0, 3] },
@@ -256,6 +266,11 @@ export function buildSignalDetailSheets(detail: SignalDetail, candles: Candle[],
     insider_net_30d: detail.signals.insider_net_30d,
     event_risk_5d: detail.signals.event_risk_5d,
     event_categories: detail.signals.event_categories.join(", "),
+    week52_high: detail.week52?.week52_high ?? "",
+    week52_low: detail.week52?.week52_low ?? "",
+    pct_below_52w_high: detail.week52?.pct_below_52w_high ?? "",
+    week52_as_of: detail.week52?.as_of ?? "",
+    week52_reason: detail.week52?.reason ?? "",
     narrative: detail.narrative,
   }];
   const newsRows = detail.news.map((item) => ({ ...item, entities: JSON.stringify(item.entities), matched_symbols: item.matched_symbols?.join(", ") ?? "" }));

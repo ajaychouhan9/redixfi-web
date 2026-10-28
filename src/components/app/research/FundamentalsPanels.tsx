@@ -20,14 +20,35 @@ const FLAG_LABELS: Record<string, string> = {
   HIGH_DEBT: "Debt-to-equity above 1x",
 };
 
+const NOT_AVAILABLE = "Not available from data source";
+
 function fmtNum(v: number | null, digits = 2): string {
-  return v === null ? "—" : v.toLocaleString("en-IN", { maximumFractionDigits: digits });
+  return v === null ? NOT_AVAILABLE : v.toLocaleString("en-IN", { maximumFractionDigits: digits });
 }
 
 function fmtPct(v: number | null, digits = 1): string {
-  if (v === null) return "—";
+  if (v === null) return NOT_AVAILABLE;
   const sign = v > 0 ? "+" : "";
   return `${sign}${v.toFixed(digits)}%`;
+}
+
+function ttmPat(fundamentals: FundamentalsBlock | null): number | null {
+  const series = fundamentals?.quarterly.series_8q ?? [];
+  const last4 = series.slice(-4);
+  if (last4.length === 4 && last4.every((r) => r.pat !== null)) {
+    return last4.reduce((sum, r) => sum + (r.pat ?? 0), 0);
+  }
+  const annual = fundamentals?.annual.series_5y ?? [];
+  return annual.length && annual[annual.length - 1].pat !== null ? annual[annual.length - 1].pat : null;
+}
+
+function peLabel(pe: number | null, fundamentals: FundamentalsBlock | null): string {
+  if (pe !== null) return fmtNum(pe, 1);
+  const earnings = ttmPat(fundamentals);
+  if (earnings !== null && earnings <= 0) {
+    return "Not meaningful (earnings negative over the last 12 months)";
+  }
+  return NOT_AVAILABLE;
 }
 
 /**
@@ -97,7 +118,7 @@ export function FundamentalsPanels({
         ) : (
           <div className="space-y-3 text-sm">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Stat label="Revenue (latest Q)" value={quarterly.revenue !== null ? formatCr(quarterly.revenue) : "—"} />
+              <Stat label="Revenue (latest Q)" value={quarterly.revenue !== null ? formatCr(quarterly.revenue) : NOT_AVAILABLE} />
               <Stat
                 label="Revenue YoY"
                 value={
@@ -132,7 +153,7 @@ export function FundamentalsPanels({
                       opm_bps_change: quarterly.opm_yoy_bps_change ?? 0,
                     }}
                   >
-                    {quarterly.opm_pct !== null ? `${quarterly.opm_pct.toFixed(1)}%` : "—"}
+                    {quarterly.opm_pct !== null ? `${quarterly.opm_pct.toFixed(1)}%` : NOT_AVAILABLE}
                     {quarterly.opm_vs_8q_avg && (
                       <span className="ml-1 text-xs text-foreground-faint">({quarterly.opm_vs_8q_avg} 8q avg)</span>
                     )}
@@ -168,10 +189,12 @@ export function FundamentalsPanels({
                   symbol={symbol}
                   ctx={{ symbol, pe_ttm: fmtNum(valuation.pe_ttm, 1), sector_pe: fmtNum(valuation.sector_pe, 1) }}
                 >
-                  {fmtNum(valuation.pe_ttm, 1)}
+                  {peLabel(valuation.pe_ttm, fundamentals)}
                 </ExplainTerm>
               }
             />
+            <Stat label="P/B" value={fmtNum(valuation.pb, 1)} />
+            <Stat label="P/S (TTM)" value={fmtNum(valuation.ps_ttm ?? null, 1)} />
             <Stat label="Sector P/E" value={fmtNum(valuation.sector_pe, 1)} />
             <Stat label="Dividend yield" value={fmtPct(valuation.dividend_yield_pct)} />
           </div>
@@ -200,7 +223,7 @@ export function FundamentalsPanels({
                 <tbody>
                   <tr className="border-t border-border bg-accent/5 font-medium">
                     <td className="py-1.5 pr-3">{symbol} (this stock)</td>
-                    <td className="py-1.5 pr-3">{fmtNum(valuation.pe_ttm, 1)}</td>
+                    <td className="py-1.5 pr-3">{peLabel(valuation.pe_ttm, fundamentals)}</td>
                     <td className="py-1.5 pr-3">{fmtNum(valuation.pb, 1)}</td>
                     <td className="py-1.5 pr-3">{fmtPct(valuation.net_margin_ttm)}</td>
                     <td className="py-1.5 pr-3">{fmtPct(valuation.roe_ttm)}</td>
@@ -214,11 +237,11 @@ export function FundamentalsPanels({
                     return (
                       <tr key={i} className="border-t border-border">
                         <td className="py-1.5 pr-3">
-                          {p.company_name ? displayName(p.company_name) : "—"}
+                          {p.company_name ? displayName(p.company_name) : NOT_AVAILABLE}
                           {p.values_source ? <sup title={`Values from ${p.values_source}`}> *</sup> : null}
                         </td>
-                        <td className="py-1.5 pr-3">{fmtNum(p.pe, 1)}</td>
-                        <td className="py-1.5 pr-3">{fmtNum(p.pb, 1)}</td>
+                        <td className="py-1.5 pr-3">{p.pe === null ? NOT_AVAILABLE : fmtNum(p.pe, 1)}</td>
+                        <td className="py-1.5 pr-3">{p.pb === null ? NOT_AVAILABLE : fmtNum(p.pb, 1)}</td>
                         <td className="py-1.5 pr-3">{fmtPct(noData ? null : p.net_margin_ttm)}</td>
                         <td className="py-1.5 pr-3">{fmtPct(noData ? null : p.roe_ttm)}</td>
                         <td className="py-1.5 pr-3">{fmtNum(noData ? null : p.debt_to_equity, 2)}</td>
@@ -285,7 +308,7 @@ export function FundamentalsPanels({
                   Last reported {formatDateIst(events.next_results_date)}
                 </ExplainTerm>
               ) : (
-                "—"
+                "Not available from data source"
               )
             }
           />
@@ -297,7 +320,7 @@ export function FundamentalsPanels({
               <ul className="space-y-1">
                 {events.recent_dividends.map((d, i) => (
                   <li key={i} className="flex justify-between">
-                    <span className="text-foreground-muted">{d.record_date ? formatDateIst(d.record_date) : "—"}</span>
+                    <span className="text-foreground-muted">{d.record_date ? formatDateIst(d.record_date) : "Not available from data source"}</span>
                     <span>
                       ₹{fmtNum(d.value, 2)} ({fmtNum(d.percentage, 0)}%)
                     </span>
@@ -312,7 +335,7 @@ export function FundamentalsPanels({
               <ul className="space-y-1">
                 {events.recent_bonus.map((b, i) => (
                   <li key={i} className="flex justify-between">
-                    <span className="text-foreground-muted">{b.record_date ? formatDateIst(b.record_date) : "—"}</span>
+                    <span className="text-foreground-muted">{b.record_date ? formatDateIst(b.record_date) : "Not available from data source"}</span>
                     <span>{b.remarks}</span>
                   </li>
                 ))}
@@ -370,7 +393,7 @@ export function FundamentalsPanels({
                         <td className="py-1 pr-3">{y.fiscal_year}</td>
                         <td className="py-1 pr-3">{formatCr(y.revenue)}</td>
                         <td className="py-1 pr-3">{formatCr(y.pat)}</td>
-                        <td className="py-1 pr-3">{y.opm_pct !== null ? `${y.opm_pct.toFixed(1)}%` : "—"}</td>
+                        <td className="py-1 pr-3">{y.opm_pct !== null ? `${y.opm_pct.toFixed(1)}%` : NOT_AVAILABLE}</td>
                         <td className="py-1 pr-3">{fmtNum(y.eps, 2)}</td>
                       </tr>
                     ))}
@@ -410,7 +433,7 @@ function RawRow({
     <div className="flex justify-between">
       <dt className="text-foreground-muted">{label}</dt>
       <dd className="tabular-nums">
-        {value === null ? "—" : format ? format(value) : `${unit ?? ""}${value.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`}
+        {value === null ? NOT_AVAILABLE : format ? format(value) : `${unit ?? ""}${value.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`}
       </dd>
     </div>
   );
@@ -436,7 +459,7 @@ function OwnerRow({
   const valueSpan = (
     <>
       {pct === null ? (
-        "—"
+        NOT_AVAILABLE
       ) : (
         <>
           {pct.toFixed(2)}%
