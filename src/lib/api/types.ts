@@ -761,9 +761,9 @@ export interface PricePoint {
   last_price: number;
   day_change_pct: number | null;
   corporate_action?: CorporateActionNote | null;
-  week52_high: number;
-  week52_low: number;
-  week52_position_pct: number;
+  week52_high: number | null;
+  week52_low: number | null;
+  week52_position_pct: number | null;
   data_as_of?: DataAsOf | null;
 }
 

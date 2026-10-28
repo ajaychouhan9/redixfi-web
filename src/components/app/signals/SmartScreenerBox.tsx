@@ -121,7 +121,7 @@ export function SmartScreenerBox({ onApplyFilters }: { onApplyFilters?: (patch: 
   const EXAMPLE_QUERIES = [
     "stocks within 5% of their 52-week high",
     "higher volatility stocks",
-    "near 52-week high with above-average volume",
+    "stocks with delivery above average",
   ];
 
   const chips = result ? filterChips(result) : [];
@@ -276,7 +276,7 @@ export function SmartScreenerBox({ onApplyFilters }: { onApplyFilters?: (patch: 
                   </table>
                 </div>
               ) : (
-                <p className="text-sm text-foreground-muted">No stocks matched ({result.result_count}).</p>
+                <p className="text-sm text-foreground-muted">No {result.result_count === 1 ? "stock" : "stocks"} matched ({result.result_count}).</p>
               )
             )}
           </div>

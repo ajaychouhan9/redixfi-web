@@ -59,8 +59,11 @@ function introSentences(data: ResearchDetail): string[] {
   const p = data.price;
   const out = [`${data.company_name} (${data.symbol}) is listed on the NSE${data.sector ? ` and grouped under ${data.sector}` : ""}.`];
   out.push(`Its latest price is ₹${fmtInr(p.last_price)}${p.day_change_pct === null ? "" : `, ${p.day_change_pct > 0 ? "+" : ""}${p.day_change_pct.toFixed(2)}% from the previous close`}.`);
-  if (!rangeHidden(data) && p.week52_high > 0) {
-    out.push(`Over the past 52 weeks it traded between ₹${fmtInr(p.week52_low)} and ₹${fmtInr(p.week52_high)}; the latest price sits ${Math.round(p.week52_position_pct)}% of the way up that range.`);
+  const high52 = p.week52_high;
+  const low52 = p.week52_low;
+  const position52 = p.week52_position_pct;
+  if (!rangeHidden(data) && high52 != null && low52 != null && position52 != null && high52 > 0) {
+    out.push(`Over the past 52 weeks it traded between ₹${fmtInr(low52)} and ₹${fmtInr(high52)}; the latest price sits ${Math.round(position52)}% of the way up that range.`);
   }
   const dl = data.delivery_30d.map((d) => d.delivery_pct).filter((v) => Number.isFinite(v));
   if (dl.length >= 5) {
@@ -77,7 +80,12 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
   if (!data) return { title: `${symbol.toUpperCase()} not found` };
   const title = `${data.company_name} (${data.symbol}) — Price, Delivery & News`;
   const dc = data.price.day_change_pct;
-  const description = `${data.company_name} (${data.symbol}): ₹${fmtInr(data.price.last_price)}, ${dc === null ? "" : `${dc > 0 ? "+" : ""}${dc.toFixed(2)}% today, `}${rangeHidden(data) ? "" : `52-week range ₹${fmtInr(data.price.week52_low)}–₹${fmtInr(data.price.week52_high)}, `}delivery trend and latest news — measured data, not advice.`;
+  const high52 = data.price.week52_high;
+  const low52 = data.price.week52_low;
+  const rangeText = !rangeHidden(data) && high52 != null && low52 != null
+    ? `52-week range ₹${fmtInr(low52)}–₹${fmtInr(high52)}, `
+    : "";
+  const description = `${data.company_name} (${data.symbol}): ₹${fmtInr(data.price.last_price)}, ${dc === null ? "" : `${dc > 0 ? "+" : ""}${dc.toFixed(2)}% today, `}${rangeText}delivery trend and latest news — measured data, not advice.`;
   const ogImage = `/api/og?${new URLSearchParams({
     type: "stock",
     title: data.symbol,
@@ -108,7 +116,7 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
   const data = await loadCompany(normalizedSymbol);
   if (!data) notFound();
 
-  const positionPct = Math.max(0, Math.min(100, data.price.week52_position_pct));
+  const positionPct = Math.max(0, Math.min(100, data.price.week52_position_pct ?? 0));
   const sortedDelivery = [...data.delivery_30d].sort((a, b) => a.date.localeCompare(b.date));
 
   const jsonLd = {

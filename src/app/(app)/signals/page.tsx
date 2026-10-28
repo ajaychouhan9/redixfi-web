@@ -35,7 +35,7 @@ export default async function SignalsPage({ searchParams }: { searchParams: Prom
       <div className="mb-5">
         <h1 className="text-lg font-semibold">Signal Dashboard</h1>
         <p className="mt-1 text-sm text-foreground-muted">
-          Measured market signals across {trackedCount !== null ? trackedCount.toLocaleString("en-IN") : "2,000+"} tracked stocks
+          Measured market signals across {trackedCount !== null ? trackedCount.toLocaleString("en-IN") : "2,000+"} tracked {trackedCount === 1 ? "stock" : "stocks"}
         </p>
       </div>
       <SignalsPageBody sectorSummary={sectorSummary} cloneSource={cloneSource} />

@@ -71,7 +71,7 @@ function SectorRow({ row, onSelect }: { row: SectorSummaryRow; onSelect?: (indus
     >
       <span className="text-sm">{row.sector}</span>
       <span className="flex items-center gap-3">
-        <span className="font-mono text-[12px] text-foreground-faint">{row.count} stocks</span>
+        <span className="font-mono text-[12px] text-foreground-faint">{row.count} {row.count === 1 ? "stock" : "stocks"}</span>
         <DeltaValue value={row.avg_delta} className="w-16 justify-end" />
       </span>
     </button>

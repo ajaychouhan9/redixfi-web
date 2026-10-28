@@ -244,6 +244,34 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
  *  name. Right: the price with its full day change, and a compact score badge with its change. Same data as the table row;
  *  a locked (free-tier) score keeps the lock treatment. The badge is neutral on purpose (no colour for a high or low score). */
 export function SignalMobileRow({ row }: { row: SignalRow }) {
+  const [queued, setQueued] = useState(false);
+  const [full, setFull] = useState(false);
+
+  useEffect(() => {
+    const sync = () => {
+      const q = getComparisonQueue();
+      setQueued(q.some((e) => e.symbol === row.symbol));
+      setFull(q.length >= COMPARISON_QUEUE_MAX);
+    };
+    sync();
+    return onComparisonQueueChange(sync);
+  }, [row.symbol]);
+
+  function toggleCompare(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (queued) removeFromComparisonQueue(row.symbol);
+    else addToComparisonQueue({ symbol: row.symbol, company_name: row.company_name });
+  }
+
+  const high = row.week52_high;
+  const below = row.pct_below_52w_high;
+  const highLine = high != null
+    ? `52-week high ₹${high.toLocaleString("en-IN")} · ${below != null ? `${below.toFixed(1)}% below` : "n/a below"}`
+    : "52-week high n/a · n/a below";
+  const volLine = row.volatility_text
+    ?? (row.vol_pct_more != null ? `More volatile than ${row.vol_pct_more}%` : "n/a");
+
   return (
     <li className="flex flex-wrap items-center gap-3 px-3 py-2.5" data-testid="signal-mobile-row">
       <Link href={stockPath("/signals", row.symbol)} className="min-w-0 flex-1">
@@ -277,12 +305,26 @@ export function SignalMobileRow({ row }: { row: SignalRow }) {
         )}
         {!row.locked && row.delta_1d !== null && <DeltaValue value={row.delta_1d} className="text-[11px]" />}
       </div>
-      {(row.pct_below_52w_high !== null || row.vol_pct_more !== null) && (
-        <div className="mt-1 flex w-full flex-wrap gap-x-2 text-[11px] text-foreground-faint">
-          {row.pct_below_52w_high !== null && <span>{row.pct_below_52w_high.toFixed(1)}% below 52w high</span>}
-          {row.vol_pct_more !== null && <span>More volatile than {row.vol_pct_more}%</span>}
+      <div className="mt-1 flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-1">
+        <div className="flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-foreground-faint">
+          <span>{highLine}</span>
+          <span>Volatility: {volLine}</span>
         </div>
-      )}
+        <button
+          type="button"
+          onClick={toggleCompare}
+          disabled={!queued && full}
+          aria-pressed={queued}
+          className="shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+          style={queued
+            ? { background: "var(--hover)", color: "var(--accent)", borderColor: "color-mix(in srgb, var(--accent) 30%, transparent)" }
+            : { background: "transparent", color: "var(--foreground-faint)", borderColor: "var(--border)" }}
+          title={!queued && full ? `Comparison is full (max ${COMPARISON_QUEUE_MAX} stocks)` : "Add to comparison"}
+        >
+          {queued ? <Check size={11} className="mr-0.5 inline" /> : <Plus size={11} className="mr-0.5 inline" />}
+          {queued ? "Added" : "Compare"}
+        </button>
+      </div>
     </li>
   );
 }

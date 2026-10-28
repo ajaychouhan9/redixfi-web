@@ -62,7 +62,13 @@ export function ResearchDetail({
   peers: PeerRow[] | null;
   peersError: boolean;
 }) {
-  const positionPct = Math.max(0, Math.min(100, data.price.week52_position_pct));
+  const positionPct = Math.max(0, Math.min(100, data.price.week52_position_pct ?? 0));
+  const lastPrice = data.price.last_price;
+  const high52 = data.price.week52_high;
+  const low52 = data.price.week52_low;
+  const belowHighPct = high52 != null && high52 > 0 && lastPrice != null
+    ? Math.max(0, (1 - lastPrice / high52) * 100)
+    : null;
 
   return (
     <div className="space-y-4">
@@ -96,10 +102,17 @@ export function ResearchDetail({
           <div className="h-1.5 w-full rounded-full bg-neutral-bg">
             <div className="h-1.5 rounded-full bg-accent" style={{ width: `${positionPct}%` }} />
           </div>
-          <div className="mt-1 flex justify-between text-xs text-foreground-faint">
-            <span>52wk low ₹{data.price.week52_low}</span>
-            <span>52wk high ₹{data.price.week52_high}</span>
+          <div className="mt-1 flex justify-between gap-2 text-xs text-foreground-faint">
+            <span>52wk low {low52 != null ? `₹${low52.toLocaleString("en-IN")}` : "n/a"}</span>
+            <span>52wk high {high52 != null ? `₹${high52.toLocaleString("en-IN")}` : "n/a"}</span>
           </div>
+          <p className="mt-1 text-xs text-foreground-muted">
+            {belowHighPct == null
+              ? "52-week high unavailable"
+              : belowHighPct < 0.05
+                ? "at 52-week high"
+                : `${belowHighPct.toFixed(1)}% below 52-week high`}
+          </p>
         </div>
 
         {/* B1 Signal Snapshot (2026-08-11) — compact, near the top, per the

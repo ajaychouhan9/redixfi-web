@@ -516,7 +516,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
         <p className="mt-3 text-[11px] text-foreground-faint">{DISCLAIMER}</p>
         {shortHistoryCount !== null && shortHistoryCount > 0 && (
           <p className="mt-1 text-[11px] text-foreground-faint">
-            {shortHistoryCount.toLocaleString("en-IN")} stocks have less than 52 weeks of data and are not matched by the 52-week filter.
+            {shortHistoryCount.toLocaleString("en-IN")} {shortHistoryCount === 1 ? "stock has" : "stocks have"} less than 52 weeks of data and {shortHistoryCount === 1 ? "is" : "are"} not matched by the 52-week filter.
           </p>
         )}
 
@@ -565,6 +565,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
           {rows.map((row) => <SignalMobileRow key={row.symbol} row={row} />)}
         </ul>
         <div className="hidden overflow-x-auto md:block">
+          <p className="mb-2 hidden text-[11px] text-foreground-faint md:block lg:hidden">Scroll the table sideways to see all columns.</p>
           <table className="w-full min-w-[900px] text-sm">
             <thead>
               <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wider text-foreground-faint">
@@ -600,7 +601,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
       {!watchlistOnly && (
         <div className="mt-3 flex items-center justify-between text-xs text-foreground-muted">
           <span className="font-mono">
-            {total.toLocaleString("en-IN")} stocks · page {page} of {totalPages}
+            {total.toLocaleString("en-IN")} {total === 1 ? "stock" : "stocks"} · page {page} of {totalPages}
           </span>
           <div className="flex gap-2">
             <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="rounded border border-border px-2 py-1 disabled:opacity-40">Prev</button>
