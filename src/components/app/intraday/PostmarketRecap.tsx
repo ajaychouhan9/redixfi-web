@@ -67,16 +67,16 @@ export function PostmarketRecap({ recap }: { recap: IntradayRecap | null }) {
         {recap.breadth_line && <p className="mt-1 text-sm text-foreground-muted">{recap.breadth_line}</p>}
       </Card>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Card title="Top gainers">
+        <Card title="Largest price increases">
           <MoverTable rows={recap.top_gainers} />
         </Card>
-        <Card title="Top losers">
+        <Card title="Largest price decreases">
           <MoverTable rows={recap.top_losers} />
         </Card>
-        <Card title="Sector leaders">
+        <Card title="Highest sector readings">
           <SectorTable rows={recap.sector_leaders} />
         </Card>
-        <Card title="Sector laggards">
+        <Card title="Lowest sector readings">
           <SectorTable rows={recap.sector_laggards} />
         </Card>
       </div>

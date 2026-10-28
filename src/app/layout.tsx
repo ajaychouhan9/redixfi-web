@@ -33,7 +33,7 @@ const SITE_URL = "https://www.redixfi.com";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "RedixFi — The AI that reads the entire market for you",
+    default: "RedixFi — Understand Indian stocks through measured data, not predictions.",
     template: "%s · RedixFi",
   },
   description:

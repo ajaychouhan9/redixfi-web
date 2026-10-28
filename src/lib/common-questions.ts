@@ -164,7 +164,7 @@ export const COMMON_QUESTION_GROUPS: CommonQuestionGroup[] = [
       {
         "id": "sector_rank_q1",
         "q": "Why rank within an industry instead of the whole market?",
-        "a": "Comparing against direct peers separates stock-specific behaviour from behaviour shared across an entire industry. A stock can look weak in isolation while actually being the strongest name in a weak industry, or the reverse."
+        "a": "Comparing against direct peers separates stock-specific behaviour from behaviour shared across an entire industry. A stock can look weak in isolation while actually having the highest reading in a weak industry, or the reverse."
       },
       {
         "id": "sector_rank_q2",

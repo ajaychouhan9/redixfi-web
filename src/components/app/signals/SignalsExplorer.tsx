@@ -4,6 +4,7 @@ import { ListSessionNote } from "@/components/app/signals/ListSessionNote";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { Search, Filter, ArrowUpDown, SlidersHorizontal, X, ChevronDown } from "lucide-react";
 import { getSignals } from "@/lib/api/endpoints";
+import { formatObservationDate } from "@/lib/format";
 import type { SignalRow, SignalsPageInfo, SharedScreenParams } from "@/lib/api/types";
 import { SIGNAL_SECTORS } from "@/data/sectors";
 import { SignalMobileRow, SignalTableRow, type VisibleColumns } from "./SignalTableRow";
@@ -113,6 +114,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   const [rows, setRows] = useState<SignalRow[]>([]);
   const [total, setTotal] = useState(0);
   const [shortHistoryCount, setShortHistoryCount] = useState<number | null>(null);
+  const [extrasAsOf, setExtrasAsOf] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -282,6 +284,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
           setRows(data);
           setTotal(env.page_info.total);
           setShortHistoryCount((env.page_info as SignalsPageInfo).short_history_count ?? null);
+          setExtrasAsOf((env.page_info as SignalsPageInfo).extras_as_of ?? null);
         })
         .catch((e) => !cancelled && setError(e instanceof Error ? e.message : "Failed to load signals."))
         .finally(() => !cancelled && setLoading(false));
@@ -517,6 +520,11 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
         {shortHistoryCount !== null && shortHistoryCount > 0 && (
           <p className="mt-1 text-[11px] text-foreground-faint">
             {shortHistoryCount.toLocaleString("en-IN")} {shortHistoryCount === 1 ? "stock has" : "stocks have"} less than 52 weeks of data and {shortHistoryCount === 1 ? "is" : "are"} not matched by the 52-week filter.
+          </p>
+        )}
+        {extrasAsOf && (
+          <p className="mt-1 text-[11px] text-foreground-faint">
+            52-week high and volatility: as of {formatObservationDate(extrasAsOf)}.
           </p>
         )}
 

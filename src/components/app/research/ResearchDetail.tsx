@@ -24,7 +24,7 @@ import { CurrentSymbolSync } from "@/components/app/CurrentSymbolSync";
 import { ConcallSummary } from "@/components/app/research/ConcallSummary";
 import { AnnualReportSummaryCard } from "@/components/app/research/AnnualReportSummaryCard";
 import { RedFlagSection } from "@/components/app/research/RedFlagSection";
-import { formatDataAsOf, formatDateIst, formatPriceAsOf } from "@/lib/format";
+import { formatDataAsOf, formatDateIst, formatObservationDate, formatPriceAsOf } from "@/lib/format";
 import { stockPath } from "@/lib/seo/stock-symbol";
 
 // Concall tone -> the app's existing semantic color tones (Chip component),
@@ -112,6 +112,9 @@ export function ResearchDetail({
               : belowHighPct < 0.05
                 ? "at 52-week high"
                 : `${belowHighPct.toFixed(1)}% below 52-week high`}
+          </p>
+          <p className="mt-0.5 text-[10px] text-foreground-faint">
+            52-week range: as of {formatObservationDate(data.price.data_as_of?.data_as_of) ?? "date unavailable"}.
           </p>
         </div>
 

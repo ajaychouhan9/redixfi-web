@@ -12,9 +12,9 @@ const UNSAFE_SUGGESTION_PATTERNS = [
 // is deliberately no stock fallback: whether a stock's question can be
 // answered depends on that stock's data, which only the server knows.
 export const FALLBACK_MARKET_SUGGESTIONS = [
-  "Which stocks are today's top gainers?",
+  "Which stocks have the largest score increases today?",
   "Show the 10 stocks with the highest composite scores.",
-  "Which sectors are strongest in the latest market session?",
+  "Which sectors have the highest readings in the latest market session?",
   "Show stocks with unusual market activity.",
   "Which F&O stocks have the highest put/call ratio?",
 ] as const;

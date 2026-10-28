@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run check:compliance && npm run check:auth-fetch && npm run check:no-change-stock && next build",
+    "build": "npm run check:compliance && npm run check:auth-fetch && npm run check:no-change-stock && npm run check:wording && next build",
     "start": "next start",
     "lint": "eslint",
     "check:compliance": "node scripts/check-compliance.mjs",
@@ -12,7 +12,8 @@
     "check:no-change-stock": "node scripts/check-no-change-stock-button.mjs",
     "test:sitemap": "node scripts/test-sitemap.mjs && node scripts/test-sitemap-url-rules.mjs",
     "test:stock-clarity": "node scripts/test-stock-clarity.mjs",
-    "check:sitemap-live": "node scripts/check-sitemap-live.mjs"
+    "check:sitemap-live": "node scripts/check-sitemap-live.mjs",
+    "check:wording": "node scripts/test-wording.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

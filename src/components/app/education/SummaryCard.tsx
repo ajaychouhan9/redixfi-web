@@ -116,17 +116,17 @@ export function SectorSummaryCard({ data, onSelectIndustry }: { data: SectorSumm
       {!expanded && total > 0 && (
         <div className="grid grid-cols-1 border-t border-border sm:grid-cols-2">
           <div className="divide-y divide-border border-b border-border sm:border-b-0 sm:border-r">
-            <p className="px-5 pt-2.5 pb-1 font-mono text-[11px] uppercase tracking-wide text-foreground-faint">Strongest</p>
+            <p className="px-5 pt-2.5 pb-1 font-mono text-[11px] uppercase tracking-wide text-foreground-faint">Highest reading · avg score change</p>
             {strongest.map((r) => (
               <SectorRow key={r.sector} row={r} onSelect={onSelectIndustry} />
             ))}
           </div>
           <div className="divide-y divide-border">
-            <p className="px-5 pt-2.5 pb-1 font-mono text-[11px] uppercase tracking-wide text-foreground-faint">Weakest</p>
+            <p className="px-5 pt-2.5 pb-1 font-mono text-[11px] uppercase tracking-wide text-foreground-faint">Lowest reading · avg score change</p>
             {weakest.length > 0 ? (
               weakest.map((r) => <SectorRow key={r.sector} row={r} onSelect={onSelectIndustry} />)
             ) : (
-              <p className="px-5 pb-2.5 text-xs text-foreground-faint">No distinct weakest industry today.</p>
+              <p className="px-5 pb-2.5 text-xs text-foreground-faint">No distinct lowest reading industry today.</p>
             )}
           </div>
         </div>

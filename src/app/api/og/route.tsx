@@ -38,7 +38,7 @@ const TYPE_BADGES: Record<string, string> = {
   concall: "CONCALL SUMMARY",
   screener: "SCREENER",
   brief: "DAILY MARKET PULSE",
-  movers: "TOP MOVERS",
+  movers: "BIGGEST SCORE CHANGES",
 };
 
 function clamp(value: string | null, max: number, fallback: string): string {

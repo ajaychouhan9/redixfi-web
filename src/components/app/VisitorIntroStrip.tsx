@@ -42,11 +42,11 @@ export function VisitorIntroStrip() {
       <div className="px-5 py-8 sm:px-8 sm:py-10">
         <div className="font-mono text-[11px] uppercase tracking-widest text-accent">RedixFi — Market. Simplified.</div>
         <h1 className="mt-2 max-w-2xl text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
-          The AI that reads the entire market for you
+          Understand Indian stocks through measured data, not predictions.
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-foreground-muted sm:text-[15px]">
           Measured signal scores across 2,000+ NSE stocks, AI summaries across major NSE-listed companies&rsquo;
-          annual reports and concalls, and a governance radar that flags what institutional coverage misses — all
+          annual reports and concalls, and a governance radar that highlights disclosed governance items for further review — all
           updated daily.
         </p>
 
