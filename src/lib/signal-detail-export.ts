@@ -1,4 +1,5 @@
 import type { Candle, DeliveryPoint, FundamentalsBlock, SignalDetail } from "./api/types";
+import { formatYmd } from "./format";
 import type { XlsxSheet, XlsxSummaryRow } from "./xlsx";
 
 const COMPONENT_LABEL: Record<string, string> = {
@@ -141,6 +142,11 @@ export function getChecklistRows(detail: SignalDetail, fundamentals?: Fundamenta
           ? "P/E or sector P/E not available for this stock yet."
           : `Trailing P/E of ${v.pe_ttm} sits ${v.pe_vs_sector ?? "in line with"} the sector average of ${v.sector_pe}.`,
     });
+  }
+  const fb = fundamentals?.fallback_source;
+  const fbDate = fb?.growth_as_of ?? fb?.valuation_as_of;
+  if (fb && fbDate) {
+    rows.push({ label: "Fundamentals source", value: `Source: Yahoo Finance, as of ${formatYmd(fbDate) || fbDate}` });
   }
   return rows;
 }

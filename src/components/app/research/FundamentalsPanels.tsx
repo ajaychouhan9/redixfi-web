@@ -51,6 +51,17 @@ function peLabel(pe: number | null, fundamentals: FundamentalsBlock | null): str
   return NOT_AVAILABLE;
 }
 
+/** One plain line naming the source of any field filled from the fallback (only rendered when a date exists). */
+function FallbackNote({ date }: { date: string | null | undefined }) {
+  const label = formatYmd(date ?? null);
+  if (!label) return null;
+  return (
+    <p className="text-xs text-foreground-faint" data-testid="fallback-source">
+      Source: Yahoo Finance, as of {label}
+    </p>
+  );
+}
+
 /**
  * Task 09 UI panels — each collapsible, each titled as a question a real
  * person asks, each with a tap-to-learn explainer. Derived-first; raw
@@ -171,6 +182,7 @@ export function FundamentalsPanels({
                 </div>
               </div>
             )}
+            <FallbackNote date={fundamentals.fallback_source?.growth_as_of} />
           </div>
         )}
       </Collapsible>
@@ -198,6 +210,7 @@ export function FundamentalsPanels({
             <Stat label="Sector P/E" value={fmtNum(valuation.sector_pe, 1)} />
             <Stat label="Dividend yield" value={fmtPct(valuation.dividend_yield_pct)} />
           </div>
+          <FallbackNote date={fundamentals.fallback_source?.valuation_as_of} />
           {/* Facts side by side, user's own reading — never "cheaper = better".
               peers is resolved server-side before this ever renders, so
               null here means a genuine fetch failure (same bucket as

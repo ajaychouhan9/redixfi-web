@@ -997,6 +997,8 @@ export interface FundamentalsBlock {
   as_of: string;
   /** The day this company's own latest fundamentals record was fetched (YYYY-MM-DD). */
   fetched_on?: string | null;
+  /** Present only when some null fields were filled from the Yahoo Finance fallback. */
+  fallback_source?: { source: string; fields: string[]; growth_as_of: string | null; valuation_as_of: string | null } | null;
   identity: FundamentalsIdentity;
   quarterly: FundamentalsQuarterly;
   annual: FundamentalsAnnual;
