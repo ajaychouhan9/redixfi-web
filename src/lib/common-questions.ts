@@ -14,47 +14,47 @@ export interface CommonQuestionGroup {
 
 export const COMMON_QUESTION_GROUPS: CommonQuestionGroup[] = [
   {
-    "topic": "Composite Signal Score",
+    "topic": "Conditions Reading",
     "items": [
       {
         "id": "composite_score_q1",
-        "q": "What counts as a 'good' score?",
-        "a": "There is no 'good' score. A higher score means more of the measured signals lined up in the same way; a lower score means fewer did. It describes the measured signals, not future price."
+        "q": "What counts as a 'good' reading?",
+        "a": "There is no 'good' reading. A higher reading means more of the measured signals lined up in the same way; a lower reading means fewer did. It describes the measured signals, not future price."
       },
       {
         "id": "composite_score_q2",
-        "q": "Why did the score change so much in one day?",
+        "q": "Why did the reading change so much in one day?",
         "a": "Large single-day moves have historically traced back to one underlying signal flipping state — a delivery spike, a trend crossing its moving average, a fresh event flag — rather than everything shifting a little at once. The Signal Change Log on each stock page names exactly which signal moved."
       },
       {
         "id": "composite_score_q3",
-        "q": "Does a high score mean the stock will go up?",
-        "a": "No. The score summarizes what has already been measured — it carries no forward claim. A high score has historically coincided with broad agreement across signals on a given day; it has not reliably predicted the next day's move, and this product does not track or claim that it does."
+        "q": "Does a high reading mean the stock will go up?",
+        "a": "No. The reading summarizes what has already been measured — it carries no forward claim. A high reading has historically coincided with broad agreement across signals on a given day; it has not reliably predicted the next day's move, and this product does not track or claim that it does."
       },
       {
         "id": "composite_score_q4",
-        "q": "Can two stocks with the same score look completely different?",
-        "a": "Yes. The same number can be reached by very different combinations of underlying signals — one stock might score 65 on strong delivery and weak sector standing, another might reach 65 the opposite way. That's why the full breakdown sits right below the number rather than the score standing alone."
+        "q": "Can two stocks with the same reading look completely different?",
+        "a": "Yes. The same number can be reached by very different combinations of underlying signals — one stock might show 65 on high delivery and a lower sector rank, another might reach 65 the opposite way. That's why the full breakdown sits right below the number rather than the reading standing alone."
       }
     ]
   },
   {
-    "topic": "Score change (1 day)",
+    "topic": "Reading change (1 day)",
     "items": [
       {
         "id": "delta_1d_q1",
-        "q": "Is a big score change always driven by price?",
-        "a": "Not necessarily. Because the composite score blends trend, delivery, volume, sector standing, options positioning and event risk together, a large move can come from any one of those changing state — price is only one input among several."
+        "q": "Is a big reading change always driven by price?",
+        "a": "Not necessarily. Because the Conditions Reading blends trend, delivery, volume, sector standing, options positioning and event risk together, a large move can come from any one of those changing state — price is only one input among several."
       },
       {
         "id": "delta_1d_q2",
-        "q": "What does it mean if the score barely moved?",
+        "q": "What does it mean if the reading barely moved?",
         "a": "A small delta usually means the underlying signals stayed in roughly the same state as the previous session — no single signal crossed a threshold. It says the picture was stable that day, not that nothing at all happened to the stock."
       },
       {
         "id": "delta_1d_q3",
-        "q": "Can the score fall even if the price rose?",
-        "a": "Yes — this is exactly the kind of disagreement the Tension panel is built to surface. Price and the composite score are not the same measurement; delivery weakening, sector standing slipping, or an event flag appearing can all pull the composite down on a day the price closed higher."
+        "q": "Can the reading fall even if the price rose?",
+        "a": "Yes — this is exactly the kind of disagreement the Tension panel is built to surface. Price and the Conditions Reading are not the same measurement; delivery weakening, sector standing slipping, or an event flag appearing can all pull the composite down on a day the price closed higher."
       },
       {
         "id": "delta_1d_q4",
@@ -164,7 +164,7 @@ export const COMMON_QUESTION_GROUPS: CommonQuestionGroup[] = [
       {
         "id": "sector_rank_q1",
         "q": "Why rank within an industry instead of the whole market?",
-        "a": "Comparing against direct peers separates stock-specific behaviour from behaviour shared across an entire industry. A stock can look weak in isolation while actually having the highest reading in a weak industry, or the reverse."
+        "a": "Comparing against direct peers separates stock-specific behaviour from behaviour shared across an entire industry. A stock's reading on its own can look low while being the highest in its industry, or the reverse."
       },
       {
         "id": "sector_rank_q2",
@@ -174,12 +174,12 @@ export const COMMON_QUESTION_GROUPS: CommonQuestionGroup[] = [
       {
         "id": "sector_rank_q3",
         "q": "Does #1 in the sector mean the stock is a buy?",
-        "a": "No — it means this stock's composite score was the highest among its classified peers today, nothing more. The rank carries no forward claim and is recomputed fresh from scratch every day."
+        "a": "No — it means this stock's Conditions Reading was the highest among its classified peers today, nothing more. The rank carries no forward claim and is recomputed fresh from scratch every day."
       },
       {
         "id": "sector_rank_q4",
         "q": "Can a rank swing a lot day to day?",
-        "a": "Yes, especially in smaller peer groups, since each member's composite score is itself a same-day snapshot. A rank moving from #3 to #7 describes a change in relative standing that day — it says nothing about direction on its own."
+        "a": "Yes, especially in smaller peer groups, since each member's Conditions Reading is itself a same-day snapshot. A rank moving from #3 to #7 describes a change in relative standing that day — it says nothing about direction on its own."
       }
     ]
   },
@@ -262,7 +262,7 @@ export const COMMON_QUESTION_CHIPS: string[] = [
   "What is delivery, exactly?",
   "Is high delivery always a good sign?",
   "Does PCR always indicate direction?",
-  "What counts as a 'good' score?",
+  "What counts as a 'good' reading?",
   "Why compare to the stock's own average instead of a fixed number?",
   "Why show disagreement instead of just picking a side?"
 ];

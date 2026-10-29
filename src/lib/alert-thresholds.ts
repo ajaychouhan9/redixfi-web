@@ -9,7 +9,7 @@ export function thresholdError(metric: AlertMetricKey, value: number): string | 
     case "price":
       return value > 0 ? null : "Price must be above 0.";
     case "score":
-      return value >= 0 && value <= 100 ? null : "Composite score must be between 0 and 100.";
+      return value >= 0 && value <= 100 ? null : "Conditions Reading must be between 0 and 100.";
     case "delivery":
       return value >= 0 && value <= 100 ? null : "Delivery % must be between 0 and 100.";
     case "volume":

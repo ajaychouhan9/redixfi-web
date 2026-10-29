@@ -7,7 +7,7 @@ import { InstallRow } from "@/components/app/pwa/InstallRow";
 export const metadata: Metadata = { title: "More" };
 
 const LINKS = [
-  { href: "/how-it-works", label: "How the score works", icon: BookOpen },
+  { href: "/how-it-works", label: "How the reading works", icon: BookOpen },
   { href: "/volatility", label: "Volatility ranking", icon: Activity },
   { href: "/more/disclaimer", label: "Full disclaimer", icon: ShieldCheck },
   { href: "/more/data-sources", label: "Data sources & update times", icon: Database },

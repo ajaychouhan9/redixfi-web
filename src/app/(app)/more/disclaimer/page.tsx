@@ -42,7 +42,7 @@ export default function DisclaimerPage() {
       <section>
         <h2 className="mb-1 font-semibold">No ranking, no recommendation</h2>
         <p>
-          Default sort order on every list is by name or market capitalization — never by a model-derived score.
+          Default sort order on every list is by name or market capitalization — never by a model-derived reading.
           Any sort or filter applied is chosen by the user, not by RedixFi.
         </p>
       </section>

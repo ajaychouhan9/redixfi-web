@@ -18,7 +18,7 @@ import type { AskTopupTier } from "@/lib/api/types";
 // drift apart the same way this project's numeric configs repeatedly
 // have.
 export const BASIC_FEATURES = [
-  "All 2,000+ NSE stocks' measured signal scores — full data, no masking",
+  "All 2,000+ NSE stocks' measured Conditions Readings — full data, no masking",
   "Unlimited Research Pro company lookups",
   "Same-day news (no 24h delay)",
   "Watchlist alerts: signal changes, event risk, market-wide events",
@@ -29,7 +29,7 @@ export const BASIC_FEATURES = [
 ];
 
 export const PRO_FEATURES = [
-  "All 2,000+ NSE stocks' measured signal scores — full data, no masking",
+  "All 2,000+ NSE stocks' measured Conditions Readings — full data, no masking",
   "Unlimited Research Pro company lookups",
   "Same-day news (no 24h delay)",
   "Watchlist alerts: signal changes, event risk, market-wide events",

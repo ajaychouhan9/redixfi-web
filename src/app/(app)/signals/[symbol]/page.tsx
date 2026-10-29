@@ -13,8 +13,8 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
   const { symbol: raw } = await params;
   const symbol = stockSymbolFromParam(raw) ?? raw.toUpperCase();
   return {
-    title: `${symbol} Signal Score`,
-    description: `Measured composite signal score, trend, delivery, sector standing and options positioning for ${symbol} — factual, not a prediction.`,
+    title: `${symbol} Conditions Reading`,
+    description: `Measured Conditions Reading, trend, delivery, sector standing and options positioning for ${symbol} — factual, not a prediction.`,
     alternates: { canonical: stockPath("/signals", symbol) },
   };
 }
@@ -75,11 +75,11 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
           {detail.limited_data ? (
             <p className="text-sm">
               <span className="font-medium">Limited data.</span>{" "}
-              {detail.limited_data_note || "This stock's feed is incomplete, so the score is not shown."}
+              {detail.limited_data_note || "This stock's feed is incomplete, so the reading is not shown."}
             </p>
           ) : detail.no_score_reason === "stale_candle" ? (
             <p className="text-sm">
-              No score is shown for the latest session because the latest daily bar is from an earlier
+              No reading is shown for the latest session because the latest daily bar is from an earlier
               session. The last price above is from that earlier session; coverage resumes when the next
               daily bar arrives.
             </p>

@@ -20,14 +20,14 @@ const BASE_SCREENS: CannedScreen[] = [
   },
   {
     slug: "signal-score-gainers-today",
-    title: "Largest score increases today",
-    description: "Stocks whose measured composite signal score rose the most versus the previous session.",
+    title: "Largest reading increases today",
+    description: "Stocks whose measured Conditions Reading rose the most versus the previous session.",
     params: { sort: "delta_1d", order: "desc" },
   },
   {
     slug: "signal-score-decliners-today",
-    title: "Largest score decreases today",
-    description: "Stocks whose measured composite signal score fell the most versus the previous session.",
+    title: "Largest reading decreases today",
+    description: "Stocks whose measured Conditions Reading fell the most versus the previous session.",
     params: { sort: "delta_1d", order: "asc" },
   },
   {
@@ -64,8 +64,8 @@ const SECTOR_METRICS: Array<{ suffix: string; title: (s: string) => string; desc
   },
   {
     suffix: "signal-score-gainers",
-    title: (s) => `Largest score increases in ${s}`,
-    description: (s) => `${s} stocks whose measured composite signal score rose the most versus the previous session.`,
+    title: (s) => `Largest reading increases in ${s}`,
+    description: (s) => `${s} stocks whose measured Conditions Reading rose the most versus the previous session.`,
     params: { sort: "delta_1d", order: "desc" },
   },
   {

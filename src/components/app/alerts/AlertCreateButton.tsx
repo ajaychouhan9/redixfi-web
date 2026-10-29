@@ -10,7 +10,7 @@ import type { AlertCapabilities, AlertDirection, AlertMetric } from "@/lib/api/t
 
 const METRIC_LABELS: Record<AlertMetric, string> = {
   price: "Price",
-  score: "Composite score",
+  score: "Conditions Reading",
   delivery: "Delivery %",
   volume: "Volume ratio (5d)",
 };

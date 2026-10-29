@@ -99,7 +99,7 @@ function ScoreLine({ rows }: { rows: ScoreHistoryRow[] }) {
           r="2.4" className="fill-accent" />
       </svg>
       <p className="sr-only">
-        Composite score moved from {first.score} on {formatShortDate(first.date)} to {last.score} on{" "}
+        Conditions Reading moved from {first.score} on {formatShortDate(first.date)} to {last.score} on{" "}
         {formatShortDate(last.date)} over {points.length} stored sessions.
       </p>
     </div>
@@ -128,7 +128,7 @@ function TodayCard({ t }: { t: ScoreHistoryTodayRow }) {
 }
 
 function ScoreExplainerLink({ symbol, score }: { symbol: string; score: number | null }) {
-  const label = "How is this score calculated?";
+  const label = "How is this reading calculated?";
   if (SCORE_EXPLAINER_TARGET.startsWith("explain:")) {
     return (
       <ExplainTerm
@@ -236,10 +236,10 @@ export function ScoreHistorySection({
         className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
       >
         <span className="min-w-0">
-          <span className="block text-sm font-semibold text-foreground">Score history</span>
+          <span className="block text-sm font-semibold text-foreground">Reading history</span>
           <span className="block text-[11px] text-foreground-faint">
             {data?.blocked ? "Not shown — corporate action in progress" : data ? `${data.available} stored session${data.available === 1 ? "" : "s"}` : `Last ${sessions || 5}–10 sessions`}
-            {" · "}inputs and score change
+            {" · "}inputs and reading change
           </span>
         </span>
         <ChevronDown size={16} className={clsx("shrink-0 text-foreground-faint transition-transform", open && "rotate-180")} />
@@ -250,7 +250,7 @@ export function ScoreHistorySection({
           {loading && <p className="text-xs text-foreground-muted">Loading stored sessions…</p>}
 
           {failed && !loading && (
-            <p className="text-xs text-foreground-muted">Could not load score history right now.</p>
+            <p className="text-xs text-foreground-muted">Could not load reading history right now.</p>
           )}
 
           {data?.blocked && (
@@ -261,7 +261,7 @@ export function ScoreHistorySection({
 
           {data && !data.blocked && data.locked && (
             <p className="text-xs text-foreground-muted">
-              Score history is available on the full stock page for this symbol.
+              Reading history is available on the full stock page for this symbol.
             </p>
           )}
 
@@ -277,7 +277,7 @@ export function ScoreHistorySection({
               <div className="hidden sm:block">
                 <table className="w-full table-fixed border-collapse text-[11px]">
                   <caption className="sr-only">
-                    Stored per-session inputs and composite score, newest first.
+                    Stored per-session inputs and Conditions Reading, newest first.
                   </caption>
                   <thead>
                     <tr className="text-left text-foreground-faint">
@@ -286,7 +286,7 @@ export function ScoreHistorySection({
                       <th className="w-[74px] py-1 font-medium">Delivery</th>
                       <th className="w-[48px] py-1 font-medium">Vol</th>
                       <th className="py-1 font-medium">Inputs</th>
-                      <th className="w-[42px] py-1 text-right font-medium">Score</th>
+                      <th className="w-[42px] py-1 text-right font-medium">Reading</th>
                       <th className="w-[54px] py-1 pr-2 text-right font-medium">Δ</th>
                       <th className="w-[132px] py-1 pl-1 font-medium">Main reasons</th>
                     </tr>
@@ -385,7 +385,7 @@ export function ScoreHistorySection({
               </ul>
 
               <p className="mt-3 text-[10px] text-foreground-faint">
-                Delivery is NSE end-of-day data published after the score run, so each row uses the
+                Delivery is NSE end-of-day data published after the daily run, so each row uses the
                 latest delivery available at that run — usually the previous session. BE
                 (trade-for-trade) stocks show delivery as not applicable.
               </p>

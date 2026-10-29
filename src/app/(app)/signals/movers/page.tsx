@@ -9,9 +9,9 @@ import { formatObservationDate } from "@/lib/format";
 import { stockPath } from "@/lib/seo/stock-symbol";
 
 export const metadata: Metadata = {
-  title: "Signal score changes",
+  title: "Conditions Reading changes",
   alternates: { canonical: "/signals/movers" },
-  description: "Today's largest composite signal score increases and decreases, reported symmetrically.",
+  description: "Today's largest Conditions Reading increases and decreases, reported symmetrically.",
 };
 
 const CAUSE_LABEL: Record<string, string> = {
@@ -60,10 +60,10 @@ export default async function SignalMoversPage() {
       <h1 className="mb-1 text-xl font-semibold">Signal Movers</h1>
       {observedOn && <p className="mb-4 text-sm text-foreground-muted">As of {observedOn}</p>}
       <div className="grid gap-4 sm:grid-cols-2">
-        <Card title="Largest score increases">
+        <Card title="Largest reading increases">
           <MoverList rows={movers.up} />
         </Card>
-        <Card title="Largest score decreases">
+        <Card title="Largest reading decreases">
           <MoverList rows={movers.down} />
         </Card>
       </div>

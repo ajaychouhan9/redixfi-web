@@ -6,7 +6,7 @@ export function FooterDisclaimer() {
       RedixFi provides measured market data and analytics only — not investment advice, recommendations, or
       predictions. We are not yet SEBI-registered as a Research Analyst.{" "}
       <Link href="/how-it-works" className="underline">
-        How the score works
+        How the reading works
       </Link>{" "}
       ·{" "}
       <Link href="/volatility" className="underline">

@@ -157,8 +157,8 @@ export function buildSignalSummaryRows(detail: SignalDetail, fundamentals?: Fund
   const table = (headers: string[]) => rows.push({ kind: "header", cells: headers });
   const items = (values: DetailTextRow[]) => values.forEach((row) => rows.push({ kind: "item", cells: [row.label, row.value] }));
   const scoreMovement = detail.delta_1d == null
-    ? "Composite score movement: Not available."
-    : `Composite score moved from ${detail.composite_score - detail.delta_1d} to ${detail.composite_score} today (${detail.delta_1d > 0 ? "+" : ""}${detail.delta_1d}).`;
+    ? "Conditions Reading movement: Not available."
+    : `Conditions Reading moved from ${detail.composite_score - detail.delta_1d} to ${detail.composite_score} today (${detail.delta_1d > 0 ? "+" : ""}${detail.delta_1d}).`;
   const week52 = detail.week52;
   section("52-week range");
   items(week52?.week52_high != null
@@ -173,8 +173,8 @@ export function buildSignalSummaryRows(detail: SignalDetail, fundamentals?: Fund
   rows.push(
     { kind: "title", cells: ["RedixFi — Market. Simplified."] , merge: [0, 3] },
     { kind: "subtitle", cells: [`${detail.symbol} — Signal Summary`], merge: [0, 3] },
-    { kind: "metadata", cells: ["Date", detail.date, "Composite Score", detail.composite_score] },
-    { kind: "metadata", cells: ["Industry / Sector", `${detail.industry ?? "Not available"} / ${detail.sector}`, "Score Change", detail.delta_1d] },
+    { kind: "metadata", cells: ["Date", detail.date, "Conditions Reading", detail.composite_score] },
+    { kind: "metadata", cells: ["Industry / Sector", `${detail.industry ?? "Not available"} / ${detail.sector}`, "Reading Change", detail.delta_1d] },
     { kind: "blank" },
   );
 
@@ -186,7 +186,7 @@ export function buildSignalSummaryRows(detail: SignalDetail, fundamentals?: Fund
 
   section("WHY DID THIS CHANGE?");
   table(["Factor", "Change", "Explanation"]);
-  rows.push({ kind: "item", cells: ["Composite score", detail.delta_1d == null ? "Not available" : `${detail.delta_1d > 0 ? "+" : ""}${detail.delta_1d}`, scoreMovement] });
+  rows.push({ kind: "item", cells: ["Conditions Reading", detail.delta_1d == null ? "Not available" : `${detail.delta_1d > 0 ? "+" : ""}${detail.delta_1d}`, scoreMovement] });
   if (detail.component_changes.length) {
     rows.push(...detail.component_changes.map((change) => ({ kind: "item" as const, cells: [COMPONENT_LABEL[change.signal] ?? change.signal, change.direction, change.note] })));
   } else {

@@ -67,7 +67,7 @@ export default async function ScreenPage({ params }: { params: Promise<{ slug: s
             <tr>
               <th className="px-3 py-2">Symbol</th>
               <th className="px-3 py-2">Sector</th>
-              <th className="px-3 py-2">Score</th>
+              <th className="px-3 py-2">Reading</th>
               <th className="px-3 py-2">Change</th>
               <th className="px-3 py-2">Delivery</th>
             </tr>

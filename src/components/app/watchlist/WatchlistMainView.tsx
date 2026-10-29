@@ -221,7 +221,7 @@ export function WatchlistMainView() {
                 <th className="px-4 py-3">Symbol</th>
                 <th className="hidden px-3 py-3 sm:table-cell">Industry</th>
                 <th className="px-3 py-3">Price</th>
-                <th className="px-3 py-3">Score</th>
+                <th className="px-3 py-3">Reading</th>
                 <th className="hidden px-3 py-3 sm:table-cell">Delivery</th>
                 {showBehavior && <th className="px-3 py-3">Behavior</th>}
                 <th className="hidden px-4 py-3 sm:table-cell" />

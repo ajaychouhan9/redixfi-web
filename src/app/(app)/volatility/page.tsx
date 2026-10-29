@@ -77,9 +77,9 @@ export default async function VolatilityPage() {
               <li>Stocks with a very large one-day price step that has not been explained.</li>
             </ul>
             <p className="text-xs text-foreground-faint">
-              Measured once per trading day after the score run. {disclaimer}{" "}
+              Measured once per trading day after the daily run. {disclaimer}{" "}
               <Link href="/how-it-works" className="text-accent underline decoration-dotted underline-offset-2">
-                How the composite score works
+                How the Conditions Reading works
               </Link>
             </p>
           </div>

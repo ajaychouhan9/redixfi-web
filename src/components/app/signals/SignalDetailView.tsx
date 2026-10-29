@@ -9,6 +9,7 @@ import { ExplainTerm } from "@/components/ui/ExplainTerm";
 import { AnalystChecklist } from "@/components/app/signals/AnalystChecklist";
 import { WhyDidThisChange } from "@/components/app/signals/WhyDidThisChange";
 import { ScoreAsOf } from "@/components/app/signals/ScoreAsOf";
+import { READING_EXPLAINER, READING_NAME } from "@/lib/reading-copy";
 import { ScoreHistorySection } from "@/components/app/signals/ScoreHistorySection";
 import { Week52Range } from "@/components/app/signals/Week52Range";
 import { VolatilitySection } from "@/components/app/signals/VolatilitySection";
@@ -65,13 +66,13 @@ export function SignalDetailView({
       {detail.limited_data && (
         <div className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-muted">
           <span className="font-medium text-foreground">Limited data.</span>{" "}
-          {detail.limited_data_note || "This stock's feed is incomplete; the score is partial."}
+          {detail.limited_data_note || "This stock's feed is incomplete; the reading is partial."}
         </div>
       )}
       {detail.partial && !detail.limited_data && !isTradeForTrade(s.delivery_series) && (
         <div className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-muted">
-          <span className="font-medium text-foreground">Partial score.</span> Some inputs were not
-          available for this session; the score is built from what was measured.
+          <span className="font-medium text-foreground">Partial reading.</span> Some inputs were not
+          available for this session; the reading is built from what was measured.
         </div>
       )}
 
@@ -117,7 +118,9 @@ export function SignalDetailView({
             <AlertCreateButton symbol={detail.symbol} />
           </div>
         </div>
-        <p className="mt-1 text-xs text-foreground-faint">A measured summary of observed signals. Not a prediction.</p>
+        <p className="mt-1 text-xs text-foreground-faint" data-testid="reading-explainer">
+          <span className="font-medium text-foreground-muted">{READING_NAME}.</span> {READING_EXPLAINER}
+        </p>
         <ScoreAsOf scoreDate={detail.signal_freshness?.composite_score?.data_as_of} />
         <QuickRead detail={detail} />
         <CorporateActionNote info={detail.corporate_action} />

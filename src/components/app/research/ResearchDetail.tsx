@@ -2,6 +2,7 @@ import { SlowestInputNote } from "@/components/ui/SlowestInputNote";
 import { CorporateActionNote } from "@/components/ui/CorporateActionNote";
 import Link from "next/link";
 import { ScoreAsOf } from "@/components/app/signals/ScoreAsOf";
+import { READING_EXPLAINER, READING_NAME } from "@/lib/reading-copy";
 import type { ResearchDetail as ResearchDetailType, Candle, PeerRow } from "@/lib/api/types";
 import { Card } from "@/components/ui/Card";
 import { AiLabel } from "@/components/ui/AiLabel";
@@ -136,9 +137,10 @@ export function ResearchDetail({
             link to the full Signal Dashboard) is unchanged. */}
         {data.signal_summary.composite_score !== null && (
           <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface-raised px-3 py-2">
-            <span className="font-mono text-[11px] uppercase tracking-wide text-foreground-faint">Signal snapshot</span>
+            <span className="font-mono text-[11px] uppercase tracking-wide text-foreground-faint">{READING_NAME}</span>
             <span className="text-lg font-semibold">{data.signal_summary.composite_score}/100</span>
             {data.signal_summary.delta_1d !== null && <DeltaValue value={data.signal_summary.delta_1d} />}
+            <p className="w-full text-[11px] text-foreground-faint" data-testid="reading-explainer">{READING_EXPLAINER}</p>
             <ScoreAsOf className="w-full text-[11px] text-foreground-faint" scoreDate={data.signal_summary.data_as_of?.data_as_of} />
             <div className="w-full -mt-2"><SlowestInputNote input={data.signal_summary.slowest_input} /></div>
             <Link href={stockPath("/signals", data.symbol)} className="ml-auto text-xs font-medium text-accent">

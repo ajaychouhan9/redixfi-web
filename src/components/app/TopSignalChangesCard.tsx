@@ -24,7 +24,7 @@ function MoverList({ rows, label, tone }: { rows: MoverRow[]; label: string; ton
             </Link>
           </li>
         ))}
-        {rows.length === 0 && <li className="text-sm text-foreground-faint">No score changes for this session.</li>}
+        {rows.length === 0 && <li className="text-sm text-foreground-faint">No reading changes for this session.</li>}
       </ul>
     </div>
   );
@@ -38,7 +38,7 @@ export function TopSignalChangesCard({ movers, marketState }: { movers: SignalsM
   // wrong on weekends/holidays/before the day's measured_signals run —
   // signal_movers() now returns the real observation date.
   // Live-vs-end-of-day fix (Oct 2026): the session date is a "Last session · <date>" label inside the card.
-  const title = "Biggest score changes";
+  const title = "Biggest reading changes";
   return (
     <Card
       title={title}
@@ -47,10 +47,10 @@ export function TopSignalChangesCard({ movers, marketState }: { movers: SignalsM
           <ShareCardPopover
             card={{
               type: "movers",
-              title: "Biggest score changes",
-              subtitle: "Biggest measured signal score changes today",
+              title: "Biggest reading changes",
+              subtitle: "Biggest measured Conditions Reading changes today",
               stat: shareStat,
-              statLabel: topDecliner ? `Largest score decrease: ${topDecliner.symbol} ${topDecliner.delta_1d}` : undefined,
+              statLabel: topDecliner ? `Largest reading decrease: ${topDecliner.symbol} ${topDecliner.delta_1d}` : undefined,
               direction: "up",
             }}
           />
@@ -62,8 +62,8 @@ export function TopSignalChangesCard({ movers, marketState }: { movers: SignalsM
     >
       <SessionLabel dataDate={movers?.date} initial={marketState} />
       <div className="grid grid-cols-2 gap-x-6">
-        <MoverList rows={movers?.up.slice(0, 3) ?? []} label="Largest score increase" tone="up" />
-        <MoverList rows={movers?.down.slice(0, 3) ?? []} label="Largest score decrease" tone="down" />
+        <MoverList rows={movers?.up.slice(0, 3) ?? []} label="Largest reading increase" tone="up" />
+        <MoverList rows={movers?.down.slice(0, 3) ?? []} label="Largest reading decrease" tone="down" />
       </div>
     </Card>
   );

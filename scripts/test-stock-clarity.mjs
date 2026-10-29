@@ -18,11 +18,11 @@ const base = { composite_score: 74, delta_1d: -4, delta_5d: -8, delivery_pct: 42
 
 // the example from the task
 assert.deepEqual(quickReadParts(base), [
-  "Score 74 (-4 today, -8 over 5 sessions)", "Delivery 42.9% vs 48.9% 20-day avg", "Volume 1.5x usual", "Volatility rank 1,136 of 2,132 (1 = most volatile)"]);
+  "Reading 74 (-4 today, -8 over 5 sessions)", "Delivery 42.9% vs 48.9% 20-day avg", "Volume 1.5x usual", "Volatility rank 1,136 of 2,132 (1 = most volatile)"]);
 // a blanked 5-day change (stale baseline) is not shown, and a blank 1-day change is not shown either
-assert.equal(quickReadParts({ ...base, delta_5d: null })[0], "Score 74 (-4 today)");
-assert.equal(quickReadParts({ ...base, delta_1d: null, delta_5d: null })[0], "Score 74");
-assert.equal(quickReadParts({ ...base, delta_1d: 0 })[0], "Score 74 (0 today, -8 over 5 sessions)");
+assert.equal(quickReadParts({ ...base, delta_5d: null })[0], "Reading 74 (-4 today)");
+assert.equal(quickReadParts({ ...base, delta_1d: null, delta_5d: null })[0], "Reading 74");
+assert.equal(quickReadParts({ ...base, delta_1d: 0 })[0], "Reading 74 (0 today, -8 over 5 sessions)");
 // at least 3 parts, otherwise nothing
 assert.equal(quickReadParts({ ...base, delivery_pct: null, volume_ratio_5d: null }).length, 0, "score + volatility only = 2 parts");
 assert.equal(quickReadParts({ ...base, delivery_pct: null }).length, 3);
@@ -134,7 +134,7 @@ console.log("stock-page clarity helpers: ok");
   assert.deepEqual([...idx].sort((a, b) => a - b), idx, "card order");
   assert.ok(!/HowToReadPage|InsightChips|SignalStateChip/.test(view), "How to read, Q&A chips and the separate flags block are gone");
   const quick = rd("../src/components/app/signals/QuickRead.tsx");
-  assert.ok(quick.includes("quickReadChips") && quick.includes('href="/how-it-works"') && quick.includes("How is this score calculated?"));
+  assert.ok(quick.includes("quickReadChips") && quick.includes('href="/how-it-works"') && quick.includes("How is this reading calculated?"));
   const why = rd("../src/components/app/signals/WhyDidThisChange.tsx");
   assert.ok(why.includes("c.change ??") && why.includes('data-testid="change-marker"') && !why.includes('?? "•"'), "each line starts with its marker");
   const page = rd("../src/app/(app)/how-it-works/page.tsx");
@@ -233,7 +233,7 @@ console.log("stock-page clarity helpers: ok");
 
   // forbidden words in the strings added here
   const added = [chartCaption(held), "Recently viewed Your watchlist Stocks you open will appear here. Add stocks to your watchlist to find them here. Log in to see your watchlist here.",
-    "Out of range Swipe Statutory dues in dispute Biggest score change (up or down) Delivery % must be between 0 and 100. Price must be above 0.",
+    "Out of range Swipe Statutory dues in dispute Biggest reading change (up or down) Delivery % must be between 0 and 100. Price must be above 0.",
     "More stocks fell than rose volume its 20-day average session of high-severity (market or sector-wide)"].join("\n");
   const hits = added.match(/\b(buy|sell|target|likely|expected|bullish|bearish|recommend\w*|predict\w*)\b/gi) ?? [];
   assert.deepEqual(hits, []);

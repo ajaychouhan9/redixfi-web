@@ -26,11 +26,12 @@ const DEFAULT_SIGNALS_COLUMNS: VisibleColumns = {
 };
 
 const SORT_OPTIONS = [
-  { value: "abs_delta_1d", label: "Biggest score change (up or down)" },
+  { value: "symbol", label: "Symbol (A–Z)" },
+  { value: "abs_delta_1d", label: "Biggest reading change (up or down)" },
   { value: "name", label: "Name (A–Z)" },
   { value: "market_cap", label: "Market cap" },
-  { value: "composite_score", label: "Composite score" },
-  { value: "delta_1d", label: "Score change" },
+  { value: "composite_score", label: "Conditions Reading" },
+  { value: "delta_1d", label: "Reading change" },
   { value: "delivery_pct", label: "Delivery %" },
   { value: "sector_rank", label: "Sector rank" },
   { value: "volume_ratio", label: "Volume ratio" },
@@ -109,8 +110,8 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   const [anomalyOnly, setAnomalyOnly] = useState(!!initialParams?.anomaly);
   const [moreOpen, setMoreOpen] = useState(false);
 
-  const [sort, setSort] = useState<string>(initialParams?.sort ?? "abs_delta_1d");
-  const [order, setOrder] = useState<"asc" | "desc">(initialParams?.order ?? (initialParams?.sort ? "asc" : "desc"));
+  const [sort, setSort] = useState<string>(initialParams?.sort ?? "symbol");
+  const [order, setOrder] = useState<"asc" | "desc">(initialParams?.order ?? "asc");
   const [page, setPage] = useState(1);
   const [columns, setColumns] = useState<VisibleColumns>({
     sector: true, delivery: true, volume: true, chips: true, eventRisk: true,
@@ -371,8 +372,8 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
       industry: r.industry ?? "",
       price: r.last_price ?? "",
       day_change_pct: r.day_change_pct ?? "",
-      score: r.composite_score ?? "",
-      score_change_1d: r.delta_1d ?? "",
+      reading: r.composite_score ?? "",
+      reading_change_1d: r.delta_1d ?? "",
       delivery_pct: r.delivery_pct ?? "",
       delivery_avg20: r.delivery_avg20 ?? "",
       volume_ratio_5d: r.volume_ratio_5d ?? "",
@@ -402,8 +403,8 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   if (q) activeFilters.push({ key: "q", text: `Search: ${q}`, clear: () => setQ("") });
   if (sector) activeFilters.push({ key: "sector", text: `Sector: ${sector}`, clear: () => setSector("") });
   if (industry) activeFilters.push({ key: "industry", text: `Industry: ${industry}`, clear: () => setIndustry("") });
-  if (scoreMin) activeFilters.push({ key: "smin", text: `Score ≥ ${scoreMin}`, clear: () => setScoreMin("") });
-  if (scoreMax) activeFilters.push({ key: "smax", text: `Score ≤ ${scoreMax}`, clear: () => setScoreMax("") });
+  if (scoreMin) activeFilters.push({ key: "smin", text: `Reading ≥ ${scoreMin}`, clear: () => setScoreMin("") });
+  if (scoreMax) activeFilters.push({ key: "smax", text: `Reading ≤ ${scoreMax}`, clear: () => setScoreMax("") });
   if (from52Max !== undefined) activeFilters.push({ key: "f52", text: `From 52-week high ≤ ${from52Max}%`, clear: () => { setFrom52Preset(""); setFrom52Custom(""); } });
   if (asNumber(from52Min) !== undefined) activeFilters.push({ key: "f52min", text: `From 52-week high ≥ ${from52Min}%`, clear: () => setFrom52Min("") });
   if (volatilityBand) {
@@ -414,7 +415,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   }
   if (volumeMin) activeFilters.push({ key: "volmin", text: `Volume ≥ ${volumeMin}× 20d avg`, clear: () => setVolumeMin("") });
   if (deliveryState) activeFilters.push({ key: "delivery", text: `Delivery: ${deliveryState.replace("_", " ")}`, clear: () => setDeliveryState("") });
-  if (deltaMin) activeFilters.push({ key: "delta", text: `Score change ≥ ${deltaMin}`, clear: () => setDeltaMin("") });
+  if (deltaMin) activeFilters.push({ key: "delta", text: `Reading change ≥ ${deltaMin}`, clear: () => setDeltaMin("") });
   if (dmaState) activeFilters.push({ key: "dma", text: `DMA: ${dmaState.replace("_", " ")}`, clear: () => setDmaState("") });
   if (pcrBand) activeFilters.push({ key: "pcr", text: `PCR: ${pcrBand}`, clear: () => setPcrBand("") });
   if (anomalyOnly) activeFilters.push({ key: "anomaly", text: "Unusual activity", clear: () => setAnomalyOnly(false) });
@@ -425,8 +426,8 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
     <div ref={containerRef}>
       {!explorerControlsEnabled && (
         <p className="mb-3 rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-muted">
-          Basic shows the full table, ordered by the biggest score change today (up or down). For a filtered or sorted view, ask Ask-RedixFi AI directly — e.g.
-          &quot;highest composite score today&quot; or &quot;IT sector stocks with high delivery&quot;.
+          Basic shows the full table, ordered by Symbol (A–Z). For a filtered or sorted view, ask Ask-RedixFi AI directly — e.g.
+          &quot;highest Conditions Reading today&quot; or &quot;IT sector stocks with high delivery&quot;.
         </p>
       )}
 
@@ -448,11 +449,11 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
               </select>
             </label>
             <label className={label}>
-              Min score
+              Min reading
               <input value={scoreMin} onChange={(e) => setScoreMin(e.target.value)} type="number" placeholder="0" className={control} />
             </label>
             <label className={label}>
-              Max score
+              Max reading
               <input value={scoreMax} onChange={(e) => setScoreMax(e.target.value)} type="number" placeholder="100" className={control} />
             </label>
             <label className={label}>
@@ -512,7 +513,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
                   </select>
                 </label>
                 <label className={label}>
-                  Score change ≥
+                  Reading change ≥
                   <input value={deltaMin} onChange={(e) => setDeltaMin(e.target.value)} type="number" step="0.1" placeholder="e.g. 2" className={control} />
                 </label>
                 <label className={label}>
@@ -637,7 +638,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
                 <th className="px-4 py-3">Symbol</th>
                 {columns.sector && <th className="hidden px-3 py-3 md:table-cell">Sector</th>}
                 <th className="px-3 py-3">Price</th>
-                <th className="px-3 py-3">Score</th>
+                <th className="px-3 py-3">Reading</th>
                 {columns.delivery && <th className="hidden px-3 py-3 sm:table-cell">Delivery</th>}
                 {columns.volume && <th className="hidden px-3 py-3 sm:table-cell">Volume</th>}
                 {(columns.from52 || from52Max !== undefined) && (
@@ -666,7 +667,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
         {error && <div className="p-4 text-center text-sm text-down">{error}</div>}
 
         {!user?.tier || user.tier === "free" ? (
-          <UnlockBanner label="Locked rows show 🔒 in place of scores — a fixed sample of 20 stocks (A–Z) stays visible on the free tier." />
+          <UnlockBanner label="Locked rows show 🔒 in place of readings — a fixed sample of 20 stocks (A–Z) stays visible on the free tier." />
         ) : null}
       </div>
 

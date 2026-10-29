@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
   return {
     title: `${data.symbol} Signal History`,
     alternates: { canonical: stockPath("/track-record", data.symbol) },
-    description: `Full measured signal-crossing and score-change history for ${data.company_name ?? data.symbol} (${data.symbol}) — factual, not investment advice.`,
+    description: `Full measured signal-crossing and reading-change history for ${data.company_name ?? data.symbol} (${data.symbol}) — factual, not investment advice.`,
   };
 }
 
@@ -41,7 +41,7 @@ function CrossingRow({ c }: { c: SignalCrossing }) {
   return (
     <li className="flex flex-col gap-1 border-t border-border py-2 text-sm sm:flex-row sm:items-center sm:justify-between">
       <span>
-        Composite score crossed {c.crossing_side} {c.threshold} on {formatShortDate(c.crossing_date)}
+        Conditions Reading crossed {c.crossing_side} {c.threshold} on {formatShortDate(c.crossing_date)}
       </span>
       {c.outcome_status === "pending" ? (
         <span className="text-xs text-foreground-faint">
@@ -85,7 +85,7 @@ export default async function TrackRecordSymbolPage({ params }: { params: Promis
         </p>
       </Card>
 
-      <Card title="Composite-score threshold crossings">
+      <Card title="Conditions Reading threshold crossings">
         {data.crossings.length === 0 ? (
           <p className="text-sm text-foreground-muted">No threshold crossings recorded yet for {data.symbol}.</p>
         ) : (

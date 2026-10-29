@@ -155,7 +155,7 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
         <StackedCell
           locked={locked}
           lockedFallback="--"
-          lockedTitle="Unlock all 2,000+ measured scores"
+          lockedTitle="Unlock all 2,000+ measured readings"
           primary={row.composite_score}
           subtitle={row.delta_1d !== null ? <DeltaValue value={row.delta_1d} className="text-[12px]" /> : undefined}
         />
@@ -293,13 +293,13 @@ export function SignalMobileRow({ row }: { row: SignalRow }) {
       </div>
       <div className="flex w-14 shrink-0 flex-col items-end gap-0.5">
         {row.locked ? (
-          <LockedInline title="Unlock all 2,000+ measured scores">
+          <LockedInline title="Unlock all 2,000+ measured readings">
             <span className="rounded-md bg-neutral-bg px-2 py-0.5 font-mono text-sm font-semibold">--</span>
           </LockedInline>
         ) : row.composite_score === null ? (
           <span className="text-foreground-faint">—</span>
         ) : (
-          <span className="rounded-md bg-neutral-bg px-2 py-0.5 font-mono text-sm font-semibold" aria-label={`Score ${row.composite_score}`}>
+          <span className="rounded-md bg-neutral-bg px-2 py-0.5 font-mono text-sm font-semibold" aria-label={`Reading ${row.composite_score}`}>
             {row.composite_score}
           </span>
         )}

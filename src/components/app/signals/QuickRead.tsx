@@ -93,7 +93,7 @@ export function QuickRead({ detail }: { detail: SignalDetail }) {
       )}
       <p className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 text-[10px] text-foreground-faint">
         <span>Measured market data, not investment advice.</span>
-        <Link href="/how-it-works" className="font-medium text-accent underline">How is this score calculated?</Link>
+        <Link href="/how-it-works" className="font-medium text-accent underline">How is this reading calculated?</Link>
       </p>
     </div>
   );

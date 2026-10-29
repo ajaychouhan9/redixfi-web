@@ -164,7 +164,7 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
         More on {data.symbol}:{" "}
         <Link href={stockPath("/research", data.symbol)} className="text-accent hover:underline">research page</Link>
         {" · "}
-        <Link href={stockPath("/signals", data.symbol)} className="text-accent hover:underline">signal score</Link>
+        <Link href={stockPath("/signals", data.symbol)} className="text-accent hover:underline">Conditions Reading</Link>
         {" · "}
         <Link href={stockPath("/track-record", data.symbol)} className="text-accent hover:underline">signal history</Link>
       </p>
