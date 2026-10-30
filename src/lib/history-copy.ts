@@ -1,8 +1,7 @@
 /** Fixed wording of the History Explorer. Facts only: counts of past days and the readings around them. */
 
 export const HISTORY_TITLE = "History Explorer";
-export const HISTORY_INTRO =
-  "Choose a move size and, if you like, some readings. See the past days when a stock moved by that much, with the readings the day before, on the day and the day after.";
+export const HISTORY_INTRO = "Past days when a stock moved by a chosen size, with the measured readings around each day.";
 export const HISTORY_DISCLAIMER = "Past record of measured data. Not a forecast or a recommendation.";
 export const HISTORY_CHANCE_NOTE = "Trying many filters can produce good-looking numbers by chance.";
 export const HISTORY_EXAMPLES_TITLE = "Examples to start with";

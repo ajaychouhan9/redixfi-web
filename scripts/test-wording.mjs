@@ -111,12 +111,16 @@ const HISTORY_FILES = [
   "lib/history-flag.ts",
   "components/app/history/HistoryExplorer.tsx",
   "components/app/history/HistoryTabs.tsx",
+  "components/app/history/CommonReadings.tsx",
+  "components/app/history/HowToRead.tsx",
+  "components/app/history/ui.tsx",
+  "lib/history-common-copy.ts",
   "components/app/history/StockwiseHistory.tsx",
   "components/app/history/HistoryLinks.tsx",
   "app/(app)/history/page.tsx",
 ];
 const HISTORY_FORBIDDEN = /\b(chance|probabilit(?:y|ies)|likely|predict\w*|buy|sell|(?<!\.)targets?(?!=)|best|top picks?|breakout|setup|bullish|opportunit(?:y|ies)|momentum|red flags?)\b|strong stock|weak stock|matches today|same as today/i;
-const HISTORY_ALLOWED = ["Trying many filters can produce good-looking numbers by chance.", "Not a forecast or a recommendation."];
+const HISTORY_ALLOWED = ["Trying many filters can produce good-looking numbers by chance.", "Not a forecast or a recommendation.", "checked against chance"];
 const historyHits = [];
 for (const rel of HISTORY_FILES) {
   let text = stripComments(readFileSync(join(ROOT, rel), "utf8"));
@@ -131,9 +135,20 @@ for (const rel of ["components/app/history/StockwiseHistory.tsx", "components/ap
   const m = t.match(STOCKWISE_EXTRA);
   if (m) historyHits.push(`${rel}: ${m[0]}`);
 }
+// Common readings: no pattern, signal, setup, edge, likely, tends to, predicts, bullish, bearish, buy, sell or outperform wording.
+const COMMON_FORBIDDEN = /\b(pattern found|signals?|setups?|edge|likely|tends? to|predicts?|bullish|bearish|buy|sell|outperform\w*)\b/i;
+for (const rel of ["components/app/history/CommonReadings.tsx", "lib/history-common-copy.ts"]) {
+  const t = stripComments(readFileSync(join(ROOT, rel), "utf8"));
+  const m = t.match(COMMON_FORBIDDEN);
+  if (m) historyHits.push(`${rel}: ${m[0]}`);
+}
 const histCopy = readFileSync(join(ROOT, "lib/history-copy.ts"), "utf8");
 for (const need of ["Many stocks move on the same market days; these days are not independent.", "Next session pending", "No days in this period", "Past record of measured data. Not a forecast or a recommendation.", "Trying many filters can produce good-looking numbers by chance.", "Examples to start with"]) {
   if (!histCopy.includes(need)) historyHits.push(`lib/history-copy.ts: required line missing: ${need}`);
+}
+const commonCopy = readFileSync(join(ROOT, "lib/history-common-copy.ts"), "utf8");
+for (const need of ["Common readings", "What these days had in common, checked against chance. Not a forecast or a recommendation.", "Fewer than 30 days. Not enough for a comparison."]) {
+  if (!commonCopy.includes(need)) historyHits.push(`lib/history-common-copy.ts: required line missing: ${need}`);
 }
 if (historyHits.length) {
   console.error("History Explorer wording problem:" + String.fromCharCode(10) + historyHits.join(String.fromCharCode(10)));

@@ -250,3 +250,20 @@ body {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
+
+/* History Explorer (2026-10-31): the sign colours of a move, with AA contrast for small text on the page background.
+   The site-wide --up / --down stay as they are; these are used only for the sign of a move or a change. */
+:root {
+  --hx-up: #12744a;
+  --hx-down: #b9291c;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --hx-up: var(--up);
+    --hx-down: var(--down);
+  }
+}
+:root[data-theme="dark"] {
+  --hx-up: var(--up);
+  --hx-down: var(--down);
+}

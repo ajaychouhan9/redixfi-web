@@ -29,7 +29,7 @@ export function HistoryTabs() {
             aria-selected={tab === t.id}
             aria-controls={`history-panel-${t.id}`}
             onClick={() => setTab(t.id)}
-            className={`rounded-md px-3 py-1.5 text-xs font-medium ${tab === t.id ? "bg-accent text-accent-foreground" : "text-foreground-muted"}`}
+            className={`min-h-11 rounded-md px-4 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${tab === t.id ? "bg-accent/15 text-foreground ring-1 ring-accent" : "text-foreground-muted hover:text-foreground"}`}
             data-testid={`history-tab-${t.id}`}
           >
             {t.label}

@@ -16,6 +16,7 @@ export interface HistoryAccess {
 export interface HistoryParams {
   move: number;
   direction: HistoryDirection;
+  move_dir?: HistoryDirection;
   signals: string[];
   match: string;
   scope: HistoryScope;
@@ -36,9 +37,13 @@ export interface HistoryConfig {
   min_sample: number;
   saved_max: number;
   stockwise?: StockwiseConfig;
+  common_readings?: boolean;
+  common_min_days?: number;
 }
 
 export interface ReadingCells {
+  status?: "ok" | "na" | "pending";
+  states_na?: string[];
   date?: string;
   move?: number | null;
   trend_10d?: number | null;
@@ -147,7 +152,8 @@ export interface StockwiseParams {
 export interface SessionState {
   key: string;
   label: string;
-  on: boolean;
+  /** true present, false absent, null the reading could not be measured that day (n/a) */
+  on: boolean | null;
 }
 
 export interface SessionBlock {
@@ -169,6 +175,7 @@ export interface StockwiseDay {
   date: string;
   weekday: string;
   move_pct: number;
+  nearby?: boolean;
   sessions: SessionBlock[];
 }
 
@@ -237,3 +244,44 @@ export const downloadStockwiseCsv = (p: StockwiseParams, token: string) =>
       sort: p.sort,
     },
   });
+
+// ---- Common readings -------------------------------------------------------------------------------------------
+
+export interface CommonRow {
+  key: string;
+  reading: string;
+  offset: number;
+  k: number;
+  n: number;
+  base_k: number;
+  base_n: number;
+  pct: number | null;
+  base_pct: number | null;
+  enough: boolean;
+  diff_pp: number | null;
+  p_value: number | null;
+  stood_out: boolean;
+}
+
+export interface CommonResult {
+  status: "ok" | "too_few" | "needs_move";
+  message?: string;
+  days: number;
+  headline?: string;
+  checked?: number;
+  stood_out?: number;
+  threshold?: number | null;
+  offsets?: number[];
+  rows?: CommonRow[];
+  up_days?: number;
+  down_days?: number;
+  weekdays?: Record<string, number>;
+  market_wide?: { days: number; dates: number; of_dates: number; others: number };
+  fixed?: { before_only: string; caution: string; independence: string };
+  results_dates?: string;
+  mode: "stockwise" | "pooled";
+  ms: number;
+}
+
+export const runCommonReadings = (mode: "stockwise" | "pooled", body: Record<string, unknown>, opts?: FetchOpts) =>
+  apiMutate<CommonResult>("/history/common", "POST", { ...body, mode }, opts);

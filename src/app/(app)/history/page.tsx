@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 
 import { HistoryTabs } from "@/components/app/history/HistoryTabs";
-import { HISTORY_DISCLAIMER, HISTORY_INTRO, HISTORY_SEO_DESCRIPTION, HISTORY_SEO_TITLE, HISTORY_TITLE } from "@/lib/history-copy";
+import { HISTORY_INTRO, HISTORY_SEO_DESCRIPTION, HISTORY_SEO_TITLE, HISTORY_TITLE } from "@/lib/history-copy";
 
 const SITE_URL = "https://www.redixfi.com";
 const OG_IMAGE = `/api/og?${new URLSearchParams({
@@ -54,23 +54,22 @@ export default function HistoryPage() {
     ],
   };
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
+    <div className="mx-auto w-full max-w-5xl space-y-4">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div>
         <h1 className="text-lg font-semibold">{HISTORY_TITLE}</h1>
         <p className="mt-1 text-sm text-foreground-muted">{HISTORY_INTRO}</p>
-        <p className="mt-1 text-xs font-medium text-foreground-muted">{HISTORY_DISCLAIMER}</p>
       </div>
       <Suspense fallback={<p className="text-sm text-foreground-muted">Loading…</p>}>
         <HistoryTabs />
       </Suspense>
-      <p className="text-xs text-foreground-faint">
+      <p className="text-xs text-foreground-muted">
         Readings use the same measured states as the{" "}
-        <Link href="/signals" className="text-accent">
+        <Link href="/signals" className="text-foreground underline">
           Signals pages
         </Link>
         . See{" "}
-        <Link href="/how-it-works" className="text-accent">
+        <Link href="/how-it-works" className="text-foreground underline">
           how the reading works
         </Link>
         .
