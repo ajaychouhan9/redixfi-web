@@ -174,7 +174,7 @@ export function HistoryExplorer() {
         if (!live) return;
         setCfg(env.data);
         if (env.data.access.saved_filters && token) {
-          listSavedFilters({ token }).then((r) => live && setSaved(r.data)).catch(() => undefined);
+          listSavedFilters({ token }).then((r) => live && setSaved(r.data.filter((x) => x.kind !== "stockwise"))).catch(() => undefined);
         } else {
           setSaved([]);
         }

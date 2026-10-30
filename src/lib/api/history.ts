@@ -35,6 +35,7 @@ export interface HistoryConfig {
   access: HistoryAccess;
   min_sample: number;
   saved_max: number;
+  stockwise?: StockwiseConfig;
 }
 
 export interface ReadingCells {
@@ -89,6 +90,7 @@ export interface SavedFilter {
   id: string;
   name: string;
   created_at: string;
+  kind?: "pooled" | "stockwise";
   params: HistoryParams;
 }
 
@@ -122,3 +124,107 @@ export function historyErrorMessage(e: unknown): string {
   }
   return "Something went wrong. Please try again.";
 }
+
+// ---- stock-wise mode -------------------------------------------------------------------------------------------
+
+export type StockwiseDirection = HistoryDirection;
+
+export interface StockwiseParams {
+  symbols: string[];
+  move: number | null;
+  direction: StockwiseDirection;
+  period: "1y" | "2y" | "3y";
+  offsets: number[];
+  signals: string[];
+  match: string;
+  signal_offset: number;
+  group: "stock" | "date";
+  sort: "newest" | "largest";
+}
+
+export interface SessionState {
+  key: string;
+  label: string;
+  on: boolean;
+}
+
+export interface SessionBlock {
+  offset: number;
+  status: "ok" | "na" | "pending";
+  date?: string;
+  weekday?: string;
+  change_pct?: number | null;
+  trend_10d?: number | null;
+  volume_x?: number | null;
+  rsi?: number | null;
+  delivery_pct?: number | null;
+  above_dma_sessions?: number | null;
+  states?: SessionState[];
+}
+
+export interface StockwiseDay {
+  symbol: string;
+  date: string;
+  weekday: string;
+  move_pct: number;
+  sessions: SessionBlock[];
+}
+
+export interface StockwiseStock {
+  symbol: string;
+  company_name: string;
+  sessions: number;
+  first_session: string | null;
+  partial_period: boolean;
+  count: number;
+  up: number;
+  down: number;
+  with_readings: number | null;
+  listed: number;
+  days: StockwiseDay[];
+  no_history?: boolean;
+}
+
+export interface StockwiseResult {
+  as_of: string;
+  period_start: string;
+  stocks: StockwiseStock[];
+  same_day_count: number | null;
+  timeline: StockwiseDay[] | null;
+  timeline_total: number | null;
+  day_cap: number;
+  params: StockwiseParams;
+  access: HistoryAccess;
+  max_stocks: number;
+  ms: number;
+}
+
+export interface StockwiseConfig {
+  max_stocks: number;
+  periods: string[];
+  offsets: [number, number];
+  default_offsets: number[];
+  day_cap: number;
+  examples: { id: string; label: string; params: Partial<StockwiseParams> }[];
+}
+
+export const runStockwise = (body: Record<string, unknown>, opts?: FetchOpts) =>
+  apiMutate<StockwiseResult>("/history/stockwise", "POST", body, opts);
+export const saveStockwiseFilter = (name: string, params: StockwiseParams, opts?: FetchOpts) =>
+  apiMutate<SavedFilter>("/history/saved", "POST", { name, kind: "stockwise", params }, opts);
+export const downloadStockwiseCsv = (p: StockwiseParams, token: string) =>
+  apiGetBlob("/history/stockwise.csv", {
+    token,
+    params: {
+      symbols: p.symbols.join(","),
+      move: p.move == null ? "any" : p.move,
+      direction: p.direction,
+      period: p.period,
+      offsets: p.offsets.join(","),
+      signals: p.signals.join(","),
+      match: p.match,
+      signal_offset: p.signal_offset,
+      group: p.group,
+      sort: p.sort,
+    },
+  });

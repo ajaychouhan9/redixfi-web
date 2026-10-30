@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 
-import { HistoryExplorer } from "@/components/app/history/HistoryExplorer";
+import { HistoryTabs } from "@/components/app/history/HistoryTabs";
 import { HISTORY_DISCLAIMER, HISTORY_INTRO, HISTORY_SEO_DESCRIPTION, HISTORY_SEO_TITLE, HISTORY_TITLE } from "@/lib/history-copy";
 
 const SITE_URL = "https://www.redixfi.com";
@@ -62,7 +62,7 @@ export default function HistoryPage() {
         <p className="mt-1 text-xs font-medium text-foreground-muted">{HISTORY_DISCLAIMER}</p>
       </div>
       <Suspense fallback={<p className="text-sm text-foreground-muted">Loading…</p>}>
-        <HistoryExplorer />
+        <HistoryTabs />
       </Suspense>
       <p className="text-xs text-foreground-faint">
         Readings use the same measured states as the{" "}

@@ -39,3 +39,29 @@ export function summaryLines(args: {
   if (baseRate != null) out.push(`For comparison, on all days in the same stocks and period such a move happened on ${baseRate}% of days.`);
   return out;
 }
+
+// ---- stock-wise mode (the default view)
+export const SW_TAB = "Stock-wise";
+export const POOLED_TAB = "Across stocks";
+export const SW_INTRO = "Choose one or more stocks, a move size and a period. See every past day with that move and the measured readings around it.";
+export const SW_INDEPENDENCE_NOTE = "Many stocks move on the same market days; these days are not independent.";
+export const SW_NO_DAYS = "No days in this period";
+export const SW_NA = "Not available";
+export const SW_PENDING = "Next session pending";
+export const SW_PRO_ONLY = "CSV download and saved filters are included in Pro.";
+export const SW_SIGNAL_NOTE = "A reading is checked at the chosen session; sessions are the stock's own trading days.";
+
+const PERIOD_TEXT: Record<string, string> = { "1y": "last year", "2y": "last 2 years", "3y": "last 3 years" };
+export const periodText = (p: string) => PERIOD_TEXT[p] ?? p;
+const n = (v: number) => v.toLocaleString("en-IN");
+
+export function stockwiseLine(args: { symbol: string; count: number; up: number; down: number; sessions: number; move: number | null; direction: "up" | "down" | "either"; period: string }): string {
+  const { symbol, count, up, down, sessions, move, direction, period } = args;
+  const kind = direction === "either" ? "a move" : `${direction === "up" ? "an up" : "a down"} move`;
+  const what = move == null ? (direction === "either" ? "days" : `${direction} days`) : `days with ${kind} of ${move}% or more`;
+  const split = direction === "either" ? ` (${n(up)} up, ${n(down)} down)` : "";
+  return `${symbol}: ${n(count)} ${what} in the ${periodText(period)}${split}, out of ${n(sessions)} sessions.`;
+}
+
+export const readingsCountLine = (hit: number, of: number, offset: number) => `${n(hit)} of ${n(of)} days had these readings at ${offset > 0 ? "+" : ""}${offset}.`;
+export const sameDayLine = (c: number) => `Days when 2 or more of the selected stocks moved: ${n(c)}.`;

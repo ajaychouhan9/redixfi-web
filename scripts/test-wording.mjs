@@ -110,6 +110,8 @@ const HISTORY_FILES = [
   "lib/api/history.ts",
   "lib/history-flag.ts",
   "components/app/history/HistoryExplorer.tsx",
+  "components/app/history/HistoryTabs.tsx",
+  "components/app/history/StockwiseHistory.tsx",
   "components/app/history/HistoryLinks.tsx",
   "app/(app)/history/page.tsx",
 ];
@@ -122,8 +124,15 @@ for (const rel of HISTORY_FILES) {
   const m = text.match(HISTORY_FORBIDDEN);
   if (m) historyHits.push(`${rel}: ${m[0]}`);
 }
+// Stock-wise mode lists past days and their readings: it may not say that a later move followed, and has no rate language.
+const STOCKWISE_EXTRA = /\b(followed|next[- ]day|hit rate|win rate|success|accura\w*|reliab\w*|edge|signal quality)\b/i;
+for (const rel of ["components/app/history/StockwiseHistory.tsx", "components/app/history/HistoryTabs.tsx"]) {
+  const t = stripComments(readFileSync(join(ROOT, rel), "utf8"));
+  const m = t.match(STOCKWISE_EXTRA);
+  if (m) historyHits.push(`${rel}: ${m[0]}`);
+}
 const histCopy = readFileSync(join(ROOT, "lib/history-copy.ts"), "utf8");
-for (const need of ["Past record of measured data. Not a forecast or a recommendation.", "Trying many filters can produce good-looking numbers by chance.", "Examples to start with"]) {
+for (const need of ["Many stocks move on the same market days; these days are not independent.", "Next session pending", "No days in this period", "Past record of measured data. Not a forecast or a recommendation.", "Trying many filters can produce good-looking numbers by chance.", "Examples to start with"]) {
   if (!histCopy.includes(need)) historyHits.push(`lib/history-copy.ts: required line missing: ${need}`);
 }
 if (historyHits.length) {
