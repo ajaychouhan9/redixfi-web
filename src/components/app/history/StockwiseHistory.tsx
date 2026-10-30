@@ -56,6 +56,11 @@ const READINGS: { key: string; label: string }[] = [
 const PAGE = 10;
 
 const offLabel = (k: number) => (k > 0 ? `+${k}` : `${k}`);
+function fmtShort(iso?: string | null): string {
+  if (!iso) return "";
+  const d = new Date(`${iso.slice(0, 10)}T00:00:00Z`);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit", timeZone: "UTC" });
+}
 const sgn = (v?: number | null, d = 1) => (v == null ? "-" : `${v > 0 ? "+" : ""}${v.toFixed(d)}%`);
 
 function fmtDate(iso?: string | null): string {
@@ -66,9 +71,9 @@ function fmtDate(iso?: string | null): string {
 
 function Block({ b }: { b: SessionBlock }) {
   const head = (
-    <div className="flex items-baseline justify-between gap-2">
+    <div className="flex flex-wrap items-baseline justify-between gap-x-2">
       <span className="text-[11px] font-semibold text-foreground">{offLabel(b.offset)}{b.offset === 0 ? " (the day)" : ""}</span>
-      {b.status === "ok" && <span className="text-[11px] text-foreground-faint">{b.weekday?.slice(0, 3)} {fmtDate(b.date)}</span>}
+      {b.status === "ok" && <span className="text-[10px] text-foreground-faint">{b.weekday?.slice(0, 3)} {fmtShort(b.date)}</span>}
     </div>
   );
   const frame = `min-w-0 rounded-lg border p-2 ${b.offset === 0 ? "border-accent/50 bg-hover" : "border-border bg-surface"}`;
@@ -89,7 +94,7 @@ function Block({ b }: { b: SessionBlock }) {
         <dd className="text-right tabular-nums">{b.change_pct == null ? SW_NA : sgn(b.change_pct, 2)}</dd>
         <dt className="text-foreground-faint">Trend (10d)</dt>
         <dd className="text-right tabular-nums">{sgn(b.trend_10d)}</dd>
-        <dt className="text-foreground-faint">Volume, 5-day vs 20-day avg</dt>
+        <dt className="text-foreground-faint" title="5-session volume against the prior 20-session average">Volume vs 20d avg</dt>
         <dd className="text-right tabular-nums">{b.volume_x == null ? "-" : `${b.volume_x.toFixed(2)}x`}</dd>
         <dt className="text-foreground-faint">RSI</dt>
         <dd className="text-right tabular-nums">{b.rsi == null ? "-" : b.rsi.toFixed(0)}</dd>
@@ -119,7 +124,7 @@ function DayCard({ d, showStock, names }: { d: StockwiseDay; showStock: boolean;
         </div>
         <div className={`text-sm font-semibold tabular-nums ${d.move_pct >= 0 ? "text-up" : "text-down"}`}>{sgn(d.move_pct, 2)}</div>
       </div>
-      <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-2 grid grid-cols-2 gap-2 lg:grid-cols-3">
         {d.sessions.map((b) => (
           <Block key={b.offset} b={b} />
         ))}
