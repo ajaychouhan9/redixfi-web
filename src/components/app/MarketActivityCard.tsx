@@ -75,7 +75,7 @@ function RedFlagsRow({ redFlags }: { redFlags: MarketActivityRedFlagSummary | un
   const hasActivity = !!redFlags && redFlags.total_findings > 0 && !isUpdating;
   return (
     <div className="flex items-center justify-between gap-3 py-1.5">
-      <span className="text-sm text-foreground">Red Flags</span>
+      <span className="text-sm text-foreground">Governance disclosures</span>
       {isUpdating ? (
         <span className="text-right text-xs text-foreground-faint">Updating…</span>
       ) : hasActivity ? (
@@ -112,7 +112,7 @@ export function MarketActivityCard({ summary }: { summary: MarketActivitySummary
       {!summary ? (
         <p className="text-sm text-foreground-muted">Not available right now.</p>
       ) : allEmpty ? (
-        <p className="text-sm text-foreground-muted">No insider trades, bulk/block deals, concalls, corporate events, or red flags recorded yet.</p>
+        <p className="text-sm text-foreground-muted">No insider trades, bulk/block deals, concalls, corporate events, or governance disclosures recorded yet.</p>
       ) : (
         <div className="divide-y divide-border">
           {CATEGORIES.map(({ key, label, unit }) => (

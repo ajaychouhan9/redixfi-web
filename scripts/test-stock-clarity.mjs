@@ -208,6 +208,7 @@ console.log("stock-page clarity helpers: ok");
   const { RED_FLAG_CATEGORY_LABELS } = load("../src/lib/redFlagCategories.ts");
   assert.equal(RED_FLAG_CATEGORY_LABELS.statutory_dues_dispute, "Statutory dues in dispute");
   assert.equal(RED_FLAG_CATEGORY_LABELS.default_or_covenant, "Default / Covenant Breach");
+  assert.equal(RED_FLAG_CATEGORY_LABELS.fraud_or_investigation, "Investigation or enforcement mention");
 
   // structure
   const wl = rd("../src/components/app/watchlist/WatchlistMainView.tsx");

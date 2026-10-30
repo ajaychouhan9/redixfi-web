@@ -79,7 +79,7 @@ export function ConcallsTable({ rows }: { rows: MarketActivityConcallRow[] }) {
  * multiple passages in the same filing support this finding, without
  * rendering them as separate rows. */
 export function RedFlagTable({ rows }: { rows: MarketActivityRedFlagRow[] }) {
-  if (rows.length === 0) return <EmptyState text="No governance red flags identified in filed documents yet." />;
+  if (rows.length === 0) return <EmptyState text="No governance disclosures identified in filed documents yet." />;
   return (
     <div className="space-y-3">
       {rows.map((r, i) => (
@@ -276,7 +276,7 @@ const TYPE_LABEL: Record<MarketActivityRow["type"], string> = {
   insider: "Insider trade",
   corporate_event: "Corporate event",
   bulk_block: "Bulk/block deal",
-  red_flag: "Red flag",
+  red_flag: "Governance disclosure",
 };
 
 function summaryLine(row: MarketActivityRow): string {

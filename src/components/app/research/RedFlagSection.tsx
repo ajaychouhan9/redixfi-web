@@ -1,8 +1,16 @@
-import type { ResearchRedFlags, RedFlagCategoryGroup } from "@/lib/api/types";
+import type { ResearchRedFlags, RedFlagAttentionItem, RedFlagCategoryGroup } from "@/lib/api/types";
 import { Card } from "@/components/ui/Card";
 import { AiLabel } from "@/components/ui/AiLabel";
 import { formatDateIst } from "@/lib/format";
-import { RED_FLAG_CATEGORY_LABELS, RED_FLAG_RADAR_TITLE } from "@/lib/redFlagCategories";
+import {
+  ATTENTION_HEADING,
+  ATTENTION_KEYS,
+  ATTENTION_NOTE,
+  NO_ATTENTION_NOTE,
+  RED_FLAG_CATEGORY_LABELS,
+  RED_FLAG_RADAR_TITLE,
+  ROUTINE_HEADING,
+} from "@/lib/redFlagCategories";
 
 /**
  * Red Flags (Task 2, 2026-09-19) — core/red_flag_view.py::get_symbol_red_flags().
@@ -96,11 +104,18 @@ export function RedFlagSection({ data }: { data: ResearchRedFlags | undefined })
   // renders nothing rather than an ErrorBoundary fallback during that gap.
   if (!data) return null;
   const coverage = data.coverage;
+  const attentionKeys = new Set([...ATTENTION_KEYS, ...(data.attention ?? []).map((a) => a.category)]);
+  const attentionGroups = data.categories.filter((g) => attentionKeys.has(g.category));
+  const routineGroups = data.categories.filter((g) => !attentionKeys.has(g.category));
+  // An API that does not send `attention` yet: build the line from the groups, so it never says "none" while items are listed.
+  const attention: RedFlagAttentionItem[] =
+    data.attention ??
+    attentionGroups.map((g) => ({ category: g.category, label: RED_FLAG_CATEGORY_LABELS[g.category] ?? g.category_label, count: g.occurrence_count }));
   // `coverage` is null when per-stock coverage isn't measured; that says
   // nothing about this stock, so no note (the empty state already says "yet").
   const coverageNote =
     coverage && !coverage.complete
-      ? `Governance classification is still in progress for this stock (${coverage.classified_chunks} of ${coverage.total_chunks} filed-document sections reviewed so far) — additional flags may surface as it continues.`
+      ? `Governance classification is still in progress for this stock (${coverage.classified_chunks} of ${coverage.total_chunks} filed-document sections reviewed so far) — additional disclosures may surface as it continues.`
       : null;
 
   return (
@@ -112,11 +127,30 @@ export function RedFlagSection({ data }: { data: ResearchRedFlags | undefined })
     >
       {data.categories.length === 0 ? (
         <p className="text-sm text-foreground-muted">
-          No governance flags identified in {data.symbol}&apos;s filed documents{coverage === null ? " yet" : ""}.
+          No governance disclosures identified in {data.symbol}&apos;s filed documents{coverage === null ? " yet" : ""}.
         </p>
       ) : (
         <div className="space-y-4">
-          {data.categories.map((group) => (
+          <div data-testid="governance-attention" className="rounded-lg border border-border bg-hover px-3 py-2.5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-foreground-muted">{ATTENTION_HEADING}</p>
+            {attention.length > 0 ? (
+              <>
+                <p className="mt-1 text-sm text-foreground">
+                  {attention.map((a) => `${a.label} (${a.detail ?? `${a.count} ${a.count === 1 ? "item" : "items"}`})`).join("; ")}
+                </p>
+                <p className="mt-1 text-xs text-foreground-faint">{ATTENTION_NOTE}</p>
+              </>
+            ) : (
+              <p className="mt-1 text-sm text-foreground-muted">{NO_ATTENTION_NOTE}</p>
+            )}
+          </div>
+          {attentionGroups.map((group) => (
+            <CategoryBlock key={group.category} group={group} />
+          ))}
+          {routineGroups.length > 0 && attentionGroups.length > 0 && (
+            <p className="border-t border-border pt-3 text-xs font-semibold uppercase tracking-wide text-foreground-muted">{ROUTINE_HEADING}</p>
+          )}
+          {routineGroups.map((group) => (
             <CategoryBlock key={group.category} group={group} />
           ))}
         </div>

@@ -101,7 +101,7 @@ export function MarketActivityHub() {
         insider: "Insider trade",
         corporate_event: "Corporate event",
         bulk_block: "Bulk/block deal",
-        red_flag: "Red flag",
+        red_flag: "Governance disclosure",
       };
       return rows.map((row) => {
         let detail = "";

@@ -292,6 +292,7 @@ export function FundamentalsPanels({
               label="FII"
               pct={shareholding.fii_pct}
               changeQoq={shareholding.fii_change_qoq}
+              changeNote={shareholding.fii_change_note}
               streak={shareholding.fii_streak}
               symbol={symbol}
               shareholding={shareholding}
@@ -456,6 +457,7 @@ function OwnerRow({
   label,
   pct,
   changeQoq,
+  changeNote,
   streak,
   symbol,
   shareholding,
@@ -464,6 +466,7 @@ function OwnerRow({
   label: string;
   pct: number | null;
   changeQoq: number | null;
+  changeNote?: string | null;
   streak: string | null;
   symbol: string;
   shareholding: FundamentalsShareholding;
@@ -481,6 +484,11 @@ function OwnerRow({
               {" "}
               ({changeQoq > 0 ? "+" : ""}
               {changeQoq.toFixed(2)}pp)
+            </span>
+          )}
+          {changeQoq === null && changeNote && (
+            <span className="block text-xs font-normal text-foreground-faint" data-testid="holding-change-note">
+              {changeNote}
             </span>
           )}
         </>

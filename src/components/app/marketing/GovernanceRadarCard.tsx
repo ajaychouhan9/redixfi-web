@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { RED_FLAG_CATEGORIES, RED_FLAG_RADAR_TITLE } from "@/lib/redFlagCategories";
 
 /**
- * Landing preview of the Red Flag Radar (2026-09-11 landing overhaul).
+ * Landing preview of the Governance disclosures card (2026-09-11 landing overhaul).
  * Anonymous-only, same pattern as VisitorIntroStrip.
  *
  * The example finding below is REAL, not fabricated: a genuine
@@ -29,7 +29,7 @@ export function GovernanceRadarCard() {
         </span>
         <div>
           <div className="font-mono text-[11px] uppercase tracking-widest text-accent">{RED_FLAG_RADAR_TITLE}</div>
-          <div className="text-xs text-foreground-faint">AI reads every filing for nine categories of governance risk</div>
+          <div className="text-xs text-foreground-faint">Filings are reviewed automatically for nine kinds of governance disclosure</div>
         </div>
       </div>
 

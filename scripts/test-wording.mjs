@@ -35,6 +35,13 @@ const OLD = [
   "Max score",
   "Biggest score change",
   "Why did this score change",
+  // 2026-10-30: governance section is "Governance disclosures"; the investigation category label has no "Fraud"
+  "Fraud / Investigation",
+  "Red Flag Radar",
+  "Red Flags",
+  "Red flags",
+  "Red flag",
+  "red flags",
   // removed cue phrases (read as a recommendation)
   "Among the top-ranked",
   "Among the lowest-ranked",

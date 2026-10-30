@@ -960,6 +960,8 @@ export interface FundamentalsShareholding {
   fii_pct: number | null;
   fii_change_qoq: number | null;
   fii_streak: string | null;
+  /** Set when the FII change is not shown because the data source moved holdings between holder categories. */
+  fii_change_note?: string | null;
   mf_pct: number | null;
   mf_change_qoq: number | null;
   mf_streak: string | null;
@@ -1158,9 +1160,18 @@ export interface RedFlagCoverage {
   complete: boolean;
 }
 
+export interface RedFlagAttentionItem {
+  category: string;
+  label: string;
+  count: number;
+  detail?: string;
+}
+
 export interface ResearchRedFlags {
   symbol: string;
   categories: RedFlagCategoryGroup[];
+  /** Non-routine kinds present (shown on the "Needs attention" line); absent on an older API. */
+  attention?: RedFlagAttentionItem[];
   coverage: RedFlagCoverage | null;
 }
 

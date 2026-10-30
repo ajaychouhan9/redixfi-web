@@ -30,7 +30,7 @@ export const metadata: Metadata = {
 // one that will plausibly show the hint first, given today's data).
 const DEFAULT_STALE_THRESHOLD_DAYS = 14;
 const STALE_THRESHOLD_DAYS_BY_LABEL: Record<string, number> = {
-  "Red flags": 90,
+  "Governance disclosures": 90,
   Concalls: 14,
 };
 
@@ -65,7 +65,7 @@ export default async function MarketActivityPage() {
   const redFlags = summary?.red_flags ?? null;
   const redFlagsStale =
     redFlags?.latest_date != null &&
-    (daysSince(redFlags.latest_date) ?? 0) > STALE_THRESHOLD_DAYS_BY_LABEL["Red flags"];
+    (daysSince(redFlags.latest_date) ?? 0) > STALE_THRESHOLD_DAYS_BY_LABEL["Governance disclosures"];
 
   return (
     <div className="mx-auto max-w-5xl space-y-4">
@@ -112,8 +112,8 @@ export default async function MarketActivityPage() {
                 windowed redesign 2026-10-06), a different shape from the 4
                 single-day categories above -- rendered separately rather
                 than forced into the same {count/date} tuple shape. */}
-            <li key="Red flags">
-              <span className="font-medium">Red flags:</span>{" "}
+            <li key="Governance disclosures">
+              <span className="font-medium">Governance disclosures:</span>{" "}
               {redFlags?.status === "updating" ? (
                 <span className="text-foreground-muted">Updating…</span>
               ) : redFlags && redFlags.total_findings > 0 ? (
