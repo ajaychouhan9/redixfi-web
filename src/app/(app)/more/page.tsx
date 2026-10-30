@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ShieldCheck, Database, UserCircle, CreditCard, Newspaper, ChevronRight, Info, BookOpen, Activity, FileText } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { InstallRow } from "@/components/app/pwa/InstallRow";
+import { HistoryMoreRow } from "@/components/app/history/HistoryLinks";
 
 export const metadata: Metadata = { title: "More" };
 
@@ -35,6 +36,7 @@ export default function MorePage() {
               </Link>
             </li>
           ))}
+          <HistoryMoreRow />
           <InstallRow />
         </ul>
       </Card>

@@ -103,4 +103,31 @@ if (reportHits.length) {
   console.error("Company report wording problem:" + String.fromCharCode(10) + reportHits.join(String.fromCharCode(10)));
   process.exit(1);
 }
+// 2026-10-30: the History Explorer shows counts of past days only. Its texts may not use forecast or recommendation language.
+// Two sentences are allowed as written by the owner: the "by chance" caution and the disclaimer ("Not a forecast").
+const HISTORY_FILES = [
+  "lib/history-copy.ts",
+  "lib/api/history.ts",
+  "lib/history-flag.ts",
+  "components/app/history/HistoryExplorer.tsx",
+  "components/app/history/HistoryLinks.tsx",
+  "app/(app)/history/page.tsx",
+];
+const HISTORY_FORBIDDEN = /\b(chance|probabilit(?:y|ies)|likely|predict\w*|buy|sell|(?<!\.)targets?(?!=)|best|top picks?|breakout|setup|bullish|opportunit(?:y|ies)|momentum|red flags?)\b|strong stock|weak stock|matches today|same as today/i;
+const HISTORY_ALLOWED = ["Trying many filters can produce good-looking numbers by chance.", "Not a forecast or a recommendation."];
+const historyHits = [];
+for (const rel of HISTORY_FILES) {
+  let text = stripComments(readFileSync(join(ROOT, rel), "utf8"));
+  for (const ok of HISTORY_ALLOWED) text = text.split(ok).join("");
+  const m = text.match(HISTORY_FORBIDDEN);
+  if (m) historyHits.push(`${rel}: ${m[0]}`);
+}
+const histCopy = readFileSync(join(ROOT, "lib/history-copy.ts"), "utf8");
+for (const need of ["Past record of measured data. Not a forecast or a recommendation.", "Trying many filters can produce good-looking numbers by chance.", "Examples to start with"]) {
+  if (!histCopy.includes(need)) historyHits.push(`lib/history-copy.ts: required line missing: ${need}`);
+}
+if (historyHits.length) {
+  console.error("History Explorer wording problem:" + String.fromCharCode(10) + historyHits.join(String.fromCharCode(10)));
+  process.exit(1);
+}
 console.log("Wording guard passed: replaced display phrases are absent.");

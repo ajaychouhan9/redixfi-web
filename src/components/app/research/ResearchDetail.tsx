@@ -18,6 +18,7 @@ import { FundamentalsPanels } from "@/components/app/research/FundamentalsPanels
 import { ResearchChart } from "@/components/app/research/ResearchChart";
 import { ResearchExportButton } from "@/components/app/research/ResearchExportButton";
 import { ReportActions } from "@/components/app/report/ReportActions";
+import { ExploreHistoryLink } from "@/components/app/history/HistoryLinks";
 import { AlertCreateButton } from "@/components/app/alerts/AlertCreateButton";
 import { CompareIndicator } from "@/components/app/CompareIndicator";
 import { displayName } from "@/lib/company-name";
@@ -91,6 +92,7 @@ export function ResearchDetail({
           <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             <ResearchExportButton data={data} peers={peers} />
             <ReportActions symbol={data.symbol} />
+            <ExploreHistoryLink symbol={data.symbol} />
             <CompareIndicator symbol={data.symbol} companyName={data.company_name} />
             <WatchlistButton symbol={data.symbol} />
             <AlertCreateButton symbol={data.symbol} />

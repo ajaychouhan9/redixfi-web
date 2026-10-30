@@ -20,6 +20,7 @@ import { CandleChart } from "@/components/app/CandleChart";
 import { NewsList } from "@/components/app/NewsList";
 import { WatchlistButton } from "@/components/app/WatchlistButton";
 import { ReportActions } from "@/components/app/report/ReportActions";
+import { ExploreHistoryLink } from "@/components/app/history/HistoryLinks";
 import { AlertCreateButton } from "@/components/app/alerts/AlertCreateButton";
 import { RecordView } from "@/components/app/RecordView";
 import { CompareIndicator } from "@/components/app/CompareIndicator";
@@ -118,6 +119,7 @@ export function SignalDetailView({
             <CompareIndicator symbol={detail.symbol} companyName={detail.company_name} />
             <AlertCreateButton symbol={detail.symbol} />
             <ReportActions symbol={detail.symbol} />
+            <ExploreHistoryLink symbol={detail.symbol} />
           </div>
         </div>
         <p className="mt-1 text-xs text-foreground-faint" data-testid="reading-explainer">

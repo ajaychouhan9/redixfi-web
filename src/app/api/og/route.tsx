@@ -40,6 +40,7 @@ const TYPE_BADGES: Record<string, string> = {
   brief: "DAILY MARKET PULSE",
   movers: "BIGGEST READING CHANGES",
   report: "SAMPLE COMPANY REPORT",
+  history: "HISTORY EXPLORER",
 };
 
 function clamp(value: string | null, max: number, fallback: string): string {

@@ -18,7 +18,7 @@ vm.runInNewContext(transpile("../src/data/canned-screens.ts"), {
 });
 const SCREENS = screensMod.exports.CANNED_SCREENS.length;
 assert.equal(SCREENS, 38);
-const CORE = 14 + SCREENS;
+const CORE = 15 + SCREENS;
 const symbols = Array.from({ length: 2302 }, (_, i) => `S${String(i + 1).padStart(4, "0")}`);
 symbols.push("M&M");
 
