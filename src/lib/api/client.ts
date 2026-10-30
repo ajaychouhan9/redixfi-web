@@ -155,3 +155,12 @@ export async function apiGetOptional<T>(path: string, opts?: FetchOpts): Promise
     throw e;
   }
 }
+
+/** Binary download (PDF, PNG). A non-2xx answer is thrown as an ApiError carrying the JSON body (`detail`, `code`, `quota`). */
+export async function apiGetBlob(path: string, opts?: FetchOpts): Promise<{ blob: Blob; filename: string | null }> {
+  const res = await rawFetch(path, { timeoutMs: 60_000, ...opts });
+  if (!res.ok) return parseOrThrow(res);
+  const cd = res.headers.get("content-disposition") ?? "";
+  const m = /filename="?([^";]+)"?/i.exec(cd);
+  return { blob: await res.blob(), filename: m ? m[1] : null };
+}

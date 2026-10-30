@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getMarketOverview, getSignalMovers, getLatestBrief, getIntradaySession, getAnomalies, getMarketState, getLiveToday, getNews, getBillingPlans, getMarketActivitySummary } from "@/lib/api/endpoints";
 import { MarketPulseCard } from "@/components/app/MarketPulseCard";
 import { LiveTodayCard } from "@/components/app/LiveTodayCard";
@@ -126,6 +127,13 @@ export default async function HomePage() {
           <MarketActivityCard summary={marketActivity} />
         </div>
       </div>
+
+      <p className="text-center text-sm text-foreground-muted" data-testid="home-sample-report">
+        New: company report PDFs with price, growth, peers, ownership, filings and sources.{" "}
+        <Link href="/sample-report" className="font-medium text-accent hover:underline">
+          See the free sample report
+        </Link>
+      </p>
 
       <HomePricingSection plans={plans} />
     </div>

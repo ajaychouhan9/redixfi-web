@@ -56,6 +56,13 @@ export function HomePricingSection({ plans }: { plans: BillingPlan[] }) {
         {basic && <PlanCard plan={basic} features={BASIC_FEATURES} mode="new" />}
         {pro && <PlanCard plan={pro} highlighted badge="Most Popular" features={PRO_FEATURES} mode="new" />}
       </div>
+      <p className="mt-3 text-center text-sm text-foreground-muted">
+        Want to see a company report first?{" "}
+        <Link href="/sample-report" className="font-medium text-accent hover:underline">
+          Open the free sample report
+        </Link>
+        .
+      </p>
     </div>
   );
 }

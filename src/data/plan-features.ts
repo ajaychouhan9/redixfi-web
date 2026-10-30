@@ -25,6 +25,7 @@ export const BASIC_FEATURES = [
   "AI Daily Brief digest",
   "Ask-RedixFi AI: 10 questions/day",
   "Compare up to 2 stocks side by side",
+  "Company report PDF: 3 different stocks a month",
   "View-only signal table — ask Ask-RedixFi to filter or sort for you",
 ];
 
@@ -36,6 +37,7 @@ export const PRO_FEATURES = [
   "AI Daily Brief digest",
   "Ask-RedixFi AI: 25 questions/day",
   "Compare up to 10 stocks side by side",
+  "Company report PDF: 15 different stocks a month",
   "Full sort/filter/search + CSV export on the Signal Dashboard",
 ];
 

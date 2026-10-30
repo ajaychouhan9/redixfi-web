@@ -17,6 +17,7 @@ import { RecordView } from "@/components/app/RecordView";
 import { FundamentalsPanels } from "@/components/app/research/FundamentalsPanels";
 import { ResearchChart } from "@/components/app/research/ResearchChart";
 import { ResearchExportButton } from "@/components/app/research/ResearchExportButton";
+import { ReportActions } from "@/components/app/report/ReportActions";
 import { AlertCreateButton } from "@/components/app/alerts/AlertCreateButton";
 import { CompareIndicator } from "@/components/app/CompareIndicator";
 import { displayName } from "@/lib/company-name";
@@ -89,6 +90,7 @@ export function ResearchDetail({
               Signal detail page already uses — not a new component. */}
           <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             <ResearchExportButton data={data} peers={peers} />
+            <ReportActions symbol={data.symbol} />
             <CompareIndicator symbol={data.symbol} companyName={data.company_name} />
             <WatchlistButton symbol={data.symbol} />
             <AlertCreateButton symbol={data.symbol} />

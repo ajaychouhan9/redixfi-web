@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import { PLAN_LABEL, PlanCard } from "@/components/app/billing/PlanCard";
 import { TopupCard } from "@/components/app/billing/TopupCard";
@@ -235,7 +236,15 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
         </div>
       )}
 
-      <p className="mt-6 text-xs text-foreground-faint">
+      <p className="mt-6 text-sm text-foreground-muted" data-testid="pricing-sample-report">
+        Company report PDFs are included in Basic and Pro (see the allowance on each plan; a Pro trial includes a small allowance too).{" "}
+        <Link href="/sample-report" className="font-medium text-accent hover:underline">
+          Open the free sample report
+        </Link>
+        .
+      </p>
+
+      <p className="mt-3 text-xs text-foreground-faint">
         Prices are GST-inclusive; invoices show the breakup. Subscriptions renew automatically and can be cancelled
         anytime — cancellation is pro-rata.
       </p>

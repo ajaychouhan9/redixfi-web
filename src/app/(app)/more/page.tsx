@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ShieldCheck, Database, UserCircle, CreditCard, Newspaper, ChevronRight, Info, BookOpen, Activity } from "lucide-react";
+import { ShieldCheck, Database, UserCircle, CreditCard, Newspaper, ChevronRight, Info, BookOpen, Activity, FileText } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { InstallRow } from "@/components/app/pwa/InstallRow";
 
@@ -9,6 +9,7 @@ export const metadata: Metadata = { title: "More" };
 const LINKS = [
   { href: "/how-it-works", label: "How the reading works", icon: BookOpen },
   { href: "/volatility", label: "Volatility ranking", icon: Activity },
+  { href: "/sample-report", label: "Sample report", icon: FileText },
   { href: "/more/disclaimer", label: "Full disclaimer", icon: ShieldCheck },
   { href: "/more/data-sources", label: "Data sources & update times", icon: Database },
   { href: "/more/about-us", label: "About & Contact", icon: Info },

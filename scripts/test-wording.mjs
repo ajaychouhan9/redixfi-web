@@ -75,4 +75,25 @@ if (!explorer.includes('initialParams?.sort ?? "symbol"')) {
   console.error("Signals default sort must be Symbol (A-Z).");
   process.exit(1);
 }
+// 2026-10-30: the company report texts (sample page, buttons, copy) may not use recommendation language, and must carry the report disclaimer.
+const REPORT_FILES = [
+  "lib/report-copy.ts",
+  "components/app/report/ReportActions.tsx",
+  "app/(app)/sample-report/page.tsx",
+];
+const REPORT_FORBIDDEN = /\b(buy|sell|targets?(?!=)|best|top picks?|bullish|bearish|outperform\w*|opportunit(?:y|ies)|momentum|predict\w*|fraud\w*|scams?|hiding|manipulat\w*|avoid\w*)\b|will (?:rise|fall)/i;
+const reportHits = [];
+for (const rel of REPORT_FILES) {
+  const text = stripComments(readFileSync(join(ROOT, rel), "utf8"));
+  const m = text.match(REPORT_FORBIDDEN);
+  if (m) reportHits.push(`${rel}: ${m[0]}`);
+}
+const copy = readFileSync(join(ROOT, "lib/report-copy.ts"), "utf8");
+if (!copy.includes("Measured data, not investment advice. Not a recommendation or a forecast.")) reportHits.push("lib/report-copy.ts: disclaimer line missing");
+const sample = readFileSync(join(ROOT, "app/(app)/sample-report/page.tsx"), "utf8");
+if (!sample.includes("REPORT_DISCLAIMER")) reportHits.push("sample-report page: disclaimer missing");
+if (reportHits.length) {
+  console.error("Company report wording problem:" + String.fromCharCode(10) + reportHits.join(String.fromCharCode(10)));
+  process.exit(1);
+}
 console.log("Wording guard passed: replaced display phrases are absent.");
