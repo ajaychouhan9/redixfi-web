@@ -10,6 +10,7 @@ import {
   getHistoryConfig,
   historyErrorMessage,
   listSavedFilters,
+  normalizeStockwiseParams,
   runStockwise,
   saveStockwiseFilter,
   searchHistoryStocks,
@@ -400,7 +401,7 @@ export function StockwiseHistory({ initialSymbol }: { initialSymbol?: string }) 
         <h2 className="text-sm font-semibold">{HISTORY_EXAMPLES_TITLE}</h2>
         <div className="mt-2 flex flex-wrap gap-2" data-testid="sw-examples">
           {(sw?.examples ?? []).map((e) => (
-            <button key={e.id} type="button" className={`${CHIP} border-border bg-hover text-foreground-muted hover:text-foreground`} onClick={() => runParams(e.params)} disabled={busy}>
+            <button key={e.id} type="button" className={`max-w-full rounded-full border px-2.5 py-1 text-left text-xs font-medium border-border bg-hover text-foreground-muted hover:text-foreground`} onClick={() => runParams(e.params)} disabled={busy}>
               {e.label}
             </button>
           ))}
@@ -625,7 +626,7 @@ export function StockwiseHistory({ initialSymbol }: { initialSymbol?: string }) 
           <ul className="mt-2 space-y-1.5">
             {saved.map((f) => (
               <li key={f.id} className="flex items-center justify-between gap-2 text-sm">
-                <button type="button" className="min-w-0 truncate text-left text-accent" onClick={() => runParams(f.params as unknown as Partial<StockwiseParams>)}>
+                <button type="button" className="min-w-0 truncate text-left text-accent" onClick={() => runParams(normalizeStockwiseParams(f.params as unknown as Partial<StockwiseParams>))}>
                   {f.name}
                 </button>
                 <button type="button" aria-label={`Delete ${f.name}`} className="text-foreground-faint hover:text-down" onClick={() => onDelete(f.id)}>

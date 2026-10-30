@@ -133,6 +133,8 @@ export interface StockwiseParams {
   symbols: string[];
   move: number | null;
   direction: StockwiseDirection;
+  /** the server echoes the direction as move_dir (a key named direction is stripped from responses) */
+  move_dir?: StockwiseDirection;
   period: "1y" | "2y" | "3y";
   offsets: number[];
   signals: string[];
@@ -208,8 +210,15 @@ export interface StockwiseConfig {
   examples: { id: string; label: string; params: Partial<StockwiseParams> }[];
 }
 
-export const runStockwise = (body: Record<string, unknown>, opts?: FetchOpts) =>
-  apiMutate<StockwiseResult>("/history/stockwise", "POST", body, opts);
+/** Read a params echo from the server (result or saved filter) into the request shape. */
+export function normalizeStockwiseParams<T extends Partial<StockwiseParams>>(p: T): T & { direction: StockwiseDirection } {
+  return { ...p, direction: (p.direction ?? p.move_dir ?? "either") as StockwiseDirection };
+}
+
+export const runStockwise = async (body: Record<string, unknown>, opts?: FetchOpts) => {
+  const env = await apiMutate<StockwiseResult>("/history/stockwise", "POST", body, opts);
+  return { ...env, data: { ...env.data, params: normalizeStockwiseParams(env.data.params) } };
+};
 export const saveStockwiseFilter = (name: string, params: StockwiseParams, opts?: FetchOpts) =>
   apiMutate<SavedFilter>("/history/saved", "POST", { name, kind: "stockwise", params }, opts);
 export const downloadStockwiseCsv = (p: StockwiseParams, token: string) =>
