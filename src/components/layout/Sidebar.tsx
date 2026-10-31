@@ -159,6 +159,7 @@ export function Sidebar({
         </button>
         <Link
           href="/more"
+          aria-label="More options"
           className={clsx(
             "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
             isActive(pathname, "/more") ? "bg-accent/10 text-accent" : "text-foreground-muted hover:bg-hover hover:text-foreground"
@@ -240,6 +241,7 @@ export function BottomNav() {
             href={item.href}
             className={clsx("relative flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 text-[12px] font-medium", active ? "text-accent-dim" : "text-foreground-faint")}
             aria-current={active ? "page" : undefined}
+            aria-label={item.href === "/more" ? "More options" : undefined}
           >
             <item.icon size={19} strokeWidth={active ? 2.4 : 2} />
             {item.label}
