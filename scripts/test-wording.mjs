@@ -136,8 +136,8 @@ for (const rel of ["components/app/history/StockwiseHistory.tsx", "components/ap
   if (m) historyHits.push(`${rel}: ${m[0]}`);
 }
 // Common readings: no pattern, signal, setup, edge, likely, tends to, predicts, bullish, bearish, buy, sell or outperform wording.
-const COMMON_FORBIDDEN = /\b(pattern found|signals?|setups?|edge|likely|tends? to|predicts?|bullish|bearish|buy|sell|outperform\w*)\b/i;
-for (const rel of ["components/app/history/CommonReadings.tsx", "lib/history-common-copy.ts"]) {
+const COMMON_FORBIDDEN = /\b(pattern found|signals?|setups?|edge|likely|tends? to|predicts?|bullish|bearish|buy|sell|outperform\w*)\b|inside information|insiders know|smart money/i;
+for (const rel of ["components/app/history/CommonReadings.tsx", "components/app/history/HowToRead.tsx", "lib/history-common-copy.ts"]) {
   const t = stripComments(readFileSync(join(ROOT, rel), "utf8"));
   const m = t.match(COMMON_FORBIDDEN);
   if (m) historyHits.push(`${rel}: ${m[0]}`);

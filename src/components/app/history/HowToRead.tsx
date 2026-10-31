@@ -10,6 +10,7 @@ const POINTS: string[] = [
   "Volume vs 20d avg is the last 5 sessions' volume against the average of the 20 sessions before them.",
   "Trend (10d) is the change of the close over the last 10 sessions. Delivery is the share of traded volume that was delivered.",
   "Not available (n/a) means the reading could not be measured on that session, for example in the first weeks of a stock's stored history. It never means the reading was absent.",
+  "Insider trade disclosed and Bulk or block deal use the date the information was published (for a disclosure, after 15:30 it counts from the next day), never the trade date, so nothing is used before it was public. They look at the session and the 4 sessions before it. Names of persons are never shown. Dates before our stored record show Not available.",
   "Counts are a past record of measured data only.",
 ];
 

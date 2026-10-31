@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check } from "lucide-react";
+import { Check, ChevronDown, ChevronUp } from "lucide-react";
 
 import { useAuth } from "@/lib/auth/AuthContext";
 import { historyErrorMessage, runCommonReadings, type CommonResult, type CommonRow } from "@/lib/api/history";
@@ -12,6 +12,7 @@ import {
   COL_PRESENT,
   COL_READING,
   COL_SESSION,
+  LEGEND,
   COMMON_BUTTON,
   COMMON_ERROR,
   COMMON_HOW,
@@ -28,14 +29,15 @@ const MIN_DAYS = 30;
 function share(k: number, n: number, pct: number | null) {
   return n ? `${fmtInt(k)} of ${fmtInt(n)} days (${(pct ?? 0).toFixed(2)}%)` : "Not available";
 }
-const diffText = (v: number | null) => (v == null ? "Not available" : `${v > 0 ? "+" : ""}${v.toFixed(2)} percentage points`);
+const diffText = (v: number | null) => (v == null ? "Not available" : `${v > 0 ? "+" : ""}${v.toFixed(2)} pts`);
+const pctText = (v: number | null) => (v == null ? "n/a" : `${v.toFixed(2)}%`);
 
 function RowCard({ r }: { r: CommonRow }) {
   return (
-    <li className={`${INNER} ${r.stood_out ? "border-accent" : ""}`} data-testid="common-row">
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-semibold">
-          {r.reading} <span className="font-normal text-foreground-muted">at session {offLabel(r.offset)}</span>
+    <li className={`rounded-lg border px-3 py-2 ${r.stood_out ? "border-accent bg-accent/10" : "border-border bg-surface-2"}`} data-testid="common-row">
+      <div className="flex items-center justify-between gap-2">
+        <p className="min-w-0 text-[13px] font-semibold">
+          {r.reading} <span className="font-normal text-foreground-muted">· session {offLabel(r.offset)}</span>
         </p>
         {r.stood_out && (
           <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-accent bg-accent/15 px-2 py-0.5 text-[11px] font-semibold text-foreground">
@@ -43,20 +45,15 @@ function RowCard({ r }: { r: CommonRow }) {
           </span>
         )}
       </div>
-      <dl className="mt-2 space-y-2 text-[13px]">
-        <div>
-          <dt className="text-xs text-foreground-muted">{COL_PRESENT}</dt>
-          <dd className="font-medium tabular-nums">{share(r.k, r.n, r.pct)}</dd>
-        </div>
-        <div>
-          <dt className="text-xs text-foreground-muted">{COL_ALL}</dt>
-          <dd className="font-medium tabular-nums">{share(r.base_k, r.base_n, r.base_pct)}</dd>
-        </div>
-        <div>
-          <dt className="text-xs text-foreground-muted">{COL_DIFF}</dt>
-          <dd className="font-medium tabular-nums">{r.enough ? diffText(r.diff_pp) : "Fewer than 30 days"}</dd>
-        </div>
-      </dl>
+      <p className="mt-0.5 text-[12px] tabular-nums text-foreground-muted" title={`${share(r.k, r.n, r.pct)}; all days ${share(r.base_k, r.base_n, r.base_pct)}`}>
+        {r.enough ? (
+          <>
+            Present {pctText(r.pct)} · All days {pctText(r.base_pct)} · <span className="font-semibold text-foreground">{diffText(r.diff_pp)}</span>
+          </>
+        ) : (
+          <>Fewer than 30 days</>
+        )}
+      </p>
     </li>
   );
 }
@@ -108,11 +105,13 @@ export function CommonReadings({ mode, body, days, moveAny }: { mode: "stockwise
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [how, setHow] = useState(false);
+  const [open, setOpen] = useState(false);
   const key = JSON.stringify(body);
 
   useEffect(() => {
     setRes(null);
     setErr(null);
+    setOpen(false);
   }, [key]);
 
   const blocked = moveAny ? COMMON_NEEDS_MOVE : days < MIN_DAYS ? COMMON_TOO_FEW : null;
@@ -124,6 +123,7 @@ export function CommonReadings({ mode, body, days, moveAny }: { mode: "stockwise
       const token = user ? await getToken() : null;
       const env = await runCommonReadings(mode, body, { token });
       setRes(env.data);
+      setOpen(true);
     } catch (e) {
       setRes(null);
       const m = historyErrorMessage(e);
@@ -136,8 +136,9 @@ export function CommonReadings({ mode, body, days, moveAny }: { mode: "stockwise
   return (
     <section className="space-y-3 rounded-xl border border-border bg-surface p-3 sm:p-4" aria-label={COMMON_BUTTON} data-testid="common-readings">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-        <button type="button" className={blocked ? BTN : BTN_PRIMARY} onClick={load} disabled={!!blocked || busy} aria-describedby="common-sub" data-testid="common-button">
+        <button type="button" className={blocked ? BTN : BTN_PRIMARY} onClick={() => (res ? setOpen((o) => !o) : load())} disabled={!!blocked || busy} aria-describedby="common-sub" aria-expanded={!!res && open} data-testid="common-button">
           {busy ? "Working…" : COMMON_BUTTON}
+          {!busy && (open && res ? <ChevronUp className="ml-1.5 inline h-4 w-4 align-[-3px]" aria-hidden /> : <ChevronDown className="ml-1.5 inline h-4 w-4 align-[-3px]" aria-hidden />)}
         </button>
         <p id="common-sub" className="min-w-0 flex-1 text-sm text-foreground-muted sm:text-xs">
           {COMMON_SUB}
@@ -150,15 +151,17 @@ export function CommonReadings({ mode, body, days, moveAny }: { mode: "stockwise
       )}
       {busy && <Skeleton lines={4} />}
       {err && <ErrorState message={err} onRetry={load} />}
-      {res && res.status !== "ok" && <p className="text-sm text-foreground-muted">{res.message}</p>}
-      {res && res.status === "ok" && res.rows && (
+      {open && res && res.status !== "ok" && <p className="text-sm text-foreground-muted">{res.message}</p>}
+      {open && res && res.status === "ok" && res.rows && (
         <div className="space-y-4" data-testid="common-panel">
           <p className="text-base font-semibold" data-testid="common-headline">
             {res.headline}
           </p>
+          <p className="text-xs text-foreground-muted" data-testid="common-stood-out-note">{res.fixed?.stood_out_note}</p>
           <p className="text-xs text-foreground-muted">{res.fixed?.before_only}</p>
+          <p className="text-[11px] text-foreground-muted" data-testid="common-legend">{LEGEND}</p>
           <RowTable rows={res.rows} />
-          <ul className="space-y-2 sm:hidden" data-testid="common-cards">
+          <ul className="space-y-1.5 sm:hidden" data-testid="common-cards">
             {res.rows.map((r) => (
               <RowCard key={`${r.key}${r.offset}`} r={r} />
             ))}
@@ -181,7 +184,7 @@ export function CommonReadings({ mode, body, days, moveAny }: { mode: "stockwise
             </dl>
             {res.market_wide && (
               <p className="mt-1 text-[11px] text-foreground-muted">
-                A market-wide day is one on which {res.market_wide.others} or more other stocks also moved by the same size.
+                A market-wide day is one on which at least {res.market_wide.share_pct}% of the ranked stocks moved by the same size.
               </p>
             )}
             {res.weekdays && (

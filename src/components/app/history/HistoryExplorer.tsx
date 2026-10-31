@@ -73,8 +73,8 @@ const SCOPE_LABEL: Record<HistoryScope, string> = {
   all: "All stocks",
   similar: "Stocks with similar volatility",
 };
-const READING_LABELS = ["Trend up (10d)", "Above 20-DMA", "Volume elevated", "RSI in the upper zone", "Delivery up"];
-const READING_KEYS = ["trend_up", "above_dma", "volume_high", "rsi_high", "delivery_up"];
+const READING_LABELS = ["Trend up (10d)", "Above 20-DMA", "Volume elevated", "RSI in the upper zone", "Delivery up", "Insider trade disclosed", "Bulk or block deal", "Near 52-week high", "Gap at open"];
+const READING_KEYS = ["trend_up", "above_dma", "volume_high", "rsi_high", "delivery_up", "insider_disclosed", "bulk_block", "near_high", "gap_open"];
 
 /** One pooled row (the day before, the day of the move, the day after) in the shape of a stock-wise day, so both tabs read alike. */
 function toDay(r: HistoryRow): StockwiseDay {

@@ -76,6 +76,10 @@ const READINGS: { key: string; label: string }[] = [
   { key: "volume_high", label: "Volume elevated" },
   { key: "rsi_high", label: "RSI in the upper zone" },
   { key: "delivery_up", label: "Delivery up" },
+  { key: "insider_disclosed", label: "Insider trade disclosed" },
+  { key: "bulk_block", label: "Bulk or block deal" },
+  { key: "near_high", label: "Near 52-week high" },
+  { key: "gap_open", label: "Gap at open" },
 ];
 const PAGE = 10;
 const DIR_TEXT: Record<string, string> = { either: "Either", up: "Up", down: "Down" };

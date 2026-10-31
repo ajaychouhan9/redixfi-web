@@ -276,8 +276,8 @@ export interface CommonResult {
   up_days?: number;
   down_days?: number;
   weekdays?: Record<string, number>;
-  market_wide?: { days: number; dates: number; of_dates: number; others: number };
-  fixed?: { before_only: string; caution: string; independence: string };
+  market_wide?: { days: number; dates: number; of_dates: number; share_pct: number } | null;
+  fixed?: { before_only: string; caution: string; independence: string; stood_out_note: string };
   results_dates?: string;
   mode: "stockwise" | "pooled";
   ms: number;
