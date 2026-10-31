@@ -168,6 +168,62 @@ for (const f of walkSrc(join(ROOT))) {
 for (const need of ["Stock Condition", "Weighted combination of 8 measured readings. Not a probability, a rating or a forecast."]) {
   if (!readFileSync(join(ROOT, "lib/reading-copy.ts"), "utf8").includes(need)) historyHits.push(`lib/reading-copy.ts: required text missing: ${need}`);
 }
+// 2026-11-01: 7-Day Review. Price changes over the last sessions and measured readings only: no outlook, rating, hit rate, track record, "top picks" or
+// recommendation wording, and no ranking claim beyond "biggest". The one sentence that says "Not a forecast or a recommendation" and the neutral Ask AI
+// question ("Do not give a forecast or a recommendation") are allowed as written.
+const REVIEW_FILES = [
+  "lib/review-copy.ts",
+  "components/app/review/ReviewTabs.tsx",
+  "components/app/review/ReviewLists.tsx",
+  "components/app/review/YourStocks.tsx",
+  "components/app/review/MarketBlock.tsx",
+  "components/app/review/ScChanges.tsx",
+  "components/app/review/EventsBlock.tsx",
+  "components/app/review/WeekPicker.tsx",
+  "components/app/review/MineProvider.tsx",
+  "app/(app)/signals/7-day-review/page.tsx",
+];
+const REVIEW_FORBIDDEN = /(buy|sell|targets?(?!=)|best|top picks?|picks?|tips?|bullish|bearish|outperform\w*|opportunit(?:y|ies)|momentum|predict\w*|forecasts?|recommend\w*|outlook|likely|expected|hit rates?|win rates?|accura\w*|track records?|strongest|weakest|gainers|losers|decliners|top gainers|top losers|winners|will (?:rise|fall|gain|drop))/i;
+const REVIEW_ALLOWED = ["Not a forecast or a recommendation.", "Do not give a forecast or a recommendation.", "a forecast or a recommendation"];
+const reviewHits = [];
+for (const rel of REVIEW_FILES) {
+  let text = stripComments(readFileSync(join(ROOT, rel), "utf8"));
+  for (const ok of REVIEW_ALLOWED) text = text.split(ok).join("");
+  const m = text.match(REVIEW_FORBIDDEN);
+  if (m) reviewHits.push(`${rel}: ${m[0]}`);
+}
+const reviewCopy = readFileSync(join(ROOT, "lib/review-copy.ts"), "utf8");
+for (const need of ["Price change over the window.", "Log in to see your watchlist here", "Biggest gains and falls of the week", "7-Day Review - biggest gains and falls of the week | RedixFi"]) {
+  if (!reviewCopy.includes(need)) reviewHits.push(`lib/review-copy.ts: required text missing: ${need}`);
+}
+const listsSrc = readFileSync(join(ROOT, "components/app/review/ReviewLists.tsx"), "utf8");
+for (const need of ["Biggest gains", "Biggest falls", "Open in Market Rewind", "Research page"]) {
+  if (!listsSrc.includes(need)) reviewHits.push(`ReviewLists.tsx: required text missing: ${need}`);
+}
+// Mobile navigation layout C: the bar is Home | Signals | Intraday | Research | Rewind, C is the default, and every More row is in the header menu.
+const navCfg = readFileSync(join(ROOT, "lib/nav-config.ts"), "utf8");
+if (!/NAV_MOBILE_LAYOUT === "A" \? "A" : process\.env\.NAV_MOBILE_LAYOUT === "B" \? "B" : "C"/.test(navCfg)) reviewHits.push("lib/nav-config.ts: layout C must be the default");
+const side = readFileSync(join(ROOT, "components/layout/Sidebar.tsx"), "utf8");
+const cStart = side.indexOf("  C: [");
+const cBlock = side.slice(cStart, side.indexOf("],", cStart));
+const cHrefs = [...cBlock.matchAll(/href: "([^"]+)"/g)].map((m) => m[1]).join(",");
+if (cHrefs !== "/,/signals,/intraday,/research" || !cBlock.includes("REWIND_ITEM")) reviewHits.push(`Sidebar.tsx: layout C bar must be Home, Signals, Intraday, Research, Rewind (found ${cHrefs} + ${cBlock.includes("REWIND_ITEM") ? "Rewind" : "no Rewind"})`);
+if (!side.includes("sidebar-7day-review")) reviewHits.push("Sidebar.tsx: 7-Day Review sub-item under Signals is missing");
+const more = readFileSync(join(ROOT, "lib/more-links.ts"), "utf8");
+const moreHrefs = [...more.slice(more.indexOf("export const MORE_LINKS"), more.indexOf("export const MENU_GROUPS")).matchAll(/href: "([^"]+)"/g)].map((m) => m[1]);
+const menuHrefs = new Set([...more.slice(more.indexOf("export const MENU_GROUPS")).matchAll(/href: "([^"]+)"/g)].map((m) => m[1]));
+for (const h of moreHrefs) if (!menuHrefs.has(h)) reviewHits.push(`lib/more-links.ts: ${h} is on the More page but not in the header menu`);
+for (const need of ["/watchlist", "/account/alerts", "/account", "/pricing", "/more/about-us", "/how-it-works", "/more/disclaimer"]) {
+  if (!menuHrefs.has(need)) reviewHits.push(`lib/more-links.ts: header menu lacks ${need}`);
+}
+const sm = readFileSync(join(ROOT, "app/sitemap.xml/route.ts"), "utf8");
+if (!sm.includes('"/signals/7-day-review"')) reviewHits.push("sitemap.xml/route.ts: /signals/7-day-review missing");
+if (!readFileSync(join(ROOT, "app/llms.txt/route.ts"), "utf8").includes("/signals/7-day-review")) reviewHits.push("llms.txt/route.ts: 7-Day Review missing");
+if (!readFileSync(join(ROOT, "app/(app)/signals/page.tsx"), "utf8").includes("ReviewTabs")) reviewHits.push("signals/page.tsx: Signals | 7-Day Review tabs missing");
+if (reviewHits.length) {
+  console.error("7-Day Review wording / navigation problem:" + String.fromCharCode(10) + reviewHits.join(String.fromCharCode(10)));
+  process.exit(1);
+}
 if (historyHits.length) {
   console.error("History Explorer wording problem:" + String.fromCharCode(10) + historyHits.join(String.fromCharCode(10)));
   process.exit(1);

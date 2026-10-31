@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SignalsPageBody } from "@/components/app/signals/SignalsPageBody";
+import { ReviewTabs } from "@/components/app/review/ReviewTabs";
 import { getSectorSummary, getSignals, getSharedScreen } from "@/lib/api/endpoints";
 
 export const metadata: Metadata = {
@@ -32,6 +33,7 @@ export default async function SignalsPage({ searchParams }: { searchParams: Prom
 
   return (
     <div>
+      <ReviewTabs active="signals" />
       <div className="mb-5">
         <h1 className="text-lg font-semibold">Signal Dashboard</h1>
         <p className="mt-1 text-sm text-foreground-muted">

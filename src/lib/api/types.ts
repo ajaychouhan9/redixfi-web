@@ -2234,3 +2234,89 @@ export interface PublicChannelsResponse {
 }
 
 export type ChannelDiscoveryAction = "seen" | "already_subscribed" | "dismissed";
+
+// ---------- 7-Day Review (GET /review/7-day, GET /review/7-day/mine) ----------
+
+export type ReviewUniverse = "liquid" | "nifty50" | "nifty100" | "nifty500";
+
+export interface ReviewRow {
+  symbol: string;
+  name: string | null;
+  /** Price change over the window, in percent. */
+  pct: number;
+  close: number | null;
+  /** Stock Condition at the start of the window and at its end (null when we do not hold it). */
+  sc_start: number | null;
+  sc_end: number | null;
+  /** Average volume in the window divided by the average of the 20 sessions before it. */
+  vr: number | null;
+  /** Average delivery share over the window, percent. */
+  dl: number | null;
+  /** Closes of the last 5 sessions. */
+  spark: number[];
+}
+
+export interface ReviewScRow {
+  symbol: string;
+  name: string | null;
+  sc_start: number;
+  sc_end: number;
+  sc_delta: number;
+  pct: number | null;
+}
+
+export interface ReviewIndexBlock {
+  start: number;
+  end: number;
+  pct: number | null;
+  pts: number | null;
+}
+
+export interface ReviewEvents {
+  results: { stocks: number };
+  board_meetings: { stocks: number };
+  deals: { deals: number; stocks: number; covered_to: string | null };
+  insider: { disclosures: number; stocks: number; covered_to: string | null };
+}
+
+export interface SevenDayReview {
+  available: boolean;
+  as_of?: string;
+  built_at?: string | null;
+  window?: { sessions: string[]; n: number; before: string; label: string; as_of_label: string; holidays: string[]; notes: string[] };
+  thresholds?: { min_avg_turnover_cr: number; min_price: number; sessions: number };
+  universe?: Record<ReviewUniverse, { n: number; members: number | null }>;
+  excluded?: { corporate_action: number; symbols: string[] };
+  lists?: Record<ReviewUniverse, { gains: ReviewRow[]; falls: ReviewRow[] }>;
+  sc_changes?: { start_date: string | null; end_date: string; partial: boolean; note: string | null; up: ReviewScRow[]; down: ReviewScRow[] };
+  market?: {
+    nifty: ReviewIndexBlock | null;
+    banknifty: ReviewIndexBlock | null;
+    vix: ReviewIndexBlock | null;
+    breadth: { advancing: number; declining: number; unchanged: number; n: number };
+    industries: { higher: number; lower: number; total: number };
+    flows: { unit: string; sessions: number; fii_net: number | null; dii_net: number | null; fii_net_days: number; dii_net_days: number; complete: boolean } | null;
+  };
+  events?: ReviewEvents;
+  index_membership_fetched?: string | null;
+  weeks?: { as_of: string; sessions: number; label: string }[];
+}
+
+export interface ReviewMineRow {
+  symbol: string;
+  name: string | null;
+  status: "ok" | "corporate_action" | "incomplete" | "not_eq" | "no_data";
+  pct: number | null;
+  close: number | null;
+  sc_start: number | null;
+  sc_end: number | null;
+  sc_spark: number[];
+  spark: number[];
+}
+
+export interface SevenDayMine {
+  as_of: string;
+  symbols: number;
+  rows: ReviewMineRow[];
+  events: ReviewEvents | null;
+}

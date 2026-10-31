@@ -17,6 +17,7 @@ const TRANSIENT_STATUSES = new Set([502, 503, 504]);
 const PUBLIC_CORE_ROUTES = [
   "/",
   "/signals",
+  "/signals/7-day-review",
   "/intraday",
   "/research",
   "/screens",

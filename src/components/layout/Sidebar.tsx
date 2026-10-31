@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
@@ -27,7 +28,7 @@ const TIER_LABEL: Record<string, string> = {
 // Mobile BottomNav's own 4-5 item list — unchanged (this session is scoped
 // to Home/desktop polish; a mobile bottom bar can't fit the 8-item desktop
 // sidebar order below without its own redesign, out of scope here).
-// Two layouts behind NAV_MOBILE_LAYOUT (see lib/nav-config.ts). Without the Market Rewind flag the old 5 items are shown.
+// Three layouts behind NAV_MOBILE_LAYOUT (see lib/nav-config.ts; C is the default). Without the Market Rewind flag the old 5 items are shown.
 const REWIND_ITEM = { href: "/rewind", label: "Rewind", icon: Rewind } as const;
 const NAV_ITEMS_BY_LAYOUT = {
   A: [
@@ -44,14 +45,30 @@ const NAV_ITEMS_BY_LAYOUT = {
     REWIND_ITEM,
     { href: "/more", label: "More", icon: MoreHorizontal },
   ],
+  // C: no More tab. Everything that lived in More is in the header avatar menu (see UserMenu.tsx); the bell stays in the header.
+  C: [
+    { href: "/", label: "Home", icon: Home },
+    { href: "/signals", label: "Signals", icon: BarChart3 },
+    { href: "/intraday", label: "Intraday", icon: Zap },
+    { href: "/research", label: "Research", icon: Search },
+    REWIND_ITEM,
+  ],
 } as const;
-const NAV_ITEMS_NO_REWIND = [
-  { href: "/", label: "Home", icon: Home },
-  { href: "/signals", label: "Signals", icon: BarChart3 },
-  { href: "/intraday", label: "Intraday", icon: Zap },
-  { href: "/research", label: "Research", icon: Search },
-  { href: "/more", label: "More", icon: MoreHorizontal },
-] as const;
+const NAV_ITEMS_NO_REWIND =
+  NAV_MOBILE_LAYOUT === "C"
+    ? ([
+        { href: "/", label: "Home", icon: Home },
+        { href: "/signals", label: "Signals", icon: BarChart3 },
+        { href: "/intraday", label: "Intraday", icon: Zap },
+        { href: "/research", label: "Research", icon: Search },
+      ] as const)
+    : ([
+        { href: "/", label: "Home", icon: Home },
+        { href: "/signals", label: "Signals", icon: BarChart3 },
+        { href: "/intraday", label: "Intraday", icon: Zap },
+        { href: "/research", label: "Research", icon: Search },
+        { href: "/more", label: "More", icon: MoreHorizontal },
+      ] as const);
 
 function NewBadge() {
   return (
@@ -79,9 +96,17 @@ const SIDEBAR_LINK_ITEMS = [
   { href: "/watchlist", label: "Watchlist", icon: Bookmark },
 ] as const;
 
+const REVIEW_HREF = "/signals/7-day-review";
+
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
   return pathname.startsWith(href);
+}
+
+/** Desktop sidebar: Signals is active on its pages except the 7-Day Review, which has its own sub-item under it. */
+function isActiveSidebar(pathname: string, href: string) {
+  if (href === "/signals") return pathname.startsWith("/signals") && !pathname.startsWith(REVIEW_HREF);
+  return isActive(pathname, href);
 }
 
 export function Sidebar({
@@ -131,20 +156,34 @@ export function Sidebar({
     <aside className="hidden w-56 flex-col overflow-y-auto border-r border-border bg-surface md:fixed md:left-0 md:top-[var(--header-height)] md:flex md:h-[calc(100vh-var(--header-height))]">
       <nav className="flex flex-1 flex-col gap-1 p-3">
         {(rewindOn ? [...SIDEBAR_LINK_ITEMS.slice(0, 4), REWIND_ITEM, ...SIDEBAR_LINK_ITEMS.slice(4)] : SIDEBAR_LINK_ITEMS).map((item) => {
-          const active = isActive(pathname, item.href);
+          const active = isActiveSidebar(pathname, item.href);
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={clsx(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                active ? "bg-accent/10 text-accent" : "text-foreground-muted hover:bg-hover hover:text-foreground"
+            <Fragment key={item.href}>
+              <Link
+                href={item.href}
+                className={clsx(
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  active ? "bg-accent/10 text-accent" : "text-foreground-muted hover:bg-hover hover:text-foreground"
+                )}
+              >
+                <item.icon size={17} strokeWidth={2} />
+                {item.href === "/rewind" ? "Market Rewind" : item.label}
+                {item.href === "/rewind" && rewindNew && <NewBadge />}
+              </Link>
+              {item.href === "/signals" && (
+                <Link
+                  href={REVIEW_HREF}
+                  data-testid="sidebar-7day-review"
+                  aria-current={isActive(pathname, REVIEW_HREF) ? "page" : undefined}
+                  className={clsx(
+                    "-mt-0.5 ml-5 flex items-center gap-2 rounded-lg border-l border-border py-2 pl-5 pr-3 text-sm font-medium transition-colors",
+                    isActive(pathname, REVIEW_HREF) ? "bg-accent/10 text-accent" : "text-foreground-muted hover:bg-hover hover:text-foreground"
+                  )}
+                >
+                  7-Day Review
+                </Link>
               )}
-            >
-              <item.icon size={17} strokeWidth={2} />
-              {item.href === "/rewind" ? "Market Rewind" : item.label}
-              {item.href === "/rewind" && rewindNew && <NewBadge />}
-            </Link>
+            </Fragment>
           );
         })}
         <button
@@ -166,7 +205,7 @@ export function Sidebar({
           )}
         >
           <MoreHorizontal size={17} strokeWidth={2} />
-          More
+          More pages
         </Link>
       </nav>
       <div className="border-t border-border p-3">

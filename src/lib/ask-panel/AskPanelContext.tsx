@@ -28,6 +28,10 @@ interface AskPanelContextValue {
   setMode: (mode: AskPanelMode) => void;
   /** Open on top of whatever is on screen (sidebar nav item's "destination"). */
   openPanel: () => void;
+  /** Open the panel with a question already typed in the input (not sent; the person presses Send). */
+  openWithQuestion: (question: string) => void;
+  pendingQuestion: string | null;
+  clearPendingQuestion: () => void;
 }
 
 const AskPanelContext = createContext<AskPanelContextValue | null>(null);
@@ -35,6 +39,7 @@ const AskPanelContext = createContext<AskPanelContextValue | null>(null);
 export function AskPanelProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [mode, setModeState] = useState<AskPanelMode>(DEFAULT_ASK_PANEL_MODE);
+  const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
       setModeState(restoreAskPanelMode(window.localStorage.getItem(ASK_PANEL_MODE_STORAGE_KEY)));
@@ -46,7 +51,16 @@ export function AskPanelProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(ASK_PANEL_MODE_STORAGE_KEY, nextMode);
   };
   const openPanel = () => setOpen(true);
-  const value = useMemo(() => ({ open, setOpen, openPanel, mode, setMode }), [open, mode]);
+  const openWithQuestion = (question: string) => {
+    setPendingQuestion(question);
+    setOpen(true);
+  };
+  const clearPendingQuestion = () => setPendingQuestion(null);
+  const value = useMemo(
+    () => ({ open, setOpen, openPanel, mode, setMode, openWithQuestion, pendingQuestion, clearPendingQuestion }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [open, mode, pendingQuestion],
+  );
   return <AskPanelContext.Provider value={value}>{children}</AskPanelContext.Provider>;
 }
 

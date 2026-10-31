@@ -41,6 +41,7 @@ const TYPE_BADGES: Record<string, string> = {
   movers: "BIGGEST STOCK CONDITION CHANGES",
   report: "SAMPLE COMPANY REPORT",
   rewind: "MARKET REWIND",
+  review: "7-DAY REVIEW",
   history: "MARKET REWIND",
 };
 

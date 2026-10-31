@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import { renamedSymbolRedirects } from "./src/lib/seo/renamed-symbols";
 
 const nextConfig: NextConfig = {
-  env: { NAV_MOBILE_LAYOUT: process.env.NAV_MOBILE_LAYOUT ?? "A" },
+  env: { NAV_MOBILE_LAYOUT: process.env.NAV_MOBILE_LAYOUT ?? "C" },
   async headers() {
     return [
       // The service worker file must always be re-checked so a new deploy's worker (and its cache version) replaces the old.

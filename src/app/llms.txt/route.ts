@@ -11,6 +11,7 @@ const BODY = `# RedixFi
 - **Chance Check**: the base-rate comparison inside Market Rewind. It compares how often each reading was present before the chosen big moves with how often it was present on all days. A reading is marked "Stood out" only when the difference passes strict tests that allow for chance. "Stood out" means different from all days. It does not mean the reading comes before a move, and many readings rise together when a stock is volatile.
 - **Stock Condition**: a number from 0 to 100 for each stock and day. It is a weighted combination of 8 measured readings (trend, volume, delivery share, momentum, sector, options positioning and others). It is not a probability, a rating or a forecast. The page for each stock shows the number and its change from the previous session.
 - **Readings**: the 8 measured inputs to Stock Condition. Market Rewind also lists extra readings such as insider trade disclosed, bulk or block deal, near 52-week high and gap at open.
+- **7-Day Review** (https://www.redixfi.com/signals/7-day-review): the biggest price gains and falls of the last trading sessions (usually 5), the market for the week, the biggest changes in Stock Condition and a count of what was announced. The lists rank by price change over the window only. It is a past record of measured data, not a forecast or a recommendation.
 - **Intraday**: measured moves during the trading day.
 
 ## Main pages
@@ -18,6 +19,7 @@ const BODY = `# RedixFi
 - Home: https://www.redixfi.com/
 - Market Rewind: https://www.redixfi.com/rewind
 - Stock Condition by stock: https://www.redixfi.com/signals
+- 7-Day Review: https://www.redixfi.com/signals/7-day-review
 - Research pages: https://www.redixfi.com/research
 - Intraday: https://www.redixfi.com/intraday
 - How it works: https://www.redixfi.com/how-it-works

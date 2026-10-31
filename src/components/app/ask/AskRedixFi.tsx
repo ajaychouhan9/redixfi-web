@@ -208,7 +208,7 @@ function AskQuota({ usage, detailed = false }: { usage: AskUsageInfo | null; det
 
 export function AskRedixFi() {
   const { user, loading: authLoading, getToken } = useAuth();
-  const { open, setOpen, mode, setMode } = useAskPanel();
+  const { open, setOpen, mode, setMode, pendingQuestion, clearPendingQuestion } = useAskPanel();
   const pathname = usePathname();
   // UI polish batch, Item 4 — LOCKED DECISION. `closedAtPathRef` records
   // which route the panel was on the last time the user explicitly closed
@@ -588,6 +588,16 @@ export function AskRedixFi() {
       skipNextLoadRef.current = true;
     }
   }, [open, pathname]);
+
+  // A page can open the panel with a question typed in (7-Day Review's "Explain this week"). It is placed in the input after the
+  // fresh-start effect above has run, and is not sent: the person reads it and presses Send.
+  useEffect(() => {
+    if (open && pendingQuestion) {
+      if (user) setInput(pendingQuestion);
+      clearPendingQuestion();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, pendingQuestion, user]);
 
   // Loads resumable history once per distinct symbol context whenever the
   // panel is open (skipNextLoadRef skips the one stale pass after a fresh

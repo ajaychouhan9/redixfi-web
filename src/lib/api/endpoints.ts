@@ -3,6 +3,8 @@ import type {
   MarketOverview,
   SignalRow,
   SignalsMovers,
+  SevenDayReview,
+  SevenDayMine,
   SignalDetail,
   ScoreHistoryResponse,
   VolatilityResponse,
@@ -116,6 +118,15 @@ export async function getAllSignals(opts?: FetchOpts): Promise<SignalRow[]> {
 // deliberately ungated for every tier (Home shows it to everyone).
 export const getSignalMovers = (direction?: "up" | "down", limit = 20, opts?: FetchOpts) =>
   apiGet<SignalsMovers>("/signals/movers", { ...opts, params: { direction, limit } });
+
+// @auth public — the stored 7-Day Review for the latest completed week, or for the `asof` date given. Blocks A, C, D and E need no
+// login and carry no tier masking; the response is identical for every caller.
+export const getSevenDayReview = (asof?: string, opts?: FetchOpts) =>
+  apiGet<SevenDayReview>("/review/7-day", { ...opts, params: { asof } });
+
+// @auth required — block B, "Your stocks": the signed-in user's watchlist over the same window (401 without a real token).
+export const getSevenDayMine = (asof?: string, opts?: FetchOpts) =>
+  apiGet<SevenDayMine>("/review/7-day/mine", { ...opts, params: { asof } });
 
 // @auth required — B8 masks the full detail for a locked symbol.
 export const getSignalDetail = (symbol: string, newsLimit = 6, opts?: FetchOpts) =>
