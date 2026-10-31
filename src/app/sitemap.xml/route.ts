@@ -28,7 +28,7 @@ const PUBLIC_CORE_ROUTES = [
   "/pricing",
   "/how-it-works",
   "/sample-report",
-  "/history",
+  "/rewind",
   "/volatility",
 ] as const;
 

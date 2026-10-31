@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ShieldCheck, Database, UserCircle, CreditCard, Newspaper, ChevronRight, Info, BookOpen, Activity, FileText } from "lucide-react";
+import { ShieldCheck, Database, UserCircle, CreditCard, Newspaper, ChevronRight, Info, BookOpen, Activity, FileText, Search, Zap } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { InstallRow } from "@/components/app/pwa/InstallRow";
 import { HistoryMoreRow } from "@/components/app/history/HistoryLinks";
+import { MOVED_TO_MORE } from "@/lib/nav-config";
 
 export const metadata: Metadata = { title: "More" };
 
 const LINKS = [
-  { href: "/how-it-works", label: "How the reading works", icon: BookOpen },
+  // First item: the one the phone bottom bar leaves out (NAV_MOBILE_LAYOUT A: Research, B: Intraday).
+  { href: MOVED_TO_MORE.href, label: MOVED_TO_MORE.label, icon: MOVED_TO_MORE.href === "/research" ? Search : Zap },
+  { href: "/how-it-works", label: "How Stock Condition works", icon: BookOpen },
   { href: "/volatility", label: "Volatility ranking", icon: Activity },
   { href: "/sample-report", label: "Sample report", icon: FileText },
   { href: "/more/disclaimer", label: "Full disclaimer", icon: ShieldCheck },

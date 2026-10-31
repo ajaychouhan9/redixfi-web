@@ -5,7 +5,7 @@ import { getSectorSummary, getSignals, getSharedScreen } from "@/lib/api/endpoin
 export const metadata: Metadata = {
   title: "Signal Dashboard",
   alternates: { canonical: "/signals" },
-  description: "Measured Conditions Readings across 2,000+ NSE stocks — trend, delivery, industry standing and options positioning, factually reported.",
+  description: "Measured Stock Conditions across 2,000+ NSE stocks — trend, delivery, industry standing and options positioning, factually reported.",
 };
 
 export default async function SignalsPage({ searchParams }: { searchParams: Promise<{ clone?: string }> }) {

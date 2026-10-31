@@ -12,6 +12,7 @@ import { AnomalyCard } from "@/components/app/AnomalyCard";
 import { WatchlistAlertsCard } from "@/components/app/WatchlistAlertsCard";
 import { MarketActivityCard } from "@/components/app/MarketActivityCard";
 import { VisitorIntroStrip } from "@/components/app/VisitorIntroStrip";
+import { HomeShortcutCard } from "@/components/app/HomeShortcutCard";
 import { HomePricingSection } from "@/components/app/HomePricingSection";
 import { GovernanceRadarCard } from "@/components/app/marketing/GovernanceRadarCard";
 import { AskAiTeaserCard } from "@/components/app/marketing/AskAiTeaserCard";
@@ -74,6 +75,7 @@ export default async function HomePage() {
           why that's the correct, non-cloaking default). Hides itself
           client-side once a REAL logged-in token resolves. */}
       <VisitorIntroStrip />
+      <HomeShortcutCard />
 
       {/* Governance/Ask AI preview + small-cap positioning — anonymous
           visitors only (each self-gates on `user`, same pattern as

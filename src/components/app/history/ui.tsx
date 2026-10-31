@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 
 /**
- * Shared building blocks of the History Explorer (both tabs): one card style, one heading style, one chip style, one button
+ * Shared building blocks of the Market Rewind (both tabs): one card style, one heading style, one chip style, one button
  * style, and one set of number formats. Tap targets are at least 44px; colour is never the only carrier of meaning.
  */
 

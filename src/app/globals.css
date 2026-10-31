@@ -251,7 +251,7 @@ body {
   outline-offset: 2px;
 }
 
-/* History Explorer (2026-10-31): the sign colours of a move, with AA contrast for small text on the page background.
+/* Market Rewind (2026-10-31): the sign colours of a move, with AA contrast for small text on the page background.
    The site-wide --up / --down stay as they are; these are used only for the sign of a move or a change. */
 :root {
   --hx-up: #12744a;

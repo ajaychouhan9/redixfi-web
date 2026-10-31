@@ -5,7 +5,7 @@ import { CANNED_SCREENS } from "@/data/canned-screens";
 export const metadata: Metadata = {
   title: "Stock Screens",
   alternates: { canonical: "/screens" },
-  description: "Run measurable, factual stock screens across NSE/BSE — high delivery, Conditions Reading movers, event risk and volume — no login required.",
+  description: "Run measurable, factual stock screens across NSE/BSE — high delivery, Stock Condition movers, event risk and volume — no login required.",
 };
 
 export default function ScreensIndexPage() {

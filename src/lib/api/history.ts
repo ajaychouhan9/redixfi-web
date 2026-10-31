@@ -124,7 +124,7 @@ export function historyErrorMessage(e: unknown): string {
       const d = e.detail as { message?: string } | undefined;
       return d?.message || "This filter is not included in your plan.";
     }
-    if (e.status === 404) return "The History Explorer is not available right now.";
+    if (e.status === 404) return "The Market Rewind is not available right now.";
     if (e.status === 400) return e.message;
   }
   return "Something went wrong. Please try again.";
@@ -245,7 +245,7 @@ export const downloadStockwiseCsv = (p: StockwiseParams, token: string) =>
     },
   });
 
-// ---- Common readings -------------------------------------------------------------------------------------------
+// ---- Chance Check -------------------------------------------------------------------------------------------
 
 export interface CommonRow {
   key: string;

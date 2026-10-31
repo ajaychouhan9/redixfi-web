@@ -14,7 +14,7 @@ export interface CommonQuestionGroup {
 
 export const COMMON_QUESTION_GROUPS: CommonQuestionGroup[] = [
   {
-    "topic": "Conditions Reading",
+    "topic": "Stock Condition",
     "items": [
       {
         "id": "composite_score_q1",
@@ -44,7 +44,7 @@ export const COMMON_QUESTION_GROUPS: CommonQuestionGroup[] = [
       {
         "id": "delta_1d_q1",
         "q": "Is a big reading change always driven by price?",
-        "a": "Not necessarily. Because the Conditions Reading blends trend, delivery, volume, sector standing, options positioning and event risk together, a large move can come from any one of those changing state — price is only one input among several."
+        "a": "Not necessarily. Because the Stock Condition blends trend, delivery, volume, sector standing, options positioning and event risk together, a large move can come from any one of those changing state — price is only one input among several."
       },
       {
         "id": "delta_1d_q2",
@@ -54,7 +54,7 @@ export const COMMON_QUESTION_GROUPS: CommonQuestionGroup[] = [
       {
         "id": "delta_1d_q3",
         "q": "Can the reading fall even if the price rose?",
-        "a": "Yes — this is exactly the kind of disagreement the Tension panel is built to surface. Price and the Conditions Reading are not the same measurement; delivery weakening, sector standing slipping, or an event flag appearing can all pull the composite down on a day the price closed higher."
+        "a": "Yes — this is exactly the kind of disagreement the Tension panel is built to surface. Price and the Stock Condition are not the same measurement; delivery weakening, sector standing slipping, or an event flag appearing can all pull the composite down on a day the price closed higher."
       },
       {
         "id": "delta_1d_q4",
@@ -174,12 +174,12 @@ export const COMMON_QUESTION_GROUPS: CommonQuestionGroup[] = [
       {
         "id": "sector_rank_q3",
         "q": "Does #1 in the sector mean the stock is a buy?",
-        "a": "No — it means this stock's Conditions Reading was the highest among its classified peers today, nothing more. The rank carries no forward claim and is recomputed fresh from scratch every day."
+        "a": "No — it means this stock's Stock Condition was the highest among its classified peers today, nothing more. The rank carries no forward claim and is recomputed fresh from scratch every day."
       },
       {
         "id": "sector_rank_q4",
         "q": "Can a rank swing a lot day to day?",
-        "a": "Yes, especially in smaller peer groups, since each member's Conditions Reading is itself a same-day snapshot. A rank moving from #3 to #7 describes a change in relative standing that day — it says nothing about direction on its own."
+        "a": "Yes, especially in smaller peer groups, since each member's Stock Condition is itself a same-day snapshot. A rank moving from #3 to #7 describes a change in relative standing that day — it says nothing about direction on its own."
       }
     ]
   },

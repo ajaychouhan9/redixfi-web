@@ -87,7 +87,7 @@ export function ScoreHistoryChart({
   const tickIndices = xTickIndices(referenceSeries.points.length);
   const yTicks = [max, mid, min];
 
-  const title = withData.length === 1 ? `${withData[0].symbol} Conditions Reading — last ${withData[0].points.length} sessions` : "Conditions Reading — recent sessions";
+  const title = withData.length === 1 ? `${withData[0].symbol} Stock Condition — last ${withData[0].points.length} sessions` : "Stock Condition — recent sessions";
 
   return (
     <div className="mt-2 rounded-lg border border-border bg-surface-raised p-3">
@@ -97,7 +97,7 @@ export function ScoreHistoryChart({
         width="100%"
         height={CHART_HEIGHT}
         role="img"
-        aria-label={withData.length === 1 ? `${withData[0].symbol} Conditions Reading over the last ${withData[0].points.length} sessions` : "Conditions Reading comparison over recent sessions"}
+        aria-label={withData.length === 1 ? `${withData[0].symbol} Stock Condition over the last ${withData[0].points.length} sessions` : "Stock Condition comparison over recent sessions"}
       >
         {/* Y-axis gridlines + value labels */}
         {yTicks.map((v, i) => {

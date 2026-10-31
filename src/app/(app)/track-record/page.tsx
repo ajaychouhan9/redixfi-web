@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   title: "Track Record",
   alternates: { canonical: "/track-record" },
   description:
-    "How RedixFi's Conditions Reading has performed historically, measured relative to each stock's own sector — sample size and date range shown with every figure. Not investment advice.",
+    "How RedixFi's Stock Condition has performed historically, measured relative to each stock's own sector — sample size and date range shown with every figure. Not investment advice.",
 };
 
 const COMPONENTS: { key: string; label: string; weight: number; metricKey: string }[] = [
@@ -96,7 +96,7 @@ export default async function TrackRecordPage() {
       <div>
         <h1 className="text-xl font-semibold">Track Record</h1>
         <p className="mt-1 text-sm text-foreground-muted">
-          A measured, historical look at how the Conditions Reading has related to each stock&apos;s subsequent
+          A measured, historical look at how the Stock Condition has related to each stock&apos;s subsequent
           price move, relative to its own sector — never an absolute return, never a forward statement.
         </p>
       </div>
@@ -121,7 +121,7 @@ export default async function TrackRecordPage() {
             </p>
             {snapshot.earliest_measured_date && (
               <p>
-                Conditions Reading history on file since {formatShortDate(snapshot.earliest_measured_date)}
+                Stock Condition history on file since {formatShortDate(snapshot.earliest_measured_date)}
                 {snapshot.latest_measured_date && snapshot.latest_measured_date !== snapshot.earliest_measured_date
                   ? ` through ${formatShortDate(snapshot.latest_measured_date)}`
                   : ""}
@@ -132,7 +132,7 @@ export default async function TrackRecordPage() {
         ) : (
           <>
             <p className="mb-3 text-sm text-foreground-muted">
-              For each session where the Conditions Reading sat in a given range, this measures whether the stock&apos;s
+              For each session where the Stock Condition sat in a given range, this measures whether the stock&apos;s
               price move over the following {snapshot.window_sessions} trading sessions beat its own sector&apos;s
               median move over the same window — N={snapshot.total_observations} total observation
               {snapshot.total_observations === 1 ? "" : "s"}
@@ -159,9 +159,9 @@ export default async function TrackRecordPage() {
         )}
       </Card>
 
-      <Card title="Methodology — how the Conditions Reading is built">
+      <Card title="Methodology — how the Stock Condition is built">
         <p className="mb-3 text-sm text-foreground-muted">
-          The Conditions Reading (0–100) is a weighted measurement of 8 factors, each computed from data already
+          The Stock Condition (0–100) is a weighted measurement of 8 factors, each computed from data already
           shown elsewhere on the site. Tap any factor for how it&apos;s calculated.
         </p>
         <ul className="divide-y divide-border text-sm">

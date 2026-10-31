@@ -1,7 +1,7 @@
-// History Explorer layout check (run on demand against a running site):
+// Market Rewind layout check (run on demand against a running site):
 //   node scripts/test-history-layout.mjs http://localhost:3100
 // At 375px, light and dark: no horizontal overflow, every control at least 44px tall, the summary bar sticks to the top after
-// scrolling, blank readings read "Not available" and never "no", and Common readings opens with its fixed lines.
+// scrolling, blank readings read "Not available" and never "no", and Chance Check opens with its fixed lines.
 import { chromium } from "playwright";
 
 const base = process.argv[2] || "http://localhost:3100";
@@ -12,7 +12,7 @@ const browser = await chromium.launch();
 for (const scheme of ["light", "dark"]) {
   const ctx = await browser.newContext({ viewport: { width: 375, height: 812 }, colorScheme: scheme });
   const page = await ctx.newPage();
-  await page.goto(`${base}/history`, { waitUntil: "networkidle" });
+  await page.goto(`${base}/rewind`, { waitUntil: "networkidle" });
   await page.waitForSelector('[data-testid="sw-result"]', { timeout: 40000 });
   await page.waitForTimeout(1000);
 
@@ -45,7 +45,7 @@ for (const scheme of ["light", "dark"]) {
   await page.locator('[data-testid="common-button"]').click();
   await page.waitForSelector('[data-testid="common-headline"]', { timeout: 20000 });
   const panel = await page.locator('[data-testid="common-panel"]').innerText();
-  check(/Checking many readings can show differences by chance\./.test(panel), `${scheme}: common readings caution line missing`);
+  check(/Checking many readings can show differences by chance\./.test(panel), `${scheme}: chance check caution line missing`);
   check(/Many stocks move on the same market days; these days are not independent\./.test(panel), `${scheme}: independence line missing`);
   check(/Only sessions before the move are checked/.test(panel), `${scheme}: before-only line missing`);
   await ctx.close();
@@ -55,4 +55,4 @@ if (fails.length) {
   console.error("History layout check failed:\n" + fails.join("\n"));
   process.exit(1);
 }
-console.log("History layout check passed: no overflow, 44px targets, sticky summary bar, n/a readings, Common readings lines (375px, light and dark).");
+console.log("History layout check passed: no overflow, 44px targets, sticky summary bar, n/a readings, Chance Check lines (375px, light and dark).");

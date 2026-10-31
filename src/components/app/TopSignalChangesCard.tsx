@@ -48,7 +48,7 @@ export function TopSignalChangesCard({ movers, marketState }: { movers: SignalsM
             card={{
               type: "movers",
               title: "Biggest reading changes",
-              subtitle: "Biggest measured Conditions Reading changes today",
+              subtitle: "Biggest measured Stock Condition changes today",
               stat: shareStat,
               statLabel: topDecliner ? `Largest reading decrease: ${topDecliner.symbol} ${topDecliner.delta_1d}` : undefined,
               direction: "up",

@@ -18,7 +18,7 @@ export function lockedText(q: ReportQuotaConfig = REPORT_QUOTA_FALLBACK): string
 }
 
 export const SAMPLE_INSIDE = [
-  "Snapshot: price, 52-week range, Conditions Reading with its last 5 sessions, volatility, delivery and volume",
+  "Snapshot: price, 52-week range, Stock Condition with its last 5 sessions, volatility, delivery and volume",
   "Is it growing: revenue, profit and margin, with an 8-quarter chart",
   "Versus peers: P/E, P/B, ROE, net margin, debt-to-equity and dividend yield",
   "Who owns it: promoter, FII and MF holding with the change since last quarter, pledge, insider trades, bulk and block deals",

@@ -211,7 +211,7 @@ export function HistoryExplorer() {
         }
         getHistorySectors({ token }).then((r) => live && setSectors(r.data)).catch(() => undefined);
       } catch {
-        if (live) setCfgError("The History Explorer is not available right now.");
+        if (live) setCfgError("The Market Rewind is not available right now.");
       }
     })();
     return () => {

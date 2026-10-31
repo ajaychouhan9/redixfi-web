@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { Home, BarChart3, Zap, Search, MoreHorizontal, User, CreditCard, Bookmark, Bell, Sparkles } from "lucide-react";
+import { Home, BarChart3, Zap, Search, MoreHorizontal, User, CreditCard, Bookmark, Bell, Sparkles, Rewind } from "lucide-react";
+import { useHistoryEnabled } from "@/lib/history-flag";
+import { NAV_MOBILE_LAYOUT } from "@/lib/nav-config";
+import { useRewindNewBadge } from "@/lib/rewind-new";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 import type { MarketOverview } from "@/lib/api/types";
@@ -24,13 +27,39 @@ const TIER_LABEL: Record<string, string> = {
 // Mobile BottomNav's own 4-5 item list — unchanged (this session is scoped
 // to Home/desktop polish; a mobile bottom bar can't fit the 8-item desktop
 // sidebar order below without its own redesign, out of scope here).
-const NAV_ITEMS = [
+// Two layouts behind NAV_MOBILE_LAYOUT (see lib/nav-config.ts). Without the Market Rewind flag the old 5 items are shown.
+const REWIND_ITEM = { href: "/rewind", label: "Rewind", icon: Rewind } as const;
+const NAV_ITEMS_BY_LAYOUT = {
+  A: [
+    { href: "/", label: "Home", icon: Home },
+    { href: "/signals", label: "Signals", icon: BarChart3 },
+    { href: "/intraday", label: "Intraday", icon: Zap },
+    REWIND_ITEM,
+    { href: "/more", label: "More", icon: MoreHorizontal },
+  ],
+  B: [
+    { href: "/", label: "Home", icon: Home },
+    { href: "/signals", label: "Signals", icon: BarChart3 },
+    { href: "/research", label: "Research", icon: Search },
+    REWIND_ITEM,
+    { href: "/more", label: "More", icon: MoreHorizontal },
+  ],
+} as const;
+const NAV_ITEMS_NO_REWIND = [
   { href: "/", label: "Home", icon: Home },
   { href: "/signals", label: "Signals", icon: BarChart3 },
   { href: "/intraday", label: "Intraday", icon: Zap },
   { href: "/research", label: "Research", icon: Search },
   { href: "/more", label: "More", icon: MoreHorizontal },
 ] as const;
+
+function NewBadge() {
+  return (
+    <span className="ml-1.5 rounded-full bg-accent px-1.5 py-px text-[10px] font-semibold leading-tight text-accent-foreground" data-testid="rewind-new-badge">
+      New
+    </span>
+  );
+}
 
 // Desktop sidebar's full order (task-specified): Home / Signals / Intraday
 // / Research / Alerts / Watchlist / RedixFi AI / More. Watchlist used to
@@ -67,6 +96,8 @@ export function Sidebar({
   const pathname = usePathname();
   const { user } = useAuth();
   const { open: askOpen, openPanel } = useAskPanel();
+  const rewindOn = useHistoryEnabled();
+  const rewindNew = useRewindNewBadge(pathname);
 
   return (
     // Fixed/sticky sidebar (2026-08-11): previously a normal in-flow flex
@@ -99,7 +130,7 @@ export function Sidebar({
     // drift out of alignment with however tall the header actually is.
     <aside className="hidden w-56 flex-col overflow-y-auto border-r border-border bg-surface md:fixed md:left-0 md:top-[var(--header-height)] md:flex md:h-[calc(100vh-var(--header-height))]">
       <nav className="flex flex-1 flex-col gap-1 p-3">
-        {SIDEBAR_LINK_ITEMS.map((item) => {
+        {(rewindOn ? [...SIDEBAR_LINK_ITEMS.slice(0, 4), REWIND_ITEM, ...SIDEBAR_LINK_ITEMS.slice(4)] : SIDEBAR_LINK_ITEMS).map((item) => {
           const active = isActive(pathname, item.href);
           return (
             <Link
@@ -111,7 +142,8 @@ export function Sidebar({
               )}
             >
               <item.icon size={17} strokeWidth={2} />
-              {item.label}
+              {item.href === "/rewind" ? "Market Rewind" : item.label}
+              {item.href === "/rewind" && rewindNew && <NewBadge />}
             </Link>
           );
         })}
@@ -195,18 +227,27 @@ export function Sidebar({
 
 export function BottomNav() {
   const pathname = usePathname();
+  const rewindOn = useHistoryEnabled();
+  const rewindNew = useRewindNewBadge(pathname);
+  const items = rewindOn ? NAV_ITEMS_BY_LAYOUT[NAV_MOBILE_LAYOUT] : NAV_ITEMS_NO_REWIND;
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 flex h-14 items-center justify-around border-t border-border bg-surface-raised md:hidden">
-      {NAV_ITEMS.map((item) => {
+    <nav className="fixed inset-x-0 bottom-0 z-30 flex h-14 items-center justify-around border-t border-border bg-surface-raised md:hidden" aria-label="Main">
+      {items.map((item) => {
         const active = isActive(pathname, item.href);
         return (
           <Link
             key={item.href}
             href={item.href}
-            className={clsx("flex flex-1 flex-col items-center gap-0.5 text-[12px] font-medium", active ? "text-accent" : "text-foreground-faint")}
+            className={clsx("relative flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 text-[12px] font-medium", active ? "text-accent" : "text-foreground-faint")}
+            aria-current={active ? "page" : undefined}
           >
             <item.icon size={19} strokeWidth={active ? 2.4 : 2} />
             {item.label}
+            {item.href === "/rewind" && rewindNew && (
+              <span className="absolute right-[18%] top-0.5 rounded-full bg-accent px-1 text-[9px] font-semibold leading-tight text-accent-foreground" data-testid="rewind-new-badge">
+                New
+              </span>
+            )}
           </Link>
         );
       })}

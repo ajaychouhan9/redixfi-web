@@ -79,7 +79,7 @@ export default async function VolatilityPage() {
             <p className="text-xs text-foreground-faint">
               Measured once per trading day after the daily run. {disclaimer}{" "}
               <Link href="/how-it-works" className="text-accent underline decoration-dotted underline-offset-2">
-                How the Conditions Reading works
+                How the Stock Condition works
               </Link>
             </p>
           </div>

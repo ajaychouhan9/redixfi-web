@@ -117,10 +117,10 @@ const HISTORY_FILES = [
   "lib/history-common-copy.ts",
   "components/app/history/StockwiseHistory.tsx",
   "components/app/history/HistoryLinks.tsx",
-  "app/(app)/history/page.tsx",
+  "app/(app)/rewind/page.tsx",
 ];
 const HISTORY_FORBIDDEN = /\b(chance|probabilit(?:y|ies)|likely|predict\w*|buy|sell|(?<!\.)targets?(?!=)|best|top picks?|breakout|setup|bullish|opportunit(?:y|ies)|momentum|red flags?)\b|strong stock|weak stock|matches today|same as today/i;
-const HISTORY_ALLOWED = ["Trying many filters can produce good-looking numbers by chance.", "Not a forecast or a recommendation.", "checked against chance"];
+const HISTORY_ALLOWED = ["Trying many filters can produce good-looking numbers by chance.", "Not a forecast or a recommendation.", "checked against chance", "larger than chance alone would explain", "Chance Check"];
 const historyHits = [];
 for (const rel of HISTORY_FILES) {
   let text = stripComments(readFileSync(join(ROOT, rel), "utf8"));
@@ -147,8 +147,26 @@ for (const need of ["Many stocks move on the same market days; these days are no
   if (!histCopy.includes(need)) historyHits.push(`lib/history-copy.ts: required line missing: ${need}`);
 }
 const commonCopy = readFileSync(join(ROOT, "lib/history-common-copy.ts"), "utf8");
-for (const need of ["Common readings", "What these days had in common, checked against chance. Not a forecast or a recommendation.", "Fewer than 30 days. Not enough for a comparison."]) {
+for (const need of ["Chance Check", "Base-rate comparison", "What these days had in common, checked against chance. Not a forecast or a recommendation.", "Fewer than 30 days. Not enough for a comparison."]) {
   if (!commonCopy.includes(need)) historyHits.push(`lib/history-common-copy.ts: required line missing: ${need}`);
+}
+// 2026-10-31 rename: the old names may not reappear in anything a user, crawler or AI model sees (all of src/).
+// Allowed places: internal identifiers (they have no spaces), comments and the redirect table, none of which is user-visible.
+const OLD_NAMES = /History Explorer|Conditions Readings?|Common readings/i;
+function walkSrc(dir, out = []) {
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, e.name);
+    if (e.isDirectory()) walkSrc(p, out);
+    else if (/\.(ts|tsx)$/.test(e.name)) out.push(p);
+  }
+  return out;
+}
+for (const f of walkSrc(join(ROOT))) {
+  const m = stripComments(readFileSync(f, "utf8")).match(OLD_NAMES);
+  if (m) historyHits.push(`${f.replace(ROOT, "")}: old name "${m[0]}" in user-visible text`);
+}
+for (const need of ["Stock Condition", "Weighted combination of 8 measured readings. Not a probability, a rating or a forecast."]) {
+  if (!readFileSync(join(ROOT, "lib/reading-copy.ts"), "utf8").includes(need)) historyHits.push(`lib/reading-copy.ts: required text missing: ${need}`);
 }
 if (historyHits.length) {
   console.error("History Explorer wording problem:" + String.fromCharCode(10) + historyHits.join(String.fromCharCode(10)));

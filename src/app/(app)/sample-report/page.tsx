@@ -10,7 +10,7 @@ const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "https://api.redixfi.com/ap
 
 const TITLE = "Free sample company report";
 const DESCRIPTION =
-  "See what a RedixFi company report PDF contains: price and 52-week range, Conditions Reading, growth, peers, ownership, events, filing summaries and governance items, each with its source and date.";
+  "See what a RedixFi company report PDF contains: price and 52-week range, Stock Condition, growth, peers, ownership, events, filing summaries and governance items, each with its source and date.";
 const OG_IMAGE = `/api/og?${new URLSearchParams({
   type: "report",
   title: "Sample company report",
@@ -132,7 +132,7 @@ export default async function SampleReportPage() {
 
       <Card title="Get reports for the stocks you follow">
         <p className="text-sm text-foreground-muted">
-          Create a free account to follow stocks and see their Conditions Readings. Company report PDFs for any stock with
+          Create a free account to follow stocks and see their Stock Conditions. Company report PDFs for any stock with
           enough data are part of Basic and Pro.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">

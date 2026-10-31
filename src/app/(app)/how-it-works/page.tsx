@@ -5,14 +5,14 @@ import { COMMON_QUESTION_GROUPS, COMMON_QUESTION_NOTE } from "@/lib/common-quest
 import { READING_EXPLAINER } from "@/lib/reading-copy";
 
 export const metadata: Metadata = {
-  title: "How the Conditions Reading works",
+  title: "How the Stock Condition works",
   description:
-    "What the 0–100 RedixFi Conditions Reading measures, which market inputs it uses, how often it updates, and what it does not tell you.",
+    "What the 0–100 RedixFi Stock Condition measures, which market inputs it uses, how often it updates, and what it does not tell you.",
   alternates: { canonical: "/how-it-works" },
   openGraph: {
-    title: "How the Conditions Reading works",
+    title: "How the Stock Condition works",
     description:
-      "The inputs behind the 0–100 Conditions Reading, how often it updates, how to read a change, and the limits.",
+      "The inputs behind the 0–100 Stock Condition, how often it updates, how to read a change, and the limits.",
     type: "website",
   },
 };
@@ -72,7 +72,7 @@ const SOURCES = [
 
 const FAQ = [
   {
-    q: "Is the Conditions Reading a buy or sell recommendation?", // compliance-ignore — it is the question being answered, not a recommendation
+    q: "Is the Stock Condition a buy or sell recommendation?", // compliance-ignore — it is the question being answered, not a recommendation
     a: "No. It summarises measured market data. It is not advice, a forecast, a target, or a buy or sell signal.",
   },
   {
@@ -101,7 +101,7 @@ const FAQ = [
   },
   {
     q: "Is volatility part of the reading?",
-    a: "No: volatility is a separate measure of how much a stock's closing price has moved from day to day over the last 21 sessions, shown under Volatility on the stock page and in the Volatility ranking, and it does not change the Conditions Reading.",
+    a: "No: volatility is a separate measure of how much a stock's closing price has moved from day to day over the last 21 sessions, shown under Volatility on the stock page and in the Volatility ranking, and it does not change the Stock Condition.",
   },
 ];
 
@@ -121,7 +121,7 @@ export default function HowItWorksPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       <header>
-        <h1 className="text-xl font-semibold">How the Conditions Reading works</h1>
+        <h1 className="text-xl font-semibold">How the Stock Condition works</h1>
         <p className="mt-2 text-sm text-foreground-muted">
           {READING_EXPLAINER} It is a 0–100 summary of measured market data for one stock on one trading
           session, built from eight inputs that each measure something different. It is not a recommendation.

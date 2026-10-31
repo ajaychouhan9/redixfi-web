@@ -381,7 +381,7 @@ export function StockwiseHistory({ initialSymbol }: { initialSymbol?: string }) 
         if (env.data.access.saved_filters && token) listSavedFilters({ token }).then((r) => live && setSaved(r.data.filter((x) => x.kind === "stockwise"))).catch(() => undefined);
         else setSaved([]);
       } catch {
-        if (live) setCfgError("The History Explorer is not available right now.");
+        if (live) setCfgError("The Market Rewind is not available right now.");
       }
     })();
     return () => {
@@ -436,7 +436,7 @@ export function StockwiseHistory({ initialSymbol }: { initialSymbol?: string }) 
     if (first) runParams(first.params);
   }, [cfg, initialSymbol, runParams]);
 
-  // stock search (same resolver as the rest of the History Explorer)
+  // stock search (same resolver as the rest of the Market Rewind)
   useEffect(() => {
     const q = text.trim();
     if (q.length < 1) {

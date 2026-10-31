@@ -9,7 +9,7 @@ import { ExplainTerm } from "@/components/ui/ExplainTerm";
 import { AnalystChecklist } from "@/components/app/signals/AnalystChecklist";
 import { WhyDidThisChange } from "@/components/app/signals/WhyDidThisChange";
 import { ScoreAsOf } from "@/components/app/signals/ScoreAsOf";
-import { READING_EXPLAINER, READING_NAME } from "@/lib/reading-copy";
+import { READING_EXPLAINER, READING_NAME, conditionChangeText } from "@/lib/reading-copy";
 import { ScoreHistorySection } from "@/components/app/signals/ScoreHistorySection";
 import { Week52Range } from "@/components/app/signals/Week52Range";
 import { VolatilitySection } from "@/components/app/signals/VolatilitySection";
@@ -86,13 +86,19 @@ export function SignalDetailView({
             </p>
             <div className="mt-1 flex flex-wrap items-baseline gap-3">
               <ExplainTerm metricKey="composite_score" symbol={detail.symbol} ctx={{ composite_score: detail.composite_score, symbol: detail.symbol }}>
-                <span className="text-3xl font-semibold">{detail.composite_score}/100</span>
+                <span className="text-3xl font-semibold text-foreground" data-testid="stock-condition-value">
+                  <span className="mr-2 text-base font-medium text-foreground-muted">{READING_NAME}:</span>
+                  {detail.composite_score} out of 100
+                </span>
               </ExplainTerm>
-              <ExplainTerm metricKey="delta_1d" symbol={detail.symbol} ctx={{ delta_1d: detail.delta_1d ?? "—", symbol: detail.symbol }}>
-                <DeltaValue value={detail.delta_1d} />
-              </ExplainTerm>
-              <span className="text-xs text-foreground-faint">5d: <DeltaValue value={detail.delta_5d} /></span>
+              {conditionChangeText(detail.delta_1d) && (
+                <ExplainTerm metricKey="delta_1d" symbol={detail.symbol} ctx={{ delta_1d: detail.delta_1d ?? "—", symbol: detail.symbol }}>
+                  <span className="text-sm text-foreground-muted">({conditionChangeText(detail.delta_1d)})</span>
+                </ExplainTerm>
+              )}
+              {conditionChangeText(detail.delta_5d) && <span className="text-xs text-foreground-faint">5d: {conditionChangeText(detail.delta_5d)?.replace(" vs previous session", "")}</span>}
             </div>
+            <p className="mt-1 text-xs text-foreground-muted" data-testid="reading-explainer">{READING_EXPLAINER}</p>
             {/* Bug fix (2026-08-08): price/day-change/vwap restored — same
                 ₹{last_price} + DeltaValue(pct) pattern research/
                 ResearchDetail.tsx already uses, placed right under the
@@ -122,9 +128,6 @@ export function SignalDetailView({
             <ExploreHistoryLink symbol={detail.symbol} />
           </div>
         </div>
-        <p className="mt-1 text-xs text-foreground-faint" data-testid="reading-explainer">
-          <span className="font-medium text-foreground-muted">{READING_NAME}.</span> {READING_EXPLAINER}
-        </p>
         <ScoreAsOf scoreDate={detail.signal_freshness?.composite_score?.data_as_of} />
         <QuickRead detail={detail} />
         <CorporateActionNote info={detail.corporate_action} />

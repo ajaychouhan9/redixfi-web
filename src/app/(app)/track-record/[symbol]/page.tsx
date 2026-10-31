@@ -41,7 +41,7 @@ function CrossingRow({ c }: { c: SignalCrossing }) {
   return (
     <li className="flex flex-col gap-1 border-t border-border py-2 text-sm sm:flex-row sm:items-center sm:justify-between">
       <span>
-        Conditions Reading crossed {c.crossing_side} {c.threshold} on {formatShortDate(c.crossing_date)}
+        Stock Condition crossed {c.crossing_side} {c.threshold} on {formatShortDate(c.crossing_date)}
       </span>
       {c.outcome_status === "pending" ? (
         <span className="text-xs text-foreground-faint">
@@ -85,7 +85,7 @@ export default async function TrackRecordSymbolPage({ params }: { params: Promis
         </p>
       </Card>
 
-      <Card title="Conditions Reading threshold crossings">
+      <Card title="Stock Condition threshold crossings">
         {data.crossings.length === 0 ? (
           <p className="text-sm text-foreground-muted">No threshold crossings recorded yet for {data.symbol}.</p>
         ) : (

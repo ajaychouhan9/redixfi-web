@@ -115,7 +115,7 @@ function buildSummaryRows(data: ResearchDetail, peers: PeerRow[] | null): XlsxSu
     { kind: "metadata", cells: ["Price", currencyText(data.price.last_price), "Day change", percentText(data.price.day_change_pct)] },
     ...(data.corporate_action?.note ? [{ kind: "metadata" as const, cells: ["Note", data.corporate_action.note, "", ""] }] : []),
     { kind: "metadata", cells: ["52-week low", currencyText(data.price.week52_low), "52-week high", currencyText(data.price.week52_high)] },
-    { kind: "metadata", cells: ["Conditions Reading", data.signal_summary.composite_score === null ? "Not available" : `${data.signal_summary.composite_score}/100`, "Reading change", missing(data.signal_summary.delta_1d)] },
+    { kind: "metadata", cells: ["Stock Condition", data.signal_summary.composite_score === null ? "Not available" : `${data.signal_summary.composite_score}/100`, "Reading change", missing(data.signal_summary.delta_1d)] },
     { kind: "blank" },
     { kind: "section", cells: ["GROWTH SNAPSHOT"], merge: [0, 3] as [number, number] },
     { kind: "item", cells: ["Revenue — latest quarter", currencyText(q?.revenue)] },
@@ -182,7 +182,7 @@ function buildSummaryRows(data: ResearchDetail, peers: PeerRow[] | null): XlsxSu
     ] : [{ kind: "item" as const, cells: ["Annual report", "Not available"] }]),
     { kind: "blank" },
     { kind: "section", cells: ["SIGNAL SUMMARY"], merge: [0, 3] as [number, number] },
-    { kind: "item", cells: ["Conditions Reading", data.signal_summary.composite_score === null ? "Not available" : `${data.signal_summary.composite_score}/100`] },
+    { kind: "item", cells: ["Stock Condition", data.signal_summary.composite_score === null ? "Not available" : `${data.signal_summary.composite_score}/100`] },
     { kind: "item", cells: ["Reading change", missing(data.signal_summary.delta_1d)] },
     { kind: "narrative", cells: ["Narrative", data.signal_summary.narrative ?? "Not available"], merge: [1, 3] as [number, number] },
   ];
@@ -201,7 +201,7 @@ function detailRows(data: ResearchDetail, peers: PeerRow[] | null): XlsxSheet[] 
   const metrics = (entries: [string, unknown][]) => entries.map(([Metric, Value]) => ({ Metric, Value: missing(Value) }));
   const peerRows = (peers ?? []).map((p) => ({ Company: p.company_name ?? "Not available", "P/E": p.pe, "P/B": p.pb, "Net Margin": p.net_margin_ttm, ROE: p.roe_ttm, "D/E": p.debt_to_equity, "Div. Yield": p.dividend_yield }));
   return [
-    { name: "Overview", rows: [{ Symbol: data.symbol, Company: data.company_name, Sector: data.sector, Industry: f?.identity.industry ?? "", Price: data.price.last_price, "Day change": data.price.day_change_pct, "52-week low": data.price.week52_low, "52-week high": data.price.week52_high, "Conditions Reading": data.signal_summary.composite_score ?? "", "Reading change": data.signal_summary.delta_1d ?? "", "Data as of": f?.as_of ?? "" }] },
+    { name: "Overview", rows: [{ Symbol: data.symbol, Company: data.company_name, Sector: data.sector, Industry: f?.identity.industry ?? "", Price: data.price.last_price, "Day change": data.price.day_change_pct, "52-week low": data.price.week52_low, "52-week high": data.price.week52_high, "Stock Condition": data.signal_summary.composite_score ?? "", "Reading change": data.signal_summary.delta_1d ?? "", "Data as of": f?.as_of ?? "" }] },
     { name: "Peers", rows: peerRows },
     { name: "Valuation", rows: metrics([["P/E (TTM)", v?.pe_ttm], ["P/B", v?.pb], ["Net margin", v?.net_margin_ttm], ["ROE", v?.roe_ttm], ["Debt/Equity", v?.debt_to_equity], ["Sector P/E", v?.sector_pe], ["Dividend yield", v?.dividend_yield_pct]]) },
     { name: "Growth", rows: metrics([["Revenue — latest quarter", q?.revenue], ["Revenue YoY", q?.revenue_yoy_pct], ["PAT YoY", q?.pat_yoy_pct], ["Operating margin", q?.opm_pct], ["Revenue CAGR 3Y", a?.revenue_cagr_3y_pct], ["PAT CAGR 3Y", a?.pat_cagr_3y_pct]]) },
@@ -226,7 +226,7 @@ function detailRows(data: ResearchDetail, peers: PeerRow[] | null): XlsxSheet[] 
     { name: "News", rows: data.news.map(cleanNewsRow) },
     { name: "Concalls", rows: data.concall_transcripts.map(cleanConcallRow) },
     { name: "Annual Report", rows: data.annual_report_summary ? [cleanAnnualReportRow(data.annual_report_summary)] : [] },
-    { name: "Signal Summary", rows: [{ Metric: "Conditions Reading", Value: data.signal_summary.composite_score ?? "Not available" }, { Metric: "Reading change", Value: data.signal_summary.delta_1d ?? "Not available" }, { Metric: "Narrative", Value: data.signal_summary.narrative ?? "Not available" }] },
+    { name: "Signal Summary", rows: [{ Metric: "Stock Condition", Value: data.signal_summary.composite_score ?? "Not available" }, { Metric: "Reading change", Value: data.signal_summary.delta_1d ?? "Not available" }, { Metric: "Narrative", Value: data.signal_summary.narrative ?? "Not available" }] },
     { name: "Sources", rows: [
       ...data.concall_transcripts.map((row) => ({ Section: "Concall", Date: row.filing_date, Source: row.source_pdf_url })),
       ...(data.annual_report_summary ? [{ Section: "Annual Report", Date: data.annual_report_summary.filing_date, Source: data.annual_report_summary.source_pdf_url }] : []),

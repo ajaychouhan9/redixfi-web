@@ -18,7 +18,7 @@ import type { AskTopupTier } from "@/lib/api/types";
 // drift apart the same way this project's numeric configs repeatedly
 // have.
 export const BASIC_FEATURES = [
-  "All 2,000+ NSE stocks' measured Conditions Readings — full data, no masking",
+  "All 2,000+ NSE stocks' measured Stock Conditions — full data, no masking",
   "Unlimited Research Pro company lookups",
   "Same-day news (no 24h delay)",
   "Watchlist alerts: signal changes, event risk, market-wide events",
@@ -26,12 +26,12 @@ export const BASIC_FEATURES = [
   "Ask-RedixFi AI: 10 questions/day",
   "Compare up to 2 stocks side by side",
   "Company report PDF: 3 different stocks a month",
-  "History Explorer: custom filters for one stock or a sector",
+  "Market Rewind: custom filters for one stock or a sector",
   "View-only signal table — ask Ask-RedixFi to filter or sort for you",
 ];
 
 export const PRO_FEATURES = [
-  "All 2,000+ NSE stocks' measured Conditions Readings — full data, no masking",
+  "All 2,000+ NSE stocks' measured Stock Conditions — full data, no masking",
   "Unlimited Research Pro company lookups",
   "Same-day news (no 24h delay)",
   "Watchlist alerts: signal changes, event risk, market-wide events",
@@ -39,7 +39,7 @@ export const PRO_FEATURES = [
   "Ask-RedixFi AI: 25 questions/day",
   "Compare up to 10 stocks side by side",
   "Company report PDF: 15 different stocks a month",
-  "History Explorer: all stocks, similar volatility, saved filters and CSV",
+  "Market Rewind: all stocks, similar volatility, saved filters and CSV",
   "Full sort/filter/search + CSV export on the Signal Dashboard",
 ];
 

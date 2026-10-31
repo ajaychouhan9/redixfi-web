@@ -99,7 +99,7 @@ function ScoreLine({ rows }: { rows: ScoreHistoryRow[] }) {
           r="2.4" className="fill-accent" />
       </svg>
       <p className="sr-only">
-        Conditions Reading moved from {first.score} on {formatShortDate(first.date)} to {last.score} on{" "}
+        Stock Condition moved from {first.score} on {formatShortDate(first.date)} to {last.score} on{" "}
         {formatShortDate(last.date)} over {points.length} stored sessions.
       </p>
     </div>
@@ -277,7 +277,7 @@ export function ScoreHistorySection({
               <div className="hidden sm:block">
                 <table className="w-full table-fixed border-collapse text-[11px]">
                   <caption className="sr-only">
-                    Stored per-session inputs and Conditions Reading, newest first.
+                    Stored per-session inputs and Stock Condition, newest first.
                   </caption>
                   <thead>
                     <tr className="text-left text-foreground-faint">

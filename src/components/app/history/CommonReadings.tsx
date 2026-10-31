@@ -19,6 +19,7 @@ import {
   COMMON_HOW_TITLE,
   COMMON_NEEDS_MOVE,
   COMMON_SUB,
+  COMMON_SUBLABEL,
   COMMON_TOO_FEW,
   COUNTS_TITLE,
 } from "@/lib/history-common-copy";
@@ -96,7 +97,7 @@ function RowTable({ rows }: { rows: CommonRow[] }) {
 }
 
 /**
- * "Common readings": a button under the result summary. `body` is the request the result came from (kept opaque here), `days` the
+ * "Chance Check": a button under the result summary. `body` is the request the result came from (kept opaque here), `days` the
  * number of days found with the chosen move, `moveAny` true when no move size was chosen.
  */
 export function CommonReadings({ mode, body, days, moveAny }: { mode: "stockwise" | "pooled"; body: Record<string, unknown>; days: number; moveAny: boolean }) {
@@ -141,6 +142,7 @@ export function CommonReadings({ mode, body, days, moveAny }: { mode: "stockwise
           {!busy && (open && res ? <ChevronUp className="ml-1.5 inline h-4 w-4 align-[-3px]" aria-hidden /> : <ChevronDown className="ml-1.5 inline h-4 w-4 align-[-3px]" aria-hidden />)}
         </button>
         <p id="common-sub" className="min-w-0 flex-1 text-sm text-foreground-muted sm:text-xs">
+          <span className="mb-0.5 block text-[11px] font-semibold uppercase tracking-wide text-foreground-faint">{COMMON_SUBLABEL}</span>
           {COMMON_SUB}
         </p>
       </div>

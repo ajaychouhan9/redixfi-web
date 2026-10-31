@@ -1,10 +1,11 @@
-/** Fixed wording of Common readings. Counts of past days and shares of past days only. */
+/** Fixed wording of Chance Check. Counts of past days and shares of past days only. */
 
-export const COMMON_BUTTON = "Common readings";
+export const COMMON_BUTTON = "Chance Check";
+export const COMMON_SUBLABEL = "Base-rate comparison";
 export const COMMON_SUB = "What these days had in common, checked against chance. Not a forecast or a recommendation.";
 export const COMMON_TOO_FEW = "Fewer than 30 days. Not enough for a comparison.";
 export const COMMON_NEEDS_MOVE = "Choose a move size to compare. With any size every day qualifies.";
-export const COMMON_ERROR = "Common readings could not be loaded. Please try again.";
+export const COMMON_ERROR = "Chance Check could not be loaded. Please try again.";
 export const COMMON_HOW_TITLE = "How this is checked";
 export const COMMON_HOW = [
   "Only sessions before the move are looked at (the sessions you selected before the day, and at least -1 and -2). The day of the move and later sessions contain the move itself, so they are never used.",

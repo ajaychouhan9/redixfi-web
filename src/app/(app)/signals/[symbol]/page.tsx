@@ -13,8 +13,8 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
   const { symbol: raw } = await params;
   const symbol = stockSymbolFromParam(raw) ?? raw.toUpperCase();
   return {
-    title: `${symbol} Conditions Reading`,
-    description: `Measured Conditions Reading, trend, delivery, sector standing and options positioning for ${symbol} — factual, not a prediction.`,
+    title: `${symbol} Stock Condition`,
+    description: `Measured Stock Condition, trend, delivery, sector standing and options positioning for ${symbol} — factual, not a prediction.`,
     alternates: { canonical: stockPath("/signals", symbol) },
   };
 }

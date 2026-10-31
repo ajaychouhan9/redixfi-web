@@ -30,7 +30,7 @@ const SORT_OPTIONS = [
   { value: "abs_delta_1d", label: "Biggest reading change (up or down)" },
   { value: "name", label: "Name (A–Z)" },
   { value: "market_cap", label: "Market cap" },
-  { value: "composite_score", label: "Conditions Reading" },
+  { value: "composite_score", label: "Stock Condition" },
   { value: "delta_1d", label: "Reading change" },
   { value: "delivery_pct", label: "Delivery %" },
   { value: "sector_rank", label: "Sector rank" },
@@ -427,7 +427,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
       {!explorerControlsEnabled && (
         <p className="mb-3 rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-muted">
           Basic shows the full table, ordered by Symbol (A–Z). For a filtered or sorted view, ask Ask-RedixFi AI directly — e.g.
-          &quot;highest Conditions Reading today&quot; or &quot;IT sector stocks with high delivery&quot;.
+          &quot;highest Stock Condition today&quot; or &quot;IT sector stocks with high delivery&quot;.
         </p>
       )}
 

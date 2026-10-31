@@ -9,9 +9,9 @@ import { formatObservationDate } from "@/lib/format";
 import { stockPath } from "@/lib/seo/stock-symbol";
 
 export const metadata: Metadata = {
-  title: "Conditions Reading changes",
+  title: "Stock Condition changes",
   alternates: { canonical: "/signals/movers" },
-  description: "Today's largest Conditions Reading increases and decreases, reported symmetrically.",
+  description: "Today's largest Stock Condition increases and decreases, reported symmetrically.",
 };
 
 const CAUSE_LABEL: Record<string, string> = {

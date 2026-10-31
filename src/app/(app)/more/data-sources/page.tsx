@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 const SOURCES = [
   { name: "Price & volume history", cadence: "Daily, after market close", detail: "NSE/BSE exchange candle data." },
   { name: "Delivery percentage", cadence: "Daily", detail: "Exchange delivery-vs-volume data per stock." },
-  { name: "Conditions Readings", cadence: "Daily, ~16:30 IST", detail: "Computed after market close from the day's measured signals." },
+  { name: "Stock Conditions", cadence: "Daily, ~16:30 IST", detail: "Computed after market close from the day's measured signals." },
   { name: "FII / DII flow", cadence: "Daily", detail: "Institutional net-flow figures." },
   { name: "Options positioning (PCR)", cadence: "Intraday snapshots", detail: "Put-call ratio and open interest by expiry." },
   { name: "Promoter pledge", cadence: "Quarterly", detail: "NSE pledge disclosures." },

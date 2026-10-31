@@ -11,7 +11,7 @@ import type { AlertMetric, AlertRule, AlertRulesList } from "@/lib/api/types";
 
 const METRIC_LABELS: Record<AlertMetric, string> = {
   price: "Price",
-  score: "Conditions Reading",
+  score: "Stock Condition",
   delivery: "Delivery %",
   volume: "Volume ratio (5d)",
 };
@@ -87,7 +87,7 @@ export function AlertRulesSection() {
       }
     >
       <p className="mb-3 text-xs text-foreground-muted">
-        Get notified when a stock&apos;s price, Conditions Reading, delivery %, or volume ratio crosses a threshold you
+        Get notified when a stock&apos;s price, Stock Condition, delivery %, or volume ratio crosses a threshold you
         set. An alert fires once per crossing, then re-arms once the value crosses back the other way.
       </p>
 

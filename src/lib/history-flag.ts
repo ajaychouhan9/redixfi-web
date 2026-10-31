@@ -7,7 +7,7 @@ import { apiGet } from "@/lib/api/client";
 let cached: boolean | null = null;
 let inflight: Promise<boolean> | null = null;
 
-/** The History Explorer feature flag from GET /config/public (one API setting hides the page, the More item and the links). Off until the API says on. */
+/** The Market Rewind feature flag from GET /config/public (one API setting hides the page, the More item and the links). Off until the API says on. */
 export async function fetchHistoryEnabled(): Promise<boolean> {
   if (cached !== null) return cached;
   if (!inflight) {
