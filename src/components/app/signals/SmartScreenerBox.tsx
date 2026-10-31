@@ -18,6 +18,7 @@ import {
 } from "@/lib/comparison-queue";
 import type { SmartScreenResult } from "@/lib/api/types";
 import { hasAnyFilter, hasOnlyUnsupported, toFilterPatch, type SmartFilterPatch } from "./smartFilterPatch";
+import { ConditionLabel } from "@/components/ui/ConditionLabel";
 
 // Used only for the Basic-tier legacy AI result view. Free/Pro apply the
 // parsed filters to the one main table below instead of rendering a second one.
@@ -262,7 +263,7 @@ export function SmartScreenerBox({ onApplyFilters }: { onApplyFilters?: (patch: 
                       <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wide text-foreground-faint">
                         <th className="px-3 py-2">Symbol</th>
                         <th className="px-3 py-2">Sector</th>
-                        <th className="px-3 py-2">Stock Condition</th>
+                        <th className="px-3 py-2"><ConditionLabel /></th>
                         <th className="px-3 py-2">Delivery</th>
                         <th className="px-3 py-2">Signals</th>
                         <th className="px-3 py-2" />

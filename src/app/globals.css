@@ -37,9 +37,11 @@
 
   --accent: #b8873a;
   --accent-dim: #96702e;
-  --accent-foreground: #ffffff;
+  /* Contrast fix (31 Oct 2026, Lighthouse color-contrast): white on #b8873a measured 3.19:1; the dark text the dark theme already uses measures 5.76:1. */
+  --accent-foreground: #1a1305;
 
-  --up: #1c9a63;
+  /* was #1c9a63 (3.59:1 on white); #157a50 measures 5.34:1 and stays clearly green */
+  --up: #157a50;
   --up-bg: rgba(28, 154, 99, 0.08);
   --down: #d63e30;
   --down-bg: rgba(214, 62, 48, 0.1);

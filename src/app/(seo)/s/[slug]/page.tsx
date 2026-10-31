@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSharedScreen, getSignals } from "@/lib/api/endpoints";
 import { DeltaValue } from "@/components/ui/DeltaValue";
+import { ConditionLabel } from "@/components/ui/ConditionLabel";
 
 // Public, unauthenticated view of a "Share this screen" link
 // (2026-09-11 task). NOT ISR-cached like the canned /screens/[slug] pages
@@ -81,7 +82,7 @@ export default async function SharedScreenPage({ params }: { params: Promise<{ s
             <tr>
               <th className="px-3 py-2">Symbol</th>
               <th className="px-3 py-2">Sector</th>
-              <th className="px-3 py-2">Stock Condition</th>
+              <th className="px-3 py-2"><ConditionLabel /></th>
               <th className="px-3 py-2">Change</th>
               <th className="px-3 py-2">Delivery</th>
             </tr>

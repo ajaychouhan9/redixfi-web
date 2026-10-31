@@ -29,6 +29,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { formatShortDate, formatTimeIst, hasBarTime, isClosingBar } from "@/lib/format";
 import { isTradeForTrade } from "@/lib/stock-clarity";
 import type { CorporateActionNote, ScoreHistoryResponse, ScoreHistoryRow, ScoreHistoryTodayRow } from "@/lib/api/types";
+import { ConditionLabel } from "@/components/ui/ConditionLabel";
 
 /**
  * Link target for "How is this score calculated?".
@@ -286,7 +287,7 @@ export function ScoreHistorySection({
                       <th className="w-[74px] py-1 font-medium">Delivery</th>
                       <th className="w-[48px] py-1 font-medium">Vol</th>
                       <th className="py-1 font-medium">Inputs</th>
-                      <th className="py-1 pl-2 text-right font-medium">Stock Condition</th>
+                      <th className="py-1 pl-2 text-right font-medium"><ConditionLabel /></th>
                       <th className="w-[54px] py-1 pr-2 text-right font-medium">Δ</th>
                       <th className="w-[132px] py-1 pl-1 font-medium">Main reasons</th>
                     </tr>

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getCannedScreen } from "@/data/canned-screens";
 import { getSignals } from "@/lib/api/endpoints";
 import { DeltaValue } from "@/components/ui/DeltaValue";
+import { ConditionLabel } from "@/components/ui/ConditionLabel";
 
 export const revalidate = 120;
 
@@ -67,7 +68,7 @@ export default async function ScreenPage({ params }: { params: Promise<{ slug: s
             <tr>
               <th className="px-3 py-2">Symbol</th>
               <th className="px-3 py-2">Sector</th>
-              <th className="px-3 py-2">Stock Condition</th>
+              <th className="px-3 py-2"><ConditionLabel /></th>
               <th className="px-3 py-2">Change</th>
               <th className="px-3 py-2">Delivery</th>
             </tr>

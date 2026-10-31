@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import type { MoverRow } from "@/lib/api/types";
 import { formatObservationDate } from "@/lib/format";
 import { stockPath } from "@/lib/seo/stock-symbol";
+import { retryTransientPublicGet } from "@/lib/api/retry-public-upstream";
 
 export const metadata: Metadata = {
   title: "Stock Condition changes",
@@ -47,8 +48,14 @@ function MoverList({ rows }: { rows: MoverRow[] }) {
   );
 }
 
+// 31 Oct 2026: served from a one-minute cache; the fetch below carries `revalidate` so a burst of requests or a short API outage does not 500.
+export const revalidate = 60;
+
 export default async function SignalMoversPage() {
-  const env = await getSignalMovers(undefined, 20);
+  const env = await retryTransientPublicGet(
+    () => getSignalMovers(undefined, 20, { revalidate: 60 }),
+    () => getSignalMovers(undefined, 20, { revalidate: 60, timeoutMs: 10_000 }),
+  );
   const movers = env.data;
   // Sep 2026 fix: same real observation date TopSignalChangesCard now
   // shows on the Home card — this detail page must match it, not imply a
@@ -60,10 +67,10 @@ export default async function SignalMoversPage() {
       <h1 className="mb-1 text-xl font-semibold">Signal Movers</h1>
       {observedOn && <p className="mb-4 text-sm text-foreground-muted">As of {observedOn}</p>}
       <div className="grid gap-4 sm:grid-cols-2">
-        <Card title="Largest reading increases">
+        <Card title="Largest Stock Condition increases">
           <MoverList rows={movers.up} />
         </Card>
-        <Card title="Largest reading decreases">
+        <Card title="Largest Stock Condition decreases">
           <MoverList rows={movers.down} />
         </Card>
       </div>

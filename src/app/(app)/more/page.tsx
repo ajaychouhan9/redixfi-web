@@ -6,7 +6,7 @@ import { InstallRow } from "@/components/app/pwa/InstallRow";
 import { HistoryMoreRow } from "@/components/app/history/HistoryLinks";
 import { MOVED_TO_MORE } from "@/lib/nav-config";
 
-export const metadata: Metadata = { title: "More" };
+export const metadata: Metadata = { title: "More", alternates: { canonical: "/more" } };
 
 const LINKS = [
   // First item: the one the phone bottom bar leaves out (NAV_MOBILE_LAYOUT A: Research, B: Intraday).

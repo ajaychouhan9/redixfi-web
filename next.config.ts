@@ -18,6 +18,8 @@ const nextConfig: NextConfig = {
       // History Explorer became Market Rewind (31 Oct 2026): the old address and every variant go to the new one, permanently, in one hop.
       { source: "/history", destination: "/rewind", statusCode: 301 },
       { source: "/history/:path*", destination: "/rewind", statusCode: 301 },
+      // "/about" is a guessable address; the page is About & Contact.
+      { source: "/about", destination: "/more/about-us", statusCode: 301 },
       // A company that changed its name got a new NSE symbol: old links go to the new one.
       ...renamedSymbolRedirects(),
     ];

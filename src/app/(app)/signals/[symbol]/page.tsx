@@ -9,6 +9,11 @@ import { Week52Range } from "@/components/app/signals/Week52Range";
 import { retryTransientPublicGet } from "@/lib/api/retry-public-upstream";
 import { stockPath, stockSymbolFromParam } from "@/lib/seo/stock-symbol";
 
+// 31 Oct 2026: the page is rendered once a minute and then served from the cache (like /research/[symbol]), so a crawler or a burst of
+// visitors does not hit the API for every request and a brief API outage serves the last good page instead of a 500. Every fetch below
+// is anonymous and carries `revalidate`, which is what keeps the route cacheable.
+export const revalidate = 60;
+
 export async function generateMetadata({ params }: { params: Promise<{ symbol: string }> }): Promise<Metadata> {
   const { symbol: raw } = await params;
   const symbol = stockSymbolFromParam(raw) ?? raw.toUpperCase();
@@ -32,8 +37,8 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
     // true for a real logged-in entitled user. See that component and
     // the comment just below.
     detail = (await retryTransientPublicGet(
-      () => getSignalDetail(symbol),
-      () => getSignalDetail(symbol, 6, { timeoutMs: 10_000 }),
+      () => getSignalDetail(symbol, 6, { revalidate: 60 }),
+      () => getSignalDetail(symbol, 6, { timeoutMs: 10_000, revalidate: 60 }),
     )).data;
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) notFound();
@@ -103,8 +108,8 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
   // not fixed here — no client-side "correction" for metering exists yet
   // anywhere in the app, unlike the masking-correction pattern above.
   const [chartR, deliveryR] = await Promise.allSettled([
-    getChart(symbol, { interval: "1d" }),
-    getResearch(symbol),
+    getChart(symbol, { interval: "1d" }, { revalidate: 60 }),
+    getResearch(symbol, { revalidate: 60 }),
   ]);
   const candles = chartR.status === "fulfilled" ? chartR.value.data.candles : [];
   const delivery30d = deliveryR.status === "fulfilled" ? deliveryR.value.data.delivery_30d : undefined;

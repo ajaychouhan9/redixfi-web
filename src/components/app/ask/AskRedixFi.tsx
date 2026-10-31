@@ -39,6 +39,7 @@ import type {
   AskUsageInfo,
   ResearchSearchRow,
 } from "@/lib/api/types";
+import { ConditionLabel } from "@/components/ui/ConditionLabel";
 
 const GROUP_LABELS: Record<string, string> = {
   Recent: "Recent (last 12 months)",
@@ -943,7 +944,7 @@ export function AskRedixFi() {
                               <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wide text-foreground-faint">
                                 <th className="px-3 py-2">Symbol</th>
                                 <th className="px-3 py-2">Sector</th>
-                                <th className="px-3 py-2">Stock Condition</th>
+                                <th className="px-3 py-2"><ConditionLabel /></th>
                                 <th className="px-3 py-2">Delivery</th>
                                 <th className="px-3 py-2">Signals</th>
                                 <th className="px-3 py-2" />

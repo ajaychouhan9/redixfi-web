@@ -107,7 +107,18 @@ export function CommonReadings({ mode, body, days, moveAny }: { mode: "stockwise
   const [err, setErr] = useState<string | null>(null);
   const [how, setHow] = useState(false);
   const [open, setOpen] = useState(false);
+  const [secs, setSecs] = useState(0);
   const key = JSON.stringify(body);
+
+  // progress text while a first-time filter is computed (a repeat of the same filter is answered from the server's cache)
+  useEffect(() => {
+    if (!busy) {
+      setSecs(0);
+      return;
+    }
+    const t = setInterval(() => setSecs((x) => x + 0.5), 500);
+    return () => clearInterval(t);
+  }, [busy]);
 
   useEffect(() => {
     setRes(null);
@@ -151,7 +162,20 @@ export function CommonReadings({ mode, body, days, moveAny }: { mode: "stockwise
           {blocked}
         </p>
       )}
-      {busy && <Skeleton lines={4} />}
+      {busy && (
+        <div data-testid="common-progress">
+          <p role="status" aria-live="polite" className="mb-2 text-sm text-foreground-muted">
+            {secs < 1.5
+              ? "Step 1 of 3: counting the days that match your filter…"
+              : secs < 3.5
+                ? "Step 2 of 3: comparing each reading with all days…"
+                : secs < 8
+                  ? "Step 3 of 3: testing which differences are larger than ordinary day-to-day variation…"
+                  : "Still working. A new filter can take a little longer the first time; the same filter is quick afterwards."}
+          </p>
+          <Skeleton lines={4} />
+        </div>
+      )}
       {err && <ErrorState message={err} onRetry={load} />}
       {open && res && res.status !== "ok" && <p className="text-sm text-foreground-muted">{res.message}</p>}
       {open && res && res.status === "ok" && res.rows && (
