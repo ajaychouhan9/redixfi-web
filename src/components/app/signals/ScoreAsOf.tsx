@@ -12,11 +12,11 @@ import { useMarketState } from "@/lib/market/useMarketState";
 export function ScoreAsOf({ scoreDate, className = "mt-1 text-[11px] text-foreground-faint" }: { scoreDate: string | null | undefined; className?: string }) {
   const state = useMarketState();
   const date = formatObservationDate(scoreDate);
-  if (!date) return <p className={className}>Reading date unavailable</p>;
+  if (!date) return <p className={className}>Stock Condition date unavailable</p>;
   const pending = !!state && state.score_updates_after_close && scoreDate!.slice(0, 10) < state.today;
   return (
     <p className={className}>
-      Reading as of {date} close{pending ? " · updates after today’s close" : ""}
+      Stock Condition as of {date} close{pending ? " · updates after today’s close" : ""}
     </p>
   );
 }

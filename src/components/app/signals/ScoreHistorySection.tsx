@@ -236,7 +236,7 @@ export function ScoreHistorySection({
         className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
       >
         <span className="min-w-0">
-          <span className="block text-sm font-semibold text-foreground">Reading history</span>
+          <span className="block text-sm font-semibold text-foreground">Stock Condition history</span>
           <span className="block text-[11px] text-foreground-faint">
             {data?.blocked ? "Not shown — corporate action in progress" : data ? `${data.available} stored session${data.available === 1 ? "" : "s"}` : `Last ${sessions || 5}–10 sessions`}
             {" · "}inputs and reading change
@@ -261,7 +261,7 @@ export function ScoreHistorySection({
 
           {data && !data.blocked && data.locked && (
             <p className="text-xs text-foreground-muted">
-              Reading history is available on the full stock page for this symbol.
+              Stock Condition history is available on the full stock page for this symbol.
             </p>
           )}
 
@@ -286,7 +286,7 @@ export function ScoreHistorySection({
                       <th className="w-[74px] py-1 font-medium">Delivery</th>
                       <th className="w-[48px] py-1 font-medium">Vol</th>
                       <th className="py-1 font-medium">Inputs</th>
-                      <th className="w-[42px] py-1 text-right font-medium">Reading</th>
+                      <th className="py-1 pl-2 text-right font-medium">Stock Condition</th>
                       <th className="w-[54px] py-1 pr-2 text-right font-medium">Δ</th>
                       <th className="w-[132px] py-1 pl-1 font-medium">Main reasons</th>
                     </tr>

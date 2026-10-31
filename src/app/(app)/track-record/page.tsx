@@ -108,7 +108,7 @@ export default async function TrackRecordPage() {
         </p>
       </Card>
 
-      <Card title="Reading-band study">
+      <Card title="Stock Condition band study">
         {!snapshot ? (
           <p className="text-sm text-foreground-muted">
             This study has not been published yet — check back once the weekly track-record build has run.
@@ -142,7 +142,7 @@ export default async function TrackRecordPage() {
               <table className="w-full min-w-[520px] text-sm">
                 <thead className="bg-surface text-left text-xs font-semibold uppercase tracking-wide text-foreground-faint">
                   <tr>
-                    <th className="px-3 py-2">Reading range</th>
+                    <th className="px-3 py-2">Stock Condition range</th>
                     <th className="px-3 py-2">Beat sector median</th>
                     <th className="px-3 py-2">Avg relative return</th>
                     <th className="px-3 py-2">Note</th>

@@ -33,9 +33,9 @@ export function filterChips(result: { parsed_filters: SmartScreenResult["parsed_
   if (!f) return [];
   const chips: string[] = [];
   if (f.sector) chips.push(`Sector: ${f.sector}`);
-  if (f.score_min !== null) chips.push(`Reading ≥ ${f.score_min}`);
-  if (f.score_max !== null) chips.push(`Reading ≤ ${f.score_max}`);
-  if (f.delta_1d_min !== null) chips.push(`Reading change ≥ ${f.delta_1d_min}`);
+  if (f.score_min !== null) chips.push(`Stock Condition ≥ ${f.score_min}`);
+  if (f.score_max !== null) chips.push(`Stock Condition ≤ ${f.score_max}`);
+  if (f.delta_1d_min !== null) chips.push(`Stock Condition change ≥ ${f.delta_1d_min}`);
   if (f.delivery_state) chips.push(`Delivery: ${f.delivery_state.replace(/_/g, " ")}`);
   if (f.vwap_side) chips.push(`VWAP side: ${f.vwap_side}`);
   if (f.volume_ratio_min !== null) chips.push(`Volume ≥ ${f.volume_ratio_min}× 20d avg`);
@@ -262,7 +262,7 @@ export function SmartScreenerBox({ onApplyFilters }: { onApplyFilters?: (patch: 
                       <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wide text-foreground-faint">
                         <th className="px-3 py-2">Symbol</th>
                         <th className="px-3 py-2">Sector</th>
-                        <th className="px-3 py-2">Reading</th>
+                        <th className="px-3 py-2">Stock Condition</th>
                         <th className="px-3 py-2">Delivery</th>
                         <th className="px-3 py-2">Signals</th>
                         <th className="px-3 py-2" />

@@ -11,7 +11,7 @@ export function ListSessionNote() {
   if (!state || !date) return null;
   return (
     <p className="mb-2 text-[11px] leading-snug text-foreground-faint">
-      <span className="font-medium text-foreground-muted">Reading: {date} close</span>
+      <span className="font-medium text-foreground-muted">Stock Condition: {date} close</span>
       {state.score_updates_after_close ? " · updates after today’s close" : ""}.{" "}
       <span className="font-medium text-foreground-muted">
         Price: {state.state === "live" ? "Live" : state.phase === "post_market" ? "Today\u2019s close" : "last close"}

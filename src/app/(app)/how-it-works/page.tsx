@@ -97,7 +97,7 @@ const FAQ = [
   },
   {
     q: "Where can I see previous readings?",
-    a: "On a stock page, under Reading history. Free shows the last 3 sessions, Basic 5 and Pro 10.",
+    a: "On a stock page, under Stock Condition history. Free shows the last 3 sessions, Basic 5 and Pro 10.",
   },
   {
     q: "Is volatility part of the reading?",
@@ -174,7 +174,7 @@ export default function HowItWorksPage() {
         </p>
         <ul className="mt-2 space-y-2 text-sm text-foreground-muted">
           <li>
-            <span className="font-medium text-foreground">Reading history</span> shows one row per stored
+            <span className="font-medium text-foreground">Stock Condition history</span> shows one row per stored
             session: the inputs, the reading, the change, direction chips and a plain-words reason line. It
             shows what moved, not how many points each input contributed.
           </li>

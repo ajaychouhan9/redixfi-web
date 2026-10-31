@@ -174,7 +174,7 @@ export function buildSignalSummaryRows(detail: SignalDetail, fundamentals?: Fund
     { kind: "title", cells: ["RedixFi — Market. Simplified."] , merge: [0, 3] },
     { kind: "subtitle", cells: [`${detail.symbol} — Signal Summary`], merge: [0, 3] },
     { kind: "metadata", cells: ["Date", detail.date, "Stock Condition", detail.composite_score] },
-    { kind: "metadata", cells: ["Industry / Sector", `${detail.industry ?? "Not available"} / ${detail.sector}`, "Reading Change", detail.delta_1d] },
+    { kind: "metadata", cells: ["Industry / Sector", `${detail.industry ?? "Not available"} / ${detail.sector}`, "Stock Condition change", detail.delta_1d] },
     { kind: "blank" },
   );
 

@@ -299,7 +299,7 @@ export function SignalMobileRow({ row }: { row: SignalRow }) {
         ) : row.composite_score === null ? (
           <span className="text-foreground-faint">—</span>
         ) : (
-          <span className="rounded-md bg-neutral-bg px-2 py-0.5 font-mono text-sm font-semibold" aria-label={`Reading ${row.composite_score}`}>
+          <span className="rounded-md bg-neutral-bg px-2 py-0.5 font-mono text-sm font-semibold" aria-label={`Stock Condition ${row.composite_score}`}>
             {row.composite_score}
           </span>
         )}

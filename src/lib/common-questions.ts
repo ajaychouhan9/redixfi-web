@@ -39,7 +39,7 @@ export const COMMON_QUESTION_GROUPS: CommonQuestionGroup[] = [
     ]
   },
   {
-    "topic": "Reading change (1 day)",
+    "topic": "Stock Condition change (1 day)",
     "items": [
       {
         "id": "delta_1d_q1",

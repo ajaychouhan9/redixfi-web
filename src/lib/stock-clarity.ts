@@ -61,7 +61,7 @@ export function quickReadParts(i: QuickReadInput): string[] {
   const changes: string[] = [];
   if (num(i.delta_1d)) changes.push(`${signed(i.delta_1d)} today`);
   if (num(i.delta_5d)) changes.push(`${signed(i.delta_5d)} over 5 sessions`);
-  parts.push(`Reading ${i.composite_score}${changes.length ? ` (${changes.join(", ")})` : ""}`);
+  parts.push(`Stock Condition ${i.composite_score}${changes.length ? ` (${changes.join(", ")})` : ""}`);
 
   if (num(i.delivery_pct) && num(i.delivery_avg20)) {
     parts.push(`Delivery ${i.delivery_pct}% vs ${i.delivery_avg20}% 20-day avg`);

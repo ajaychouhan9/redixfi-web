@@ -17,7 +17,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const sp = await searchParams;
   const filtered = Object.keys(sp ?? {}).length > 0;
   return {
-    title: HISTORY_SEO_TITLE,
+    title: { absolute: HISTORY_SEO_TITLE },
     description: HISTORY_SEO_DESCRIPTION,
     alternates: { canonical: "/rewind" },
     robots: filtered ? { index: false, follow: false } : { index: true, follow: true },

@@ -31,7 +31,7 @@ const SORT_OPTIONS = [
   { value: "name", label: "Name (A–Z)" },
   { value: "market_cap", label: "Market cap" },
   { value: "composite_score", label: "Stock Condition" },
-  { value: "delta_1d", label: "Reading change" },
+  { value: "delta_1d", label: "Stock Condition change" },
   { value: "delivery_pct", label: "Delivery %" },
   { value: "sector_rank", label: "Sector rank" },
   { value: "volume_ratio", label: "Volume ratio" },
@@ -403,8 +403,8 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   if (q) activeFilters.push({ key: "q", text: `Search: ${q}`, clear: () => setQ("") });
   if (sector) activeFilters.push({ key: "sector", text: `Sector: ${sector}`, clear: () => setSector("") });
   if (industry) activeFilters.push({ key: "industry", text: `Industry: ${industry}`, clear: () => setIndustry("") });
-  if (scoreMin) activeFilters.push({ key: "smin", text: `Reading ≥ ${scoreMin}`, clear: () => setScoreMin("") });
-  if (scoreMax) activeFilters.push({ key: "smax", text: `Reading ≤ ${scoreMax}`, clear: () => setScoreMax("") });
+  if (scoreMin) activeFilters.push({ key: "smin", text: `Stock Condition ≥ ${scoreMin}`, clear: () => setScoreMin("") });
+  if (scoreMax) activeFilters.push({ key: "smax", text: `Stock Condition ≤ ${scoreMax}`, clear: () => setScoreMax("") });
   if (from52Max !== undefined) activeFilters.push({ key: "f52", text: `From 52-week high ≤ ${from52Max}%`, clear: () => { setFrom52Preset(""); setFrom52Custom(""); } });
   if (asNumber(from52Min) !== undefined) activeFilters.push({ key: "f52min", text: `From 52-week high ≥ ${from52Min}%`, clear: () => setFrom52Min("") });
   if (volatilityBand) {
@@ -415,7 +415,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   }
   if (volumeMin) activeFilters.push({ key: "volmin", text: `Volume ≥ ${volumeMin}× 20d avg`, clear: () => setVolumeMin("") });
   if (deliveryState) activeFilters.push({ key: "delivery", text: `Delivery: ${deliveryState.replace("_", " ")}`, clear: () => setDeliveryState("") });
-  if (deltaMin) activeFilters.push({ key: "delta", text: `Reading change ≥ ${deltaMin}`, clear: () => setDeltaMin("") });
+  if (deltaMin) activeFilters.push({ key: "delta", text: `Stock Condition change ≥ ${deltaMin}`, clear: () => setDeltaMin("") });
   if (dmaState) activeFilters.push({ key: "dma", text: `DMA: ${dmaState.replace("_", " ")}`, clear: () => setDmaState("") });
   if (pcrBand) activeFilters.push({ key: "pcr", text: `PCR: ${pcrBand}`, clear: () => setPcrBand("") });
   if (anomalyOnly) activeFilters.push({ key: "anomaly", text: "Unusual activity", clear: () => setAnomalyOnly(false) });
@@ -513,7 +513,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
                   </select>
                 </label>
                 <label className={label}>
-                  Reading change ≥
+                  Stock Condition change ≥
                   <input value={deltaMin} onChange={(e) => setDeltaMin(e.target.value)} type="number" step="0.1" placeholder="e.g. 2" className={control} />
                 </label>
                 <label className={label}>
@@ -638,7 +638,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
                 <th className="px-4 py-3">Symbol</th>
                 {columns.sector && <th className="hidden px-3 py-3 md:table-cell">Sector</th>}
                 <th className="px-3 py-3">Price</th>
-                <th className="px-3 py-3">Reading</th>
+                <th className="px-3 py-3">Stock Condition</th>
                 {columns.delivery && <th className="hidden px-3 py-3 sm:table-cell">Delivery</th>}
                 {columns.volume && <th className="hidden px-3 py-3 sm:table-cell">Volume</th>}
                 {(columns.from52 || from52Max !== undefined) && (
