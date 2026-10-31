@@ -238,7 +238,7 @@ export function BottomNav() {
           <Link
             key={item.href}
             href={item.href}
-            className={clsx("relative flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 text-[12px] font-medium", active ? "text-accent" : "text-foreground-faint")}
+            className={clsx("relative flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 text-[12px] font-medium", active ? "text-accent-dim" : "text-foreground-faint")}
             aria-current={active ? "page" : undefined}
           >
             <item.icon size={19} strokeWidth={active ? 2.4 : 2} />
