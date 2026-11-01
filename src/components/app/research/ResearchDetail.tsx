@@ -2,6 +2,7 @@ import { SlowestInputNote } from "@/components/ui/SlowestInputNote";
 import { CorporateActionNote } from "@/components/ui/CorporateActionNote";
 import Link from "next/link";
 import { ScoreAsOf } from "@/components/app/signals/ScoreAsOf";
+import { ResearchConditionCard } from "@/components/app/research/ResearchConditionCard";
 import { READING_EXPLAINER, READING_NAME, conditionChangeText } from "@/lib/reading-copy";
 import type { ResearchDetail as ResearchDetailType, Candle, PeerRow } from "@/lib/api/types";
 import { Card } from "@/components/ui/Card";
@@ -139,21 +140,7 @@ export function ResearchDetail({
             so it was deliberately left out rather than fabricated. The
             fuller "Signal summary" card lower on this page (narrative +
             link to the full Signal Dashboard) is unchanged. */}
-        {data.signal_summary.composite_score !== null && (
-          <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface-raised px-3 py-2">
-            <span className="text-lg font-semibold text-foreground">
-              <span className="mr-2 text-sm font-medium text-foreground-muted">{READING_NAME}:</span>
-              {data.signal_summary.composite_score} out of 100
-            </span>
-            {conditionChangeText(data.signal_summary.delta_1d) && <span className="text-sm text-foreground-muted">({conditionChangeText(data.signal_summary.delta_1d)})</span>}
-            <p className="w-full text-[11px] text-foreground-faint" data-testid="reading-explainer">{READING_EXPLAINER}</p>
-            <ScoreAsOf className="w-full text-[11px] text-foreground-faint" scoreDate={data.signal_summary.data_as_of?.data_as_of} />
-            <div className="w-full -mt-2"><SlowestInputNote input={data.signal_summary.slowest_input} /></div>
-            <Link href={stockPath("/signals", data.symbol)} className="ml-auto text-xs font-medium text-accent">
-              Full signal detail →
-            </Link>
-          </div>
-        )}
+        <ResearchConditionCard symbol={data.symbol} initial={data.signal_summary} />
       </div>
 
       <ErrorBoundary>

@@ -6,6 +6,8 @@ import Link from "next/link";
 import { ConditionLabel } from "@/components/ui/ConditionLabel";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { Spark } from "@/components/app/review/Spark";
+import { useReviewData } from "@/components/app/review/ReviewData";
+import { ProLock } from "@/components/ui/ScValue";
 import { displayName } from "@/lib/company-name";
 import { formatNumber } from "@/lib/format";
 import { stockPath } from "@/lib/seo/stock-symbol";
@@ -29,10 +31,11 @@ function Links({ symbol }: { symbol: string }) {
 }
 
 function Condition({ r }: { r: ReviewRow }) {
+  if (r.sc_locked) return <ProLock />;
   if (r.sc_start === null && r.sc_end === null) return <span className="text-foreground-muted">-</span>;
   return (
-    <span className="tabular-nums text-foreground-muted">
-      {r.sc_start ?? "-"} <span aria-hidden>→</span>
+    <span className="-my-3 inline-flex min-h-[44px] items-center gap-1 tabular-nums text-foreground-muted">
+      {r.sc_start ?? "-"}<span aria-hidden>→</span>
       <span className="sr-only"> to </span> {r.sc_end ?? "-"}
     </span>
   );
@@ -143,7 +146,8 @@ function RowTable({ rows }: { rows: ReviewRow[] }) {
 }
 
 /** Block A: the biggest gains and the biggest falls over the window, for one universe at a time (all four are already in the page data). */
-export function ReviewLists({ review }: { review: SevenDayReview }) {
+export function ReviewLists({ review: initial }: { review: SevenDayReview }) {
+  const review = useReviewData(initial);
   const [universe, setUniverse] = useState<ReviewUniverse>("liquid");
   const [side, setSide] = useState<Side>("gains");
   const lists = review.lists![universe];

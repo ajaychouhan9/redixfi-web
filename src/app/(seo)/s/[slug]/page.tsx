@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ProLock } from "@/components/ui/ScValue";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSharedScreen, getSignals } from "@/lib/api/endpoints";
@@ -92,7 +93,7 @@ export default async function SharedScreenPage({ params }: { params: Promise<{ s
               <tr key={r.symbol} className="border-t border-border">
                 <td className="px-3 py-2 font-medium">{r.symbol}</td>
                 <td className="px-3 py-2 text-xs text-foreground-muted">{r.sector}</td>
-                <td className="px-3 py-2 tabular-nums">{r.composite_score ?? "—"}</td>
+                <td className="px-3 py-2 tabular-nums">{r.locked ? <ProLock className="justify-start" /> : (r.composite_score ?? "—")}</td>
                 <td className="px-3 py-2 tabular-nums">{r.delta_1d !== null ? <DeltaValue value={r.delta_1d} /> : "—"}</td>
                 <td className="px-3 py-2 tabular-nums text-xs">{r.delivery_pct !== null ? `${r.delivery_pct}%` : "—"}</td>
               </tr>

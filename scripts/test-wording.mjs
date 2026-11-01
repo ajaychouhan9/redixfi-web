@@ -220,6 +220,33 @@ const sm = readFileSync(join(ROOT, "app/sitemap.xml/route.ts"), "utf8");
 if (!sm.includes('"/signals/7-day-review"')) reviewHits.push("sitemap.xml/route.ts: /signals/7-day-review missing");
 if (!readFileSync(join(ROOT, "app/llms.txt/route.ts"), "utf8").includes("/signals/7-day-review")) reviewHits.push("llms.txt/route.ts: 7-Day Review missing");
 if (!readFileSync(join(ROOT, "app/(app)/signals/page.tsx"), "utf8").includes("ReviewTabs")) reviewHits.push("signals/page.tsx: Signals | 7-Day Review tabs missing");
+// 2026-11-01: ONE Stock Condition visibility rule. Every component that shows a Stock Condition number must draw the locked state with the shared
+// ProLock / ScValue (a small lock and "Pro", linked to the plans page), never its own blur or "Locked" text; the API already sends no number for those rows.
+const SC_COMPONENTS = [
+  "components/app/TopSignalChangesCard.tsx",
+  "components/app/signals/MoversLists.tsx",
+  "components/app/signals/SignalTableRow.tsx",
+  "components/app/intraday/tabs/StockList.tsx",
+  "components/app/review/ReviewLists.tsx",
+  "components/app/review/ScChanges.tsx",
+  "components/app/review/YourStocks.tsx",
+  "components/app/watchlist/WatchlistMainView.tsx",
+  "components/app/research/ResearchConditionCard.tsx",
+  "app/(seo)/s/[slug]/page.tsx",
+  "app/(seo)/screens/[slug]/page.tsx",
+];
+const scHits = [];
+for (const rel of SC_COMPONENTS) {
+  if (!readFileSync(join(ROOT, rel), "utf8").includes("@/components/ui/ScValue")) scHits.push(`${rel}: must use ProLock / ScValue for a locked Stock Condition`);
+}
+const scValue = readFileSync(join(ROOT, "components/ui/ScValue.tsx"), "utf8");
+for (const need of ['href="/pricing"', "min-h-[44px]", "<Lock", "Pro"]) {
+  if (!scValue.includes(need)) scHits.push(`components/ui/ScValue.tsx: required piece missing: ${need}`);
+}
+if (scHits.length) {
+  console.error("Stock Condition visibility problem:" + String.fromCharCode(10) + scHits.join(String.fromCharCode(10)));
+  process.exit(1);
+}
 // 2026-11-01: Intraday tabs (Morning | Scan | Recap). Descriptive wording only: the largest gaps before the open, the largest moves so far, how the day
 // ended. No trade-call words, and the Recap never counts how many listed stocks went which way. The two fixed sentences are required on every tab.
 const INTRADAY_FILES = [

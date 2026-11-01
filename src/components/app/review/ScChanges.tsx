@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 
 import { displayName } from "@/lib/company-name";
 import { stockPath } from "@/lib/seo/stock-symbol";
+import { ProLock } from "@/components/ui/ScValue";
+import { useReviewData } from "@/components/app/review/ReviewData";
 import type { ReviewScRow, SevenDayReview } from "@/lib/api/types";
 
 function List({ title, rows, id }: { title: string; rows: ReviewScRow[]; id: string }) {
@@ -19,9 +23,13 @@ function List({ title, rows, id }: { title: string; rows: ReviewScRow[]; id: str
                   <span className="block truncate font-medium">{displayName(r.name) || r.symbol}</span>
                   <span className="block text-xs text-foreground-muted">{r.symbol}</span>
                 </span>
-                <span className="shrink-0 text-right tabular-nums text-foreground-muted">
-                  was {r.sc_start}, now {r.sc_end}
-                </span>
+                {r.sc_locked ? (
+                  <ProLock />
+                ) : (
+                  <span className="shrink-0 text-right tabular-nums text-foreground-muted">
+                    was {r.sc_start}, now {r.sc_end}
+                  </span>
+                )}
               </Link>
             </li>
           ))}
@@ -32,7 +40,8 @@ function List({ title, rows, id }: { title: string; rows: ReviewScRow[]; id: str
 }
 
 /** Block D: the biggest changes in Stock Condition between the start and the end of the window. Numbers only, in a neutral colour. */
-export function ScChanges({ review }: { review: SevenDayReview }) {
+export function ScChanges({ review: initial }: { review: SevenDayReview }) {
+  const review = useReviewData(initial);
   const sc = review.sc_changes!;
   return (
     <div data-testid="review-block-d">

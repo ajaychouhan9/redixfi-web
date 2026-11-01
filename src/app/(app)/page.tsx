@@ -30,6 +30,7 @@ export const metadata: Metadata = { alternates: { canonical: "/" } };
 export default async function HomePage() {
   const [overviewR, moversR, briefR, sessionR, anomaliesR, newsR, plansR, marketActivityR, marketStateR, liveTodayR] = await Promise.allSettled([
     getMarketOverview(),
+    // @auth-ok: SSR, anonymous (Stock Condition locked outside the free sample); TopSignalChangesCard asks again with the token of a signed-in visitor.
     getSignalMovers(undefined, 3),
     getLatestBrief(),
     getIntradaySession(),

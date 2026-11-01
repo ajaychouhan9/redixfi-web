@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { ConditionLabel } from "@/components/ui/ConditionLabel";
 import { DeltaValue } from "@/components/ui/DeltaValue";
-import { LockedInline } from "@/components/ui/Locked";
+import { ScValue } from "@/components/ui/ScValue";
 import { Spark } from "@/components/app/review/Spark";
 import { displayName } from "@/lib/company-name";
 import { formatNumber } from "@/lib/format";
@@ -30,14 +30,7 @@ export function Pct({ v }: { v: number | null | undefined }) {
 
 /** Stock Condition cell: the number, or the usual lock for anonymous and free callers (prices and changes stay public). */
 export function Condition({ sc, locked }: { sc: number | null; locked?: boolean }) {
-  if (locked) {
-    return (
-      <LockedInline title="Stock Condition is shown on the Pro plan">
-        <span className="font-mono">00</span>
-      </LockedInline>
-    );
-  }
-  return <span className="tabular-nums text-foreground-muted">{sc === null ? "-" : sc}</span>;
+  return <ScValue value={sc} locked={locked} className="text-foreground-muted" />;
 }
 
 export const conditionHeader = <ConditionLabel />;

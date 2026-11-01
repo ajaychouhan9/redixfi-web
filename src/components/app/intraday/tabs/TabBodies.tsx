@@ -10,6 +10,7 @@ import { displayName } from "@/lib/company-name";
 import {
   EMPTY,
   LIQUID_NOTE,
+  MORNING_FALLBACK_NOTE,
   MORNING_NOTE,
   RECAP_NOTE,
   SCAN_NOTE,
@@ -111,14 +112,28 @@ export function MorningBody({ d }: { d: IntradayTabData }) {
         ) : (
           <>
             <SideToggle side={side} onChange={setSide} upLabel="Gap up" downLabel="Gap down" id="morning-side" />
-            <StockList rows={rows} cols={gapCols} testid="morning-list" empty={side === "up" ? "No liquid stock in the pre-open scan has an upward gap." : "No liquid stock in the pre-open scan has a downward gap."} />
+            <StockList rows={rows} cols={gapCols} rewind testid="morning-list" empty={side === "up" ? "No liquid stock in the pre-open scan has an upward gap." : "No liquid stock in the pre-open scan has a downward gap."} />
           </>
         )}
+        {d.coverage && (
+          <p className="text-xs font-medium text-foreground" data-testid="morning-coverage">
+            Pre-open prices for {(d.coverage.priced ?? d.coverage.in_pre_open_scan).toLocaleString("en-IN")} of {d.coverage.liquid.toLocaleString("en-IN")} liquid stocks
+            {d.as_of ? ` as of ${new Date(d.as_of).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" })}` : ""}.
+          </p>
+        )}
         <p className="text-xs text-foreground-muted">{MORNING_NOTE}</p>
-        <p className="text-xs text-foreground-muted">
-          {d.coverage ? `${d.coverage.in_pre_open_scan.toLocaleString("en-IN")} of ${d.coverage.liquid.toLocaleString("en-IN")} liquid stocks are in the pre-open scan. ` : ""}
-          {LIQUID_NOTE}
-        </p>
+        {d.source === "premarket_scan" && (
+          <p className="text-xs text-foreground-muted" data-testid="morning-reduced">
+            {MORNING_FALLBACK_NOTE}
+          </p>
+        )}
+        {d.left_out && d.left_out.corporate_action + d.left_out.no_price > 0 && (
+          <p className="text-xs text-foreground-muted" data-testid="morning-left-out">
+            Left out: {d.left_out.corporate_action.toLocaleString("en-IN")} {d.left_out.corporate_action === 1 ? "stock" : "stocks"} with a corporate action effective today (the previous close changes) and{" "}
+            {d.left_out.no_price.toLocaleString("en-IN")} without a valid pre-open price or previous close.
+          </p>
+        )}
+        <p className="text-xs text-foreground-muted">{LIQUID_NOTE}</p>
       </Section>
       <Section id="morning-events" title="Results and board meetings today" subtitle="Among liquid stocks">
         {!ev || ev.n === 0 ? (
@@ -244,12 +259,12 @@ export function RecapBody({ d }: { d: IntradayTabData }) {
       <MarketDay d={d} />
       <Section id="recap-morning" title="How the Morning lists ended the day" subtitle="The largest pre-open gaps, each stock with its own day">
         <SideToggle side={mSide} onChange={setMSide} upLabel="Gap up" downLabel="Gap down" id="recap-morning-side" />
-        <StockList rows={mRows} cols={recapCols("Pre-open gap", gapListed)} testid="recap-morning-list" empty="No stocks were listed on this side in Morning." />
+        <StockList rows={mRows} cols={recapCols("Pre-open gap", gapListed)} rewind testid="recap-morning-list" empty="No stocks were listed on this side in Morning." />
       </Section>
       <Section id="recap-scan" title="How the Scan lists ended the day" subtitle={`The largest moves, as listed${at ? ` at the ${at} IST update` : ""}, each stock with its own day`}>
         <UniverseChips value={universe} onChange={setUniverse} id="recap-universe" />
         <SideToggle side={sSide} onChange={setSSide} upLabel="Up" downLabel="Down" id="recap-scan-side" />
-        <StockList rows={sRows} cols={recapCols("Change when listed", gapListed)} testid="recap-scan-list" empty="No stocks were listed on this side in Scan." />
+        <StockList rows={sRows} cols={recapCols("Change when listed", gapListed)} rewind testid="recap-scan-list" empty="No stocks were listed on this side in Scan." />
       </Section>
       <p className="text-xs text-foreground-muted">{RECAP_NOTE}</p>
       <p className="text-xs text-foreground-muted">{LIQUID_NOTE}</p>

@@ -26,7 +26,9 @@ export const LIQUID_NOTE =
   "Liquid stocks only: EQ series (no BE, BZ or SME stocks), an average daily traded value of at least ₹1 crore and a price of at least ₹10.";
 
 export const MORNING_NOTE =
-  "The gap is the pre-open price against the previous close, from the stored 9:09 pre-open scan. Only stocks in that scan are listed. A stock with a split, bonus or similar action today is left out.";
+  "The gap is the indicative pre-open price against the previous close, from the NSE pre-open session. It can change before the market opens at 9:15.";
+export const MORNING_FALLBACK_NOTE =
+  "Reduced coverage: today's whole-market pre-open read is not available, so only the stocks in the stored 9:09 pre-open scan are listed.";
 export const SCAN_NOTE =
   "The change is the latest price against the previous close. Volume vs usual compares today's volume so far with the 20-day average volume scaled by the time elapsed in the session. Early in the session this ratio is unsteady.";
 export const RECAP_NOTE =

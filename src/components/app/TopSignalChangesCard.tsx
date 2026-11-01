@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/Card";
@@ -6,6 +8,8 @@ import { ShareCardPopover } from "@/components/app/marketing/ShareCardPopover";
 import { SessionLabel } from "@/components/app/SessionLabel";
 import type { MarketState } from "@/lib/api/types";
 import { stockPath } from "@/lib/seo/stock-symbol";
+import { ProLock } from "@/components/ui/ScValue";
+import { useMovers } from "@/components/app/useMovers";
 
 function MoverList({ rows, label, tone }: { rows: MoverRow[]; label: string; tone: "up" | "down" }) {
   const Icon = tone === "up" ? TrendingUp : TrendingDown;
@@ -17,10 +21,14 @@ function MoverList({ rows, label, tone }: { rows: MoverRow[]; label: string; ton
           <li key={r.symbol}>
             <Link href={stockPath("/signals", r.symbol)} className="flex items-center justify-between text-sm hover:text-accent">
               <span className="truncate font-medium">{r.symbol}</span>
-              <span className={`flex items-center gap-0.5 font-mono text-sm ${tone === "up" ? "text-up" : "text-down"}`}>
-                <Icon size={11} /> {r.delta_1d > 0 ? "+" : ""}
-                {r.delta_1d}
-              </span>
+              {r.sc_locked || r.delta_1d === null ? (
+                <ProLock />
+              ) : (
+                <span className={`flex items-center gap-0.5 font-mono text-sm ${tone === "up" ? "text-up" : "text-down"}`}>
+                  <Icon size={11} /> {r.delta_1d > 0 ? "+" : ""}
+                  {r.delta_1d}
+                </span>
+              )}
             </Link>
           </li>
         ))}
@@ -30,9 +38,11 @@ function MoverList({ rows, label, tone }: { rows: MoverRow[]; label: string; ton
   );
 }
 
-export function TopSignalChangesCard({ movers, marketState }: { movers: SignalsMovers | null; marketState?: MarketState | null }) {
-  const topGainer = movers?.up[0];
-  const topDecliner = movers?.down[0];
+export function TopSignalChangesCard({ movers: initial, marketState }: { movers: SignalsMovers | null; marketState?: MarketState | null }) {
+  const movers = useMovers(initial, 3);
+  // a share card never carries a Stock Condition change the viewer may not see
+  const topGainer = movers?.up[0] && !movers.up[0].sc_locked ? movers.up[0] : undefined;
+  const topDecliner = movers?.down[0] && !movers.down[0].sc_locked ? movers.down[0] : undefined;
   const shareStat = topGainer ? `${topGainer.symbol} +${topGainer.delta_1d}` : undefined;
   // Sep 2026 fix: was a static "Top Signal Changes" with no date, which is
   // wrong on weekends/holidays/before the day's measured_signals run —

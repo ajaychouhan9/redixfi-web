@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/Card";
 import { EventsBlock } from "@/components/app/review/EventsBlock";
 import { MarketBlock } from "@/components/app/review/MarketBlock";
 import { MineProvider } from "@/components/app/review/MineProvider";
+import { ReviewDataProvider } from "@/components/app/review/ReviewData";
 import { ReviewLists } from "@/components/app/review/ReviewLists";
 import { ReviewTabs } from "@/components/app/review/ReviewTabs";
 import { ScChanges } from "@/components/app/review/ScChanges";
@@ -60,6 +61,7 @@ export async function generateMetadata({ searchParams }: { searchParams: SP }): 
 
 async function load(asof: string | undefined): Promise<SevenDayReview | null> {
   try {
+    // @auth-ok: SSR, anonymous (Stock Condition locked outside the free sample); ReviewDataProvider asks again with the token of a signed-in visitor.
     const env = await retryTransientPublicGet(
       () => getSevenDayReview(asof, { revalidate: 300 }),
       () => getSevenDayReview(asof, { revalidate: 300, timeoutMs: 10_000 }),
@@ -178,6 +180,7 @@ export default async function SevenDayReviewPage({ searchParams }: { searchParam
             <p className="text-xs text-foreground-muted">{review.window!.as_of_label}</p>
           </div>
           <WeekPicker review={review} />
+          <ReviewDataProvider asOf={review.as_of!}>
           <MineProvider asOf={review.as_of!}>
             <Card title="Biggest gains and falls">
               <ReviewLists review={review} />
@@ -193,6 +196,7 @@ export default async function SevenDayReviewPage({ searchParams }: { searchParam
               <EventsBlock review={review} />
             </Card>
           </MineProvider>
+          </ReviewDataProvider>
           <Footnotes r={review} />
         </>
       )}

@@ -116,13 +116,15 @@ export async function getAllSignals(opts?: FetchOpts): Promise<SignalRow[]> {
   return [first, ...rest].flatMap((p) => p.data);
 }
 
-// @auth public — signal_movers() accepts `auth` but never reads it;
-// deliberately ungated for every tier (Home shows it to everyone).
+// @auth required — the Stock Condition number and its change are shown for every stock to paid callers and only for the free sample to anonymous and
+// free callers (the one visibility rule, core/sc_visibility.py); a missing token shows a paying user the locked version. Server-rendered pages are
+// anonymous on purpose and a signed-in visitor's browser asks again with the token (useMovers).
 export const getSignalMovers = (direction?: "up" | "down", limit = 20, opts?: FetchOpts) =>
   apiGet<SignalsMovers>("/signals/movers", { ...opts, params: { direction, limit } });
 
-// @auth public — the stored 7-Day Review for the latest completed week, or for the `asof` date given. Blocks A, C, D and E need no
-// login and carry no tier masking; the response is identical for every caller.
+// @auth required — the stored 7-Day Review for the latest completed week, or for the `asof` date given. Public, but the Stock Condition numbers in
+// blocks A and D are shown for every stock to paid callers and only for the free sample to anonymous and free callers (the one visibility rule).
+// The server-rendered page is anonymous on purpose and ReviewDataProvider asks again with the token of a signed-in visitor.
 export const getSevenDayReview = (asof?: string, opts?: FetchOpts) =>
   apiGet<SevenDayReview>("/review/7-day", { ...opts, params: { asof } });
 

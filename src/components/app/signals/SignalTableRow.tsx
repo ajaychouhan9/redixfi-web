@@ -6,6 +6,7 @@ import { Plus, Check } from "lucide-react";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { SignalStateChip } from "@/components/ui/Chip";
 import { LockedInline } from "@/components/ui/Locked";
+import { ProLock } from "@/components/ui/ScValue";
 import {
   COMPARISON_QUEUE_MAX,
   addToComparisonQueue,
@@ -152,13 +153,15 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
           `locked` false -> plain "—", see its own docstring above) — this
           callsite was just never letting that branch be reached. */}
       <td className="px-3 py-2.5">
-        <StackedCell
-          locked={locked}
-          lockedFallback="--"
-          lockedTitle="Unlock all 2,000+ measured readings"
-          primary={row.composite_score}
-          subtitle={row.delta_1d !== null ? <DeltaValue value={row.delta_1d} className="text-[12px]" /> : undefined}
-        />
+        {locked ? (
+          <ProLock className="justify-start" />
+        ) : (
+          <StackedCell
+            locked={false}
+            primary={row.composite_score}
+            subtitle={row.delta_1d !== null ? <DeltaValue value={row.delta_1d} className="text-[12px]" /> : undefined}
+          />
+        )}
       </td>
       {columns.delivery && (
         <td className="hidden px-3 py-2.5 sm:table-cell">
@@ -293,9 +296,7 @@ export function SignalMobileRow({ row }: { row: SignalRow }) {
       </div>
       <div className="flex w-14 shrink-0 flex-col items-end gap-0.5">
         {row.locked ? (
-          <LockedInline title="Unlock all 2,000+ measured readings">
-            <span className="rounded-md bg-neutral-bg px-2 py-0.5 font-mono text-sm font-semibold">--</span>
-          </LockedInline>
+          <ProLock />
         ) : row.composite_score === null ? (
           <span className="text-foreground-faint">—</span>
         ) : (

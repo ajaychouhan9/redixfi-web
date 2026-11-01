@@ -157,9 +157,11 @@ export interface SignalRow {
 export interface MoverRow {
   symbol: string;
   company_name: string;
-  composite_score: number;
-  delta_1d: number;
+  // null when the caller may not see this stock's Stock Condition (the one visibility rule): `sc_locked` is then true
+  composite_score: number | null;
+  delta_1d: number | null;
   cause: string;
+  sc_locked?: boolean;
 }
 
 export interface SignalsMovers {
@@ -856,6 +858,7 @@ export interface OptionsPcrPoint {
 export type GenericRecord = Record<string, unknown>;
 
 export interface ResearchSignalSummary {
+  sc_locked?: boolean;
   composite_score: number | null;
   delta_1d: number | null;
   narrative: string | null;
@@ -2240,6 +2243,7 @@ export type ChannelDiscoveryAction = "seen" | "already_subscribed" | "dismissed"
 export type ReviewUniverse = "liquid" | "nifty50" | "nifty100" | "nifty500";
 
 export interface ReviewRow {
+  sc_locked?: boolean;
   symbol: string;
   name: string | null;
   /** Price change over the window, in percent. */
@@ -2257,9 +2261,10 @@ export interface ReviewRow {
 }
 
 export interface ReviewScRow {
+  sc_locked?: boolean;
   symbol: string;
   name: string | null;
-  sc_start: number;
+  sc_start: number | null;
   sc_end: number;
   sc_delta: number;
   pct: number | null;
@@ -2303,6 +2308,7 @@ export interface SevenDayReview {
 }
 
 export interface ReviewMineRow {
+  sc_locked?: boolean;
   symbol: string;
   name: string | null;
   status: "ok" | "corporate_action" | "incomplete" | "not_eq" | "no_data";
@@ -2388,7 +2394,9 @@ export interface IntradayTabData {
   down?: MorningGapRow[];
   events?: { n: number; rows: { symbol: string; name: string | null; what: string; detail: string | null }[] };
   cues?: { as_of: string | null; date: string | null; rows: IntradayCue[] };
-  coverage?: { liquid: number; in_pre_open_scan: number; pre_open_rows: number };
+  coverage?: { liquid: number; priced?: number; in_pre_open_scan: number; pre_open_rows: number | null };
+  source?: "preopen_all" | "premarket_scan";
+  left_out?: { corporate_action: number; no_price: number } | null;
   // scan
   lists?: Record<IntradayUniverse, { up: ScanMoveRow[]; down: ScanMoveRow[] }>;
   universe?: { sizes: Record<IntradayUniverse, number>; liquid: number; with_bars: number };

@@ -12,12 +12,14 @@ import { formatNumber } from "@/lib/format";
 import { stockPath } from "@/lib/seo/stock-symbol";
 import { MINE_STATUS_TEXT, REVIEW_EMPTY_WATCHLIST, REVIEW_LOGIN_PROMPT } from "@/lib/review-copy";
 import type { ReviewMineRow } from "@/lib/api/types";
+import { ProLock } from "@/components/ui/ScValue";
 
 function Condition({ r }: { r: ReviewMineRow }) {
+  if (r.sc_locked) return <ProLock />;
   if (r.sc_start === null && r.sc_end === null) return <span className="text-foreground-muted">-</span>;
   return (
-    <span className="tabular-nums text-foreground-muted">
-      {r.sc_start ?? "-"} <span aria-hidden>→</span>
+    <span className="-my-3 inline-flex min-h-[44px] items-center gap-1 tabular-nums text-foreground-muted">
+      {r.sc_start ?? "-"}<span aria-hidden>→</span>
       <span className="sr-only"> to </span> {r.sc_end ?? "-"}
     </span>
   );

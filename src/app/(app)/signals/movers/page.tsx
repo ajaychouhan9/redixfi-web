@@ -1,12 +1,7 @@
-import { displayName } from "@/lib/company-name";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { getSignalMovers } from "@/lib/api/endpoints";
-import { DeltaValue } from "@/components/ui/DeltaValue";
-import { Card } from "@/components/ui/Card";
-import type { MoverRow } from "@/lib/api/types";
+import { MoversLists } from "@/components/app/signals/MoversLists";
 import { formatObservationDate } from "@/lib/format";
-import { stockPath } from "@/lib/seo/stock-symbol";
 import { retryTransientPublicGet } from "@/lib/api/retry-public-upstream";
 
 export const metadata: Metadata = {
@@ -15,43 +10,11 @@ export const metadata: Metadata = {
   description: "Today's largest Stock Condition increases and decreases, reported symmetrically.",
 };
 
-const CAUSE_LABEL: Record<string, string> = {
-  trend: "trend signal strengthened",
-  volume: "volume signal strengthened",
-  delivery: "delivery signal strengthened",
-  rsi: "RSI signal moved",
-  sector: "sector signal turned",
-  options: "options positioning shifted",
-  fii: "FII flow signal shifted",
-};
-
-function MoverList({ rows }: { rows: MoverRow[] }) {
-  return (
-    <ul className="divide-y divide-border">
-      {rows.map((r) => (
-        <li key={r.symbol}>
-          <Link href={stockPath("/signals", r.symbol)} className="flex items-center justify-between py-2.5 text-sm hover:text-accent">
-            <span>
-              <span className="font-medium">{r.symbol}</span>{" "}
-              <span className="text-foreground-faint">{displayName(r.company_name)}</span>
-              <div className="text-xs text-foreground-faint">{CAUSE_LABEL[r.cause] ?? r.cause}</div>
-            </span>
-            <span className="flex items-center gap-3">
-              <span className="tabular-nums text-foreground-muted">{r.composite_score}</span>
-              <DeltaValue value={r.delta_1d} />
-            </span>
-          </Link>
-        </li>
-      ))}
-      {rows.length === 0 && <li className="py-4 text-sm text-foreground-faint">No movers yet today.</li>}
-    </ul>
-  );
-}
-
 // 31 Oct 2026: served from a one-minute cache; the fetch below carries `revalidate` so a burst of requests or a short API outage does not 500.
 export const revalidate = 60;
 
 export default async function SignalMoversPage() {
+  // @auth-ok: SSR + one-minute cache, anonymous (Stock Condition locked outside the free sample); MoversLists asks again with the token of a signed-in visitor.
   const env = await retryTransientPublicGet(
     () => getSignalMovers(undefined, 20, { revalidate: 60 }),
     () => getSignalMovers(undefined, 20, { revalidate: 60, timeoutMs: 10_000 }),
@@ -66,14 +29,7 @@ export default async function SignalMoversPage() {
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-1 text-xl font-semibold">Signal Movers</h1>
       {observedOn && <p className="mb-4 text-sm text-foreground-muted">As of {observedOn}</p>}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card title="Largest Stock Condition increases">
-          <MoverList rows={movers.up} />
-        </Card>
-        <Card title="Largest Stock Condition decreases">
-          <MoverList rows={movers.down} />
-        </Card>
-      </div>
+      <MoversLists initial={movers} />
     </div>
   );
 }

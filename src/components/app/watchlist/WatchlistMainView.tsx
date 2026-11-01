@@ -1,5 +1,6 @@
 "use client";
 
+import { ProLock } from "@/components/ui/ScValue";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Plus, AlertTriangle } from "lucide-react";
@@ -277,7 +278,7 @@ export function WatchlistMainView() {
                       </td>
                       <td className="px-3 py-3">
                         {r.locked ? (
-                          <span className="text-xs text-foreground-faint">Locked</span>
+                          <ProLock className="justify-start" />
                         ) : r.composite_score === null ? (
                           <span className="text-xs text-foreground-faint">—</span>
                         ) : (
