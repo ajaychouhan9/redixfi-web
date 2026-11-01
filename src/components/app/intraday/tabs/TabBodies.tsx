@@ -6,6 +6,7 @@ import Link from "next/link";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { formatNumber } from "@/lib/format";
 import { stockPath } from "@/lib/seo/stock-symbol";
+import { VOLUME_STEPS, filterByVolume, volumeCountText, volumePillLabel, volumeStepLabel } from "@/lib/intraday-volume-filter";
 import { displayName } from "@/lib/company-name";
 import {
   EMPTY,
@@ -166,11 +167,34 @@ const scanCols: Col<ScanMoveRow>[] = [
   { id: "sc", header: conditionHeader, mobileLabel: "Condition", mobile: "pair", cell: (r) => <Condition sc={r.sc} locked={r.sc_locked} /> },
 ];
 
+/** Scan only: 1-tap steps for volume against the stock's own usual level. Tapping the active step clears it. Changes which rows are shown, never their order. */
+function VolumeFilter({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
+  const pill = (on: boolean) =>
+    `inline-flex min-h-11 items-center rounded-full border px-4 text-sm ${focus} ${on ? "border-accent bg-accent/15 text-foreground" : "border-border text-foreground-muted hover:text-foreground"}`;
+  return (
+    <div data-testid="scan-volume-filter" role="group" aria-label="Volume against the usual level">
+      <p className="mb-1 text-xs font-medium text-foreground-muted">{value === null ? "Volume against its usual level" : volumeStepLabel(value)}</p>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" aria-pressed={value === null} onClick={() => onChange(null)} className={pill(value === null)} data-testid="scan-volume-all">
+          All rows
+        </button>
+        {VOLUME_STEPS.map((n) => (
+          <button key={n} type="button" aria-pressed={value === n} onClick={() => onChange(value === n ? null : n)} className={pill(value === n)} data-testid={`scan-volume-${n}`}>
+            {volumePillLabel(n)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function ScanBody({ d }: { d: IntradayTabData }) {
   const [universe, setUniverse] = useState<IntradayUniverse>("nifty500");
   const [side, setSide] = useState<Side>("up");
+  const [minVol, setMinVol] = useState<number | null>(null);
   if (!d.available || !d.lists) return <Unavailable tab="scan" />;
-  const rows = d.lists[universe][side];
+  const listed = d.lists[universe][side];
+  const rows = filterByVolume(listed, minVol);
   const size = d.universe?.sizes?.[universe];
   return (
     <div className="space-y-3" data-testid="intraday-scan">
@@ -178,15 +202,18 @@ export function ScanBody({ d }: { d: IntradayTabData }) {
         <UniverseChips value={universe} onChange={setUniverse} id="scan-universe" />
         <SideToggle side={side} onChange={setSide} upLabel="Up" downLabel="Down" id="scan-side" />
         <p className="text-xs text-foreground-muted" data-testid="scan-count">
-          {UNIVERSE_LABEL[universe]}: {size !== undefined ? `${size.toLocaleString("en-IN")} stocks with a price today. ` : ""}Showing {rows.length}.
+          {UNIVERSE_LABEL[universe]}: {size !== undefined ? `${size.toLocaleString("en-IN")} stocks with a price today. ` : ""}
+          <span data-testid="scan-volume-count">{volumeCountText(rows.length, listed.length, minVol)}</span>
         </p>
+        <VolumeFilter value={minVol} onChange={setMinVol} />
         <StockList
           rows={rows}
           cols={scanCols}
           rewind
           testid="scan-list"
-          empty={side === "up" ? "No stock in this group is above its previous close." : "No stock in this group is below its previous close."}
+          empty={minVol !== null ? `No listed row has ${volumeStepLabel(minVol).toLowerCase()}.` : side === "up" ? "No stock in this group is above its previous close." : "No stock in this group is below its previous close."}
           spark={(r) => ({ values: r.spark, tone: r.pct > 0 ? "up" : "down" })}
+          rankOf={(r) => listed.indexOf(r) + 1}
         />
         <p className="text-xs text-foreground-muted">{SCAN_NOTE}</p>
         <p className="text-xs text-foreground-muted">{LIQUID_NOTE}</p>

@@ -247,10 +247,44 @@ if (scHits.length) {
   console.error("Stock Condition visibility problem:" + String.fromCharCode(10) + scHits.join(String.fromCharCode(10)));
   process.exit(1);
 }
+// 2026-11-01: AI prompt pills and the Stock Condition history line on stock pages. Neutral wording, neutral colour, nothing sent without a tap on Send,
+// and the line is never on Market Rewind.
+const uxHits = [];
+const UX_FORBIDDEN = /(buy|sell|targets?|breakouts?|candidates?|accelerat\w*|decelerat\w*|bullish|bearish|rising|falling|improving|worsening|upward|downward|trend(?:ing|s)?|hit rates?|success rates?|predict\w*|forecast\w*|rating|outperform\w*|underperform\w*)/i;
+for (const rel of ["components/app/signals/AskPills.tsx", "components/app/signals/ConditionLine.tsx", "lib/condition-line.ts"]) {
+  const text = stripComments(readFileSync(join(ROOT, rel), "utf8"));
+  const m = text.match(UX_FORBIDDEN);
+  if (m) uxHits.push(`${rel}: ${m[0]}`);
+}
+const lineSrc = stripComments(readFileSync(join(ROOT, "components/app/signals/ConditionLine.tsx"), "utf8"));
+if (/text-(up|down|success|danger|red|green|emerald|rose)|<(ArrowUp|ArrowDown|TrendingUp|TrendingDown|ChevronUp)/.test(lineSrc)) uxHits.push("ConditionLine.tsx: neutral colour only, no arrows");
+if (!readFileSync(join(ROOT, "lib/condition-line.ts"), "utf8").includes("Stock Condition, last")) uxHits.push("lib/condition-line.ts: the plain caption is missing");
+const pillsSrc = stripComments(readFileSync(join(ROOT, "components/app/signals/AskPills.tsx"), "utf8"));
+if (!pillsSrc.includes("openWithQuestion") || /(sendMessage|submit|handleSend|requestSubmit)/.test(pillsSrc)) uxHits.push("AskPills.tsx: a pill must only fill the question in (openWithQuestion), never send it");
+for (const [rel, need] of [["components/app/signals/SignalDetailView.tsx", "<AskPills"], ["components/app/signals/SignalDetailView.tsx", "<ConditionLine"], ["components/app/research/ResearchDetail.tsx", "<AskPills"], ["components/app/research/ResearchConditionCard.tsx", "<ConditionLine"]]) {
+  if (!readFileSync(join(ROOT, rel), "utf8").includes(need)) uxHits.push(`${rel}: ${need} missing`);
+}
+function rewindFiles(dir) {
+  const out = [];
+  for (const e of readdirSync(dir)) {
+    const f = join(dir, e);
+    if (statSync(f).isDirectory()) out.push(...rewindFiles(f));
+    else if (/\.tsx?$/.test(e)) out.push(f);
+  }
+  return out;
+}
+for (const f of [...rewindFiles(join(ROOT, "components/app/history")), ...rewindFiles(join(ROOT, "app/(app)/rewind"))]) {
+  if (/ConditionLine|AskPills/.test(readFileSync(f, "utf8"))) uxHits.push(`${f.replace(ROOT, "")}: the history line and the pills are not used on Market Rewind`);
+}
+if (uxHits.length) {
+  console.error("Stock page pills / history line problem:" + String.fromCharCode(10) + uxHits.join(String.fromCharCode(10)));
+  process.exit(1);
+}
 // 2026-11-01: Intraday tabs (Morning | Scan | Recap). Descriptive wording only: the largest gaps before the open, the largest moves so far, how the day
 // ended. No trade-call words, and the Recap never counts how many listed stocks went which way. The two fixed sentences are required on every tab.
 const INTRADAY_FILES = [
   "lib/intraday-copy.ts",
+  "lib/intraday-volume-filter.ts",
   "components/app/intraday/tabs/IntradayTabs.tsx",
   "components/app/intraday/tabs/TabBodies.tsx",
   "components/app/intraday/tabs/StockList.tsx",

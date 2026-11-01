@@ -7,6 +7,8 @@ import type {
   SevenDayMine,
   SignalDetail,
   ScoreHistoryResponse,
+  AskPillsResponse,
+  ConditionLineResponse,
   VolatilityResponse,
   MarketState,
   LiveToday,
@@ -138,6 +140,13 @@ export const getSignalDetail = (symbol: string, newsLimit = 6, opts?: FetchOpts)
     ...opts,
     params: { news_limit: newsLimit },
   });
+
+// @auth public — topic names only (never a number); the same pills for every caller.
+export const getAskPills = (symbol: string, opts?: FetchOpts) => apiGet<AskPillsResponse>("/ask/pills", { ...opts, params: { symbol } });
+
+// @auth required — the route applies the Stock Condition visibility rule: outside the caller's sample/grant it returns no points at all.
+export const getConditionLine = (symbol: string, opts?: FetchOpts) =>
+  apiGet<ConditionLineResponse>(`/signals/${encodeURIComponent(symbol)}/condition-line`, opts);
 
 // @auth required — the route mirrors the detail route's free-tier symbol lock
 // and returns 5 sessions for free/Basic, 10 for Pro (server-configured).

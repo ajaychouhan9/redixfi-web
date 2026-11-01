@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+import { ConditionLine } from "@/components/app/signals/ConditionLine";
 import { ScoreAsOf } from "@/components/app/signals/ScoreAsOf";
 import { SlowestInputNote } from "@/components/ui/SlowestInputNote";
 import { ProLock } from "@/components/ui/ScValue";
@@ -52,6 +53,7 @@ export function ResearchConditionCard({ symbol, initial }: { symbol: string; ini
   }
   if (s.composite_score === null) return null;
   return (
+    <>
     <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface-raised px-3 py-2">
       <span className="text-lg font-semibold text-foreground">
         <span className="mr-2 text-sm font-medium text-foreground-muted">{READING_NAME}:</span>
@@ -65,5 +67,7 @@ export function ResearchConditionCard({ symbol, initial }: { symbol: string; ini
         Full signal detail →
       </Link>
     </div>
+    <ConditionLine symbol={symbol} />
+    </>
   );
 }

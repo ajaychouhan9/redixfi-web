@@ -11,6 +11,8 @@ import { WhyDidThisChange } from "@/components/app/signals/WhyDidThisChange";
 import { ScoreAsOf } from "@/components/app/signals/ScoreAsOf";
 import { READING_EXPLAINER, READING_NAME, conditionChangeText } from "@/lib/reading-copy";
 import { ScoreHistorySection } from "@/components/app/signals/ScoreHistorySection";
+import { ConditionLine } from "@/components/app/signals/ConditionLine";
+import { AskPills } from "@/components/app/signals/AskPills";
 import { Week52Range } from "@/components/app/signals/Week52Range";
 import { VolatilitySection } from "@/components/app/signals/VolatilitySection";
 import { QuickRead } from "@/components/app/signals/QuickRead";
@@ -133,6 +135,7 @@ export function SignalDetailView({
         <CorporateActionNote info={detail.corporate_action} />
         <Week52Range week52={detail.week52} lastPrice={detail.last_price} />
         <SlowestInputNote input={detail.slowest_input} />
+        <AskPills symbol={detail.symbol} />
       </div>
 
       {detail.narrative && (
@@ -150,6 +153,7 @@ export function SignalDetailView({
       {/* Directly under the composite-score card (and never on the Signals or
           Research lists). A corporate-action hold renders only the existing
           note above — the component returns null in that case. */}
+      <ConditionLine symbol={detail.symbol} />
       <ScoreHistorySection symbol={detail.symbol} corporateAction={detail.corporate_action} />
       <VolatilitySection symbol={detail.symbol} />
 

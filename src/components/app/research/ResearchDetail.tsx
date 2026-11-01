@@ -3,6 +3,7 @@ import { CorporateActionNote } from "@/components/ui/CorporateActionNote";
 import Link from "next/link";
 import { ScoreAsOf } from "@/components/app/signals/ScoreAsOf";
 import { ResearchConditionCard } from "@/components/app/research/ResearchConditionCard";
+import { AskPills } from "@/components/app/signals/AskPills";
 import { READING_EXPLAINER, READING_NAME, conditionChangeText } from "@/lib/reading-copy";
 import type { ResearchDetail as ResearchDetailType, Candle, PeerRow } from "@/lib/api/types";
 import { Card } from "@/components/ui/Card";
@@ -141,6 +142,7 @@ export function ResearchDetail({
             fuller "Signal summary" card lower on this page (narrative +
             link to the full Signal Dashboard) is unchanged. */}
         <ResearchConditionCard symbol={data.symbol} initial={data.signal_summary} />
+        <AskPills symbol={data.symbol} />
       </div>
 
       <ErrorBoundary>

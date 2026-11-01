@@ -244,6 +244,29 @@ export interface ScoreHistoryRow {
   locked?: boolean;
 }
 
+/** GET /ask/pills: the fixed questions offered as tap-to-ask pills on a stock page. */
+export interface AskPill {
+  key: string;
+  label: string;
+  question: string;
+}
+export interface AskPillsResponse {
+  symbol: string;
+  pills: AskPill[];
+}
+/** GET /signals/{symbol}/condition-line: the stored Stock Condition value per session. `points` is empty (and `locked` true) outside the caller's visibility. */
+export interface ConditionLinePoint {
+  date: string;
+  value: number;
+}
+export interface ConditionLineResponse {
+  symbol: string;
+  locked: boolean;
+  sessions: number;
+  requested: number;
+  points: ConditionLinePoint[];
+}
+
 export interface ScoreHistoryResponse {
   symbol: string;
   as_of: string | null;

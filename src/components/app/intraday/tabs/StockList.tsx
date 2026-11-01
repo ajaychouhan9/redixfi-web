@@ -62,6 +62,7 @@ export function StockList<T extends { symbol: string; name: string | null }>({
   spark,
   testid,
   empty,
+  rankOf,
 }: {
   rows: T[];
   cols: Col<T>[];
@@ -69,6 +70,8 @@ export function StockList<T extends { symbol: string; name: string | null }>({
   spark?: (r: T) => { values: number[]; tone: "up" | "down" | "neutral" };
   testid: string;
   empty: string;
+  /** The number shown beside the name; default is the position in `rows`. A filtered list passes the row's position in the full list. */
+  rankOf?: (r: T, index: number) => number;
 }) {
   if (rows.length === 0) {
     return (
@@ -88,7 +91,7 @@ export function StockList<T extends { symbol: string; name: string | null }>({
             <div className="flex items-start justify-between gap-3">
               <Link href={stockPath("/signals", r.symbol)} className="flex min-h-[44px] min-w-0 flex-col justify-center">
                 <span className="truncate text-sm font-semibold">
-                  <span className="mr-1.5 text-xs font-normal text-foreground-muted">{i + 1}</span>
+                  <span className="mr-1.5 text-xs font-normal text-foreground-muted">{rankOf ? rankOf(r, i) : i + 1}</span>
                   {displayName(r.name) || r.symbol}
                 </span>
                 <span className="text-xs text-foreground-muted">{r.symbol}</span>
@@ -133,7 +136,7 @@ export function StockList<T extends { symbol: string; name: string | null }>({
                 <td className="px-2 py-1.5">
                   <Link href={stockPath("/signals", r.symbol)} className="flex min-h-[44px] flex-col justify-center hover:text-foreground">
                     <span className="font-medium">
-                      <span className="mr-1.5 text-xs font-normal text-foreground-muted">{i + 1}</span>
+                      <span className="mr-1.5 text-xs font-normal text-foreground-muted">{rankOf ? rankOf(r, i) : i + 1}</span>
                       {displayName(r.name) || r.symbol}
                     </span>
                     <span className="text-xs text-foreground-muted">{r.symbol}</span>
