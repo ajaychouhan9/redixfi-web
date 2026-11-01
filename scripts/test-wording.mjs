@@ -220,6 +220,50 @@ const sm = readFileSync(join(ROOT, "app/sitemap.xml/route.ts"), "utf8");
 if (!sm.includes('"/signals/7-day-review"')) reviewHits.push("sitemap.xml/route.ts: /signals/7-day-review missing");
 if (!readFileSync(join(ROOT, "app/llms.txt/route.ts"), "utf8").includes("/signals/7-day-review")) reviewHits.push("llms.txt/route.ts: 7-Day Review missing");
 if (!readFileSync(join(ROOT, "app/(app)/signals/page.tsx"), "utf8").includes("ReviewTabs")) reviewHits.push("signals/page.tsx: Signals | 7-Day Review tabs missing");
+// 2026-11-01: Intraday tabs (Morning | Scan | Recap). Descriptive wording only: the largest gaps before the open, the largest moves so far, how the day
+// ended. No trade-call words, and the Recap never counts how many listed stocks went which way. The two fixed sentences are required on every tab.
+const INTRADAY_FILES = [
+  "lib/intraday-copy.ts",
+  "components/app/intraday/tabs/IntradayTabs.tsx",
+  "components/app/intraday/tabs/TabBodies.tsx",
+  "components/app/intraday/tabs/StockList.tsx",
+  "components/app/intraday/tabs/LegacyTools.tsx",
+  "app/(app)/intraday/page.tsx",
+];
+const INTRADAY_FORBIDDEN = /\b(breakouts?|set-?ups?|signals?|targets?|stop-?loss|buy|sell|bullish|bearish|momentum play|stocks? to watch|top picks?|picks?|likely|expected|intraday tips?|tips?|predict\w*|recommend\w*|outlook|hit rates?|success rates?|accura\w*|track records?|win rates?|top gainers|top losers|gainers|losers|strongest|weakest|best)\b/i;
+const intradayHits = [];
+for (const rel of INTRADAY_FILES) {
+  let text = stripComments(readFileSync(join(ROOT, rel), "utf8"));
+  for (const ok of ["Not a forecast or a recommendation.", "a forecast or a recommendation"]) text = text.split(ok).join("");
+  text = text.split('"/signals"').join("").split("/signals").join("");     // the link path to a stock's page is not prose
+  const m = text.match(INTRADAY_FORBIDDEN);
+  if (m) intradayHits.push(`${rel}: ${m[0]}`);
+}
+const intradayCopy = readFileSync(join(ROOT, "lib/intraday-copy.ts"), "utf8");
+for (const need of [
+  "Past record of measured data. Not a forecast or a recommendation.",
+  "Prices are delayed or as of the last update.",
+  "Largest gaps before the open",
+  "Largest moves so far",
+  "How the day ended",
+]) {
+  if (!intradayCopy.includes(need)) intradayHits.push(`lib/intraday-copy.ts: required text missing: ${need}`);
+}
+const tabsSrc = readFileSync(join(ROOT, "components/app/intraday/tabs/IntradayTabs.tsx"), "utf8");
+for (const need of ["DELAY_NOTE", "DISCLAIMER", "intraday-notes"]) {
+  if (!tabsSrc.includes(need)) intradayHits.push(`IntradayTabs.tsx: both fixed sentences must be on every tab (${need} missing)`);
+}
+// The Recap tab never shows a count, share or success figure of the listed stocks.
+const bodies = readFileSync(join(ROOT, "components/app/intraday/tabs/TabBodies.tsx"), "utf8");
+const recapSrc = bodies.slice(bodies.indexOf("export function RecapBody"));
+for (const bad of [/\.length\}/, /rows\.length/, /hit/i, /success/i, /went (?:up|down)/i, /how many/i, /% of (?:the )?(?:listed|stocks)/i]) {
+  if (bad.test(recapSrc)) intradayHits.push(`TabBodies.tsx: the Recap must not count or summarise the listed stocks (${bad})`);
+}
+if (!readFileSync(join(ROOT, "app/(app)/intraday/page.tsx"), "utf8").includes('robots: withQuery ? { index: false')) intradayHits.push("intraday/page.tsx: ?tab= pages must be noindex");
+if (intradayHits.length) {
+  console.error("Intraday tabs wording problem:" + String.fromCharCode(10) + intradayHits.join(String.fromCharCode(10)));
+  process.exit(1);
+}
 if (reviewHits.length) {
   console.error("7-Day Review wording / navigation problem:" + String.fromCharCode(10) + reviewHits.join(String.fromCharCode(10)));
   process.exit(1);

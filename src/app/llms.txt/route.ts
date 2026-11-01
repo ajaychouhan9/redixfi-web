@@ -12,7 +12,7 @@ const BODY = `# RedixFi
 - **Stock Condition**: a number from 0 to 100 for each stock and day. It is a weighted combination of 8 measured readings (trend, volume, delivery share, momentum, sector, options positioning and others). It is not a probability, a rating or a forecast. The page for each stock shows the number and its change from the previous session.
 - **Readings**: the 8 measured inputs to Stock Condition. Market Rewind also lists extra readings such as insider trade disclosed, bulk or block deal, near 52-week high and gap at open.
 - **7-Day Review** (https://www.redixfi.com/signals/7-day-review): the biggest price gains and falls of the last trading sessions (usually 5), the market for the week, the biggest changes in Stock Condition and a count of what was announced. The lists rank by price change over the window only. It is a past record of measured data, not a forecast or a recommendation.
-- **Intraday**: measured moves during the trading day.
+- **Intraday** (https://www.redixfi.com/intraday): three views of the trading day for liquid NSE stocks. Morning shows the largest gaps before the open, global cues and today's results and board meetings; Scan shows the largest moves so far; Recap shows how the day ended. Prices are delayed or as of the last update. It is a past record of measured data, not a forecast or a recommendation.
 
 ## Main pages
 

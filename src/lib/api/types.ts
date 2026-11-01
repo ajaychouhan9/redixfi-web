@@ -2320,3 +2320,86 @@ export interface SevenDayMine {
   rows: ReviewMineRow[];
   events: ReviewEvents | null;
 }
+
+// ---------- Intraday tabs (Morning | Scan | Recap) ----------
+export type IntradayTabId = "morning" | "scan" | "recap";
+export type IntradayUniverse = "nifty50" | "nifty100" | "nifty500" | "liquid";
+
+export interface IntradayTabSession {
+  phase: "pre_market" | "live" | "post_market" | "weekend" | "holiday";
+  today: string;
+  now_ist: string;
+  is_trading_day: boolean;
+  market_closed: boolean;
+  closed_reason: "weekend" | "holiday" | null;
+  default_tab: IntradayTabId;
+  latest_completed_session: string;
+}
+
+interface IntradayRowBase {
+  symbol: string;
+  name: string | null;
+  sc: number | null;
+  sc_locked?: boolean;
+}
+export interface MorningGapRow extends IntradayRowBase {
+  gap_pct: number;
+  pre_open_price: number | null;
+  prev_close: number | null;
+}
+export interface ScanMoveRow extends IntradayRowBase {
+  sector: string | null;
+  price: number;
+  pct: number;
+  vr: number | null;
+  spark: number[];
+}
+export interface RecapRow extends IntradayRowBase {
+  listed: number | null;
+  listed_price: number | null;
+  close: number;
+  pct: number;
+  high: number;
+  low: number;
+}
+export interface IntradayCue {
+  label: string;
+  pct: number;
+}
+export interface IntradayIndexDay {
+  close: number;
+  prev_close: number;
+  pct: number | null;
+}
+
+export interface IntradayTabData {
+  tab: IntradayTabId;
+  session: IntradayTabSession;
+  available: boolean;
+  data_date: string | null;
+  data_date_label?: string;
+  is_today?: boolean;
+  as_of?: string | null;
+  as_of_label?: string | null;
+  sc_locked?: boolean;
+  notes: { disclaimer: string; delay: string };
+  // morning
+  up?: MorningGapRow[];
+  down?: MorningGapRow[];
+  events?: { n: number; rows: { symbol: string; name: string | null; what: string; detail: string | null }[] };
+  cues?: { as_of: string | null; date: string | null; rows: IntradayCue[] };
+  coverage?: { liquid: number; in_pre_open_scan: number; pre_open_rows: number };
+  // scan
+  lists?: Record<IntradayUniverse, { up: ScanMoveRow[]; down: ScanMoveRow[] }>;
+  universe?: { sizes: Record<IntradayUniverse, number>; liquid: number; with_bars: number };
+  // recap
+  final?: boolean;
+  morning?: { as_of: string | null; up: RecapRow[]; down: RecapRow[] };
+  scan?: { as_listed_at: string | null; lists: Record<IntradayUniverse, { up: RecapRow[]; down: RecapRow[] }> };
+  market?: {
+    breadth: { advancing: number; declining: number; unchanged: number; n: number };
+    nifty?: IntradayIndexDay;
+    banknifty?: IntradayIndexDay;
+    vix?: IntradayIndexDay;
+  };
+}

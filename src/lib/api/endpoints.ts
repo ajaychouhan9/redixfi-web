@@ -39,6 +39,8 @@ import type {
   EventKind,
   MarketActivitySummary,
   SharedScreen,
+  IntradayTabData,
+  IntradayTabId,
 } from "./types";
 
 // Every exported fetch function below MUST carry an `@auth public` or
@@ -191,6 +193,11 @@ export const getIntradayScan = (params: IntradayScanParams = {}, opts?: FetchOpt
 // @auth public — recap() accepts `auth` but never reads it.
 export const getIntradayRecap = (date?: string, opts?: FetchOpts) =>
   apiGetOptional<IntradayRecap>("/intraday/recap", { ...opts, params: { date } });
+
+// @auth required — the Intraday tab lists are the same for everyone except Stock Condition, which is hidden for anonymous and free callers (same
+// rule as the Signals page); a missing token would show a paying user the hidden version.
+export const getIntradayTab = (tab: IntradayTabId, opts?: FetchOpts) =>
+  apiGet<IntradayTabData>(`/intraday/tabs/${tab}`, opts);
 
 // @auth required — backend route uses require_auth (401 without a real
 // token, free + paid both allowed; watchlist SIZE is what's tier-capped,
