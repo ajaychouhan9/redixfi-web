@@ -99,6 +99,11 @@ export interface MarketOverview {
   fii_net: number;
   dii_net: number;
   india_vix_change_pct: number;
+  /** The day's India VIX from the index snapshot (same source as the Nifty), with its time. */
+  india_vix?: { close: number | null; change_pct: number | null; source: string; vs: string; as_of: string | null; as_of_date: string | null };
+  /** FII/DII net cash flows in ₹ crore for the trading day of the latest published file. */
+  fii_dii?: { unit: string; date: string | null; fii_net: number | null; dii_net: number | null; dates_match: boolean; latest_session: string | null; is_latest_session: boolean };
+  global_cues?: { date: string | null; as_of: string | null; vs: string };
   us_vix_change_pct: number;
   news_today: NewsToday;
 }
