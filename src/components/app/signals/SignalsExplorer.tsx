@@ -27,7 +27,7 @@ const DEFAULT_SIGNALS_COLUMNS: VisibleColumns = {
 
 const SORT_OPTIONS = [
   { value: "symbol", label: "Symbol (A–Z)" },
-  { value: "abs_delta_1d", label: "Biggest reading change (up or down)" },
+  { value: "abs_delta_1d", label: "Biggest Stock Condition change (up or down)" },
   { value: "name", label: "Name (A–Z)" },
   { value: "market_cap", label: "Market cap" },
   { value: "composite_score", label: "Stock Condition" },

@@ -240,7 +240,7 @@ export function ScoreHistorySection({
           <span className="block text-sm font-semibold text-foreground">Stock Condition history</span>
           <span className="block text-[11px] text-foreground-faint">
             {data?.blocked ? "Not shown — corporate action in progress" : data ? `${data.available} stored session${data.available === 1 ? "" : "s"}` : `Last ${sessions || 5}–10 sessions`}
-            {" · "}inputs and reading change
+            {" · "}inputs and Stock Condition change
           </span>
         </span>
         <ChevronDown size={16} className={clsx("shrink-0 text-foreground-faint transition-transform", open && "rotate-180")} />
