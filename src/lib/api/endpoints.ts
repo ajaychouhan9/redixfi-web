@@ -160,7 +160,7 @@ export const getVolatility = (symbol: string, opts?: FetchOpts) =>
 
 // @auth required — tier-aware: Free reads the first 20 of each list, Pro the whole list.
 export const getVolatilityBoard = (
-  params: { which: "top" | "bottom"; page?: number; size?: number; q?: string },
+  params: { which: "top" | "bottom"; page?: number; size?: number; q?: string; universe?: "liquid" | "all" },
   opts?: FetchOpts
 ) => apiGet<VolatilityBoard>("/volatility/leaderboard", { ...opts, params });
 

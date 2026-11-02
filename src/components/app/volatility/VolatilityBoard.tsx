@@ -20,6 +20,7 @@ import { stockPath } from "@/lib/seo/stock-symbol";
 import type { VolatilityBoard as Board, VolatilityBoardRow } from "@/lib/api/types";
 
 type Which = "top" | "bottom";
+type Universe = "liquid" | "all";
 const PAGE = 50;
 
 function move(v: number | null | undefined): string {
@@ -63,6 +64,7 @@ function Row({ r }: { r: VolatilityBoardRow }) {
 export function VolatilityBoard({ initialTop, initialBottom }: { initialTop: Board | null; initialBottom: Board | null }) {
   const { user, getToken } = useAuth();
   const [tab, setTab] = useState<Which>("top");
+  const [universe, setUniverse] = useState<Universe>("liquid");
   const [lists, setLists] = useState<Record<Which, Board | null>>({ top: initialTop, bottom: initialBottom });
   const [more, setMore] = useState<Record<Which, boolean>>({ top: false, bottom: false });
   const [q, setQ] = useState("");
@@ -74,21 +76,26 @@ export function VolatilityBoard({ initialTop, initialBottom }: { initialTop: Boa
   // Signed-in callers: reload page 1 with their token, so a higher tier sees its larger range.
   const tierKey = user?.tier ?? "";
   useEffect(() => {
-    if (!user || user.tier === "free") return;
+    // The server-rendered first 20 are the liquid view for everyone; reload for a higher tier or when "All ranked stocks" is chosen.
+    if (universe === "liquid" && (!user || user.tier === "free")) {
+      setLists({ top: initialTop, bottom: initialBottom });
+      return;
+    }
     let alive = true;
     (async () => {
       try {
         const token = await getToken();
+        const size = !user || user.tier === "free" ? 20 : PAGE;
         const [top, bottom] = await Promise.all([
-          getVolatilityBoard({ which: "top", page: 1, size: PAGE }, { token }),
-          getVolatilityBoard({ which: "bottom", page: 1, size: PAGE }, { token }),
+          getVolatilityBoard({ which: "top", page: 1, size, universe }, { token }),
+          getVolatilityBoard({ which: "bottom", page: 1, size, universe }, { token }),
         ]);
         if (alive) setLists({ top: top.data, bottom: bottom.data });
-      } catch { /* keep the server-rendered lists */ }
+      } catch { /* keep the lists already shown */ }
     })();
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tierKey]);
+  }, [tierKey, universe]);
 
   const loadMore = useCallback(async (which: Which) => {
     const cur = lists[which];
@@ -97,11 +104,11 @@ export function VolatilityBoard({ initialTop, initialBottom }: { initialTop: Boa
     try {
       const token = await getToken();
       const next = Math.floor(cur.rows.length / PAGE) + 1;
-      const res = await getVolatilityBoard({ which, page: next, size: PAGE }, { token });
+      const res = await getVolatilityBoard({ which, page: next, size: PAGE, universe }, { token });
       setLists((l) => ({ ...l, [which]: { ...res.data, rows: [...(l[which]?.rows ?? []), ...res.data.rows] } }));
     } catch { setFailed(true); }
     finally { setMore((m) => ({ ...m, [which]: false })); }
-  }, [lists, getToken]);
+  }, [lists, getToken, universe]);
 
   // Search by symbol (debounced). Results come from the full ranked list; rows outside the caller's range are locked.
   useEffect(() => {
@@ -113,16 +120,19 @@ export function VolatilityBoard({ initialTop, initialBottom }: { initialTop: Boa
       setFailed(false);
       try {
         const token = await getToken();
-        const res = await getVolatilityBoard({ which: "top", page: 1, size: 30, q: term }, { token });
+        const res = await getVolatilityBoard({ which: "top", page: 1, size: 30, q: term, universe }, { token });
         if (mine === seq.current) setFound(res.data);
       } catch { if (mine === seq.current) setFailed(true); }
       finally { if (mine === seq.current) setBusy(false); }
     }, 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q]);
+  }, [q, universe]);
 
   const capped = (lists.top?.cap ?? 20) > 0;
+  const rankedOf = lists.top?.ranked_of ?? lists.bottom?.ranked_of ?? null;
+  const universeLabel = lists.top?.universe_label ?? "ranked stocks";
+  const hasUniverse = !!lists.top?.universe;      // an API that has not been updated yet sends no universe: show no toggle and no liquid wording
 
   const renderList = (which: Which) => {
     const b = lists[which];
@@ -142,6 +152,22 @@ export function VolatilityBoard({ initialTop, initialBottom }: { initialTop: Boa
 
   return (
     <div>
+      {hasUniverse && (<>
+      <div role="group" aria-label="Which stocks are ranked" className="mb-3 grid grid-cols-2 gap-1 rounded-lg border border-border bg-surface p-1" data-testid="volatility-universe">
+        {([["liquid", "Liquid stocks"], ["all", "All ranked stocks"]] as [Universe, string][]).map(([u, label]) => (
+          <button key={u} type="button" aria-pressed={universe === u} onClick={() => { setUniverse(u); setFound(null); }}
+            className={clsx("min-h-11 rounded-md px-2 text-xs font-medium", universe === u ? "bg-accent text-accent-foreground" : "text-foreground-muted")}>
+            {label}
+          </button>
+        ))}
+      </div>
+      <p className="mb-3 text-[11px] text-foreground-muted" data-testid="volatility-universe-note">
+        {rankedOf ? `Ranked among ${rankedOf.toLocaleString("en-IN")} ${universeLabel}. ` : ""}
+        {lists.top?.universe === "liquid"
+          ? "Liquid stocks are the same set the Intraday tabs and the 7-Day Review use; thinly traded stocks are left out of this view."
+          : "Every stock with a stored ranking, including thinly traded ones."}
+      </p>
+      </>)}
       <label className="relative block">
         <span className="sr-only">Search a symbol</span>
         <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-faint" />

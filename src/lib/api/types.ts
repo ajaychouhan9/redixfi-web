@@ -350,6 +350,8 @@ export interface VolatilityBoardRow {
   max_up_pct?: number | null;
   max_down_pct?: number | null;
   avg_range_pct?: number | null;
+  /** Rank among all ranked stocks (the Liquid view re-numbers `vol_rank` 1..N). */
+  all_rank?: number;
 }
 
 export interface VolatilityBoard {
@@ -365,6 +367,9 @@ export interface VolatilityBoard {
   /** Rows per list this caller may read; 0 = the whole list. */
   cap?: number;
   ranked_of?: number;
+  /** "liquid" (the default: the stocks the Intraday tabs and the 7-Day Review use) or "all" (every ranked stock). */
+  universe?: "liquid" | "all";
+  universe_label?: string;
   tier?: string;
   next_tier?: string | null;
   disclaimer: string;
