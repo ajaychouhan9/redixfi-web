@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { ConditionLine } from "@/components/app/signals/ConditionLine";
 import { ScoreAsOf } from "@/components/app/signals/ScoreAsOf";
 import { SlowestInputNote } from "@/components/ui/SlowestInputNote";
 import { ProLock } from "@/components/ui/ScValue";
@@ -67,7 +66,6 @@ export function ResearchConditionCard({ symbol, initial }: { symbol: string; ini
         Full signal detail →
       </Link>
     </div>
-    <ConditionLine symbol={symbol} />
     </>
   );
 }

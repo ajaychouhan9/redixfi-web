@@ -261,8 +261,12 @@ if (/text-(up|down|success|danger|red|green|emerald|rose)\b|<(ArrowUp|ArrowDown|
 if (!readFileSync(join(ROOT, "lib/condition-line.ts"), "utf8").includes("Stock Condition, last")) uxHits.push("lib/condition-line.ts: the plain caption is missing");
 const pillsSrc = stripComments(readFileSync(join(ROOT, "components/app/signals/AskPills.tsx"), "utf8"));
 if (!pillsSrc.includes("openWithQuestion") || /\b(sendMessage|submit|handleSend|requestSubmit)\b/.test(pillsSrc)) uxHits.push("AskPills.tsx: a pill must only fill the question in (openWithQuestion), never send it");
-for (const [rel, need] of [["components/app/signals/SignalDetailView.tsx", "<AskPills"], ["components/app/signals/SignalDetailView.tsx", "<ConditionLine"], ["components/app/research/ResearchDetail.tsx", "<AskPills"], ["components/app/research/ResearchConditionCard.tsx", "<ConditionLine"]]) {
+for (const [rel, need] of [["components/app/signals/SignalDetailView.tsx", "<AskPills"], ["components/app/research/ResearchDetail.tsx", "<AskPills"]]) {
   if (!readFileSync(join(ROOT, rel), "utf8").includes(need)) uxHits.push(`${rel}: ${need} missing`);
+}
+// 2 Nov 2026 (Tasks 6 and 7): the Stock Condition 30-session line is no longer shown on the stock or Research page (the endpoint and component stay)
+for (const rel of ["components/app/signals/SignalDetailView.tsx", "components/app/research/ResearchConditionCard.tsx", "components/app/research/ResearchDetail.tsx"]) {
+  if (readFileSync(join(ROOT, rel), "utf8").includes("<ConditionLine")) uxHits.push(`${rel}: <ConditionLine must not be rendered`);
 }
 function rewindFiles(dir) {
   const out = [];

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { ScoreAsOf } from "@/components/app/signals/ScoreAsOf";
 import { ResearchConditionCard } from "@/components/app/research/ResearchConditionCard";
 import { AskPills } from "@/components/app/signals/AskPills";
+import { StockPriceHeader } from "@/components/app/signals/StockPriceHeader";
+import { Week52Range } from "@/components/app/signals/Week52Range";
 import { READING_EXPLAINER, READING_NAME, conditionChangeText } from "@/lib/reading-copy";
 import type { ResearchDetail as ResearchDetailType, Candle, PeerRow } from "@/lib/api/types";
 import { Card } from "@/components/ui/Card";
@@ -100,32 +102,15 @@ export function ResearchDetail({
             <AlertCreateButton symbol={data.symbol} />
           </div>
         </div>
-        <div className="mt-1 flex flex-wrap items-baseline gap-3">
-          <span className="text-2xl font-semibold">₹{data.price.last_price.toLocaleString("en-IN")}</span>
-          <DeltaValue value={data.price.day_change_pct} kind="pct" />
-        </div>
-        <p className="mt-1 text-[11px] text-foreground-faint">{formatPriceAsOf(data.price.data_as_of)}</p>
+        <StockPriceHeader symbol={data.symbol} name={data.company_name} group={data.sector} price={data.price.last_price} pct={data.price.day_change_pct} asOf={data.price.data_as_of} />
         <CorporateActionNote info={data.corporate_action} />
-        <div className="mt-2 max-w-xs">
-          <div className="h-1.5 w-full rounded-full bg-neutral-bg">
-            <div className="h-1.5 rounded-full bg-accent" style={{ width: `${positionPct}%` }} />
-          </div>
-          <div className="mt-1 flex justify-between gap-2 text-xs text-foreground-faint">
-            <span>52wk low {low52 != null ? `₹${low52.toLocaleString("en-IN")}` : "n/a"}</span>
-            <span>52wk high {high52 != null ? `₹${high52.toLocaleString("en-IN")}` : "n/a"}</span>
-          </div>
-          <p className="mt-1 text-xs text-foreground-muted">
-            {belowHighPct == null
-              ? "52-week high unavailable"
-              : belowHighPct < 0.05
-                ? "at 52-week high"
-                : `${belowHighPct.toFixed(1)}% below 52-week high`}
-          </p>
-          <p className="mt-0.5 text-[10px] text-foreground-faint">
-            52-week range: as of {formatObservationDate(data.price.data_as_of?.data_as_of) ?? "date unavailable"}.
-          </p>
-        </div>
-
+        <Week52Range
+          className="mt-2 max-w-xs"
+          week52={{ week52_high: high52, week52_low: low52, last_close: lastPrice, as_of: data.price.data_as_of?.data_as_of?.slice(0, 10) ?? null, pct_below_52w_high: belowHighPct } as never}
+          lastPrice={lastPrice}
+          livePrice={/^As of \d{2}:\d{2} IST \(delayed\)$/.test(formatPriceAsOf(data.price.data_as_of)) ? lastPrice : null}
+          liveLabel={formatPriceAsOf(data.price.data_as_of)}
+        />
         {/* B1 Signal Snapshot (2026-08-11) — compact, near the top, per the
             task. Uses ONLY data already fetched for this page
             (signal_summary: composite_score/delta_1d — ResearchSignalSummary,
@@ -141,13 +126,17 @@ export function ResearchDetail({
             so it was deliberately left out rather than fabricated. The
             fuller "Signal summary" card lower on this page (narrative +
             link to the full Signal Dashboard) is unchanged. */}
-        <ResearchConditionCard symbol={data.symbol} initial={data.signal_summary} />
         <AskPills symbol={data.symbol} />
       </div>
 
-      <ErrorBoundary>
-        <ResearchChart symbol={data.symbol} dailyCandles={dailyCandles} />
-      </ErrorBoundary>
+      <p className="text-sm" data-testid="research-chart-link">
+        <Link href={`${stockPath("/signals", data.symbol)}#price-chart`} className="font-medium text-accent underline decoration-dotted underline-offset-2">
+          Price chart
+        </Link>
+        <span className="ml-2 text-xs text-foreground-muted">Daily closes on the stock page.</span>
+      </p>
+
+      <ResearchConditionCard symbol={data.symbol} initial={data.signal_summary} />
 
       <ErrorBoundary>
         <FundamentalsPanels

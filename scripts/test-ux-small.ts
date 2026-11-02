@@ -50,4 +50,29 @@ assert.equal(priceGapNote({ ...gap, marketOpen: false }), null);        // after
 assert.equal(priceGapNote({ ...gap, readingsDate: "2026-11-02" }), null); // readings already for the current session
 assert.equal(priceGapNote({ ...gap, pct: null }), null);
 
+
+// Task 6: notable combination (same rules as detect_conflicts), no model
+import { notableCombination } from "../src/lib/notable-combination.ts";
+import { closesFrom, labelIndexes, linePath, pctFromStart, periodPoints } from "../src/lib/price-chart.ts";
+const base = { trend_10d_pct: 5, delivery_pct: 40, delivery_avg20: 50, volume_ratio_5d: 1, pcr: 1, pcr_available: false, sector_rank: 5, sector_count: 20 };
+assert.equal(notableCombination(base), "Price rose 5.0% over 10 sessions while delivery stayed below its 20-day average (40% vs 50%).");
+assert.equal(notableCombination({ ...base, delivery_pct: 60 }), null);                                         // delivery above its average: no combination
+assert.equal(notableCombination({ ...base, trend_10d_pct: -4, delivery_pct: 70 })?.startsWith("Price fell 4.0%"), true);
+assert.equal(notableCombination({ ...base, delivery_pct: 50, volume_ratio_5d: 0.6 }), "Price rose 5.0% over 10 sessions on volume well below its 20-day norm (0.6x).");
+assert.equal(notableCombination({ ...base, delivery_pct: 50, sector_rank: 18 }), "The stock rose 5.0% over 10 sessions while its sector ranked 18 of 20.");
+assert.equal(notableCombination({ ...base, trend_10d_pct: 0.5, delivery_pct: 70 })?.includes("roughly flat"), true);
+assert.equal(notableCombination({ ...base, trend_10d_pct: null }), null);
+assert.ok(!/historically|buy|sell|signal|bullish|bearish/i.test(notableCombination(base) ?? ""));
+
+// Task 6: price chart helpers
+const days = (n: number) => Array.from({ length: n }, (_, i) => ({ timestamp: new Date(Date.UTC(2026, 0, 1) + i * 86400000).toISOString(), close: 100 + i }));
+const allPts = closesFrom(days(400));
+assert.equal(allPts.length, 400);
+assert.ok(periodPoints(allPts, "1M").length <= 32 && periodPoints(allPts, "1M").length >= 30);
+assert.ok(periodPoints(allPts, "3M").length > periodPoints(allPts, "1M").length && periodPoints(allPts, "1Y").length > periodPoints(allPts, "3M").length);
+assert.equal(periodPoints(closesFrom(days(10)), "1Y").length, 10);                                              // a stock with a short history shows what exists
+assert.equal(pctFromStart(allPts.slice(0, 3), 2)?.toFixed(2), "2.00");
+assert.deepEqual(labelIndexes(100), [0, 33, 66, 99]);
+assert.ok(linePath(allPts.slice(0, 5), 320, 150).d.startsWith("M6.0 "));
+
 console.log("test-ux-small: ok");
