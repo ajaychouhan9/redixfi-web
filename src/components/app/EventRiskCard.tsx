@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle } from "lucide-react";
+import { Newspaper } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
@@ -65,10 +65,10 @@ export function EventRiskCard({
     .slice(0, 3);
   const highCount = newsToday?.items_flagged_high ?? 0;
   return (
-    <Card title="Event Risk Today" action={<AiLabel />}>
+    <Card title="Today\u2019s news scan" action={<AiLabel />}>
       {newsToday && (
         <p className="mb-2 text-xs text-foreground-muted">
-          {since ? `Session of ${formatShortDate(since)}: ` : "Today: "}AI read {newsToday.items_read} item(s) —{" "}
+          {since ? `Session of ${formatShortDate(since)}: ` : "Latest session: "}AI read {newsToday.items_read} item(s) —{" "}
           <span className="text-accent">{newsToday.items_flagged} flagged</span>, {highCount} high-severity (market or sector-wide).
         </p>
       )}
@@ -98,7 +98,7 @@ export function EventRiskCard({
         </ul>
       )}
       <div className="mt-3 flex items-center gap-1 border-t border-border pt-3">
-        <AlertTriangle size={12} className="text-accent" />
+        <Newspaper size={12} className="text-accent" />
         <Link href="/news" className="text-xs font-medium text-accent">
           See all news
         </Link>

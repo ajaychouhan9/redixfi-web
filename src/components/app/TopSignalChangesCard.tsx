@@ -8,6 +8,8 @@ import { ShareCardPopover } from "@/components/app/marketing/ShareCardPopover";
 import { SessionLabel } from "@/components/app/SessionLabel";
 import type { MarketState } from "@/lib/api/types";
 import { stockPath } from "@/lib/seo/stock-symbol";
+import { displayName } from "@/lib/company-name";
+import { formatShortDate } from "@/lib/format";
 import { ProLock } from "@/components/ui/ScValue";
 import { useMovers } from "@/components/app/useMovers";
 
@@ -20,7 +22,13 @@ function MoverList({ rows, label, tone }: { rows: MoverRow[]; label: string; ton
         {rows.map((r) => (
           <li key={r.symbol}>
             <Link href={stockPath("/signals", r.symbol)} className="flex items-center justify-between text-sm hover:text-accent">
-              <span className="truncate font-medium">{r.symbol}</span>
+              <span className="min-w-0 truncate">
+                <span className="font-medium">{displayName(r.company_name) || r.symbol}</span>
+                <span className="block text-[11px] text-foreground-muted">
+                  {r.symbol}
+                  {typeof r.day_change_pct === "number" && <> · price {r.day_change_pct > 0 ? "+" : ""}{r.day_change_pct.toFixed(1)}%</>}
+                </span>
+              </span>
               {r.sc_locked || r.delta_1d === null ? (
                 <ProLock />
               ) : (
@@ -32,7 +40,7 @@ function MoverList({ rows, label, tone }: { rows: MoverRow[]; label: string; ton
             </Link>
           </li>
         ))}
-        {rows.length === 0 && <li className="text-sm text-foreground-faint">No reading changes for this session.</li>}
+        {rows.length === 0 && <li className="text-sm text-foreground-faint">No Stock Condition changes for this session.</li>}
       </ul>
     </div>
   );
@@ -48,7 +56,7 @@ export function TopSignalChangesCard({ movers: initial, marketState }: { movers:
   // wrong on weekends/holidays/before the day's measured_signals run —
   // signal_movers() now returns the real observation date.
   // Live-vs-end-of-day fix (Oct 2026): the session date is a "Last session · <date>" label inside the card.
-  const title = "Biggest reading changes";
+  const title = "Biggest Stock Condition changes";
   return (
     <Card
       title={title}
@@ -57,8 +65,8 @@ export function TopSignalChangesCard({ movers: initial, marketState }: { movers:
           <ShareCardPopover
             card={{
               type: "movers",
-              title: "Biggest reading changes",
-              subtitle: "Biggest measured Stock Condition changes today",
+              title: "Biggest Stock Condition changes",
+              subtitle: "Biggest measured Stock Condition changes at the last close",
               stat: shareStat,
               statLabel: topDecliner ? `Largest reading decrease: ${topDecliner.symbol} ${topDecliner.delta_1d}` : undefined,
               direction: "up",
@@ -71,9 +79,12 @@ export function TopSignalChangesCard({ movers: initial, marketState }: { movers:
       }
     >
       <SessionLabel dataDate={movers?.date} initial={marketState} />
+      <p className="mb-2 text-[11px] text-foreground-faint" data-testid="sc-changes-note">
+        Points are the change in the 0-100 Stock Condition value{movers?.date ? ` · As of ${formatShortDate(movers.date)} close` : ""}. Liquid stocks with a full reading only.
+      </p>
       <div className="grid grid-cols-2 gap-x-6">
-        <MoverList rows={movers?.up.slice(0, 3) ?? []} label="Largest reading increase" tone="up" />
-        <MoverList rows={movers?.down.slice(0, 3) ?? []} label="Largest reading decrease" tone="down" />
+        <MoverList rows={movers?.up.slice(0, 3) ?? []} label="Largest increase" tone="up" />
+        <MoverList rows={movers?.down.slice(0, 3) ?? []} label="Largest decrease" tone="down" />
       </div>
     </Card>
   );

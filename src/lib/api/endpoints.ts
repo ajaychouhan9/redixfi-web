@@ -8,6 +8,7 @@ import type {
   SignalDetail,
   ScoreHistoryResponse,
   IntradayCheck,
+  PriceMovers,
   AskPillsResponse,
   ConditionLineResponse,
   VolatilityResponse,
@@ -218,6 +219,9 @@ export const getWatchlistStates = (opts?: FetchOpts) =>
   apiGet<WatchlistBehaviorRow[]>("/intraday/watchlist-states", opts);
 
 // ---------- research ----------
+
+// @auth required — name, price and % move are public; the Stock Condition on each row follows the visibility rule for the caller's plan.
+export const getPriceMovers = (opts?: FetchOpts) => apiGet<PriceMovers>("/market/price-movers", opts);
 
 // @auth public — prices and averages for liquid stocks; no Stock Condition value.
 export const getIntradayCheck = (symbol: string, tab: IntradayTabId, opts?: FetchOpts) =>

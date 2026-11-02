@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getMarketOverview, getSignalMovers, getLatestBrief, getIntradaySession, getAnomalies, getMarketState, getLiveToday, getNews, getBillingPlans, getMarketActivitySummary } from "@/lib/api/endpoints";
+import { getMarketOverview, getSignalMovers, getLatestBrief, getIntradaySession, getAnomalies, getMarketState, getLiveToday, getPriceMovers, getNews, getBillingPlans, getMarketActivitySummary } from "@/lib/api/endpoints";
 import { MarketPulseCard } from "@/components/app/MarketPulseCard";
+import { MarketStatusStrip } from "@/components/app/MarketStatusStrip";
+import { PriceMoversCard } from "@/components/app/PriceMoversCard";
 import { LiveTodayCard } from "@/components/app/LiveTodayCard";
 import { TopSignalChangesCard } from "@/components/app/TopSignalChangesCard";
 import { AiDailyBriefCard } from "@/components/app/AiDailyBriefCard";
@@ -28,7 +30,7 @@ export const metadata: Metadata = { alternates: { canonical: "/" } };
 // docstring) — this fetch never sees a paid user's data, so it can't leak
 // the mistake this pattern originally guarded against.
 export default async function HomePage() {
-  const [overviewR, moversR, briefR, sessionR, anomaliesR, newsR, plansR, marketActivityR, marketStateR, liveTodayR] = await Promise.allSettled([
+  const [overviewR, moversR, briefR, sessionR, anomaliesR, newsR, plansR, marketActivityR, marketStateR, liveTodayR, priceMoversR] = await Promise.allSettled([
     getMarketOverview(),
     // @auth-ok: SSR, anonymous (Stock Condition locked outside the free sample); TopSignalChangesCard asks again with the token of a signed-in visitor.
     getSignalMovers(undefined, 3),
@@ -47,6 +49,8 @@ export default async function HomePage() {
     // @auth-ok: public — the market state and the live-today list are the same for every caller.
     getMarketState(),
     getLiveToday(),
+    // @auth-ok: SSR, anonymous (Stock Condition locked outside the free sample); PriceMoversCard asks again with the token of a signed-in visitor.
+    getPriceMovers(),
   ]);
 
   const overview = overviewR.status === "fulfilled" ? overviewR.value.data : null;
@@ -59,6 +63,7 @@ export default async function HomePage() {
   const marketActivity = marketActivityR.status === "fulfilled" ? marketActivityR.value.data : null;
   const marketState = marketStateR.status === "fulfilled" ? marketStateR.value.data : null;
   const liveToday = liveTodayR.status === "fulfilled" ? liveTodayR.value.data : null;
+  const priceMovers = priceMoversR.status === "fulfilled" ? priceMoversR.value.data : null;
 
   return (
     // Widened from `mx-auto max-w-6xl` (2026-08-11): that cap centered a
@@ -68,68 +73,35 @@ export default async function HomePage() {
     // width up to the sidebar's edge on one side and the viewport edge on
     // the other, instead of floating centered with dead space either side.
     <div className="w-full max-w-[1800px] space-y-5">
-      {/* Live today: only while the market is open and the live feed is fresh (renders nothing otherwise). The
-          end-of-day cards further down are labelled with their own session date. */}
-      <LiveTodayCard initial={liveToday} />
-      {/* Server-rendered for every visitor by default (no session cookie in
-          this app to branch on — see VisitorIntroStrip's own docstring for
-          why that's the correct, non-cloaking default). Hides itself
-          client-side once a REAL logged-in token resolves. */}
+      {/* Order (2 Nov 2026): market status and breadth, today's price movers, your stocks, the latest brief, Market Pulse, the Stock Condition
+          changes, unusual activity, the news scan, Market Activity, the report promo. The visitor intro (anonymous only) stays on top; the
+          marketing cards that only anonymous visitors see are below the report promo. */}
       <VisitorIntroStrip />
-      <HomeShortcutCard />
+      <MarketStatusStrip overview={overview} session={session} marketState={marketState} />
+      <LiveTodayCard initial={liveToday} />
 
-      {/* Governance/Ask AI preview + small-cap positioning — anonymous
-          visitors only (each self-gates on `user`, same pattern as
-          VisitorIntroStrip). Sits above the real live dashboard rows below
-          so a first-time visitor sees the two AI features named in the
-          hero (document summaries, governance radar) demonstrated with
-          real, already-generated output before scrolling into live data. */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <GovernanceRadarCard />
-        <AskAiTeaserCard />
-      </div>
-      <SmallCapPositioningStrip />
+      <PriceMoversCard initial={priceMovers} />
 
-      {/* Row 1 — AI Daily Brief (wider) + Market Pulse. Founder decision:
-          the Brief is the strongest differentiator, so it leads. 1 column
-          mobile, even 2-up tablet, 60/40 desktop. */}
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-5">
-        <div className="lg:col-span-3">
-          <AiDailyBriefCard brief={brief} />
-        </div>
-        <div className="lg:col-span-2">
-          <MarketPulseCard overview={overview} />
-        </div>
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <WatchlistAlertsCard />
+        <ContinueResearchCard />
       </div>
 
-      {/* Rows 2 and 3 as one masonry flow (2026-10-25): the cards have different heights, and a plain grid left empty
-          gaps under the shorter ones (under Top Signal Changes and Intraday now). CSS columns pack them top to bottom,
-          3 across on desktop, 2 on tablet, 1 on mobile. A client card that renders nothing leaves an empty wrapper,
-          which is hidden (empty:hidden) so it cannot leave a gap either. Unusual Activity is the compact variant (the
-          full per-stock breakdown lives on /unusual-activity); Market Activity is the rollup with one "View all" link. */}
-      <div className="columns-1 gap-5 md:columns-2 lg:columns-3">
-        <div className="mb-5 break-inside-avoid empty:hidden">
-          <TopSignalChangesCard movers={movers} marketState={marketState} />
-        </div>
-        <div className="mb-5 break-inside-avoid empty:hidden">
-          <AnomalyCard compact results={anomalies?.data ?? []} scan={anomalies?.page_info.scan ?? null} marketState={marketState} />
-        </div>
-        <div className="mb-5 break-inside-avoid empty:hidden">
-          <EventRiskCard newsToday={overview?.news_today ?? null} initialItems={newsItems} />
-        </div>
-        <div className="mb-5 break-inside-avoid empty:hidden">
-          <IntradayNowCard session={session} />
-        </div>
-        <div className="mb-5 break-inside-avoid empty:hidden">
-          <ContinueResearchCard />
-        </div>
-        <div className="mb-5 break-inside-avoid empty:hidden">
-          <WatchlistAlertsCard />
-        </div>
-        <div className="mb-5 break-inside-avoid empty:hidden">
-          <MarketActivityCard summary={marketActivity} />
-        </div>
+      <AiDailyBriefCard brief={brief} />
+
+      <MarketPulseCard overview={overview} />
+
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <TopSignalChangesCard movers={movers} marketState={marketState} />
+        <AnomalyCard compact results={anomalies?.data ?? []} scan={anomalies?.page_info.scan ?? null} marketState={marketState} />
       </div>
+
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <EventRiskCard newsToday={overview?.news_today ?? null} initialItems={newsItems} />
+        <IntradayNowCard session={session} />
+      </div>
+
+      <MarketActivityCard summary={marketActivity} />
 
       <p className="text-center text-sm text-foreground-muted" data-testid="home-sample-report">
         New: company report PDFs with price, growth, peers, ownership, filings and sources.{" "}
@@ -137,6 +109,13 @@ export default async function HomePage() {
           See the free sample report
         </Link>
       </p>
+
+      <HomeShortcutCard />
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <GovernanceRadarCard />
+        <AskAiTeaserCard />
+      </div>
+      <SmallCapPositioningStrip />
 
       <HomePricingSection plans={plans} />
     </div>

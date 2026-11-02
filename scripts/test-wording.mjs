@@ -302,6 +302,22 @@ if (oldNameHits.length) {
   console.error("Old tab names or signal-like wording in user-facing files:" + String.fromCharCode(10) + oldNameHits.join(String.fromCharCode(10)));
   process.exit(1);
 }
+// 2026-11-02: no sign-up call to action may render for a logged-in user. A file that prints one must gate it (GuestOnly) or check the user itself.
+const ctaHits = [];
+const CTA_TEXT = ["Sign up free", "Create a free account", "mode=signup"];
+const CTA_ALLOWED = new Set(["app/(app)/login/page.tsx", "components/app/VisitorIntroStrip.tsx"]);
+for (const file of files(ROOT)) {
+  const rel = file.slice(ROOT.length).replace(/\\/g, "/");
+  if (CTA_ALLOWED.has(rel)) continue;
+  const raw = readFileSync(file, "utf8");
+  const text = stripComments(raw);
+  if (!CTA_TEXT.some((t) => text.includes(t))) continue;
+  if (!/GuestOnly|useAuth\(/.test(raw)) ctaHits.push(rel);
+}
+if (ctaHits.length) {
+  console.error("Sign-up call to action without a logged-in check (wrap it in GuestOnly):" + String.fromCharCode(10) + ctaHits.join(String.fromCharCode(10)));
+  process.exit(1);
+}
 // 2026-11-01: Intraday tabs (Morning | Scan | Recap). Descriptive wording only: the largest gaps before the open, the largest moves so far, how the day
 // ended. No trade-call words, and the Recap never counts how many listed stocks went which way. The two fixed sentences are required on every tab.
 const INTRADAY_FILES = [

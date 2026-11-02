@@ -167,6 +167,28 @@ export interface MoverRow {
   delta_1d: number | null;
   cause: string;
   sc_locked?: boolean;
+  /** The stock's price move on the same day (public). */
+  day_change_pct?: number | null;
+}
+
+export interface PriceMoverRow {
+  symbol: string;
+  name: string | null;
+  price: number | null;
+  pct: number | null;
+  /** The Stock Condition (second line); null with `sc_locked` when the caller may not see it. */
+  sc: number | null;
+  sc_locked: boolean;
+}
+/** GET /market/price-movers: today's top 5 up and down by price (liquid EQ stocks). */
+export interface PriceMovers {
+  as_of_label: string | null;
+  date: string | null;
+  source: string;
+  universe: string;
+  up: PriceMoverRow[];
+  down: PriceMoverRow[];
+  note: string;
 }
 
 export interface SignalsMovers {

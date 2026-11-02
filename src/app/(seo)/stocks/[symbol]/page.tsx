@@ -1,3 +1,4 @@
+import { GuestOnly } from "@/components/app/GuestOnly";
 import type { Metadata } from "next";
 import { cache } from "react";
 import Link from "next/link";
@@ -197,6 +198,7 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
         </p>
       )}
 
+<GuestOnly>
       <div className="mt-8 rounded-xl border border-accent/30 bg-accent/5 p-5 text-center">
         <p className="text-sm font-medium">
           See {data.symbol}&apos;s full Research Pro page — insider trades, promoter pledge trend, options
@@ -209,6 +211,7 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
           Sign up free
         </Link>
       </div>
+      </GuestOnly>
 
       <p className="mt-6 text-center text-xs text-foreground-faint">
         <Link href="/pricing" className="underline">

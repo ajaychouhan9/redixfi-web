@@ -57,7 +57,7 @@ export interface DailyBriefBullets {
  * with a mid-sentence period edge case could still land awkwardly. A
  * durable fix belongs in the builder emitting structured facts.
  */
-export function splitDailyBriefBullets(body: string, maxVisible = 3): DailyBriefBullets {
+export function splitDailyBriefBullets(body: string, maxVisible = 5): DailyBriefBullets {
   const sentences = sentencesIn(body)
     .map((sentence) => sentence.trim())
     .filter(Boolean);

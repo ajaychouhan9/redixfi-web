@@ -6,8 +6,8 @@ import type { IntradaySession } from "@/lib/api/types";
 
 const STATE_LABEL: Record<string, string> = {
   premarket: "Pre-market",
-  live: "Live",
-  postmarket: "Closed — recap available",
+  live: "Market open",
+  postmarket: "Closed — After close view available",
 };
 
 export function IntradayNowCard({ session }: { session: IntradaySession | null }) {
@@ -18,10 +18,10 @@ export function IntradayNowCard({ session }: { session: IntradaySession | null }
           <div className="flex items-center gap-3">
             <Clock size={16} className="text-foreground-muted" />
             <div>
-              <p className="text-sm font-semibold">Intraday now — {STATE_LABEL[session.state] ?? session.state}</p>
+              <p className="text-sm font-semibold">Intraday: Pre-open, Live scan, After close · {STATE_LABEL[session.state] ?? session.state}</p>
               <p className="mt-0.5 text-xs text-foreground-faint">
                 {session.high_severity_events_today} high-severity event(s)
-                {session.event_session_date ? ` · session of ${formatShortDate(session.event_session_date)}` : " today"}
+                {session.event_session_date ? ` · session of ${formatShortDate(session.event_session_date)}` : ""}
                 {session.breadth_line && ` · ${session.breadth_line}`}
               </p>
             </div>

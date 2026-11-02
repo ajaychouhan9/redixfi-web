@@ -1,3 +1,4 @@
+import { GuestOnly } from "@/components/app/GuestOnly";
 import type { Metadata } from "next";
 import { ProLock } from "@/components/ui/ScValue";
 import Link from "next/link";
@@ -113,9 +114,11 @@ export default async function SharedScreenPage({ params }: { params: Promise<{ s
           >
             Clone this screen
           </Link>
+          <GuestOnly>
           <Link href="/login?mode=signup" className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
             Sign up free
           </Link>
+          </GuestOnly>
         </div>
         <p className="mt-2 text-xs text-foreground-faint">
           Log in to clone directly into your own Signal Dashboard — no account yet? Sign up first, then open this
