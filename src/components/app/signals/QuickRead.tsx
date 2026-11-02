@@ -18,6 +18,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { Chip } from "@/components/ui/Chip";
 import { signalStateLabel, signalStateTone } from "@/lib/signal-state-labels";
 import { isHeldStatus, quickReadChips, quickReadParts } from "@/lib/stock-clarity";
+import { formatShortDate } from "@/lib/format";
 import type { SignalDetail, VolatilityResponse } from "@/lib/api/types";
 
 export function QuickRead({ detail }: { detail: SignalDetail }) {
@@ -82,6 +83,9 @@ export function QuickRead({ detail }: { detail: SignalDetail }) {
         <p className="text-[13px] leading-snug text-foreground">
           <span className="mr-1.5 font-mono text-[11px] uppercase tracking-wide text-foreground-faint">Quick read</span>
           {parts.join(" · ")}
+          {detail.signal_freshness?.composite_score?.data_as_of && (
+            <span className="ml-1.5 text-[11px] text-foreground-faint">As of {formatShortDate(String(detail.signal_freshness.composite_score.data_as_of).slice(0, 10))} close</span>
+          )}
         </p>
       )}
       {chips.length > 0 && (

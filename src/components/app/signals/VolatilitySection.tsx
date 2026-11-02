@@ -164,7 +164,7 @@ export function VolatilitySection({ symbol }: { symbol: string }) {
         <span className="min-w-0">
           <span className="block text-sm font-semibold text-foreground">Volatility</span>
           <span className="block text-[11px] text-foreground-faint">
-            {ranked ? data?.band_text : "Past price movement over the last 21 sessions"}
+            {(ranked ? data?.band_text : "Past price movement over the last 21 sessions") + (data?.as_of ? ` · As of ${data.as_of.slice(8, 10).replace(/^0/, "")} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][Number(data.as_of.slice(5, 7)) - 1]} close` : "")}
           </span>
         </span>
         <ChevronDown size={16} className={clsx("shrink-0 text-foreground-faint transition-transform", open && "rotate-180")} />
