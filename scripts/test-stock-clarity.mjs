@@ -18,11 +18,11 @@ const base = { composite_score: 74, delta_1d: -4, delta_5d: -8, delivery_pct: 42
 
 // the example from the task
 assert.deepEqual(quickReadParts(base), [
-  "Reading 74 (-4 today, -8 over 5 sessions)", "Delivery 42.9% vs 48.9% 20-day avg", "Volume 1.5x usual", "Volatility rank 1,136 of 2,132 (1 = most volatile)"]);
+  "Stock Condition 74 (-4 vs previous session, -8 over 5 sessions)", "Delivery 42.9% vs 48.9% 20-day avg", "Volume 1.5x usual", "Volatility rank 1,136 of 2,132 (1 = most volatile)"]);
 // a blanked 5-day change (stale baseline) is not shown, and a blank 1-day change is not shown either
-assert.equal(quickReadParts({ ...base, delta_5d: null })[0], "Reading 74 (-4 today)");
-assert.equal(quickReadParts({ ...base, delta_1d: null, delta_5d: null })[0], "Reading 74");
-assert.equal(quickReadParts({ ...base, delta_1d: 0 })[0], "Reading 74 (0 today, -8 over 5 sessions)");
+assert.equal(quickReadParts({ ...base, delta_5d: null })[0], "Stock Condition 74 (-4 vs previous session)");
+assert.equal(quickReadParts({ ...base, delta_1d: null, delta_5d: null })[0], "Stock Condition 74");
+assert.equal(quickReadParts({ ...base, delta_1d: 0 })[0], "Stock Condition 74 (0 vs previous session, -8 over 5 sessions)");
 // at least 3 parts, otherwise nothing
 assert.equal(quickReadParts({ ...base, delivery_pct: null, volume_ratio_5d: null }).length, 0, "score + volatility only = 2 parts");
 assert.equal(quickReadParts({ ...base, delivery_pct: null }).length, 3);

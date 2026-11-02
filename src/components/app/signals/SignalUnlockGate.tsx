@@ -9,6 +9,7 @@ import { setLookupGrant } from "@/lib/lookup-grants";
 import { useTrialDays } from "@/lib/trial";
 import { Card } from "@/components/ui/Card";
 import { SignalDetailView } from "./SignalDetailView";
+import { PublicStockSummary } from "./PublicStockSummary";
 import type { Candle, DeliveryPoint, FundamentalsBlock, SignalDetail } from "@/lib/api/types";
 
 /**
@@ -93,20 +94,24 @@ export function SignalUnlockGate({
 
   if (phase === "resolving") {
     return (
-      <div className="mx-auto max-w-3xl animate-pulse space-y-3">
-        <p className="sr-only">
-          {initialDetail.company_name ?? symbol} — measured signals. Logged-out and Free visitors can open a few stocks each day.
+      <div className="mx-auto max-w-3xl space-y-3">
+        <PublicStockSummary detail={initialDetail} />
+        <p className="text-xs text-foreground-muted">
+          {initialDetail.company_name ?? symbol} — the Stock Condition and its detail open when your free stock view for the day is counted. Logged-out and
+          Free visitors can open a few stocks each day.
         </p>
-        <div className="h-6 w-48 rounded bg-hover" />
-        <div className="h-24 rounded-xl bg-hover" />
-        <div className="h-40 rounded-xl bg-hover" />
+        <div className="animate-pulse space-y-3">
+          <div className="h-24 rounded-xl bg-hover" />
+          <div className="h-40 rounded-xl bg-hover" />
+        </div>
       </div>
     );
   }
 
   if (phase === "used_up") {
     return (
-      <div className="mx-auto max-w-3xl" data-testid="free-views-used">
+      <div className="mx-auto max-w-3xl space-y-3" data-testid="free-views-used">
+        <PublicStockSummary detail={initialDetail} />
         <Card>
           {user ? (
             <>
@@ -148,7 +153,8 @@ export function SignalUnlockGate({
 
   if (phase === "error") {
     return (
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-3xl space-y-3">
+        <PublicStockSummary detail={initialDetail} />
         <Card>
           <p className="text-sm">We could not load {detail.company_name ?? symbol} right now. Please refresh the page in a moment.</p>
         </Card>

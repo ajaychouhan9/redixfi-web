@@ -39,4 +39,15 @@ const { d, min, max } = conditionLinePath([10, 20, 15], 100, 40);
 assert.ok(d.startsWith("M4.0 ") && d.split("L").length === 3 && min === 10 && max === 20);
 assert.ok(conditionLinePath([50, 50, 50], 100, 40).d.includes("20.0"));                      // a flat series is drawn in the middle
 
+
+// price-first: the difference line (Task 3)
+import { priceGapNote } from "../src/lib/price-gap.ts";
+const gap = { pct: 20, readingsDate: "2026-10-30", today: "2026-11-02", marketOpen: true };
+assert.equal(priceGapNote(gap), "The price has moved +20.0% from the last close (30 Oct). The readings below were measured at the 30 Oct close and update after today’s close.");
+assert.equal(priceGapNote({ ...gap, pct: 4.9 }), null);                 // smaller than the configured 5 percent
+assert.equal(priceGapNote({ ...gap, pct: -5 })?.includes("-5.0%"), true);
+assert.equal(priceGapNote({ ...gap, marketOpen: false }), null);        // after the close
+assert.equal(priceGapNote({ ...gap, readingsDate: "2026-11-02" }), null); // readings already for the current session
+assert.equal(priceGapNote({ ...gap, pct: null }), null);
+
 console.log("test-ux-small: ok");

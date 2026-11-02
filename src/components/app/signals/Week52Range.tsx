@@ -5,15 +5,24 @@ import { formatObservationDate } from "@/lib/format";
 export function Week52Range({
   week52,
   lastPrice,
+  livePrice,
+  liveLabel,
   className = "mt-3 max-w-md",
 }: {
   week52: Week52Detail | null | undefined;
   lastPrice?: number | null;
+  /** While the market is open: the header's delayed live price and its "As of HH:MM IST (delayed)" label. The marker and the percentages
+   *  then use that price (a price outside the stored range shows as the new extreme); otherwise the last close and its date are used. */
+  livePrice?: number | null;
+  liveLabel?: string | null;
   className?: string;
 }) {
   if (!week52) return null;
-  const high = week52.week52_high;
-  const low = week52.week52_low;
+  const storedHigh = week52.week52_high;
+  const storedLow = week52.week52_low;
+  const useLive = typeof livePrice === "number" && Number.isFinite(livePrice) && !!liveLabel;
+  const high = storedHigh != null && useLive ? Math.max(storedHigh, livePrice as number) : storedHigh;
+  const low = storedLow != null && useLive ? Math.min(storedLow, livePrice as number) : storedLow;
   if (high == null || low == null) {
     return (
       <div className={`${className} rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-muted`}>
@@ -23,7 +32,7 @@ export function Week52Range({
       </div>
     );
   }
-  const last = week52.last_close ?? lastPrice;
+  const last = useLive ? (livePrice as number) : (week52.last_close ?? lastPrice);
   const position = last != null && high > low
     ? Math.max(0, Math.min(100, ((last - low) / (high - low)) * 100))
     : 50;
@@ -48,7 +57,7 @@ export function Week52Range({
             : `${below.toFixed(1)}% below 52-week high`}
       </p>
       <p className="mt-0.5 text-[10px] text-foreground-faint">
-        52-week range: as of {formatObservationDate(week52.as_of) ?? "date unavailable"}.
+        52-week range: {useLive ? liveLabel : `as of ${formatObservationDate(week52.as_of) ?? "date unavailable"} close`}.
       </p>
     </div>
   );

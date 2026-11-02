@@ -59,7 +59,7 @@ export function quickReadParts(i: QuickReadInput): string[] {
   const parts: string[] = [];
 
   const changes: string[] = [];
-  if (num(i.delta_1d)) changes.push(`${signed(i.delta_1d)} today`);
+  if (num(i.delta_1d)) changes.push(`${signed(i.delta_1d)} vs previous session`);
   if (num(i.delta_5d)) changes.push(`${signed(i.delta_5d)} over 5 sessions`);
   parts.push(`Stock Condition ${i.composite_score}${changes.length ? ` (${changes.join(", ")})` : ""}`);
 

@@ -15,6 +15,9 @@ import { ConditionLine } from "@/components/app/signals/ConditionLine";
 import { AskPills } from "@/components/app/signals/AskPills";
 import { Week52Range } from "@/components/app/signals/Week52Range";
 import { VolatilitySection } from "@/components/app/signals/VolatilitySection";
+import { StockPriceHeader } from "@/components/app/signals/StockPriceHeader";
+import { StockConditionCard } from "@/components/app/signals/StockConditionCard";
+import { PriceGapNote } from "@/components/app/signals/PriceGapNote";
 import { QuickRead } from "@/components/app/signals/QuickRead";
 import { chartCaption, isTradeForTrade, visibleChangeLog } from "@/lib/stock-clarity";
 import { displayName } from "@/lib/company-name";
@@ -47,6 +50,11 @@ import { stockPath } from "@/lib/seo/stock-symbol";
  * all (Server Components can't read the browser's localStorage-held
  * auth token, so the SSR fetch is always anonymous).
  */
+/** True when the shown price comes from the delayed live feed (market open, today's bar), so the 52-week marker can use it. */
+function isLiveLabel(asOf: { data_as_of: string } | null | undefined): boolean {
+  return /^As of \d{2}:\d{2} IST \(delayed\)$/.test(formatPriceAsOf(asOf));
+}
+
 export function SignalDetailView({
   detail,
   candles,
@@ -82,45 +90,23 @@ export function SignalDetailView({
 
       <div>
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-sm text-foreground-muted">
-              {[detail.symbol, displayName(detail.company_name), detail.industry || detail.sector].filter(Boolean).join(" · ")}
-            </p>
-            <div className="mt-1 flex flex-wrap items-baseline gap-3">
-              <ExplainTerm metricKey="composite_score" symbol={detail.symbol} ctx={{ composite_score: detail.composite_score, symbol: detail.symbol }}>
-                <span className="text-3xl font-semibold text-foreground" data-testid="stock-condition-value">
-                  <span className="mr-2 text-base font-medium text-foreground-muted">{READING_NAME}:</span>
-                  {detail.composite_score} out of 100
-                </span>
-              </ExplainTerm>
-              {conditionChangeText(detail.delta_1d) && (
-                <ExplainTerm metricKey="delta_1d" symbol={detail.symbol} ctx={{ delta_1d: detail.delta_1d ?? "—", symbol: detail.symbol }}>
-                  <span className="text-sm text-foreground-muted">({conditionChangeText(detail.delta_1d)})</span>
-                </ExplainTerm>
-              )}
-              {conditionChangeText(detail.delta_5d) && <span className="text-xs text-foreground-faint">5d: {conditionChangeText(detail.delta_5d)?.replace(" vs previous session", "")}</span>}
-            </div>
-            <p className="mt-1 text-xs text-foreground-muted" data-testid="reading-explainer">{READING_EXPLAINER}</p>
-            {/* Bug fix (2026-08-08): price/day-change/vwap restored — same
-                ₹{last_price} + DeltaValue(pct) pattern research/
-                ResearchDetail.tsx already uses, placed right under the
-                composite score where the founder's bug report said users
-                expect to find it. */}
-            {(detail.last_price !== null || detail.vwap !== null) && (
-              <div className="mt-1 flex flex-wrap items-baseline gap-3 text-sm">
-                {detail.last_price !== null && (
-                  <span className="font-mono font-medium">₹{detail.last_price.toLocaleString("en-IN")}</span>
-                )}
-                {detail.day_change_pct !== null && <DeltaValue value={detail.day_change_pct} kind="pct" className="text-xs" />}
+          <StockPriceHeader
+            symbol={detail.symbol}
+            name={detail.company_name}
+            group={detail.industry || detail.sector}
+            price={detail.last_price}
+            pct={detail.day_change_pct}
+            asOf={detail.price_data_as_of}
+            extra={
+              <span className="text-xs">
                 {detail.vwap !== null && (
                   <span className="text-xs text-foreground-faint" title="Intraday VWAP — available for today's intraday-eligible universe">
                     VWAP ₹{detail.vwap.toLocaleString("en-IN")}
                   </span>
                 )}
-              </div>
-            )}
-            <p className="mt-1 text-[11px] text-foreground-faint">{formatPriceAsOf(detail.price_data_as_of)}</p>
-          </div>
+              </span>
+            }
+          />
           <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             <ExportButton onExport={exportXlsx} canExport={isProEntitled(user)} label="Download Excel" enabledTitle="Export as Excel" disabledTitle="Upgrade to export Excel" />
             <WatchlistButton symbol={detail.symbol} />
@@ -130,10 +116,15 @@ export function SignalDetailView({
             <ExploreHistoryLink symbol={detail.symbol} />
           </div>
         </div>
-        <ScoreAsOf scoreDate={detail.signal_freshness?.composite_score?.data_as_of} />
         <QuickRead detail={detail} />
+        <PriceGapNote pct={detail.day_change_pct} readingsDate={detail.signal_freshness?.composite_score?.data_as_of} />
         <CorporateActionNote info={detail.corporate_action} />
-        <Week52Range week52={detail.week52} lastPrice={detail.last_price} />
+        <Week52Range
+          week52={detail.week52}
+          lastPrice={detail.last_price}
+          livePrice={isLiveLabel(detail.price_data_as_of) ? detail.last_price : null}
+          liveLabel={isLiveLabel(detail.price_data_as_of) ? formatPriceAsOf(detail.price_data_as_of) : null}
+        />
         <SlowestInputNote input={detail.slowest_input} />
         <AskPills symbol={detail.symbol} />
       </div>
@@ -156,6 +147,7 @@ export function SignalDetailView({
       <ConditionLine symbol={detail.symbol} />
       <ScoreHistorySection symbol={detail.symbol} corporateAction={detail.corporate_action} />
       <VolatilitySection symbol={detail.symbol} />
+      <StockConditionCard detail={detail} />
 
       {detail.conflicts.length > 0 && (
         <Card title="Tension in the data" action={<AiLabel />}>

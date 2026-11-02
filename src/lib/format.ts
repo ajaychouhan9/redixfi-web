@@ -138,7 +138,7 @@ export function istToday(): string {
   return IST_DAY.format(new Date());
 }
 
-function isMarketOpenNow(): boolean {
+export function isMarketOpenNow(): boolean {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Kolkata",
     weekday: "short",
@@ -190,7 +190,7 @@ export function formatCloseOrBar(iso: string): string {
 export function formatPriceAsOf(
   asOf?: { data_as_of: string; data_as_of_type?: string } | null,
 ): string {
-  if (!asOf?.data_as_of) return "Last close";
+  if (!asOf?.data_as_of) return "As of the last close";
   const raw = asOf.data_as_of;
   const day = raw.slice(0, 10);
   // A daily candle is stored at midnight and may arrive with type
@@ -200,17 +200,15 @@ export function formatPriceAsOf(
   const isTimestamp = !isMidnight && (asOf.data_as_of_type === "timestamp" || hasClockTime);
   if (isTimestamp) {
     const time = formatTimeIst(raw);
+    // The label rule: a price that comes from the live feed shows "As of HH:MM IST (delayed)" (never the bare word "Live"); the session's
+    // final bar and any daily candle show "As of <date> close".
     if (day === istToday()) {
-      if (isMarketOpenNow()) return `Live · ${time} IST`;
-      // after the close today's last bar is the session's final price
-      if (isAfterCloseNow() && isClosingBar(raw)) return "Today\u2019s close \u00b7 3:30 pm IST";
-      return `Today · ${time} IST`;
+      if (isAfterCloseNow() && isClosingBar(raw)) return `As of ${formatShortDate(day)} close`;
+      return `As of ${time} IST (delayed)`;
     }
-    return `Last update ${formatDateIst(raw)} · ${time} IST`;
+    return `As of ${formatShortDate(day)}, ${time} IST`;
   }
-  // today's daily candle after the close (16:00 job): the session's close, with the exchange close time
-  if (day === istToday() && isAfterCloseNow()) return "Today\u2019s close \u00b7 3:30 pm IST";
-  return `Last close, ${formatShortDate(day)}`;
+  return `As of ${formatShortDate(day)} close`;
 }
 
 export function formatShortDate(iso: string): string {

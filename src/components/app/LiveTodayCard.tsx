@@ -76,7 +76,7 @@ export function LiveTodayCard({ initial }: { initial: LiveToday | null }) {
           {closed ? <Moon size={14} className="text-accent" aria-hidden /> : <Zap size={14} className="text-accent" aria-hidden />}
           {closed ? "Today’s session · Market closed" : "Live today"}
           <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent">
-            {closed ? formatCloseOrBar(data.card_as_of) : `Live · ${formatTimeIst(data.card_as_of)} IST`}
+            {closed ? formatCloseOrBar(data.card_as_of) : `As of ${formatTimeIst(data.card_as_of)} IST (delayed)`}
           </span>
         </span>
       }
