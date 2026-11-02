@@ -97,15 +97,6 @@ export function SignalDetailView({
             price={detail.last_price}
             pct={detail.day_change_pct}
             asOf={detail.price_data_as_of}
-            extra={
-              <span className="text-xs">
-                {detail.vwap !== null && (
-                  <span className="text-xs text-foreground-faint" title="Intraday VWAP — available for today's intraday-eligible universe">
-                    VWAP ₹{detail.vwap.toLocaleString("en-IN")}
-                  </span>
-                )}
-              </span>
-            }
           />
           <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             <ExportButton onExport={exportXlsx} canExport={isProEntitled(user)} label="Download Excel" enabledTitle="Export as Excel" disabledTitle="Upgrade to export Excel" />
@@ -116,6 +107,14 @@ export function SignalDetailView({
             <ExploreHistoryLink symbol={detail.symbol} />
           </div>
         </div>
+        {detail.vwap !== null && detail.vwap !== undefined && (
+          <p className="mt-1 text-xs text-foreground-muted" data-testid="day-average">
+            Day&apos;s average traded price (VWAP) ₹{detail.vwap.toLocaleString("en-IN")}
+            {typeof detail.last_price === "number" && detail.vwap > 0 && (
+              <> · Price vs day&apos;s average {(((detail.last_price / detail.vwap) - 1) * 100) >= 0 ? "+" : "-"}{Math.abs(((detail.last_price / detail.vwap) - 1) * 100).toFixed(2)}%</>
+            )}
+          </p>
+        )}
         <QuickRead detail={detail} />
         <PriceGapNote pct={detail.day_change_pct} readingsDate={detail.signal_freshness?.composite_score?.data_as_of} />
         <CorporateActionNote info={detail.corporate_action} />

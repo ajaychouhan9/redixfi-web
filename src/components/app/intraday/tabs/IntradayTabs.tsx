@@ -6,9 +6,11 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getIntradayTab } from "@/lib/api/endpoints";
 import type { IntradayTabData, IntradayTabId } from "@/lib/api/types";
-import { DELAY_NOTE, DISCLAIMER, INTRADAY_PATH, TAB_LABEL, TAB_ORDER, TAB_SUBTITLE, closedMessage } from "@/lib/intraday-copy";
+import { DELAY_NOTE, DISCLAIMER, INTRADAY_PATH, TAB_LABEL,
+  explainerFor, TAB_ORDER, TAB_SUBTITLE, closedMessage } from "@/lib/intraday-copy";
 import { LegacyTools } from "./LegacyTools";
 import { MorningBody, RecapBody, ScanBody } from "./TabBodies";
+import { CheckStock } from "./CheckStock";
 
 const POLL_MS = 60_000;
 
@@ -107,11 +109,16 @@ export function IntradayTabs({ tab, defaultTab, initial }: { tab: IntradayTabId;
       <p className="text-sm text-foreground-muted" data-testid="intraday-subtitle">
         {TAB_SUBTITLE[tab]}
       </p>
+      <p className="text-xs text-foreground-muted" data-testid="intraday-explainer">
+        {explainerFor(tab, data?.data_date_label, data?.is_today)}
+        {data?.available && data.data_date_label ? ` Data for ${data.data_date_label}.` : ""}
+      </p>
       <StatusStrip d={data} />
       <div className="space-y-0.5 text-xs text-foreground-muted" data-testid="intraday-notes">
         <p>{DELAY_NOTE}</p>
         <p>{DISCLAIMER}</p>
       </div>
+      <CheckStock tab={tab} />
       {!data ? (
         <p className="py-6 text-sm text-foreground-muted" data-testid="intraday-unavailable">
           Intraday data is unavailable right now. Please try again in a minute.

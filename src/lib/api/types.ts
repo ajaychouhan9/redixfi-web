@@ -801,6 +801,30 @@ export interface WatchlistBehaviorRow {
 
 // ---------- research ----------
 
+/** GET /intraday/check/{symbol}?tab=: one liquid stock on one Intraday tab. No Stock Condition value is part of it. */
+export interface IntradayCheck {
+  symbol: string;
+  tab: IntradayTabId;
+  available: boolean;
+  /** One neutral line when the stock is outside the data (not liquid, BE/BZ, corporate action, no valid price, not in our records). */
+  reason?: string;
+  note?: string | null;
+  name?: string | null;
+  price?: number;
+  prev_close?: number | null;
+  gap_pct?: number | null;
+  change_pct?: number | null;
+  volume_vs_usual?: number | null;
+  avg_price?: number | null;
+  price_vs_avg_pct?: number | null;
+  price_vs_avg_text?: string | null;
+  as_of_label?: string | null;
+  source?: string;
+  avg_source?: string | null;
+  date?: string;
+  disclaimer: string;
+}
+
 export interface ResearchSearchRow {
   canonicalSymbol: string;
   company_name: string;

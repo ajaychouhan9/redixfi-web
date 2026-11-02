@@ -12,12 +12,23 @@ export const DISCLAIMER = "Past record of measured data. Not a forecast or a rec
 export const DELAY_NOTE = "Prices are delayed or as of the last update.";
 
 export const TAB_ORDER: IntradayTabId[] = ["morning", "scan", "recap"];
-export const TAB_LABEL: Record<IntradayTabId, string> = { morning: "Morning", scan: "Scan", recap: "Recap" };
+export const TAB_LABEL: Record<IntradayTabId, string> = { morning: "Pre-open", scan: "Live scan", recap: "After close" };
 export const TAB_SUBTITLE: Record<IntradayTabId, string> = {
   morning: "Largest gaps before the open",
   scan: "Largest moves so far",
   recap: "How the day ended",
 };
+
+/** One line under the tab bar saying what the tab is. `recapDate` is the date label of the stored data when it is not the current trading day. */
+export const TAB_EXPLAINER: Record<IntradayTabId, string> = {
+  morning: "Prices set by NSE between 9:00 and 9:08, snapshot taken at 9:09.",
+  scan: "During market hours. Prices are delayed or as of the last update.",
+  recap: "What happened today, after the close.",
+};
+export function explainerFor(tab: IntradayTabId, dataDate: string | null | undefined, isToday: boolean | undefined): string {
+  if (tab === "recap" && dataDate && isToday === false) return `What happened on ${dataDate}, after the close.`;
+  return TAB_EXPLAINER[tab];
+}
 
 export const UNIVERSE_ORDER: IntradayUniverse[] = ["nifty50", "nifty100", "nifty500", "liquid"];
 export const UNIVERSE_LABEL: Record<IntradayUniverse, string> = { nifty50: "Nifty 50", nifty100: "Nifty 100", nifty500: "Nifty 500", liquid: "All liquid" };
@@ -32,7 +43,7 @@ export const MORNING_FALLBACK_NOTE =
 export const SCAN_NOTE =
   "The change is the latest price against the previous close. Volume vs usual compares today's volume so far with the 20-day average volume scaled by the time elapsed in the session. Early in the session this ratio is unsteady.";
 export const RECAP_NOTE =
-  "The same lists as they stood in Morning and in Scan (the Scan lists are kept as they stood at the 11:15 update), each stock with its own change by the end of the day and its day low and high. Nothing here is a count or a score of the lists.";
+  "The same lists as they stood in Pre-open and in Live scan (the Live scan lists are kept as they stood at the 11:15 update), each stock with its own change by the end of the day and its day low and high. Nothing here is a count or a score of the lists.";
 
 export function closedMessage(reason: "weekend" | "holiday" | null, dataDate: string | null): string {
   const why = reason === "holiday" ? "Market closed today (market holiday)" : reason === "weekend" ? "Market closed (weekend)" : "Market closed";

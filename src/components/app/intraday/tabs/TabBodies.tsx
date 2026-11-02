@@ -284,11 +284,11 @@ export function RecapBody({ d }: { d: IntradayTabData }) {
         </p>
       )}
       <MarketDay d={d} />
-      <Section id="recap-morning" title="How the Morning lists ended the day" subtitle="The largest pre-open gaps, each stock with its own day">
+      <Section id="recap-morning" title="How the Pre-open lists ended the day" subtitle="The largest pre-open gaps, each stock with its own day">
         <SideToggle side={mSide} onChange={setMSide} upLabel="Gap up" downLabel="Gap down" id="recap-morning-side" />
         <StockList rows={mRows} cols={recapCols("Pre-open gap", gapListed)} rewind testid="recap-morning-list" empty="No stocks were listed on this side in Morning." />
       </Section>
-      <Section id="recap-scan" title="How the Scan lists ended the day" subtitle={`The largest moves, as listed${at ? ` at the ${at} IST update` : ""}, each stock with its own day`}>
+      <Section id="recap-scan" title="How the Live scan lists ended the day" subtitle={`The largest moves, as listed${at ? ` at the ${at} IST update` : ""}, each stock with its own day`}>
         <UniverseChips value={universe} onChange={setUniverse} id="recap-universe" />
         <SideToggle side={sSide} onChange={setSSide} upLabel="Up" downLabel="Down" id="recap-scan-side" />
         <StockList rows={sRows} cols={recapCols("Change when listed", gapListed)} rewind testid="recap-scan-list" empty="No stocks were listed on this side in Scan." />

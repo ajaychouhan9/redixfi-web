@@ -183,7 +183,7 @@ const REVIEW_FILES = [
   "components/app/review/MineProvider.tsx",
   "app/(app)/signals/7-day-review/page.tsx",
 ];
-const REVIEW_FORBIDDEN = /(buy|sell|targets?(?!=)|best|top picks?|picks?|tips?|bullish|bearish|outperform\w*|opportunit(?:y|ies)|momentum|predict\w*|forecasts?|recommend\w*|outlook|likely|expected|hit rates?|win rates?|accura\w*|track records?|strongest|weakest|gainers|losers|decliners|top gainers|top losers|winners|will (?:rise|fall|gain|drop))/i;
+const REVIEW_FORBIDDEN = /\b(buy|sell|targets?(?!=)|best|top picks?|picks?|tips?|bullish|bearish|outperform\w*|opportunit(?:y|ies)|momentum|predict\w*|forecasts?|recommend\w*|outlook|likely|expected|hit rates?|win rates?|accura\w*|track records?|strongest|weakest|gainers|losers|decliners|top gainers|top losers|winners|will (?:rise|fall|gain|drop))\b/i;
 const REVIEW_ALLOWED = ["Not a forecast or a recommendation.", "Do not give a forecast or a recommendation.", "a forecast or a recommendation"];
 const reviewHits = [];
 for (const rel of REVIEW_FILES) {
@@ -250,17 +250,17 @@ if (scHits.length) {
 // 2026-11-01: AI prompt pills and the Stock Condition history line on stock pages. Neutral wording, neutral colour, nothing sent without a tap on Send,
 // and the line is never on Market Rewind.
 const uxHits = [];
-const UX_FORBIDDEN = /(buy|sell|targets?|breakouts?|candidates?|accelerat\w*|decelerat\w*|bullish|bearish|rising|falling|improving|worsening|upward|downward|trend(?:ing|s)?|hit rates?|success rates?|predict\w*|forecast\w*|rating|outperform\w*|underperform\w*)/i;
+const UX_FORBIDDEN = /\b(buy|sell|targets?|breakouts?|candidates?|accelerat\w*|decelerat\w*|bullish|bearish|rising|falling|improving|worsening|upward|downward|trend(?:ing|s)?|hit rates?|success rates?|predict\w*|forecast\w*|rating|outperform\w*|underperform\w*)\b/i;
 for (const rel of ["components/app/signals/AskPills.tsx", "components/app/signals/ConditionLine.tsx", "lib/condition-line.ts"]) {
   const text = stripComments(readFileSync(join(ROOT, rel), "utf8"));
   const m = text.match(UX_FORBIDDEN);
   if (m) uxHits.push(`${rel}: ${m[0]}`);
 }
 const lineSrc = stripComments(readFileSync(join(ROOT, "components/app/signals/ConditionLine.tsx"), "utf8"));
-if (/text-(up|down|success|danger|red|green|emerald|rose)|<(ArrowUp|ArrowDown|TrendingUp|TrendingDown|ChevronUp)/.test(lineSrc)) uxHits.push("ConditionLine.tsx: neutral colour only, no arrows");
+if (/text-(up|down|success|danger|red|green|emerald|rose)\b|<(ArrowUp|ArrowDown|TrendingUp|TrendingDown|ChevronUp)/.test(lineSrc)) uxHits.push("ConditionLine.tsx: neutral colour only, no arrows");
 if (!readFileSync(join(ROOT, "lib/condition-line.ts"), "utf8").includes("Stock Condition, last")) uxHits.push("lib/condition-line.ts: the plain caption is missing");
 const pillsSrc = stripComments(readFileSync(join(ROOT, "components/app/signals/AskPills.tsx"), "utf8"));
-if (!pillsSrc.includes("openWithQuestion") || /(sendMessage|submit|handleSend|requestSubmit)/.test(pillsSrc)) uxHits.push("AskPills.tsx: a pill must only fill the question in (openWithQuestion), never send it");
+if (!pillsSrc.includes("openWithQuestion") || /\b(sendMessage|submit|handleSend|requestSubmit)\b/.test(pillsSrc)) uxHits.push("AskPills.tsx: a pill must only fill the question in (openWithQuestion), never send it");
 for (const [rel, need] of [["components/app/signals/SignalDetailView.tsx", "<AskPills"], ["components/app/signals/SignalDetailView.tsx", "<ConditionLine"], ["components/app/research/ResearchDetail.tsx", "<AskPills"], ["components/app/research/ResearchConditionCard.tsx", "<ConditionLine"]]) {
   if (!readFileSync(join(ROOT, rel), "utf8").includes(need)) uxHits.push(`${rel}: ${need} missing`);
 }
@@ -278,6 +278,28 @@ for (const f of [...rewindFiles(join(ROOT, "components/app/history")), ...rewind
 }
 if (uxHits.length) {
   console.error("Stock page pills / history line problem:" + String.fromCharCode(10) + uxHits.join(String.fromCharCode(10)));
+  process.exit(1);
+}
+// 2026-11-02 (Intraday clean-up): the tab labels are Pre-open / Live scan / After close, and no user-facing file may carry the old signal-like wording.
+const internalFiles = new Set(["lib/api/types.ts"]);
+const oldNameHits = [];
+const FORBIDDEN_UI = [
+  [/\bbreakouts?\b/i, "breakout"], [/>\s*VWAP|<\s*VWAP/, "> VWAP / < VWAP"], [/VWAP side/i, "VWAP side"], [/Range-break/i, "Range-break"],
+  [/>\s*Live\s*</, "Live as a label"], [/\b(Morning|Scan|Recap) (tab|lists)\b/, "old tab name"],
+];
+for (const file of files(ROOT)) {
+  const rel = file.slice(ROOT.length).replace(/\\/g, "/");
+  if (internalFiles.has(rel)) continue;
+  const text = stripComments(readFileSync(file, "utf8"));
+  for (const [rx, name] of FORBIDDEN_UI) {
+    const m = text.match(rx);
+    if (m) oldNameHits.push(`${rel}: ${name} (${m[0]})`);
+  }
+}
+const tabLabels = readFileSync(join(ROOT, "lib/intraday-copy.ts"), "utf8").split("TAB_LABEL")[1]?.split(String.fromCharCode(10))[0] ?? "";
+if (!/Pre-open/.test(tabLabels) || !/Live scan/.test(tabLabels) || !/After close/.test(tabLabels) || /"(Morning|Scan|Recap)"/.test(tabLabels)) oldNameHits.push("lib/intraday-copy.ts: TAB_LABEL must be Pre-open, Live scan, After close");
+if (oldNameHits.length) {
+  console.error("Old tab names or signal-like wording in user-facing files:" + String.fromCharCode(10) + oldNameHits.join(String.fromCharCode(10)));
   process.exit(1);
 }
 // 2026-11-01: Intraday tabs (Morning | Scan | Recap). Descriptive wording only: the largest gaps before the open, the largest moves so far, how the day
@@ -317,7 +339,7 @@ for (const need of ["DELAY_NOTE", "DISCLAIMER", "intraday-notes"]) {
 // The Recap tab never shows a count, share or success figure of the listed stocks.
 const bodies = readFileSync(join(ROOT, "components/app/intraday/tabs/TabBodies.tsx"), "utf8");
 const recapSrc = bodies.slice(bodies.indexOf("export function RecapBody"));
-for (const bad of [/\.length\}/, /rows\.length/, /hit/i, /success/i, /went (?:up|down)/i, /how many/i, /% of (?:the )?(?:listed|stocks)/i]) {
+for (const bad of [/\.length\}/, /rows\.length/, /\bhit\b/i, /success/i, /went (?:up|down)/i, /how many/i, /% of (?:the )?(?:listed|stocks)/i]) {
   if (bad.test(recapSrc)) intradayHits.push(`TabBodies.tsx: the Recap must not count or summarise the listed stocks (${bad})`);
 }
 if (!readFileSync(join(ROOT, "app/(app)/intraday/page.tsx"), "utf8").includes('robots: withQuery ? { index: false')) intradayHits.push("intraday/page.tsx: ?tab= pages must be noindex");

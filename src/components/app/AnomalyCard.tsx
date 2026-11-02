@@ -41,7 +41,7 @@ const DIRECTION_LABEL: Record<string, string> = {
 };
 
 const CATEGORY_META: { type: AnomalyType; label: string; directions: AnomalyDirection[] }[] = [
-  { type: "volume_extreme", label: "Volume Breakout", directions: ["up", "down", "flat"] },
+  { type: "volume_extreme", label: "Volume 5x or more than usual", directions: ["up", "down", "flat"] },
   { type: "pcr_shift", label: "Options Activity", directions: ["put_heavy", "call_heavy"] },
   { type: "insider_cluster", label: "Insider Activity", directions: ["buying", "selling"] },
 ];

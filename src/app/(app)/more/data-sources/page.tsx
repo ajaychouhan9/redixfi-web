@@ -37,7 +37,7 @@ const SOURCES = [
   { name: "Promoter pledge", cadence: "Quarterly", detail: "NSE pledge disclosures." },
   { name: "Insider filings", cadence: "As disclosed", detail: "Exchange insider-trading disclosures." },
   { name: "News classification", cadence: "Several times daily", detail: "AI-classified for category, scope and severity." },
-  { name: "Intraday scanner", cadence: "Live during market hours", detail: "Volume ratio, VWAP side and range state, computed from 15-minute candles." },
+  { name: "Intraday scanner", cadence: "During market hours, delayed", detail: "Volume vs usual so far from 15-minute candles, and the day's average traded price (VWAP) from the exchange's own figure via a delayed market quote, for liquid stocks." },
 ];
 
 export default async function DataSourcesPage() {

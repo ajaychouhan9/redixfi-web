@@ -7,6 +7,7 @@ import type {
   SevenDayMine,
   SignalDetail,
   ScoreHistoryResponse,
+  IntradayCheck,
   AskPillsResponse,
   ConditionLineResponse,
   VolatilityResponse,
@@ -217,6 +218,10 @@ export const getWatchlistStates = (opts?: FetchOpts) =>
   apiGet<WatchlistBehaviorRow[]>("/intraday/watchlist-states", opts);
 
 // ---------- research ----------
+
+// @auth public — prices and averages for liquid stocks; no Stock Condition value.
+export const getIntradayCheck = (symbol: string, tab: IntradayTabId, opts?: FetchOpts) =>
+  apiGet<IntradayCheck>(`/intraday/check/${encodeURIComponent(symbol)}`, { ...opts, params: { tab } });
 
 // @auth public — search() accepts `auth` but never reads it (plain
 // symbol/company-name lookup, identical for every caller).

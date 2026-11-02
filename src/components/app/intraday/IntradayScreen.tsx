@@ -7,13 +7,12 @@ import type { IntradaySession, IntradaySectors, IntradayRecap } from "@/lib/api/
 import { formatShortDate } from "@/lib/format";
 import { PremarketTable } from "./PremarketTable";
 import { SectorHeatmap } from "./SectorHeatmap";
-import { ScannerTab } from "./ScannerTab";
 import { EventsTab } from "./EventsTab";
 import { WatchlistTab } from "./WatchlistTab";
 import { PostmarketRecap } from "./PostmarketRecap";
 
 const POLL_MS = 60_000;
-type LiveTab = "scanner" | "events" | "watchlist";
+type LiveTab = "events" | "watchlist";
 
 /**
  * Task 14 (secondary item) — session/sectors/recap are now seeded from
@@ -36,7 +35,7 @@ export function IntradayScreen({
   const [session, setSession] = useState<IntradaySession | null>(initialSession);
   const [sectors, setSectors] = useState<IntradaySectors | null>(initialSectors);
   const [recap, setRecap] = useState<IntradayRecap | null>(initialRecap);
-  const [tab, setTab] = useState<LiveTab>("scanner");
+  const [tab, setTab] = useState<LiveTab>("events");
 
   useEffect(() => {
     let cancelled = false;
@@ -108,7 +107,7 @@ export function IntradayScreen({
       {session.state === "live" && (
         <div>
           <div className="mb-3 flex gap-1 border-b border-border">
-            {(["scanner", "events", "watchlist"] as LiveTab[]).map((t) => (
+            {(["events", "watchlist"] as LiveTab[]).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -121,7 +120,6 @@ export function IntradayScreen({
               </button>
             ))}
           </div>
-          {tab === "scanner" && <ScannerTab />}
           {tab === "events" && <EventsTab />}
           {tab === "watchlist" && <WatchlistTab />}
         </div>

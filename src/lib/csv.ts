@@ -14,7 +14,7 @@ const HEADER_ACRONYMS: Record<string, string> = {
   pb: "PB",
   rsi: "RSI",
   url: "URL",
-  vwap: "VWAP",
+  vwap: "Day's average traded price (VWAP)",
 };
 
 export function formatExportHeader(key: string): string {
