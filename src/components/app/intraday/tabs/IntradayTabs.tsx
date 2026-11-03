@@ -57,7 +57,7 @@ function useTabData(tab: IntradayTabId, initial: IntradayTabData | null) {
   return data;
 }
 
-function StatusStrip({ d }: { d: IntradayTabData | null }) {
+function StatusStrip({ d, tab }: { d: IntradayTabData | null; tab: IntradayTabId }) {
   if (!d) return null;
   const s = d.session;
   return (
@@ -78,8 +78,10 @@ function StatusStrip({ d }: { d: IntradayTabData | null }) {
         </p>
       )}
       {!s.market_closed && d.available && d.is_today === false && (
-        <p className="text-foreground-muted" data-testid="intraday-last-session">
-          Today's data is not stored yet. Showing the last session: {d.data_date_label}.
+        <p className="text-foreground-muted" data-testid={tab === "morning" ? "intraday-preopen-unavailable" : "intraday-last-session"}>
+          {tab === "morning"
+            ? `Today's pre-open data is not available. The list below is the last stored pre-open snapshot for ${d.data_date_label}.`
+            : `Today's data is not stored yet. Showing the last session: ${d.data_date_label}.`}
         </p>
       )}
     </div>
@@ -113,7 +115,7 @@ export function IntradayTabs({ tab, defaultTab, initial }: { tab: IntradayTabId;
         {explainerFor(tab, data?.data_date_label, data?.is_today)}
         {data?.available && data.data_date_label ? ` Data for ${data.data_date_label}.` : ""}
       </p>
-      <StatusStrip d={data} />
+      <StatusStrip d={data} tab={tab} />
       <div className="space-y-0.5 text-xs text-foreground-muted" data-testid="intraday-notes">
         <p>{DELAY_NOTE}</p>
         <p>{DISCLAIMER}</p>
