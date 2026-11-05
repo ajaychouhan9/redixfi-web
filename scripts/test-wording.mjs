@@ -76,6 +76,15 @@ if (hits.length) {
   console.error("Replaced display wording returned:\n" + hits.join("\n"));
   process.exit(1);
 }
+// The Signals/Home price labels must never use a bare "Live" (the market
+// tab is still "Live scan", and "Today's session" is allowed).
+const BARE_LIVE = /(?:>|["'`])Live(?:<|["'`])/;
+for (const file of files(ROOT)) {
+  if (BARE_LIVE.test(stripComments(readFileSync(file, "utf8")))) {
+    console.error(`Bare Live label is not allowed: ${file}`);
+    process.exit(1);
+  }
+}
 // The Signals list opens on a neutral order (Symbol A-Z), never on a model-derived one.
 const explorer = readFileSync(join(ROOT, "components/app/signals/SignalsExplorer.tsx"), "utf8");
 if (!explorer.includes('initialParams?.sort ?? "symbol"')) {

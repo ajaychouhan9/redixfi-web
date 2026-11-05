@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef } from "react";
+import { Collapsible } from "@/components/ui/Collapsible";
+import { formatObservationDate } from "@/lib/format";
 import { SmartScreenerBox } from "@/components/app/signals/SmartScreenerBox";
 import { SignalsExplorer, type SignalsExplorerHandle } from "@/components/app/signals/SignalsExplorer";
 import { SectorSummaryCard } from "@/components/app/education/SummaryCard";
@@ -23,18 +25,22 @@ export function SignalsPageBody({
 }) {
   const explorerRef = useRef<SignalsExplorerHandle>(null);
 
+  const industryDate = formatObservationDate(sectorSummary?.date);
   return (
     <>
-      <div className="mb-5">
-        {sectorSummary && (
-          <SectorSummaryCard
-            data={sectorSummary}
-            onSelectIndustry={(industry) => explorerRef.current?.filterByIndustry(industry)}
-          />
-        )}
-      </div>
       <SmartScreenerBox onApplyFilters={(patch) => explorerRef.current?.applySmartFilters(patch)} />
       <SignalsExplorer ref={explorerRef} initialParams={cloneSource?.params} />
+      {sectorSummary && (
+        <div className="mt-5">
+          <Collapsible question={industryDate ? `Industry standing, as of ${industryDate} close` : "Industry standing"}>
+            <SectorSummaryCard
+              data={sectorSummary}
+              hideHeader
+              onSelectIndustry={(industry) => explorerRef.current?.filterByIndustry(industry)}
+            />
+          </Collapsible>
+        </div>
+      )}
     </>
   );
 }

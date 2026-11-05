@@ -12,6 +12,7 @@
     "check:no-change-stock": "node scripts/check-no-change-stock-button.mjs",
     "test:sitemap": "node scripts/test-sitemap.mjs && node scripts/test-sitemap-url-rules.mjs",
     "test:stock-clarity": "node scripts/test-stock-clarity.mjs",
+    "test:signals-grouping": "node scripts/test-signals-grouping.mjs",
     "check:sitemap-live": "node scripts/check-sitemap-live.mjs",
     "check:wording": "node scripts/test-wording.mjs && node --experimental-strip-types scripts/test-ux-small.ts"
   },

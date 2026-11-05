@@ -39,7 +39,7 @@ export function filterChips(result: { parsed_filters: SmartScreenResult["parsed_
   if (f.delta_1d_min !== null) chips.push(`Stock Condition change ≥ ${f.delta_1d_min}`);
   if (f.delivery_state) chips.push(`Delivery: ${f.delivery_state.replace(/_/g, " ")}`);
   if (f.vwap_side) chips.push(`Price vs day's average: ${f.vwap_side}`);
-  if (f.volume_ratio_min !== null) chips.push(`Volume ≥ ${f.volume_ratio_min}× 20d avg`);
+  if (f.volume_ratio_min !== null) chips.push(`Volume vs usual ≥ ${f.volume_ratio_min}× (5-session avg)`);
   if (f.dma_state) chips.push(`DMA: ${f.dma_state.replace(/_/g, " ")}`);
   if (f.pcr_band) chips.push(`PCR: ${f.pcr_band.replace(/_/g, " ")}`);
   if (f.from_52w_max != null) chips.push(`From 52-week high ≤ ${f.from_52w_max}%`);

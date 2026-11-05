@@ -16,6 +16,7 @@ import {
 } from "@/lib/comparison-queue";
 import type { SignalRow } from "@/lib/api/types";
 import { formatDataAsOf, formatPriceAsOf } from "@/lib/format";
+import { from52Display } from "@/lib/from52-display";
 import { stockPath } from "@/lib/seo/stock-symbol";
 import { displayName } from "@/lib/company-name";
 
@@ -85,8 +86,26 @@ function StackedCell({
   );
 }
 
-export function SignalTableRow({ row, columns }: { row: SignalRow; columns: VisibleColumns }) {
+export function SignalTableRow({
+  row,
+  columns,
+  priceGroupAsOf,
+  priceGroupDate,
+  readingsGroupDate,
+}: {
+  row: SignalRow;
+  columns: VisibleColumns;
+  priceGroupAsOf?: string | null;
+  priceGroupDate?: string | null;
+  readingsGroupDate?: string | null;
+}) {
   const locked = row.locked;
+  const from52 = from52Display(row.week52_high, row.pct_below_52w_high, row.last_price);
+  const rowPriceDate = row.price_data_as_of?.data_as_of?.slice(0, 10) ?? null;
+  const showPriceAsOf = !!row.price_data_as_of
+    && (priceGroupAsOf ? row.price_data_as_of.data_as_of !== priceGroupAsOf : rowPriceDate !== (priceGroupDate ?? null));
+  const rowReadingsDate = row.data_as_of?.data_as_of?.slice(0, 10) ?? null;
+  const showReadingsAsOf = !!row.data_as_of && rowReadingsDate !== (readingsGroupDate ?? null);
   const [queued, setQueued] = useState(false);
   const [full, setFull] = useState(false);
 
@@ -122,7 +141,7 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
           </span>
         )}
         <div className="max-w-[16rem] truncate text-[12px] text-foreground-faint">{displayName(row.company_name)}</div>
-        {row.data_as_of && <div className="whitespace-nowrap text-[10px] text-foreground-faint">{formatDataAsOf(row.data_as_of)}</div>}
+        {showReadingsAsOf && <div className="whitespace-nowrap text-[10px] text-foreground-faint">{formatDataAsOf(row.data_as_of)}</div>}
       </td>
       {columns.sector && <td className="hidden px-3 py-2.5 text-xs text-foreground-muted md:table-cell">{row.sector}</td>}
       {/* Price: always visible (never hidden by the column picker or by
@@ -134,7 +153,7 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
           primary={row.last_price !== null ? `₹${row.last_price.toLocaleString("en-IN")}` : null}
           subtitle={row.day_change_pct !== null ? <DeltaValue value={row.day_change_pct} kind="pct" className="text-[12px]" /> : row.corporate_action ? <span className="text-[12px] text-foreground-faint" title={row.corporate_action.note}>— note</span> : undefined}
         />
-        {row.price_data_as_of && <div className="text-[10px] text-foreground-faint">{formatPriceAsOf(row.price_data_as_of)}</div>}
+        {showPriceAsOf && <div className="text-[10px] text-foreground-faint">{formatPriceAsOf(row.price_data_as_of)}</div>}
       </td>
       {/* Score: always visible — unchanged position/behavior.
           Bug 1 fix (2026-08-22): `locked` here must be ONLY the real B8
@@ -179,7 +198,7 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
             locked={locked}
             lockedFallback="--x"
             primary={row.volume_ratio_5d !== null ? `${row.volume_ratio_5d}x` : null}
-            subtitle="vs 20d avg"
+            subtitle="last 5 vs prior 20"
           />
         </td>
       )}
@@ -188,8 +207,8 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
           <StackedCell
             locked={locked}
             lockedFallback="--"
-            primary={row.pct_below_52w_high !== null ? `${row.pct_below_52w_high.toFixed(1)}% below` : "n/a"}
-            subtitle={row.week52_high !== null ? `high ₹${row.week52_high.toLocaleString("en-IN")}` : undefined}
+            primary={from52.belowPct === null ? "n/a" : from52.atHigh ? "at 52-week high" : `${from52.belowPct.toFixed(1)}% below`}
+            subtitle={from52.high !== null ? `high ₹${from52.high.toLocaleString("en-IN")}` : undefined}
           />
         </td>
       )}
@@ -246,7 +265,15 @@ export function SignalTableRow({ row, columns }: { row: SignalRow; columns: Visi
 /** Phone layout (below md): one compact row per stock, nothing cut off and no sideways scroll. Left: symbol and company
  *  name. Right: the price with its full day change, and a compact score badge with its change. Same data as the table row;
  *  a locked (free-tier) score keeps the lock treatment. The badge is neutral on purpose (no colour for a high or low score). */
-export function SignalMobileRow({ row }: { row: SignalRow }) {
+export function SignalMobileRow({
+  row,
+  priceGroupAsOf,
+  priceGroupDate,
+}: {
+  row: SignalRow;
+  priceGroupAsOf?: string | null;
+  priceGroupDate?: string | null;
+}) {
   const [queued, setQueued] = useState(false);
   const [full, setFull] = useState(false);
 
@@ -267,10 +294,12 @@ export function SignalMobileRow({ row }: { row: SignalRow }) {
     else addToComparisonQueue({ symbol: row.symbol, company_name: row.company_name });
   }
 
-  const high = row.week52_high;
-  const below = row.pct_below_52w_high;
-  const highLine = high != null
-    ? `52-week high ₹${high.toLocaleString("en-IN")} · ${below != null ? `${below.toFixed(1)}% below` : "n/a below"}`
+  const rowPriceDate = row.price_data_as_of?.data_as_of?.slice(0, 10) ?? null;
+  const showPriceAsOf = !!row.price_data_as_of
+    && (priceGroupAsOf ? row.price_data_as_of.data_as_of !== priceGroupAsOf : rowPriceDate !== (priceGroupDate ?? null));
+  const from52 = from52Display(row.week52_high, row.pct_below_52w_high, row.last_price);
+  const highLine = from52.high != null
+    ? `52-week high ₹${from52.high.toLocaleString("en-IN")} · ${from52.belowPct != null ? (from52.atHigh ? "at 52-week high" : `${from52.belowPct.toFixed(1)}% below`) : "n/a below"}`
     : "52-week high n/a · n/a below";
   const volLine = row.volatility_text
     ?? (row.vol_pct_more != null ? `More volatile than ${row.vol_pct_more}%` : "n/a");
@@ -293,6 +322,7 @@ export function SignalMobileRow({ row }: { row: SignalRow }) {
             <DeltaValue value={row.day_change_pct} kind="pct" className="text-[12px]" />
           </div>
         )}
+        {showPriceAsOf && <div className="text-[10px] text-foreground-faint">{formatPriceAsOf(row.price_data_as_of)}</div>}
       </div>
       <div className="flex w-14 shrink-0 flex-col items-end gap-0.5">
         {row.locked ? (
@@ -309,6 +339,7 @@ export function SignalMobileRow({ row }: { row: SignalRow }) {
       <div className="mt-1 flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <div className="flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-foreground-faint">
           <span>{highLine}</span>
+          {row.volume_ratio_5d !== null && <span>Volume vs usual {row.volume_ratio_5d}x</span>}
           <span>Volatility: {volLine}</span>
         </div>
         <button

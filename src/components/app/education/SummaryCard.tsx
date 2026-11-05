@@ -8,6 +8,7 @@ import { DeltaValue } from "@/components/ui/DeltaValue";
 import { formatObservationDate } from "@/lib/format";
 import type { SectorSummary, SectorSummaryRow, WatchlistSummary } from "@/lib/api/types";
 import { stockPath } from "@/lib/seo/stock-symbol";
+import { INDUSTRY_MIN_STOCKS, qualifyingIndustries } from "@/lib/industry-standing";
 
 /**
  * Surface 3 (Task 12) — summary cards, extending the B11/B12 narrative
@@ -88,45 +89,63 @@ function SectorRow({ row, onSelect }: { row: SectorSummaryRow; onSelect?: (indus
  * splits into a compact STRONGEST | WEAKEST two-column view (top ~4 /
  * bottom ~3, shrinking either side so they never overlap when the sector
  * count is small); "View all sectors →" expands to the full ranked list. */
-export function SectorSummaryCard({ data, onSelectIndustry }: { data: SectorSummary; onSelectIndustry?: (industry: string) => void }) {
+export function SectorSummaryCard({
+  data,
+  onSelectIndustry,
+  hideHeader = false,
+}: {
+  data: SectorSummary;
+  onSelectIndustry?: (industry: string) => void;
+  hideHeader?: boolean;
+}) {
   const [expanded, setExpanded] = useState(false);
-  const total = data.ranked.length;
+  const ranked = qualifyingIndustries(data.ranked);
+  const total = ranked.length;
   const weakCap = Math.min(WEAK_CAP, Math.floor(total / 2));
   const strongCap = Math.min(STRONG_CAP, total - weakCap);
-  const strongest = data.ranked.slice(0, strongCap);
-  const weakest = data.ranked.slice(total - weakCap).reverse();
+  const strongest = ranked.slice(0, strongCap);
+  const weakest = ranked.slice(total - weakCap).reverse();
+  const summary = data.summary.replace(/readings?/gi, "Stock Condition");
   // Sep 2026: this card groups by symbols_master.industry (95 real
   // categories, e.g. "Chemical Manufacturing", "Software & Programming"),
   // not a sector — renamed from "Sector standing" and given the real
   // observation date instead of a static "today" (data.date comes from
   // education.py::summary_sectors' own measured_signals date lookup).
   const observedOn = formatObservationDate(data.date);
-  const title = observedOn ? `Industry standing · ${observedOn}` : "Industry standing";
+  const title = observedOn ? `Industry standing, as of ${observedOn} close` : "Industry standing";
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-surface-raised">
-      <div className="flex items-center gap-2 px-5 py-4">
-        <Layers size={14} className="text-accent" />
-        <div>
-          <h3 className="text-sm font-semibold">{title}</h3>
-          <p className="text-[12px] text-foreground-faint">{data.summary}</p>
+    <div className={hideHeader ? "" : "overflow-hidden rounded-xl border border-border bg-surface-raised"}>
+      {!hideHeader && (
+        <div className="flex items-center gap-2 px-5 py-4">
+          <Layers size={14} className="text-accent" />
+          <div>
+            <h3 className="text-sm font-semibold">{title}</h3>
+            <p className="text-[12px] text-foreground-faint">{summary}</p>
+          </div>
         </div>
-      </div>
+      )}
+
+      {total === 0 && (
+        <p className="px-5 py-4 text-sm text-foreground-muted">
+          No industry has at least {INDUSTRY_MIN_STOCKS} stocks with a current Stock Condition.
+        </p>
+      )}
 
       {!expanded && total > 0 && (
         <div className="grid grid-cols-1 border-t border-border sm:grid-cols-2">
           <div className="divide-y divide-border border-b border-border sm:border-b-0 sm:border-r">
-            <p className="px-5 pt-2.5 pb-1 font-mono text-[11px] uppercase tracking-wide text-foreground-faint">Highest reading · avg reading change</p>
+            <p className="px-5 pt-2.5 pb-1 font-mono text-[11px] uppercase tracking-wide text-foreground-faint">Highest average Stock Condition · average change</p>
             {strongest.map((r) => (
               <SectorRow key={r.sector} row={r} onSelect={onSelectIndustry} />
             ))}
           </div>
           <div className="divide-y divide-border">
-            <p className="px-5 pt-2.5 pb-1 font-mono text-[11px] uppercase tracking-wide text-foreground-faint">Lowest reading · avg reading change</p>
+            <p className="px-5 pt-2.5 pb-1 font-mono text-[11px] uppercase tracking-wide text-foreground-faint">Lowest average Stock Condition · average change</p>
             {weakest.length > 0 ? (
               weakest.map((r) => <SectorRow key={r.sector} row={r} onSelect={onSelectIndustry} />)
             ) : (
-              <p className="px-5 pb-2.5 text-xs text-foreground-faint">No distinct lowest reading industry today.</p>
+              <p className="px-5 pb-2.5 text-xs text-foreground-faint">No distinct lowest-industry Stock Condition today.</p>
             )}
           </div>
         </div>
@@ -134,7 +153,7 @@ export function SectorSummaryCard({ data, onSelectIndustry }: { data: SectorSumm
 
       {expanded && (
         <div className="divide-y divide-border border-t border-border">
-          {data.ranked.map((r) => (
+          {ranked.map((r) => (
             <SectorRow key={r.sector} row={r} onSelect={onSelectIndustry} />
           ))}
         </div>

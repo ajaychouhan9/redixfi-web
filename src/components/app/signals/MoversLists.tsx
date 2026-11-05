@@ -8,6 +8,7 @@ import { ProLock, ScValue } from "@/components/ui/ScValue";
 import { useMovers } from "@/components/app/useMovers";
 import { displayName } from "@/lib/company-name";
 import { stockPath } from "@/lib/seo/stock-symbol";
+import { formatShortDate } from "@/lib/format";
 import type { MoverRow, SignalsMovers } from "@/lib/api/types";
 
 const CAUSE_LABEL: Record<string, string> = {
@@ -55,14 +56,18 @@ function MoverList({ rows }: { rows: MoverRow[] }) {
 /** The two mover lists. The server's anonymous copy first; a signed-in visitor gets their own copy (the one Stock Condition visibility rule). */
 export function MoversLists({ initial }: { initial: SignalsMovers }) {
   const movers = useMovers(initial, 20) ?? initial;
+  const asOf = movers.date ? `As of ${formatShortDate(movers.date)} close.` : "At the latest close.";
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <Card title="Largest Stock Condition increases">
-        <MoverList rows={movers.up} />
-      </Card>
-      <Card title="Largest Stock Condition decreases">
-        <MoverList rows={movers.down} />
-      </Card>
+    <div>
+      <p className="mb-2 text-[11px] text-foreground-faint">Stock Condition changes: {asOf}</p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card title="Largest Stock Condition increases">
+          <MoverList rows={movers.up} />
+        </Card>
+        <Card title="Largest Stock Condition decreases">
+          <MoverList rows={movers.down} />
+        </Card>
+      </div>
     </div>
   );
 }

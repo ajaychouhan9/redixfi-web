@@ -1,6 +1,5 @@
 "use client";
 
-import { ListSessionNote } from "@/components/app/signals/ListSessionNote";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { Search, Filter, ArrowUpDown, SlidersHorizontal, X, ChevronDown } from "lucide-react";
 import { getSignals } from "@/lib/api/endpoints";
@@ -15,6 +14,9 @@ import { downloadCsv } from "@/lib/csv";
 import { downloadXlsx } from "@/lib/xlsx";
 import { isProEntitled } from "@/lib/entitlements";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { useMarketState } from "@/lib/market/useMarketState";
+import { signalsListLabels } from "@/lib/signals-list-labels";
+import { from52Display } from "@/lib/from52-display";
 import { getWatchlist } from "@/lib/api/mutations";
 import type { SmartFilterPatch } from "./smartFilterPatch";
 
@@ -78,6 +80,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   ref
 ) {
   const { user, getToken } = useAuth();
+  const marketState = useMarketState();
   const containerRef = useRef<HTMLDivElement>(null);
   const [q, setQ] = useState(initialParams?.q ?? "");
   const [sector, setSector] = useState(initialParams?.sector ?? "");
@@ -164,6 +167,18 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   const [extrasAsOf, setExtrasAsOf] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const latestRowBar = useMemo(() => {
+    const bars = rows
+      .map((r) => r.price_data_as_of?.data_as_of)
+      .filter((v): v is string => !!v && /T\d{2}:\d{2}/.test(v) && !/T00:00:00/.test(v))
+      .sort();
+    return bars.length ? bars[bars.length - 1] : null;
+  }, [rows]);
+  const labels = useMemo(
+    () => signalsListLabels(marketState, marketState?.live_as_of ?? latestRowBar),
+    [marketState, latestRowBar],
+  );
 
   const from52Max = from52Preset === "custom" ? asNumber(from52Custom) : asNumber(from52Preset);
   const volatilityMin = volatilityBand === "custom" ? asNumber(volMin) : undefined;
@@ -365,27 +380,33 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
       )
     );
     const all = [first, ...rest].flatMap((p) => p.data);
-    return all.map((r) => ({
-      symbol: r.symbol,
-      company_name: r.company_name,
-      sector: r.sector,
-      industry: r.industry ?? "",
-      price: r.last_price ?? "",
-      day_change_pct: r.day_change_pct ?? "",
-      reading: r.composite_score ?? "",
-      reading_change_1d: r.delta_1d ?? "",
-      delivery_pct: r.delivery_pct ?? "",
-      delivery_avg20: r.delivery_avg20 ?? "",
-      volume_ratio_5d: r.volume_ratio_5d ?? "",
-      from_52_week_high: r.pct_below_52w_high !== null ? `${r.pct_below_52w_high.toFixed(1)}% below` : "n/a",
-      week_52_high: r.week52_high ?? "",
-      volatility: r.volatility_text ?? "n/a",
-      volatility_rank: r.vol_rank ?? "",
-      volatility_ranked_of: r.vol_ranked_of ?? "",
-      signal_chips: r.signal_states.join(", "),
-      event_risk: r.event_risk ?? "",
-    }));
-  }, [params, getToken]);
+    return all.map((r) => {
+      const f52 = from52Display(r.week52_high, r.pct_below_52w_high, r.last_price);
+      return {
+        symbol: r.symbol,
+        company_name: r.company_name,
+        sector: r.sector,
+        industry: r.industry ?? "",
+        price: r.last_price ?? "",
+        price_as_of: r.price_data_as_of?.data_as_of ?? "",
+        readings_as_of: labels.readingsDate ?? "",
+        day_change_pct: r.day_change_pct ?? "",
+        stock_condition: r.composite_score ?? "",
+        stock_condition_change_1d: r.delta_1d ?? "",
+        delivery_pct: r.delivery_pct ?? "",
+        delivery_avg20: r.delivery_avg20 ?? "",
+        volume_ratio_5d: r.volume_ratio_5d ?? "",
+        volume_basis: "Last 5 full sessions vs prior 20 full sessions, as of close",
+        from_52_week_high: f52.belowPct == null ? "n/a" : f52.atHigh ? "at 52-week high" : `${f52.belowPct.toFixed(1)}% below`,
+        week_52_high: f52.high ?? "",
+        volatility: r.volatility_text ?? "n/a",
+        volatility_rank: r.vol_rank ?? "",
+        volatility_ranked_of: r.vol_ranked_of ?? "",
+        signal_chips: r.signal_states.join(", "),
+        event_risk: r.event_risk ?? "",
+      };
+    });
+  }, [params, getToken, labels.readingsDate]);
 
   const exportCsv = useCallback(async () => {
     downloadCsv(`redixfi-signals-${new Date().toISOString().slice(0, 10)}.csv`, await fetchExportRows(), [DISCLAIMER]);
@@ -413,7 +434,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
       : VOLATILITY_OPTIONS.find((o) => o.value === volatilityBand)?.label ?? volatilityBand;
     activeFilters.push({ key: "vol", text: `Volatility: ${text}`, clear: () => { setVolatilityBand(""); setVolMin(""); setVolMax(""); } });
   }
-  if (volumeMin) activeFilters.push({ key: "volmin", text: `Volume ≥ ${volumeMin}× 20d avg`, clear: () => setVolumeMin("") });
+  if (volumeMin) activeFilters.push({ key: "volmin", text: `Volume vs usual ≥ ${volumeMin}× (5-session avg)`, clear: () => setVolumeMin("") });
   if (deliveryState) activeFilters.push({ key: "delivery", text: `Delivery: ${deliveryState.replace("_", " ")}`, clear: () => setDeliveryState("") });
   if (deltaMin) activeFilters.push({ key: "delta", text: `Stock Condition change ≥ ${deltaMin}`, clear: () => setDeltaMin("") });
   if (dmaState) activeFilters.push({ key: "dma", text: `DMA: ${dmaState.replace("_", " ")}`, clear: () => setDmaState("") });
@@ -501,7 +522,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
             {moreOpen && (
               <div className="mt-2 grid grid-cols-2 items-end gap-2 rounded-lg border border-border/70 p-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
                 <label className={label}>
-                  Volume ≥ 20d avg
+                  Volume vs usual ≥ (5-session avg)
                   <input value={volumeMin} onChange={(e) => setVolumeMin(e.target.value)} type="number" min={0} step="0.1" placeholder="e.g. 1.0" className={control} />
                 </label>
                 <label className={label}>
@@ -582,7 +603,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
         )}
         {extrasAsOf && (
           <p className="mt-1 text-[11px] text-foreground-faint">
-            52-week high and volatility: as of {formatObservationDate(extrasAsOf)}.
+            52-week high history and volatility: as of {formatObservationDate(extrasAsOf)} close; the 52-week distance uses the current price while open.
           </p>
         )}
 
@@ -625,39 +646,72 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
         </div>
       </div>
 
-      <ListSessionNote />
+      <div className="mb-2 space-y-0.5 text-[11px] leading-snug text-foreground-faint">
+        <p>
+          <span className="font-medium text-foreground-muted">Price:</span>{" "}
+          {labels.priceIsLive ? "today, as of the latest 15-minute bar (delayed)." : labels.priceHeading.replace(/^As of /, "").replace(/ close$/, " close.")}
+        </p>
+        <p>
+          <span className="font-medium text-foreground-muted">Volume vs usual:</span>{" "}
+          last five full sessions against the prior 20 full sessions, as of {formatObservationDate(labels.readingsDate) ?? "the readings date"} close (not today's partial volume).
+        </p>
+      </div>
       <div className="overflow-hidden rounded-xl border border-border bg-surface-raised">
+        <div className="border-b border-border px-3 py-2.5 md:hidden" data-testid="signal-group-labels">
+          <p className="text-[11px] leading-snug text-foreground-faint">
+            <span className="font-medium text-foreground-muted">{labels.priceHeading}:</span> Price
+          </p>
+          <p className="mt-0.5 text-[11px] leading-snug text-foreground-faint">
+            <span className="font-medium text-foreground-muted">{labels.readingsHeading}:</span>{" "}
+            Stock Condition, Delivery, Volume, {labels.priceIsLive ? "From 52-week high (current price)" : "From 52-week high"}, Volatility, Signals
+          </p>
+        </div>
         <ul className="divide-y divide-border md:hidden">
-          {rows.map((row) => <SignalMobileRow key={row.symbol} row={row} />)}
+          {rows.map((row) => <SignalMobileRow key={row.symbol} row={row} priceGroupAsOf={labels.priceAsOf} priceGroupDate={labels.priceDate} />)}
         </ul>
         <div className="hidden overflow-x-auto md:block">
           <p className="mb-2 hidden text-[11px] text-foreground-faint md:block lg:hidden">Scroll the table sideways to see all columns.</p>
           <table className="w-full min-w-[900px] text-sm">
             <thead>
-              <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wider text-foreground-faint">
-                <th className="px-4 py-3">Symbol</th>
-                {columns.sector && <th className="hidden px-3 py-3 md:table-cell">Sector</th>}
-                <th className="px-3 py-3">Price</th>
-                <th className="px-3 py-3">Stock Condition</th>
-                {columns.delivery && <th className="hidden px-3 py-3 sm:table-cell">Delivery</th>}
-                {columns.volume && <th className="hidden px-3 py-3 sm:table-cell">Volume</th>}
+              <tr className="border-b border-border text-left font-mono text-[12px] uppercase tracking-wider text-foreground-faint">
+                <th rowSpan={2} className="px-4 py-2">Symbol</th>
+                {columns.sector && <th rowSpan={2} className="hidden px-3 py-2 md:table-cell">Sector</th>}
+                <th colSpan={1} className="border-l border-border px-3 py-2 text-[11px] normal-case tracking-normal text-foreground-muted">
+                  {labels.priceHeading}
+                </th>
+                <th colSpan={1 + (columns.delivery ? 1 : 0) + (columns.volume ? 1 : 0) + (columns.from52 || from52Max !== undefined ? 1 : 0) + (columns.volatility ? 1 : 0) + (columns.chips ? 1 : 0) + (columns.eventRisk ? 1 : 0)} className="border-l border-border px-3 py-2 text-[11px] normal-case tracking-normal text-foreground-muted">
+                  {labels.readingsHeading}
+                </th>
+                <th rowSpan={2} className="px-3 py-2" />
+              </tr>
+              <tr className="border-b border-border text-left font-mono text-[12px] uppercase tracking-wider text-foreground-faint">
+                <th className="border-l border-border px-3 py-2">Price</th>
+                <th className="border-l border-border px-3 py-2">Stock Condition</th>
+                {columns.delivery && <th className="hidden px-3 py-2 sm:table-cell">Delivery</th>}
+                {columns.volume && <th className="hidden px-3 py-2 sm:table-cell" title="Last five full sessions vs prior 20 full sessions">Volume vs usual</th>}
                 {(columns.from52 || from52Max !== undefined) && (
-                  <th className="hidden px-3 py-3 sm:table-cell" aria-sort={sort === "pct_below_52w_high" ? (order === "asc" ? "ascending" : "descending") : "none"}>
+                  <th className="hidden px-3 py-2 sm:table-cell" aria-sort={sort === "pct_below_52w_high" ? (order === "asc" ? "ascending" : "descending") : "none"}>
                     <button type="button" onClick={() => toggleSort("pct_below_52w_high")} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-foreground" title="Sort by distance from 52-week high">
-                      From 52-week high
+                      {labels.priceIsLive ? "From 52-week high (current price)" : "From 52-week high"}
                       <ArrowUpDown size={10} />
                     </button>
                   </th>
                 )}
-                {columns.volatility && <th className="hidden px-3 py-3 md:table-cell">Volatility</th>}
-                {columns.chips && <th className="hidden px-3 py-3 lg:table-cell">Signals</th>}
-                {columns.eventRisk && <th className="hidden px-3 py-3 text-center sm:table-cell">Event</th>}
-                <th className="px-3 py-3" />
+                {columns.volatility && <th className="hidden px-3 py-2 md:table-cell">Volatility</th>}
+                {columns.chips && <th className="hidden px-3 py-2 lg:table-cell">Signals</th>}
+                {columns.eventRisk && <th className="hidden px-3 py-2 text-center sm:table-cell">Event</th>}
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
-                <SignalTableRow key={row.symbol} row={row} columns={{ ...columns, from52: columns.from52 || from52Max !== undefined }} />
+                <SignalTableRow
+                  key={row.symbol}
+                  row={row}
+                  columns={{ ...columns, from52: columns.from52 || from52Max !== undefined }}
+                  priceGroupAsOf={labels.priceAsOf}
+                  priceGroupDate={labels.priceDate}
+                  readingsGroupDate={labels.readingsDate}
+                />
               ))}
             </tbody>
           </table>

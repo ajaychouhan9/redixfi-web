@@ -8,6 +8,8 @@ import { DeltaValue } from "@/components/ui/DeltaValue";
 import { ProLock } from "@/components/ui/ScValue";
 import { getPriceMovers } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { useMarketState } from "@/lib/market/useMarketState";
+import { formatObservationDate } from "@/lib/format";
 import { displayName } from "@/lib/company-name";
 import { formatNumber } from "@/lib/format";
 import { stockPath } from "@/lib/seo/stock-symbol";
@@ -41,6 +43,7 @@ function Rows({ rows, title }: { rows: PriceMoverRow[]; title: string }) {
 /** Today's price movers: the top 5 up and down by price (liquid EQ stocks). Name, price and % move are public; the Stock Condition is a second line. */
 export function PriceMoversCard({ initial }: { initial: PriceMovers | null }) {
   const { user, loading, getToken } = useAuth();
+  const marketState = useMarketState();
   const [data, setData] = useState(initial);
   useEffect(() => {
     if (loading || !user) return;
@@ -68,6 +71,11 @@ export function PriceMoversCard({ initial }: { initial: PriceMovers | null }) {
       ) : (
         <>
           <p className="mb-2 text-[11px] text-foreground-faint" data-testid="price-movers-asof">{data.as_of_label} · {data.universe}</p>
+          {marketState?.score_date && (
+            <p className="-mt-1 mb-2 text-[11px] text-foreground-faint">
+              Stock Condition as of {formatObservationDate(marketState.score_date)} close.
+            </p>
+          )}
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <Rows rows={data.up} title="Largest price rises" />
             <Rows rows={data.down} title="Largest price falls" />
