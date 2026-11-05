@@ -6,6 +6,7 @@
  * readable crore value (small amounts in lakh or plain rupees). Measured filings only.
  */
 
+import { safeNumber } from "@/lib/safe-format";
 import { useMemo, useState } from "react";
 
 import { GenericRecordTable } from "@/components/ui/GenericRecordTable";
@@ -32,7 +33,7 @@ function InsiderTable({ rows }: { rows: InsiderTrade[] }) {
               <td className="py-1.5 pr-3">{formatDateIst(t.trade_date)}</td>
               <td className="py-1.5 pr-3">{t.insider_name || "—"}</td>
               <td className="py-1.5 pr-3">{t.transaction_type}</td>
-              <td className="py-1.5 pr-3 tabular-nums">{t.quantity.toLocaleString("en-IN")}</td>
+              <td className="py-1.5 pr-3 tabular-nums">{safeNumber(t.quantity)}</td>
               <td className="py-1.5 pr-3 tabular-nums">{formatRupeesCompact(t.value_amount)}</td>
             </tr>
           ))}

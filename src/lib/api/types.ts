@@ -882,14 +882,14 @@ export interface InsiderTrade {
   post_holding_shares: number | null;
   price_implied: number | null;
   purpose: string;
-  quantity: number;
+  quantity: number | null;
   raw_data: Record<string, unknown>;
   relation: string;
   source_url: string;
   symbol: string;
   trade_date: string;
   transaction_type: string;
-  value_amount: number;
+  value_amount: number | null;
 }
 
 export interface PledgeHistoryPoint {

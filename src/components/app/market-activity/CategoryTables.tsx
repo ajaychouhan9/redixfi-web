@@ -1,3 +1,4 @@
+import { safeNumber, safeRupees } from "@/lib/safe-format";
 import Link from "next/link";
 import type {
   MarketActivityConcallRow,
@@ -131,14 +132,14 @@ export function InsiderTable({ rows }: { rows: MarketActivityInsiderRow[] }) {
         <tbody>
           {rows.map((t) => (
             <tr key={t.filing_id} className="border-t border-border">
-              <td className="py-1.5 pr-3">{formatDateIst(t.trade_date)}</td>
+              <td className="py-1.5 pr-3">{t.trade_date ? formatDateIst(t.trade_date) : "n/a"}</td>
               <td className="py-1.5 pr-3">
                 <SymbolLink symbol={t.symbol} companyName={t.company_name} />
               </td>
               <td className="py-1.5 pr-3">{t.insider_name || "—"}</td>
-              <td className="py-1.5 pr-3">{t.transaction_type}</td>
-              <td className="py-1.5 pr-3 tabular-nums">{t.quantity.toLocaleString("en-IN")}</td>
-              <td className="py-1.5 pr-3 tabular-nums">₹{t.value_amount.toLocaleString("en-IN")}</td>
+              <td className="py-1.5 pr-3">{t.transaction_type || "n/a"}</td>
+              <td className="py-1.5 pr-3 tabular-nums">{safeNumber(t.quantity)}</td>
+              <td className="py-1.5 pr-3 tabular-nums">{safeRupees(t.value_amount)}</td>
             </tr>
           ))}
         </tbody>
@@ -284,7 +285,7 @@ function summaryLine(row: MarketActivityRow): string {
     case "concall":
       return row.subject === "EARNINGS_CALL_TRANSCRIPT" ? "Concall transcript" : "Investor presentation";
     case "insider":
-      return `${row.transaction_type} · ${row.quantity.toLocaleString("en-IN")} shares · ₹${row.value_amount.toLocaleString("en-IN")}`;
+      return `${row.transaction_type || "n/a"} · ${safeNumber(row.quantity)} shares · ${safeRupees(row.value_amount)}`;
     case "bulk_block": {
       const types = row.deal_types_present && row.deal_types_present.length ? row.deal_types_present.join("/") : "Deal";
       return `${types} · ${row.net_direction ?? "—"} · ${row.net_quantity != null ? Number(row.net_quantity).toLocaleString("en-IN") : "—"} shares`;

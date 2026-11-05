@@ -1,5 +1,7 @@
 "use client";
 
+import { TabBoundary } from "./TabBoundary";
+import { safeNumber, safeRupees } from "@/lib/safe-format";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getMarketActivity } from "@/lib/api/endpoints";
@@ -110,7 +112,7 @@ export function MarketActivityHub() {
             detail = row.subject === "EARNINGS_CALL_TRANSCRIPT" ? "Concall transcript" : "Investor presentation";
             break;
           case "insider":
-            detail = `${row.transaction_type} · ${row.quantity.toLocaleString("en-IN")} shares · ₹${row.value_amount.toLocaleString("en-IN")}`;
+            detail = `${row.transaction_type || "n/a"} · ${safeNumber(row.quantity)} shares · ${safeRupees(row.value_amount)}`;
             break;
           case "bulk_block": {
             const types = row.deal_types_present?.length ? row.deal_types_present.join("/") : "Deal";
@@ -339,7 +341,9 @@ export function MarketActivityHub() {
           <div className="p-4 text-center text-sm text-foreground-muted">Loading…</div>
         ) : error ? (
           <div className="p-4 text-center text-sm text-down">{error}</div>
-        ) : tab === "all" ? (
+        ) : (
+          <TabBoundary key={tab}>
+          {tab === "all" ? (
           <div className="p-4">
             <AllActivityTable rows={rows} />
           </div>
@@ -366,6 +370,8 @@ export function MarketActivityHub() {
           <div className="p-4">
             <RedFlagTable rows={rows.filter((r): r is MarketActivityRedFlagRow => r.type === "red_flag")} />
           </div>
+          )}
+          </TabBoundary>
         )}
 
         {!loading && !error && !csvExportEnabled && maxRows !== null && rows.length >= maxRows && (

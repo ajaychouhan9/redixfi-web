@@ -1,3 +1,4 @@
+import { safeNumber } from "./safe-format";
 import type {
   AnnualReportSummary,
   ConcallTranscript,
@@ -155,7 +156,7 @@ function buildSummaryRows(data: ResearchDetail, peers: PeerRow[] | null): XlsxSu
     { kind: "blank" },
     { kind: "section", cells: ["SMART MONEY & ACTIVITY"], merge: [0, 3] as [number, number] },
     { kind: "item", cells: ["Latest delivery", latestDelivery ? percentText(latestDelivery.delivery_pct, 2) : "Not available"] },
-    { kind: "item", cells: ["Latest insider trade", latestInsider ? `${latestInsider.transaction_type} · ${latestInsider.insider_name || "Not available"} · ${latestInsider.quantity.toLocaleString("en-IN")} shares` : "None recently"] },
+    { kind: "item", cells: ["Latest insider trade", latestInsider ? `${latestInsider.transaction_type} · ${latestInsider.insider_name || "Not available"} · ${safeNumber(latestInsider.quantity)} shares` : "None recently"] },
     { kind: "item", cells: ["Promoter pledge", latestPledge ? `${percentText(latestPledge.pledged_pct, 2)} · as of ${latestPledge.as_of_date} · ${latestPledge.pledge_trend ?? "stable"}` : "Not available"] },
     { kind: "item", cells: ["Options PCR", latestPcr ? `${numberText(latestPcr.pcr, 2)} · ${latestPcr.pcr > 1 ? "put-heavy" : "call-heavy"}` : "Not available"] },
     { kind: "item", cells: ["Bulk/block activity", data.bulk_block_deals.length ? `${data.bulk_block_deals.length} recent record(s)` : "None recently"] },
