@@ -118,7 +118,7 @@ export default async function MarketActivityPage() {
                 <span className="text-foreground-muted">Updating…</span>
               ) : redFlags && redFlags.total_findings > 0 ? (
                 <>
-                  {redFlags.total_findings} finding{redFlags.total_findings === 1 ? "" : "s"} across{" "}
+                  {redFlags.total_findings} item{redFlags.total_findings === 1 ? "" : "s"} across{" "}
                   {redFlags.distinct_filings} filing{redFlags.distinct_filings === 1 ? "" : "s"} in the last{" "}
                   {redFlags.window_days} days; latest filing:{" "}
                   {redFlags.latest_date ? formatDateIst(redFlags.latest_date) : "—"}

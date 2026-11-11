@@ -9,7 +9,7 @@ import type {
   MarketActivityRow,
 } from "@/lib/api/types";
 import { formatDateIst } from "@/lib/format";
-import { Chip } from "@/components/ui/Chip";
+import { personCategory, sideLabel } from "@/lib/insider-display";
 import { stockPath } from "@/lib/seo/stock-symbol";
 
 /** Per-category tables (2026-08-15) — each reuses the EXACT column
@@ -19,13 +19,6 @@ import { stockPath } from "@/lib/seo/stock-symbol";
  * every row linking back to /research/{symbol}. Columns genuinely
  * differ per category, per the locked spec — no shared-columns generic
  * table across tabs (the "All" tab below is the only unified view). */
-
-const TONE_CHIP_TONE: Record<string, "up" | "down" | "amber"> = {
-  Positive: "up",
-  Negative: "down",
-  Mixed: "amber",
-  Neutral: "amber",
-};
 
 function SymbolLink({ symbol, companyName }: { symbol: string; companyName: string | null }) {
   return (
@@ -51,7 +44,6 @@ export function ConcallsTable({ rows }: { rows: MarketActivityConcallRow[] }) {
               <span className="rounded-full bg-neutral-bg px-2 py-0.5 font-semibold uppercase tracking-wide text-foreground-muted">
                 {c.subject === "EARNINGS_CALL_TRANSCRIPT" ? "Concall transcript" : "Investor presentation"}
               </span>
-              {TONE_CHIP_TONE[c.tone_label] && <Chip tone={TONE_CHIP_TONE[c.tone_label]}>{c.tone_label}</Chip>}
               <span className="text-foreground-faint">{formatDateIst(c.filing_date)}</span>
             </div>
             <a
@@ -123,7 +115,7 @@ export function InsiderTable({ rows }: { rows: MarketActivityInsiderRow[] }) {
           <tr>
             <th className="py-1.5 pr-3">Date</th>
             <th className="py-1.5 pr-3">Symbol</th>
-            <th className="py-1.5 pr-3">Insider</th>
+            <th className="py-1.5 pr-3">Category</th>
             <th className="py-1.5 pr-3">Type</th>
             <th className="py-1.5 pr-3">Qty</th>
             <th className="py-1.5 pr-3">Value</th>
@@ -136,8 +128,8 @@ export function InsiderTable({ rows }: { rows: MarketActivityInsiderRow[] }) {
               <td className="py-1.5 pr-3">
                 <SymbolLink symbol={t.symbol} companyName={t.company_name} />
               </td>
-              <td className="py-1.5 pr-3">{t.insider_name || "—"}</td>
-              <td className="py-1.5 pr-3">{t.transaction_type || "n/a"}</td>
+              <td className="py-1.5 pr-3">{personCategory(t)}</td>
+              <td className="py-1.5 pr-3">{sideLabel(t.transaction_type)}</td>
               <td className="py-1.5 pr-3 tabular-nums">{safeNumber(t.quantity)}</td>
               <td className="py-1.5 pr-3 tabular-nums">{safeRupees(t.value_amount)}</td>
             </tr>

@@ -15,7 +15,6 @@ import { DeltaValue } from "@/components/ui/DeltaValue";
 import { Sparkline } from "@/components/ui/Sparkline";
 import { StockEventsList } from "@/components/app/research/StockEventsList";
 import { Collapsible } from "@/components/ui/Collapsible";
-import { Chip } from "@/components/ui/Chip";
 import { NewsList } from "@/components/app/NewsList";
 import { RecordView } from "@/components/app/RecordView";
 import { FundamentalsPanels } from "@/components/app/research/FundamentalsPanels";
@@ -33,18 +32,6 @@ import { AnnualReportSummaryCard } from "@/components/app/research/AnnualReportS
 import { RedFlagSection } from "@/components/app/research/RedFlagSection";
 import { formatDataAsOf, formatDateIst, formatObservationDate, formatPriceAsOf } from "@/lib/format";
 import { stockPath } from "@/lib/seo/stock-symbol";
-
-// Concall tone -> the app's existing semantic color tones (Chip component),
-// same palette Event Risk Today's severity badges use. Real values per
-// ConcallTranscript.tone_label (types.ts) are exactly Positive/Neutral/
-// Negative/Mixed — no "Cautious"/"Unknown" value exists on the type, but a
-// defensive fallback (no badge) is kept per the task's own spec anyway.
-const TONE_CHIP_TONE: Record<string, "up" | "down" | "amber"> = {
-  Positive: "up",
-  Negative: "down",
-  Mixed: "amber",
-  Neutral: "amber",
-};
 
 /**
  * Task 14 — pure presentational component: every prop here is already
@@ -153,8 +140,8 @@ export function ResearchDetail({
           collapsed by default alongside Corporate events below. Converted
           to the same Collapsible component FundamentalsPanels already uses
           (reuse, not a new component), title updated to the task's literal
-          "Smart Money & Activity" wording. */}
-      <Collapsible question="Smart Money & Activity">
+          "Institutional and insider activity" wording. */}
+      <Collapsible question="Institutional and insider activity">
         <div className="space-y-4">
           <ErrorBoundary>
             <div>
@@ -261,7 +248,6 @@ export function ResearchDetail({
                       <span className="rounded-full bg-neutral-bg px-2 py-0.5 font-semibold uppercase tracking-wide text-foreground-muted">
                         {c.subject === "EARNINGS_CALL_TRANSCRIPT" ? "Concall transcript" : "Investor presentation"}
                       </span>
-                      {TONE_CHIP_TONE[c.tone_label] && <Chip tone={TONE_CHIP_TONE[c.tone_label]}>{c.tone_label}</Chip>}
                       {/* A5: formatDateIst (year-inclusive) — was formatShortDate
                           (year-less), same fix already applied to insider
                           trades / "What's coming up?" in a prior session. */}
@@ -283,18 +269,6 @@ export function ResearchDetail({
                   {/* A1: collapsed-by-default summary with a Show more/less
                       toggle — client leaf, see ConcallSummary.tsx. */}
                   <ConcallSummary summary={c.summary} />
-                  {/* Callout-box fix (2026-08-11, corrected placement): the
-                      highlighted box belongs HERE, on tone_note — the
-                      short one-sentence tone explanation (confirmed
-                      against data-pipeline/concall_summarizer.py's own
-                      prompt spec) that sits below the Key takeaway/Show
-                      more-less toggle and above the source/attribution
-                      line, not on the longer summary above. Same real
-                      gold-accent tokens as every other gold CTA/active
-                      state (`border-accent`/`bg-accent`), at low opacity. */}
-                  <div className="mt-2 border-l-2 border-accent bg-accent/10 px-3 py-2">
-                    <p className="text-sm font-medium leading-relaxed text-foreground">{c.tone_note}</p>
-                  </div>
                   {/* Contrast fix (2026-08-11): text-foreground-faint (this
                       project's real "most muted" text tier — no "text-muted"
                       utility exists, confirmed via grep) + a border-t

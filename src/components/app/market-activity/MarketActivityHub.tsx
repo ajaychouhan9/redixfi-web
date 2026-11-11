@@ -1,5 +1,6 @@
 "use client";
 
+import { personCategory, sideLabel } from "@/lib/insider-display";
 import { TabBoundary } from "./TabBoundary";
 import { safeNumber, safeRupees } from "@/lib/safe-format";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -138,7 +139,6 @@ export function MarketActivityHub() {
             company_name: row.company_name ?? "",
             date: row.filing_date,
             subject: row.subject,
-            tone: row.tone_label,
             summary: row.summary,
             source_pdf_url: row.source_pdf_url,
           };
@@ -148,11 +148,10 @@ export function MarketActivityHub() {
             symbol: row.symbol,
             company_name: row.company_name ?? "",
             date: row.trade_date,
-            insider_name: row.insider_name,
-            transaction_type: row.transaction_type,
+            person_category: personCategory(row),
+            transaction_type: sideLabel(row.transaction_type),
             quantity: row.quantity,
             value_amount: row.value_amount,
-            relation: row.relation ?? "",
           };
         case "bulk_block":
           // Real bulk_block_deals field shape (BUG 7 fix, 2026-08-16) —

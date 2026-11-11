@@ -1,14 +1,14 @@
 import { sentencesIn } from "./dailyBriefSplit";
+import { STANDARD_LINE } from "./compliance/standard-line";
 import type { DailyBrief } from "./api/types";
 
 // Same canonical wording as components/layout/FooterDisclaimer.tsx —
 // shortened per platform's character budget, never re-authored. The
 // medium/long footer is that exact sentence pair verbatim; the short
 // (X-length) footer is a compressed version of the SAME two claims
-// (measured-data-not-advice, not-yet-SEBI-registered), not new wording.
-const FULL_FOOTER =
-  "RedixFi provides measured market data and analytics only — not investment advice, recommendations, or predictions. We are not yet SEBI-registered as a Research Analyst.";
-const SHORT_FOOTER = "Measured data only, not investment advice. Not yet SEBI-registered as a Research Analyst.";
+// (measured-data-not-advice, not SEBI-registered), not new wording.
+const FULL_FOOTER = STANDARD_LINE;
+const SHORT_FOOTER = "Measured data only, not investment advice. Not a SEBI-registered Research Analyst or Investment Adviser.";
 
 function periodLabel(period: string): string {
   return period === "close" ? "Close" : "Morning";

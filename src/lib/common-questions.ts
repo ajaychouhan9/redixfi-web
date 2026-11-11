@@ -138,13 +138,13 @@ export const COMMON_QUESTION_GROUPS: CommonQuestionGroup[] = [
     "items": [
       {
         "id": "rsi_14_q1",
-        "q": "What do 'overbought' and 'oversold' actually mean here?",
-        "a": "They are conventional labels for readings above roughly 70 or below roughly 30 — describing that recent gains (or losses) were unusually large and one-sided relative to the stock's own 14-session history, nothing more."
+        "q": "What do RSI readings above 70 and below 30 mean here?",
+        "a": "These are conventional cut-offs, readings above roughly 70 or below roughly 30 — describing that recent gains (or losses) were unusually large and one-sided relative to the stock's own 14-session history, nothing more."
       },
       {
         "id": "rsi_14_q2",
-        "q": "Does an overbought reading mean the price will fall?",
-        "a": "RSI measures recent price momentum. Readings above 70 are conventionally called overbought, but RSI describes what has already happened; it does not show what comes next. In strong phases it has stayed at high readings for extended periods."
+        "q": "Does an RSI above 70 mean the price will fall?",
+        "a": "RSI measures recent price momentum. Readings above 70 are a conventional cut-off for strong recent gains, but RSI describes what has already happened; it does not show what comes next. In strong phases it has stayed at high readings for extended periods."
       },
       {
         "id": "rsi_14_q3",

@@ -11,6 +11,7 @@ import { useMemo, useState } from "react";
 
 import { GenericRecordTable } from "@/components/ui/GenericRecordTable";
 import { formatDateIst } from "@/lib/format";
+import { personCategory, sideLabel } from "@/lib/insider-display";
 import { formatRupeesCompact, splitLast12Months } from "@/lib/stock-clarity";
 import type { GenericRecord, InsiderTrade } from "@/lib/api/types";
 
@@ -21,7 +22,7 @@ function InsiderTable({ rows }: { rows: InsiderTrade[] }) {
         <thead className="text-left text-xs font-semibold uppercase tracking-wide text-foreground-faint">
           <tr>
             <th className="py-1.5 pr-3">Date</th>
-            <th className="py-1.5 pr-3">Insider</th>
+            <th className="py-1.5 pr-3">Category</th>
             <th className="py-1.5 pr-3">Type</th>
             <th className="py-1.5 pr-3">Qty</th>
             <th className="py-1.5 pr-3">Value</th>
@@ -31,8 +32,8 @@ function InsiderTable({ rows }: { rows: InsiderTrade[] }) {
           {rows.map((t) => (
             <tr key={t.filing_id} className="border-t border-border">
               <td className="py-1.5 pr-3">{formatDateIst(t.trade_date)}</td>
-              <td className="py-1.5 pr-3">{t.insider_name || "—"}</td>
-              <td className="py-1.5 pr-3">{t.transaction_type}</td>
+              <td className="py-1.5 pr-3">{personCategory(t)}</td>
+              <td className="py-1.5 pr-3">{sideLabel(t.transaction_type)}</td>
               <td className="py-1.5 pr-3 tabular-nums">{safeNumber(t.quantity)}</td>
               <td className="py-1.5 pr-3 tabular-nums">{formatRupeesCompact(t.value_amount)}</td>
             </tr>

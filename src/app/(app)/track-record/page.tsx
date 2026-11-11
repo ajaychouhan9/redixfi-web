@@ -1,3 +1,4 @@
+import { STANDARD_LINE } from "@/lib/compliance/standard-line";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getTrackRecord } from "@/lib/api/endpoints";
@@ -103,8 +104,7 @@ export default async function TrackRecordPage() {
 
       <Card>
         <p className="text-sm leading-relaxed">
-          &ldquo;Past patterns are not a guarantee of future results. RedixFi is not SEBI-registered as a Research
-          Analyst and this is not investment advice.&rdquo;
+          &ldquo;Past patterns are not a guarantee of future results.&rdquo; {STANDARD_LINE}
         </p>
       </Card>
 

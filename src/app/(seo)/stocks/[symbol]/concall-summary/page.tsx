@@ -50,13 +50,13 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
 
   const latest = data.concall_transcripts[0];
   const title = `${data.company_name} (${data.symbol}) — Latest Concall Summary`;
-  const description = `AI summary of ${data.company_name}'s latest ${latest.subject === "EARNINGS_CALL_TRANSCRIPT" ? "concall" : "investor presentation"} (${latest.filing_date}) — source-cited, measured tone: ${latest.tone_label}.`;
+  const description = `AI summary of ${data.company_name}'s latest ${latest.subject === "EARNINGS_CALL_TRANSCRIPT" ? "concall" : "investor presentation"} (${latest.filing_date}) — source-cited.`;
   const ogImage = `/api/og?${new URLSearchParams({
     type: "concall",
     title: data.symbol,
     subtitle: `${data.company_name} — Concall Summary`,
-    stat: latest.tone_label,
-    statLabel: `${latest.subject === "EARNINGS_CALL_TRANSCRIPT" ? "Concall" : "Investor presentation"} · ${latest.filing_date}`,
+    stat: latest.subject === "EARNINGS_CALL_TRANSCRIPT" ? "Concall" : "Presentation",
+    statLabel: latest.filing_date,
   }).toString()}`;
 
   return {
@@ -113,19 +113,7 @@ export default async function ConcallSummaryPage({ params }: { params: Promise<{
           </span>
           <span className="text-xs text-foreground-faint">{latest.filing_date}</span>
         </div>
-        <span
-          className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${
-            latest.tone_label === "Positive"
-              ? "bg-up-bg text-up"
-              : latest.tone_label === "Negative"
-                ? "bg-down-bg text-down"
-                : "bg-surface text-foreground-muted"
-          }`}
-        >
-          Tone: {latest.tone_label}
-        </span>
         <p className="mt-3 text-sm leading-relaxed text-foreground">{latest.summary}</p>
-        <p className="mt-2 text-xs text-foreground-faint">{latest.tone_note}</p>
         {latest.source_pdf_url && (
           <a href={latest.source_pdf_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs text-accent hover:underline">
             View source filing →

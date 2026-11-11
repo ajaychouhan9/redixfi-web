@@ -8,14 +8,8 @@ import { RED_FLAG_CATEGORIES, RED_FLAG_RADAR_TITLE } from "@/lib/redFlagCategori
  * Landing preview of the Governance disclosures card (2026-09-11 landing overhaul).
  * Anonymous-only, same pattern as VisitorIntroStrip.
  *
- * The example finding below is REAL, not fabricated: a genuine
- * `related_party_transaction` classification confirmed by an actual
- * live OpenAI classification request against real ABB annual-report text
- * (page 102), recorded verbatim in this project's session history. Left
- * unedited on purpose —
- * it happens to be a "no material issue found" finding, which is itself
- * an honest demonstration of the tool reporting what the filing actually
- * says rather than manufacturing alarm.
+ * 2026-11-11: the "Real example finding" (ABB India, related-party) was removed. It was
+ * an AI paraphrase of the excerpt ("The excerpt discusses..."), not the filing's own words.
  */
 export function GovernanceRadarCard() {
   const { user } = useAuth();
@@ -40,20 +34,6 @@ export function GovernanceRadarCard() {
             <div className="text-xs text-foreground-muted">{c.desc}</div>
           </div>
         ))}
-      </div>
-
-      <div className="mt-4 rounded-lg border border-border bg-surface px-3 py-3">
-        <div className="mb-1.5 flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-foreground-faint">
-          <span>Real example finding</span>
-          <span className="rounded bg-accent/10 px-1.5 py-0.5 text-accent-dim">Related-party transaction</span>
-        </div>
-        <p className="text-sm leading-relaxed text-foreground">
-          &ldquo;The excerpt discusses related party transactions that are repetitive in nature and states that these
-          transactions are reviewed by the Statutory Auditors. It mentions that the Company did not enter into any
-          Material Related Party Transactions during the year and provides related party disclosures as per Ind AS
-          24.&rdquo;
-        </p>
-        <div className="mt-2 text-xs text-foreground-faint">ABB India — annual report</div>
       </div>
     </div>
   );

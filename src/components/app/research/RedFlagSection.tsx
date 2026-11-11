@@ -1,15 +1,12 @@
-import type { ResearchRedFlags, RedFlagAttentionItem, RedFlagCategoryGroup } from "@/lib/api/types";
+import type { ResearchRedFlags, RedFlagCategoryGroup } from "@/lib/api/types";
 import { Card } from "@/components/ui/Card";
 import { AiLabel } from "@/components/ui/AiLabel";
 import { formatDateIst } from "@/lib/format";
 import {
-  ATTENTION_HEADING,
-  ATTENTION_KEYS,
-  ATTENTION_NOTE,
-  NO_ATTENTION_NOTE,
+  SUMMARY_HEADING,
+  SUMMARY_NOTE,
   RED_FLAG_CATEGORY_LABELS,
   RED_FLAG_RADAR_TITLE,
-  ROUTINE_HEADING,
 } from "@/lib/redFlagCategories";
 
 /**
@@ -104,13 +101,9 @@ export function RedFlagSection({ data }: { data: ResearchRedFlags | undefined })
   // renders nothing rather than an ErrorBoundary fallback during that gap.
   if (!data) return null;
   const coverage = data.coverage;
-  const attentionKeys = new Set([...ATTENTION_KEYS, ...(data.attention ?? []).map((a) => a.category)]);
-  const attentionGroups = data.categories.filter((g) => attentionKeys.has(g.category));
-  const routineGroups = data.categories.filter((g) => !attentionKeys.has(g.category));
-  // An API that does not send `attention` yet: build the line from the groups, so it never says "none" while items are listed.
-  const attention: RedFlagAttentionItem[] =
-    data.attention ??
-    attentionGroups.map((g) => ({ category: g.category, label: RED_FLAG_CATEGORY_LABELS[g.category] ?? g.category_label, count: g.occurrence_count }));
+  const summaryLine = data.categories
+    .map((g) => `${RED_FLAG_CATEGORY_LABELS[g.category] ?? g.category_label} (${g.occurrence_count} ${g.occurrence_count === 1 ? "item" : "items"})`)
+    .join("; ");
   // `coverage` is null when per-stock coverage isn't measured; that says
   // nothing about this stock, so no note (the empty state already says "yet").
   const coverageNote =
@@ -131,26 +124,12 @@ export function RedFlagSection({ data }: { data: ResearchRedFlags | undefined })
         </p>
       ) : (
         <div className="space-y-4">
-          <div data-testid="governance-attention" className="rounded-lg border border-border bg-hover px-3 py-2.5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-foreground-muted">{ATTENTION_HEADING}</p>
-            {attention.length > 0 ? (
-              <>
-                <p className="mt-1 text-sm text-foreground">
-                  {attention.map((a) => `${a.label} (${a.detail ?? `${a.count} ${a.count === 1 ? "item" : "items"}`})`).join("; ")}
-                </p>
-                <p className="mt-1 text-xs text-foreground-faint">{ATTENTION_NOTE}</p>
-              </>
-            ) : (
-              <p className="mt-1 text-sm text-foreground-muted">{NO_ATTENTION_NOTE}</p>
-            )}
+          <div data-testid="governance-summary" className="rounded-lg border border-border bg-hover px-3 py-2.5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-foreground-muted">{SUMMARY_HEADING}</p>
+            <p className="mt-1 text-sm text-foreground">{summaryLine}</p>
+            <p className="mt-1 text-xs text-foreground-faint">{SUMMARY_NOTE}</p>
           </div>
-          {attentionGroups.map((group) => (
-            <CategoryBlock key={group.category} group={group} />
-          ))}
-          {routineGroups.length > 0 && attentionGroups.length > 0 && (
-            <p className="border-t border-border pt-3 text-xs font-semibold uppercase tracking-wide text-foreground-muted">{ROUTINE_HEADING}</p>
-          )}
-          {routineGroups.map((group) => (
+          {data.categories.map((group) => (
             <CategoryBlock key={group.category} group={group} />
           ))}
         </div>

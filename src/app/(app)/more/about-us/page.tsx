@@ -1,3 +1,4 @@
+import { STANDARD_LINE } from "@/lib/compliance/standard-line";
 import type { Metadata } from "next";
 import { ContactForm } from "@/components/app/ContactForm";
 
@@ -24,9 +25,7 @@ export default function AboutUsPage() {
         <p>
           RedixFi tracks measured signals, delivery and options data, and AI-classified news every day — analytics,
           not advice. Every figure on the platform describes something that has already happened or is currently
-          observed; nothing states or implies what a stock will do next. RedixFi is not currently registered with
-          SEBI as a Research Analyst, and directional research is planned to launch only after that registration is
-          complete.
+          observed; nothing states or implies what a stock will do next. {STANDARD_LINE}
         </p>
       </section>
 

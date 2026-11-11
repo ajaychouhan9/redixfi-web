@@ -80,7 +80,7 @@ function RedFlagsRow({ redFlags }: { redFlags: MarketActivityRedFlagSummary | un
         <span className="text-right text-xs text-foreground-faint">Updating…</span>
       ) : hasActivity ? (
         <span className="text-right text-xs text-foreground-faint">
-          {redFlags!.total_findings} finding{redFlags!.total_findings === 1 ? "" : "s"} /{" "}
+          {redFlags!.total_findings} item{redFlags!.total_findings === 1 ? "" : "s"} /{" "}
           {redFlags!.distinct_filings} filing{redFlags!.distinct_filings === 1 ? "" : "s"} ·{" "}
           {redFlags!.window_days}d window
         </span>

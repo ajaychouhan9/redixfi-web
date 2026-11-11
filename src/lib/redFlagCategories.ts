@@ -7,13 +7,10 @@
 /** The card heading, used by the landing card and Research Pro. */
 export const RED_FLAG_RADAR_TITLE = "Governance disclosures";
 
-/** Routine kinds are plain disclosures. The kinds below also get a separate "Needs attention" line (mirrors the API). */
-export const ATTENTION_KEYS = ["fraud_or_investigation", "regulatory_action", "auditor_qualification", "default_or_covenant"];
-export const ATTENTION_HEADING = "Needs attention";
-export const ATTENTION_NOTE =
-  "Items of these kinds are disclosed in the filings. This is a count of disclosed items. It is not a finding about the company and its cause has not been independently established.";
-export const NO_ATTENTION_NOTE = "No item of a kind that needs attention was stored for this company.";
-export const ROUTINE_HEADING = "Routine disclosures";
+/** Neutral summary of the disclosed items by category: names and counts only, no verdict. */
+export const SUMMARY_HEADING = "Disclosed items by category";
+export const SUMMARY_NOTE =
+  "A count of items found in the company's filings. It is not a finding about the company and its cause has not been independently established.";
 
 export const RED_FLAG_CATEGORIES: { key: string; label: string; desc: string }[] = [
   { key: "auditor_qualification", label: "Auditor Qualification", desc: "Qualified or adverse opinions, emphasis of matter, key audit matters" },

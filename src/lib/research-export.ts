@@ -1,3 +1,4 @@
+import { personCategory, sideLabel } from "@/lib/insider-display";
 import { safeNumber } from "./safe-format";
 import type {
   AnnualReportSummary,
@@ -50,8 +51,6 @@ function cleanConcallRow(row: ConcallTranscript): Record<string, unknown> {
   return {
     "Filing date": row.filing_date,
     "Document type": row.subject === "EARNINGS_CALL_TRANSCRIPT" ? "Concall transcript" : "Investor presentation",
-    Tone: row.tone_label,
-    "Tone note": row.tone_note,
     Summary: row.summary,
     "Source filing": row.source_pdf_url,
   };
@@ -154,9 +153,9 @@ function buildSummaryRows(data: ResearchDetail, peers: PeerRow[] | null): XlsxSu
     { kind: "item", cells: ["Free cash flow", currencyText(c?.fcf_latest)] },
     { kind: "item", cells: ["FCF-positive years / last 5", c?.fcf_positive_years_5 ?? "Not available"] },
     { kind: "blank" },
-    { kind: "section", cells: ["SMART MONEY & ACTIVITY"], merge: [0, 3] as [number, number] },
+    { kind: "section", cells: ["INSTITUTIONAL AND INSIDER ACTIVITY"], merge: [0, 3] as [number, number] },
     { kind: "item", cells: ["Latest delivery", latestDelivery ? percentText(latestDelivery.delivery_pct, 2) : "Not available"] },
-    { kind: "item", cells: ["Latest insider trade", latestInsider ? `${latestInsider.transaction_type} · ${latestInsider.insider_name || "Not available"} · ${safeNumber(latestInsider.quantity)} shares` : "None recently"] },
+    { kind: "item", cells: ["Latest insider trade", latestInsider ? `${sideLabel(latestInsider.transaction_type)} · ${personCategory(latestInsider)} · ${safeNumber(latestInsider.quantity)} shares` : "None recently"] },
     { kind: "item", cells: ["Promoter pledge", latestPledge ? `${percentText(latestPledge.pledged_pct, 2)} · as of ${latestPledge.as_of_date} · ${latestPledge.pledge_trend ?? "stable"}` : "Not available"] },
     { kind: "item", cells: ["Options PCR", latestPcr ? `${numberText(latestPcr.pcr, 2)} · ${latestPcr.pcr > 1 ? "put-heavy" : "call-heavy"}` : "Not available"] },
     { kind: "item", cells: ["Bulk/block activity", data.bulk_block_deals.length ? `${data.bulk_block_deals.length} recent record(s)` : "None recently"] },
@@ -220,7 +219,7 @@ function detailRows(data: ResearchDetail, peers: PeerRow[] | null): XlsxSheet[] 
     { name: "Splits", rows: e?.recent_splits.map((row) => ({ "Record date": row.record_date, Remarks: row.remarks })) ?? [] },
     { name: "Delivery", rows: data.delivery_30d.map((row) => ({ Date: row.date, "Delivery %": row.delivery_pct })) },
     { name: "Events", rows: data.corporate_events.map(cleanGenericEvent) },
-    { name: "Insider Trades", rows: data.insider_trades.map((row) => ({ Date: row.trade_date, Insider: row.insider_name, Type: row.transaction_type, Quantity: row.quantity, Value: row.value_amount, Relation: row.relation })) },
+    { name: "Insider Trades", rows: data.insider_trades.map((row) => ({ Date: row.trade_date, Category: personCategory(row), Type: sideLabel(row.transaction_type), Quantity: row.quantity, Value: row.value_amount })) },
     { name: "Bulk Block", rows: data.bulk_block_deals.map(cleanBulkBlockRow) },
     { name: "Pledge History", rows: data.pledge_history.map((row) => ({ Quarter: row.quarter, Date: row.as_of_date, "Pledged %": row.pledged_pct, "Pledge change": row.pledge_change ?? "", Trend: row.pledge_trend ?? "" })) },
     { name: "Options PCR", rows: data.options_pcr_history.map((row) => ({ Timestamp: row.timestamp, Expiry: row.expiry, PCR: row.pcr, "PCR volume": row.pcr_vol, "Last price": row.last_price, "Max pain": row.max_pain, "CE resistance": row.ce_resistance, "PE support": row.pe_support, "CE OI change": row.ce_oi_change, "PE OI change": row.pe_oi_change })) },

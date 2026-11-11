@@ -876,7 +876,8 @@ export interface InsiderTrade {
   company_name: string;
   disclosure_type: string;
   filing_timestamp: string;
-  insider_name: string;
+  insider_name?: string;
+  person_category?: string | null;
   isin: string;
   parsed_at: string;
   post_holding_shares: number | null;
@@ -1144,8 +1145,8 @@ export interface ConcallTranscript {
   filing_date: string;
   subject: "EARNINGS_CALL_TRANSCRIPT" | "INVESTOR_PRESENTATION";
   summary: string;
-  tone_label: "Positive" | "Neutral" | "Negative" | "Mixed";
-  tone_note: string;
+  tone_label?: "Positive" | "Neutral" | "Negative" | "Mixed";
+  tone_note?: string;
   source_pdf_url: string;
 }
 

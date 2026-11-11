@@ -1,3 +1,4 @@
+import { STANDARD_LINE } from "@/lib/compliance/standard-line";
 import Link from "next/link";
 import { RedixFiLogo } from "@/components/brand/RedixFiLogo";
 
@@ -25,8 +26,7 @@ export default function SeoLayout({ children }: { children: React.ReactNode }) {
       </header>
       <main className="flex-1 px-4 py-6 sm:px-6">{children}</main>
       <footer className="border-t border-border px-4 py-3 text-center text-[12px] text-foreground-faint sm:px-6">
-        RedixFi provides measured market data and analytics only — not investment advice, recommendations, or
-        predictions. We are not yet SEBI-registered as a Research Analyst.{" "}
+        {STANDARD_LINE}{" "}
         <Link href="/more/disclaimer" className="underline">
           Full disclaimer
         </Link>

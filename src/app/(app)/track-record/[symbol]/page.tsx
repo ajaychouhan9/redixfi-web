@@ -1,3 +1,4 @@
+import { STANDARD_LINE } from "@/lib/compliance/standard-line";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -43,19 +44,6 @@ function CrossingRow({ c }: { c: SignalCrossing }) {
       <span>
         Stock Condition crossed {c.crossing_side} {c.threshold} on {formatShortDate(c.crossing_date)}
       </span>
-      {c.outcome_status === "pending" ? (
-        <span className="text-xs text-foreground-faint">
-          Outcome pending — needs {c.window_sessions} trading sessions to elapse
-        </span>
-      ) : (
-        <span className="text-xs">
-          Over the following {c.window_sessions} sessions, relative to its sector&apos;s median move:{" "}
-          <span className={c.beat_sector_median ? "text-up" : "text-down"}>
-            {c.relative_return_pct !== null && c.relative_return_pct > 0 ? "+" : ""}
-            {c.relative_return_pct}% ({c.beat_sector_median ? "outperformed" : "did not outperform"})
-          </span>
-        </span>
-      )}
     </li>
   );
 }
@@ -80,8 +68,7 @@ export default async function TrackRecordSymbolPage({ params }: { params: Promis
 
       <Card>
         <p className="text-sm leading-relaxed">
-          &ldquo;Past patterns are not a guarantee of future results. RedixFi is not SEBI-registered as a Research
-          Analyst and this is not investment advice.&rdquo;
+          &ldquo;Past patterns are not a guarantee of future results.&rdquo; {STANDARD_LINE}
         </p>
       </Card>
 

@@ -1,3 +1,4 @@
+import { STANDARD_LINE } from "@/lib/compliance/standard-line";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -14,8 +15,7 @@ export default function DisclaimerPage() {
       <section>
         <h2 className="mb-1 font-semibold">Registration status</h2>
         <p>
-          RedixFi is not currently registered with SEBI as a Research Analyst. Registration is in progress. Until it
-          is complete, RedixFi does not offer research reports, recommendations, or any form of investment advice.
+          {STANDARD_LINE}
         </p>
       </section>
 
@@ -47,13 +47,6 @@ export default function DisclaimerPage() {
         </p>
       </section>
 
-      <section>
-        <h2 className="mb-1 font-semibold">Roadmap</h2>
-        <p>
-          Directional research is planned to launch after RedixFi completes SEBI Research Analyst registration.
-          Nothing on this platform today should be read as an early or partial version of that service.
-        </p>
-      </section>
 
       <section>
         <h2 className="mb-1 font-semibold">Data quality & freshness</h2>

@@ -47,6 +47,17 @@ const OLD = [
   "Among the lowest-ranked",
   "top-ranked stocks",
   "Ranked near the top",
+  // 2026-11-11: judgment words and the old registration wording may not return in displayed text
+  "oversold",
+  "overbought",
+  "Smart Money",
+  "Smart money",
+  "smart money",
+  "Needs attention",
+  "not yet SEBI-registered",
+  "Not yet SEBI-registered",
+  "directional research",
+  "SEBI RA registration",
 ];
 
 function files(dir) {
