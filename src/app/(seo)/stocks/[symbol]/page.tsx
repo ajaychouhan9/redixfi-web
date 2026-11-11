@@ -15,6 +15,7 @@ import { stockPath, stockSymbolFromParam } from "@/lib/seo/stock-symbol";
 import { CorporateActionNote } from "@/components/ui/CorporateActionNote";
 import type { ResearchDetail } from "@/lib/api/types";
 import { retryTransientPublicGet } from "@/lib/api/retry-public-upstream";
+import { FeedbackBox } from "@/components/app/FeedbackBox";
 
 // Public no-login snapshot — ISR: pre-rendered on first crawl/visit, then
 // revalidated every 5 minutes. Fetched WITHOUT a bearer token, which the
@@ -218,7 +219,7 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
         </p>
       )}
 
-
+      <FeedbackBox page="stock" className="mt-6" />
     </div>
   );
 }

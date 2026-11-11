@@ -66,6 +66,8 @@ import {
   x2,
 } from "@/components/app/history/ui";
 import type { StockwiseDay } from "@/lib/api/history";
+import { UpgradeLink } from "@/components/ui/UpgradeLink";
+import { track } from "@/lib/analytics";
 
 const SCOPE_LABEL: Record<HistoryScope, string> = {
   stock: "This stock",
@@ -167,6 +169,7 @@ export function HistoryExplorer() {
 
   const run = useCallback(
     async (body: Record<string, unknown>) => {
+      track("rewind_query_run", { view: "across" });
       setBusy(true);
       setMsg(null);
       setLockText(null);
@@ -411,9 +414,9 @@ export function HistoryExplorer() {
             {!custom && (
               <p className="mb-3 text-xs text-foreground-muted" data-testid="history-locked">
                 {cfg.access.locked_text}{" "}
-                <Link href="/pricing" className="font-medium text-accent-dim underline">
+                <UpgradeLink className="font-medium text-accent-dim underline">
                   See plans
-                </Link>
+                </UpgradeLink>
               </p>
             )}
             <fieldset disabled={!custom} className="space-y-4 disabled:opacity-60">
@@ -668,9 +671,9 @@ export function HistoryExplorer() {
               {result.table_more && limit >= result.rows_limit && !cfg.access.saved_filters && (
                 <span className="text-xs text-foreground-muted">
                   {cfg.access.plan === "basic" ? "Showing the most rows your plan includes. " : `Showing the first ${result.rows_limit} rows. Basic and Pro show more. `}
-                  <Link href="/pricing" className="font-medium text-accent-dim underline">
+                  <UpgradeLink className="font-medium text-accent-dim underline">
                     See plans
-                  </Link>
+                  </UpgradeLink>
                 </span>
               )}
             </div>

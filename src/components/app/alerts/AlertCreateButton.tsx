@@ -7,6 +7,7 @@ import { getAlertRules, createAlertRule } from "@/lib/api/mutations";
 import { ApiError } from "@/lib/api/client";
 import { thresholdError } from "@/lib/alert-thresholds";
 import type { AlertCapabilities, AlertDirection, AlertMetric } from "@/lib/api/types";
+import { UpgradeLink } from "@/components/ui/UpgradeLink";
 
 const METRIC_LABELS: Record<AlertMetric, string> = {
   price: "Price",
@@ -121,9 +122,9 @@ export function AlertCreateButton({ symbol, onCreated }: { symbol?: string; onCr
           </div>
           <p className="text-xs text-foreground-muted">
             Delete an existing alert, or{" "}
-            <Link href="/pricing" className="font-medium text-accent hover:underline">
+            <UpgradeLink className="font-medium text-accent hover:underline">
               upgrade to Pro
-            </Link>{" "}
+            </UpgradeLink>{" "}
             for unlimited alerts.
           </p>
         </div>

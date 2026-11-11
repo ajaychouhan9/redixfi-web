@@ -20,6 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
   // The company name makes the title useful to a searcher; the same fetch as the page body below (memoised within one render).
   let name: string | null = null;
   try {
+    // @auth-ok: SSR metadata, always anonymous (only the public company name is used)
     name = (await getSignalDetail(symbol, 6, { revalidate: 60 })).data.company_name ?? null;
   } catch {
     /* the title falls back to the symbol */

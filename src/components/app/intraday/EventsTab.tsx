@@ -46,7 +46,7 @@ export function EventsTab() {
         <AiLabel />
         <p className="text-xs text-foreground-muted">AI read and classified {total} live event(s) today.</p>
       </div>
-      {loading ? <p className="text-sm text-foreground-muted">Loading…</p> : <NewsList items={items} emptyText="No live events flagged yet today." />}
+      {loading ? <p className="text-sm text-foreground-muted">Loading…</p> : <NewsList items={items} emptyText="No live news items yet today." />}
     </div>
   );
 }

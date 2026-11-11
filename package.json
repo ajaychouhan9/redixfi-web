@@ -17,6 +17,7 @@
     "check:wording": "node scripts/test-wording.mjs && node --experimental-strip-types scripts/test-ux-small.ts && node --experimental-strip-types scripts/test-market-activity.ts && node --experimental-strip-types scripts/test-insider-display.ts && node --experimental-strip-types scripts/test-trust-fixes.ts"
   },
   "dependencies": {
+    "@vercel/analytics": "^1.5.0",
     "clsx": "^2.1.1",
     "firebase": "^12.16.0",
     "lightweight-charts": "^5.2.0",

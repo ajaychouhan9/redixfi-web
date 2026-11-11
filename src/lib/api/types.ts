@@ -1493,6 +1493,7 @@ export interface MeProfile {
   pending_plan_change: PendingPlanChange | null;
   kyc_status: string;
   tnc_accepted_at: string | null;
+  terms_accepted?: boolean;
   alerts_opt_in: AlertPreferences;
   // Backend preference field (retained). Previously set by the Account
   // "Confirm before sending detailed questions" toggle for the retired

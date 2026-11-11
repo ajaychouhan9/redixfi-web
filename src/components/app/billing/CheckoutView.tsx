@@ -8,8 +8,10 @@ import { TopupCard } from "@/components/app/billing/TopupCard";
 import { SubscriptionStatusCard } from "@/components/app/account/SubscriptionStatusCard";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getMe, validatePromoCode } from "@/lib/api/mutations";
+import { track } from "@/lib/analytics";
 import { BASIC_FEATURES, PRO_FEATURES, PLAN_MATRIX } from "@/data/plan-features";
 import type { BillingPlan, MeProfile, PromoValidation } from "@/lib/api/types";
+import { FeedbackBox } from "@/components/app/FeedbackBox";
 
 const ANNUAL_SAVINGS_NOTE = "Save vs paying monthly for a year";
 
@@ -22,6 +24,9 @@ function isAnnualPlanId(planId: string | null | undefined): boolean {
 }
 
 export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) {
+  useEffect(() => {
+    track("pricing_viewed");
+  }, []);
   const { user, getToken, updateCachedUser } = useAuth();
   const [profile, setProfile] = useState<MeProfile | null>(null);
   const [plans] = useState(initialPlans);
@@ -268,6 +273,8 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
         </Link>
         .
       </p>
+
+      <FeedbackBox page="pricing" className="mt-6" />
 
       <p className="mt-3 text-xs text-foreground-faint">
         Prices are GST-inclusive; invoices show the breakup. Subscriptions renew automatically and can be cancelled

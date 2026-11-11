@@ -46,7 +46,7 @@ const CATEGORY_META: { type: AnomalyType; label: string; directions: AnomalyDire
   { type: "insider_cluster", label: "Insider Activity", directions: ["buying", "selling"] },
 ];
 
-function AnomalyGroup({ label, rows }: { label: string; rows: AnomalyFlagDoc[] }) {
+function AnomalyGroup({ label, rows, type, direction }: { label: string; rows: AnomalyFlagDoc[]; type: AnomalyType; direction: AnomalyDirection }) {
   if (rows.length === 0) return null;
   return (
     <div className="flex-1 min-w-[140px]">
@@ -54,13 +54,18 @@ function AnomalyGroup({ label, rows }: { label: string; rows: AnomalyFlagDoc[] }
         {label} ({rows.length})
       </h4>
       <ul className="space-y-1.5">
-        {rows.slice(0, 5).map((r) => (
+        {rows.slice(0, 50).map((r) => {
+          const item = r.anomalies.find((a) => a.type === type && a.anomaly_direction === direction);
+          const fact = (item as (typeof item & { fact?: string | null }) | undefined)?.fact ?? item?.detail ?? null;
+          return (
           <li key={r.symbol}>
             <Link href={stockPath("/signals", r.symbol)} className="block text-sm hover:text-accent">
               <span className="font-medium">{r.symbol}</span>
+              {fact && <span className="block text-[11px] leading-snug text-foreground-faint">{fact}</span>}
             </Link>
           </li>
-        ))}
+          );
+        })}
       </ul>
     </div>
   );
@@ -150,6 +155,8 @@ export function AnomalyCard({
                 <AnomalyGroup
                   key={`${type}:${direction}`}
                   label={DIRECTION_LABEL[direction] ?? direction}
+                  type={type}
+                  direction={direction}
                   rows={buckets.get(`${type}:${direction}`) ?? []}
                 />
               ))}

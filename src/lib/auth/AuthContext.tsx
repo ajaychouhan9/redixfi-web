@@ -17,7 +17,7 @@ interface AuthContextValue {
   loading: boolean;
   /** Resolves a currently-valid access token, refreshing first if it's about to expire. Null if logged out. */
   getToken: () => Promise<string | null>;
-  loginWithFirebaseToken: (firebaseToken: string) => Promise<void>;
+  loginWithFirebaseToken: (firebaseToken: string, acceptTermsNow?: boolean) => Promise<void>;
   logout: () => void;
   /**
    * "Always allow" opt-out session (2026-08-21) — optimistically merges
@@ -60,8 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
-  const loginWithFirebaseToken = useCallback(async (firebaseToken: string) => {
-    const tokens: AuthTokens = await firebaseLogin(firebaseToken);
+  const loginWithFirebaseToken = useCallback(async (firebaseToken: string, acceptTermsNow = false) => {
+    const tokens: AuthTokens = await firebaseLogin(firebaseToken, acceptTermsNow);
     const next: StoredAuth = { access_token: tokens.access_token, refresh_token: tokens.refresh_token, user: tokens.user };
     writeStorage(next);
     setStored(next);
@@ -155,6 +155,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               pro_trial_started_at: profile.pro_trial_started_at,
               pro_trial_ends_at: profile.pro_trial_ends_at,
               ask_skip_confirm: profile.ask_skip_confirm,
+              tnc_accepted_at: profile.tnc_accepted_at,
+              terms_accepted: profile.terms_accepted,
             },
           };
           writeStorage(next);

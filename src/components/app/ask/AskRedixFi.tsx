@@ -30,6 +30,8 @@ import { ExportButton } from "@/components/ui/ExportButton";
 import { downloadCsv } from "@/lib/csv";
 import { downloadXlsx } from "@/lib/xlsx";
 import { isProEntitled } from "@/lib/entitlements";
+import { UpgradeLink } from "@/components/ui/UpgradeLink";
+import { track } from "@/lib/analytics";
 import type {
   AskConversationListItem,
   AskChatContext,
@@ -515,6 +517,7 @@ export function AskRedixFi() {
   // then answers the ORIGINAL pending question about that stock.
   async function send(text: string, selectedSymbol?: string) {
     if (!text.trim() || busy || authLoading) return;
+    track("ask_ai_question", { signed_in: !!user });
     setBusy(true);
     setInput("");
     setResults([]);
@@ -1079,9 +1082,9 @@ export function AskRedixFi() {
               {limit && (
                 <div className="mx-3 mb-2 rounded-lg bg-amber-bg px-3 py-2 text-xs text-amber">
                   {limit.message}{" "}
-                  <Link href="/pricing" className="font-semibold underline">
+                  <UpgradeLink className="font-semibold underline">
                     {limit.cta === "subscribe" ? "View plans" : limit.cta === "upgrade" ? "Upgrade" : isProEntitled(user) ? "Add more questions" : "Manage plan"}
-                  </Link>
+                  </UpgradeLink>
                 </div>
               )}
 

@@ -14,7 +14,7 @@ import type { InboxAlert } from "@/lib/api/types";
 
 const KIND_NOUN: Record<string, string> = {
   signal_delta: "retired alert types",
-  behavior_state: "behavior updates",
+  behavior_state: "intraday updates",
   unusual_activity: "unusual activity alerts",
   news_watchlist: "news alerts",
   news_market: "market-wide news alerts",

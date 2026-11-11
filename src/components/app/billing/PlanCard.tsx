@@ -9,6 +9,10 @@ import { ApiError } from "@/lib/api/client";
 import { openRazorpayCheckout } from "@/lib/razorpay";
 import { formatShortDate } from "@/lib/format";
 import type { BillingPlan } from "@/lib/api/types";
+import Link from "next/link";
+import { LegalLinks } from "@/components/layout/LegalLinks";
+import { useTrialDays } from "@/lib/trial";
+import { track } from "@/lib/analytics";
 
 const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
@@ -78,8 +82,12 @@ export function PlanCard({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scheduledFor, setScheduledFor] = useState<string | null>(null);
+  const trialDays = useTrialDays();
+  // Subscribe is offered once the account has accepted the Terms and Privacy Policy; before that the button is the free trial (11 Nov 2026).
+  const canSubscribe = !!user && user.terms_accepted === true;
 
   async function subscribe() {
+    track("subscribe_click", { plan: plan.plan });
     if (!RAZORPAY_KEY) {
       setError("Payments are not configured.");
       return;
@@ -216,6 +224,14 @@ export function PlanCard({
         <button disabled className="mt-5 w-full cursor-default rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground-muted">
           Current plan
         </button>
+      ) : !canSubscribe ? (
+        <Link
+          href={user ? "/pricing" : "/login?mode=signup&next=%2Fpricing"}
+          onClick={() => track("trial_cta_click", { page: "pricing" })}
+          className="mt-5 block w-full rounded-lg bg-accent px-4 py-2.5 text-center text-sm font-semibold text-accent-foreground"
+        >
+          Start {trialDays}-day free Pro trial
+        </Link>
       ) : (
         <button
           onClick={subscribe}
@@ -227,6 +243,9 @@ export function PlanCard({
           {busy ? "Starting checkout…" : isUpgrade ? "Upgrade to annual" : "Subscribe"}
         </button>
       )}
+      <p className="mt-2 text-center text-[11px] text-foreground-faint">
+        <LegalLinks />
+      </p>
       {disabled && disabledReason && !isCurrent && <p className="mt-2 text-xs text-foreground-faint">{disabledReason}</p>}
       {error && <p className="mt-2 text-xs text-down">{error}</p>}
     </div>

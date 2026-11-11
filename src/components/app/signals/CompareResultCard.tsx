@@ -8,6 +8,7 @@ import type { CompareResult } from "@/lib/api/types";
 import { stockPath } from "@/lib/seo/stock-symbol";
 import { displayName, shortName } from "@/lib/company-name";
 import { formatYmd } from "@/lib/format";
+import { UpgradeLink } from "@/components/ui/UpgradeLink";
 
 /** Task 13 — chat-style comparison result card, rendered under the screener
  * bar. Symmetric table (rows = metrics, columns = symbols in the user's own
@@ -108,9 +109,9 @@ export function CompareResultCard({ compare }: { compare: CompareResult }) {
                       if (locked && value === "Not available") {
                         return (
                           <td key={sym} className="px-3 py-2">
-                            <Link href="/pricing" className="text-xs font-medium text-accent hover:underline">
+                            <UpgradeLink className="text-xs font-medium text-accent hover:underline">
                               Upgrade to see
-                            </Link>
+                            </UpgradeLink>
                           </td>
                         );
                       }

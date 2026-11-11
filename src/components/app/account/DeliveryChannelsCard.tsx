@@ -8,6 +8,7 @@ import { enableWebPush, disableWebPush, webPushSupported } from "@/lib/push/webP
 import { getTelegramLinkCode, getTelegramStatus, unlinkTelegram } from "@/lib/api/mutations";
 import { telegramBotUsername, telegramStartCommand, telegramWebLink } from "@/lib/telegram";
 import type { MeProfile } from "@/lib/api/types";
+import { UpgradeLink } from "@/components/ui/UpgradeLink";
 
 /** "Enable browser notifications" + "Connect Telegram" (2026-09-11 task).
  * Pro-only — mirrors plan_limits.py's alert_delivery_channels (only Pro
@@ -28,9 +29,9 @@ export function DeliveryChannelsCard({ profile, onProfileChange }: { profile: Me
       <Card title="Delivery channels">
         <p className="text-sm text-foreground-muted">
           Browser push notifications and Telegram alerts are available on Pro.{" "}
-          <a href="/pricing" className="font-medium text-accent hover:underline">
+          <UpgradeLink className="font-medium text-accent hover:underline">
             See pricing
-          </a>
+          </UpgradeLink>
           .
         </p>
       </Card>

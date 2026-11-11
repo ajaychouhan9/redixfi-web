@@ -14,6 +14,7 @@ import {
 } from "@/lib/api/reports";
 import { lockedText } from "@/lib/report-copy";
 import { useReportQuotaConfig } from "@/lib/report-quota";
+import { UpgradeLink } from "@/components/ui/UpgradeLink";
 
 const BTN =
   "flex items-center gap-1 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs font-medium text-foreground-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60";
@@ -122,7 +123,7 @@ export function ReportActions({ symbol }: { symbol: string }) {
         {locked && status!.lock === "quota_used" && (
           <p>
             {status!.quota.text}. Reports you already downloaded stay free to download again.{" "}
-            <Link href="/pricing" className="underline">See plans</Link>
+            <UpgradeLink className="underline">See plans</UpgradeLink>
           </p>
         )}
         {locked && status!.lock !== "quota_used" && (
@@ -130,7 +131,7 @@ export function ReportActions({ symbol }: { symbol: string }) {
             {lockedText(quotaCfg)}{" "}
             <Link href="/sample-report" className="underline">See the free sample report</Link>
             {" · "}
-            <Link href="/pricing" className="underline">See plans</Link>
+            <UpgradeLink className="underline">See plans</UpgradeLink>
           </p>
         )}
         {!unavailable && !locked && status && status.quota.limit > 0 && <p>{status.quota.text}. Measured data, not investment advice.</p>}

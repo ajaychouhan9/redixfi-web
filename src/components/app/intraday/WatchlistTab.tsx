@@ -68,7 +68,7 @@ export function WatchlistTab() {
       ) : (
         <ul className="divide-y divide-border">
           {rows.map((r) => {
-            const line = intradayPointsLine(r.points);
+            const line = intradayPointsLine(r.points ?? null);
             return (
               <li key={r.symbol}>
                 <Link href={stockPath("/signals", r.symbol)} className="flex items-center justify-between py-2 text-sm hover:text-accent">

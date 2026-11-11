@@ -1,19 +1,20 @@
 import { STANDARD_LINE } from "@/lib/compliance/standard-line";
 import Link from "next/link";
 import { RedixFiLogo } from "@/components/brand/RedixFiLogo";
+import { LegalLinks } from "@/components/layout/LegalLinks";
 
 export default function SeoLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex h-14 items-center justify-between border-b border-border px-4 sm:px-6">
+      <header className="flex h-14 items-center justify-between gap-2 border-b border-border px-4 sm:px-6">
         <Link href="/">
           <RedixFiLogo variant="compact" />
         </Link>
-        <nav className="flex items-center gap-4 text-sm">
+        <nav className="flex items-center gap-3 text-sm sm:gap-4">
           <Link href="/signals" className="text-foreground-muted hover:text-foreground">
             Screener
           </Link>
-          <Link href="/screens" className="text-foreground-muted hover:text-foreground">
+          <Link href="/screens" className="hidden text-foreground-muted hover:text-foreground sm:inline">
             Stock Screens
           </Link>
           <Link href="/pricing" className="text-foreground-muted hover:text-foreground">
@@ -29,7 +30,9 @@ export default function SeoLayout({ children }: { children: React.ReactNode }) {
         {STANDARD_LINE}{" "}
         <Link href="/more/disclaimer" className="underline">
           Full disclaimer
-        </Link>
+        </Link>{" "}
+        ·{" "}
+        <LegalLinks />
       </footer>
     </div>
   );

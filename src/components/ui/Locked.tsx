@@ -1,5 +1,5 @@
 import { Lock } from "lucide-react";
-import Link from "next/link";
+import { UpgradeLink } from "@/components/ui/UpgradeLink";
 
 /** Free-tier paywall visual: blur the real value, show a lock glyph over it.
  * Same pattern across every locked surface (mockup's LockedCell/LockedRow) —
@@ -37,9 +37,7 @@ export function UnlockBanner({ label, cta = "Unlock all 2,000+ measured readings
   return (
     <div className="flex items-center justify-between gap-3 border-t border-border px-5 py-3">
       <span className="text-[12px] text-foreground-faint">{label}</span>
-      <Link href="/pricing" className="shrink-0 rounded-md bg-accent px-3 py-1.5 text-[12px] font-medium text-accent-foreground">
-        {cta}
-      </Link>
+      <UpgradeLink className="shrink-0 rounded-md bg-accent px-3 py-1.5 text-[12px] font-medium text-accent-foreground">{cta}</UpgradeLink>
     </div>
   );
 }

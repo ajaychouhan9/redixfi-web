@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { STANDARD_LINE } from "@/lib/compliance/standard-line";
+import { LegalLinks } from "@/components/layout/LegalLinks";
 
 export function FooterDisclaimer() {
   return (
@@ -19,7 +20,9 @@ export function FooterDisclaimer() {
       ·{" "}
       <Link href="/more/about-us" className="underline">
         About &amp; Contact
-      </Link>
+      </Link>{" "}
+      ·{" "}
+      <LegalLinks />
     </footer>
   );
 }

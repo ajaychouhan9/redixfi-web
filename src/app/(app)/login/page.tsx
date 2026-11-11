@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTrialDays } from "@/lib/trial";
 import { useEffect, useState } from "react";
@@ -7,6 +8,7 @@ import { getFirebaseAuth, describeAuthError } from "@/lib/auth/firebase";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { Card } from "@/components/ui/Card";
 import { RedixFiLogo } from "@/components/brand/RedixFiLogo";
+import { track } from "@/lib/analytics";
 
 /**
  * TASK 19 — Auth redesign. Google Sign-In (primary) + email/password
@@ -55,6 +57,8 @@ export default function LoginPage() {
   const { loginWithFirebaseToken } = useAuth();
 
   const [mode, setMode] = useState<Mode>("signin");
+  // The sign-up box is unticked by default; creating an account (and Google while on the sign-up form) needs it ticked.
+  const [agree, setAgree] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -91,8 +95,11 @@ export default function LoginPage() {
     setNotice(null);
   }
 
-  async function finishLogin(idToken: string) {
-    await loginWithFirebaseToken(idToken);
+  async function finishLogin(idToken: string, acceptTermsNow = false) {
+    await loginWithFirebaseToken(idToken, acceptTermsNow);
+    if (acceptTermsNow) {
+      track("signup_completed");
+    }
     // back to the page the visitor came from when it was a same-site path (for example the stock they were opening)
     const next = new URLSearchParams(window.location.search).get("next");
     router.push(next && next.startsWith("/") && !next.startsWith("//") ? next : "/account");
@@ -108,7 +115,7 @@ export default function LoginPage() {
       provider.setCustomParameters({ prompt: "select_account" });
       const result = await signInWithPopup(auth, provider);
       const idToken = await result.user.getIdToken();
-      await finishLogin(idToken);
+      await finishLogin(idToken, mode === "signup" && agree);
     } catch (e) {
       setError(describeAuthError(e));
     } finally {
@@ -132,7 +139,7 @@ export default function LoginPage() {
         const { createUserWithEmailAndPassword } = await import("firebase/auth");
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         const idToken = await cred.user.getIdToken();
-        await finishLogin(idToken);
+        await finishLogin(idToken, agree);
         return;
       }
       const { signInWithEmailAndPassword } = await import("firebase/auth");
@@ -186,14 +193,24 @@ export default function LoginPage() {
       <h1 className="mb-4 text-xl font-semibold">{mode === "signup" ? "Create your account" : "Log in"}</h1>
       <p className="mb-4 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-foreground">
         <span className="font-semibold">{trialDays}-day free Pro trial. No payment details needed.</span>{" "}
-        It starts after your first successful login, once per account.
+        It starts once you have accepted the Terms and the Privacy Policy, once per account.
       </p>
       <Card>
         <div className="space-y-4">
+          {mode === "signup" && (
+            <label className="flex items-start gap-2 text-sm" data-testid="signup-consent">
+              <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                I agree to the{" "}
+                <Link href="/more/terms" target="_blank" className="text-accent underline">Terms</Link> and the{" "}
+                <Link href="/more/privacy" target="_blank" className="text-accent underline">Privacy Policy</Link>
+              </span>
+            </label>
+          )}
           {/* Primary: Google Sign-In — most visible option, per the task doc. */}
           <button
             onClick={signInWithGoogle}
-            disabled={busy}
+            disabled={busy || (mode === "signup" && !agree)}
             className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm font-medium disabled:opacity-50"
           >
             <GoogleIcon />
@@ -232,7 +249,7 @@ export default function LoginPage() {
             )}
             <button
               onClick={submitEmailForm}
-              disabled={busy || !email || (mode !== "reset" && !password)}
+              disabled={busy || !email || (mode !== "reset" && !password) || (mode === "signup" && !agree)}
               className="w-full rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-50"
             >
               {mode === "signup" ? "Create account" : mode === "reset" ? "Send reset link" : "Log in"}

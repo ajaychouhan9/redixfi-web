@@ -8,6 +8,7 @@ import { getAlertRules, updateAlertRule, deleteAlertRule } from "@/lib/api/mutat
 import { AlertCreateButton } from "@/components/app/alerts/AlertCreateButton";
 import { directionLabel } from "@/lib/alert-thresholds";
 import type { AlertMetric, AlertRule, AlertRulesList } from "@/lib/api/types";
+import { UpgradeLink } from "@/components/ui/UpgradeLink";
 
 const METRIC_LABELS: Record<AlertMetric, string> = {
   price: "Price",
@@ -141,9 +142,9 @@ export function AlertRulesSection() {
       {data && data.capabilities.max_active_alerts != null && data.active_count >= data.capabilities.max_active_alerts && (
         <p className="mt-3 text-xs text-foreground-muted">
           You&apos;ve used all {data.capabilities.max_active_alerts} of your plan&apos;s active alerts.{" "}
-          <Link href="/pricing" className="font-medium text-accent hover:underline">
+          <UpgradeLink className="font-medium text-accent hover:underline">
             Upgrade to Pro
-          </Link>{" "}
+          </UpgradeLink>{" "}
           for unlimited alerts and all 4 metrics.
         </p>
       )}

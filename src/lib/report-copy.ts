@@ -24,6 +24,6 @@ export const SAMPLE_INSIDE = [
   "Who owns it: promoter, FII and MF holding with the change since last quarter, pledge, insider trades, bulk and block deals",
   "Upcoming and recent events",
   "Annual report and concall summaries, with the source and date of each",
-  "Governance items in three separate parts: what filings state, calculated metrics, automated observations",
+  "Governance items in three separate parts: what filings state, calculated metrics, disclosed items",
   "Data sources with as-of dates, method notes and limits",
 ] as const;

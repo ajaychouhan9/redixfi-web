@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth/AuthContext";
+import { ConsentGate } from "@/components/app/ConsentGate";
+import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/lib/theme/ThemeContext";
 import { AskPanelProvider } from "@/lib/ask-panel/AskPanelContext";
 import { PwaProvider } from "@/components/app/pwa/PwaProvider";
@@ -79,9 +81,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <AuthProvider>
             <AskPanelProvider>
               <PwaProvider>{children}</PwaProvider>
+              <ConsentGate />
             </AskPanelProvider>
           </AuthProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );

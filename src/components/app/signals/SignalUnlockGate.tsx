@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/Card";
 import { SignalDetailView } from "./SignalDetailView";
 import { PublicStockSummary } from "./PublicStockSummary";
 import type { Candle, DeliveryPoint, FundamentalsBlock, SignalDetail } from "@/lib/api/types";
+import { UpgradeLink } from "@/components/ui/UpgradeLink";
 
 /**
  * Stock page for a stock outside the Free plan's fixed set.
@@ -117,9 +118,9 @@ export function SignalUnlockGate({
             <>
               <p className="text-sm">You have used today&apos;s free stock views. Pro opens every stock, every day.</p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <Link href="/pricing" className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
+                <UpgradeLink className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
                   View plans
-                </Link>
+                </UpgradeLink>
               </div>
             </>
           ) : (
@@ -140,9 +141,9 @@ export function SignalUnlockGate({
                 >
                   Log in
                 </Link>
-                <Link href="/pricing" className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground-muted hover:text-foreground">
+                <UpgradeLink className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground-muted hover:text-foreground">
                   View plans
-                </Link>
+                </UpgradeLink>
               </div>
             </>
           )}

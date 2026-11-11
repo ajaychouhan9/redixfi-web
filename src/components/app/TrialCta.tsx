@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useTrialDays } from "@/lib/trial";
+import { pageType, track } from "@/lib/analytics";
 
 /**
  * Sign-up buttons for a logged-out visitor on a stock page: the primary button starts the free Pro trial
@@ -21,6 +22,7 @@ export function TrialCta({ className = "" }: { className?: string }) {
     <div className={`flex flex-wrap items-center gap-3 ${className}`} data-testid="trial-cta">
       <Link
         href={`/login?mode=signup&next=${encodeURIComponent(next)}`}
+        onClick={() => track("trial_cta_click", { page: pageType(pathname) })}
         className="whitespace-nowrap rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground"
       >
         Start {trialDays}-day free Pro trial

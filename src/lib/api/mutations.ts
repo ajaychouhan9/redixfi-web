@@ -55,6 +55,8 @@ export interface AuthUser {
   pro_trial_started_at: string | null;
   pro_trial_ends_at: string | null;
   tnc_accepted_at: string | null;
+  /** True once the CURRENT Terms and Privacy Policy version is accepted; false = ask (the consent step); undefined = an older API. */
+  terms_accepted?: boolean;
   // "Always allow" opt-out session (2026-08-21) — optional because
   // POST /auth/firebase-login and /auth/refresh (core/routers/auth.py::
   // _tokens_for_user) don't return it; only ever populated after
@@ -71,8 +73,8 @@ export interface AuthTokens {
   user: AuthUser;
 }
 
-export async function firebaseLogin(firebase_token: string): Promise<AuthTokens> {
-  const env = await apiMutate<AuthTokens>("/auth/firebase-login", "POST", { firebase_token });
+export async function firebaseLogin(firebase_token: string, acceptTermsNow = false): Promise<AuthTokens> {
+  const env = await apiMutate<AuthTokens>("/auth/firebase-login", "POST", acceptTermsNow ? { firebase_token, accept_terms_now: true } : { firebase_token });
   return env.data;
 }
 
@@ -592,4 +594,11 @@ export async function postChannelDiscovery(
     { token },
   );
   return env.data.discovery;
+}
+
+
+// ---------- feedback ("What were you looking for?") ----------
+
+export async function submitFeedback(body: { text: string; page: "stock" | "no_result" | "pricing"; path?: string; email?: string }, token?: string | null) {
+  await apiMutate<{ received: boolean }>("/feedback", "POST", body, token ? { token } : undefined);
 }

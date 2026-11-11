@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/watchlist" },
   // A personal page: the HTML is an anonymous shell, so it is kept out of search results.
   robots: { index: false, follow: true },
-  description: "The stocks RedixFi watches for you — behavior states, portfolio analytics and your personalized brief, built from your watchlist.",
+  description: "The stocks RedixFi watches for you — intraday readings, portfolio analytics and your personalized brief, built from your watchlist.",
 };
 
 export default function WatchlistPage() {

@@ -18,6 +18,8 @@ import { signalsListLabels } from "@/lib/signals-list-labels";
 import { from52Display } from "@/lib/from52-display";
 import { getWatchlist } from "@/lib/api/mutations";
 import type { SmartFilterPatch } from "./smartFilterPatch";
+import { track } from "@/lib/analytics";
+import { FeedbackBox } from "@/components/app/FeedbackBox";
 
 const SIGNALS_COLUMNS_KEY = "redixfi:signals-columns:v1";
 const FROM52_DEFAULT_MIGRATION_KEY = "redixfi:signals-columns:from52-default:v1";
@@ -362,6 +364,12 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
     deltaMin, dmaState, pcrBand, anomalyOnly, sort, order,
   ]);
 
+  // screener_filter_used: counts a change that leaves at least one filter on (first change per page view per filter set is enough for a count)
+  const filtersOn = [q, sector, industry, eventRiskOnly ? "1" : "", watchlistOnly ? "1" : "", from52Preset, volatilityBand, volMin, volMax, volumeMin, deliveryState, dmaState, pcrBand, anomalyOnly ? "1" : ""].filter(Boolean).length;
+  useEffect(() => {
+    if (filtersOn > 0) track("screener_filter_used", { filters: filtersOn });
+  }, [filtersOn]);
+
   const canExport = isProEntitled(user);
   const explorerControlsEnabled = true;       // every plan has the sort / filter / search controls (Free, Basic and Pro; 2026-11-11)
 
@@ -570,7 +578,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
         )}
         {excludedInMasterCount !== null && excludedInMasterCount > 0 && (
           <p className="mt-1 text-[11px] text-foreground-faint">
-            {excludedInMasterCount.toLocaleString("en-IN")} held, BE/BZ, review-flagged or limited-data {excludedInMasterCount === 1 ? "stock is" : "stocks are"} excluded from this filter.
+            {excludedInMasterCount.toLocaleString("en-IN")} held, BE/BZ, held for review or limited-data {excludedInMasterCount === 1 ? "stock is" : "stocks are"} excluded from this filter.
           </p>
         )}
         {extrasAsOf && (
@@ -688,7 +696,12 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
           </table>
         </div>
         {loading && <div className="p-4 text-center text-sm text-foreground-muted">Loading…</div>}
-        {!loading && rows.length === 0 && <div className="p-4 text-center text-sm text-foreground-muted">No stocks match these filters.</div>}
+        {!loading && rows.length === 0 && (
+          <div className="space-y-3 p-4 text-center text-sm text-foreground-muted">
+            <p>No stocks match these filters.</p>
+            <FeedbackBox page="no_result" className="mx-auto max-w-md text-left" />
+          </div>
+        )}
         {error && <div className="p-4 text-center text-sm text-down">{error}</div>}
 
       </div>

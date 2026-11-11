@@ -10,12 +10,10 @@ import { ExportButton } from "@/components/ui/ExportButton";
 import { downloadCsv } from "@/lib/csv";
 import { downloadXlsx } from "@/lib/xlsx";
 import { isProEntitled } from "@/lib/entitlements";
-
-const SEVERITIES = ["", "high", "medium", "low", "none"] as const;
+import { UpgradeLink } from "@/components/ui/UpgradeLink";
 
 export default function NewsPage() {
   const { user, loading: authLoading, getToken } = useAuth();
-  const [severity, setSeverity] = useState<string>("");
   const [page, setPage] = useState(1);
   const [items, setItems] = useState<NewsItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -40,7 +38,7 @@ export default function NewsPage() {
     (async () => {
       const token = await getToken();
       if (cancelled) return;
-      getNews({ severity: severity || undefined, page, size: 20 }, { token })
+      getNews({ page, size: 20 }, { token })
         .then((env) => {
           if (cancelled) return;
           setItems(env.data);
@@ -51,7 +49,7 @@ export default function NewsPage() {
     return () => {
       cancelled = true;
     };
-  }, [severity, page, authLoading, getToken]);
+  }, [page, authLoading, getToken]);
 
   const totalPages = Math.max(1, Math.ceil(total / 20));
   const isFreeOrAnon = !user || user.tier === "free";
@@ -62,7 +60,6 @@ export default function NewsPage() {
     source: item.source,
     url: item.url,
     category: item.category,
-    severity: item.severity,
   }));
   const exportCsv = () => downloadCsv(`redixfi-news-${new Date().toISOString().slice(0, 10)}.csv`, exportRows);
   const exportXlsx = () => downloadXlsx(`redixfi-news-${new Date().toISOString().slice(0, 10)}.xlsx`, [{ name: "News", rows: exportRows }]);
@@ -74,7 +71,7 @@ export default function NewsPage() {
         <h1 className="text-lg font-semibold">News</h1>
         <span className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-accent-dim">AI-Classified</span>
       </div>
-      <p className="mb-4 text-xs text-foreground-faint">Every headline read and classified by severity, category and scope.</p>
+      <p className="mb-4 text-xs text-foreground-faint">Every headline read, with its category and source.</p>
 
       {/* Task 18 (per-stock news upgrade) — explicitly deferred past launch
           per the master context's locked execution sequence. Visible but
@@ -89,27 +86,13 @@ export default function NewsPage() {
       {isFreeOrAnon && (
         <p className="mb-4 rounded-lg border border-amber/30 bg-amber-bg px-3 py-2 text-xs text-amber">
           Free tier sees news on a 24-hour delay.{" "}
-          <a href="/pricing" className="font-medium underline">
+          <UpgradeLink className="font-medium underline">
             Upgrade
-          </a>{" "}
+          </UpgradeLink>{" "}
           for same-day news.
         </p>
       )}
       <div className="mb-3 flex flex-wrap gap-2">
-        {SEVERITIES.map((s) => (
-          <button
-            key={s || "all"}
-            onClick={() => {
-              setSeverity(s);
-              setPage(1);
-            }}
-            className={`rounded-full border px-3 py-1 text-xs font-medium capitalize ${
-              severity === s ? "border-accent bg-accent/10 text-accent" : "border-border text-foreground-muted"
-            }`}
-          >
-            {s || "All"}
-          </button>
-        ))}
         <div className="ml-auto">
           <ExportButton onExport={exportCsv} onCsv={exportCsv} onXlsx={exportXlsx} canExport={isProEntitled(user)} label="Download" />
         </div>

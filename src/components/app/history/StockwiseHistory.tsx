@@ -37,6 +37,7 @@ import {
 import { saveBlob } from "@/components/app/report/ReportActions";
 import { CommonReadings } from "@/components/app/history/CommonReadings";
 import { HowToRead } from "@/components/app/history/HowToRead";
+import { track } from "@/lib/analytics";
 import {
   BTN,
   BTN_PRIMARY,
@@ -347,6 +348,7 @@ export function StockwiseHistory({ initialSymbol }: { initialSymbol?: string }) 
 
   const run = useCallback(
     async (body: Record<string, unknown>, collapse = true) => {
+      track("rewind_query_run", { view: "stock" });
       setBusy(true);
       setError(null);
       setNotice(null);

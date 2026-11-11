@@ -155,7 +155,7 @@ export function WatchlistMainView() {
   }
 
   // The Behavior column appears only when at least one row has behavior data (no empty "Not available" column).
-  const showBehavior = rows.some((r) => r.behavior && r.behavior.points.length === 2);
+  const showBehavior = rows.some((r) => r.behavior && (r.behavior.points?.length ?? 0) === 2);
   const colCount = 5 + (showBehavior ? 1 : 0);
 
   return (
@@ -235,7 +235,7 @@ export function WatchlistMainView() {
                 </tr>
               ) : (
                 rows.map((r) => {
-                  const behaviorLine = r.behavior ? intradayPointsLine(r.behavior.points) : null;
+                  const behaviorLine = r.behavior ? intradayPointsLine(r.behavior.points ?? null) : null;
                   return (
                     <tr key={r.symbol} className="border-b border-border last:border-0">
                       <td className="px-4 py-3">
@@ -304,7 +304,7 @@ export function WatchlistMainView() {
         </div>
       </div>
 
-      {rows.some((r) => r.behavior && r.behavior.points.length === 2) && (
+      {rows.some((r) => r.behavior && (r.behavior.points?.length ?? 0) === 2) && (
         <p className="flex items-start gap-1.5 text-xs text-foreground-faint">
           <AlertTriangle size={12} className="mt-0.5 shrink-0" />
           The intraday column shows the change from the day&apos;s open at two points of the session. Measured, not a prediction.

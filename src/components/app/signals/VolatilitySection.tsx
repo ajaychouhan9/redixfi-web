@@ -20,6 +20,7 @@ import { getVolatility } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { formatShortDate } from "@/lib/format";
 import type { VolatilityResponse, VolatilityWindow } from "@/lib/api/types";
+import { UpgradeLink } from "@/components/ui/UpgradeLink";
 
 const WINDOW_ORDER: { key: "w21" | "w15" | "w5"; sessions: number }[] = [
   { key: "w21", sessions: 21 },
@@ -208,7 +209,7 @@ export function VolatilitySection({ symbol }: { symbol: string }) {
                     <Lock size={12} className="text-foreground-faint" />
                     Upgrade to {data.next_tier} to read more windows.
                   </p>
-                  <Link href="/pricing" className="text-[11px] font-medium text-accent">Upgrade →</Link>
+                  <UpgradeLink className="text-[11px] font-medium text-accent">Upgrade →</UpgradeLink>
                 </div>
               )}
             </>

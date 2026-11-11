@@ -44,7 +44,6 @@ function cleanNewsRow(row: NewsItem): Record<string, unknown> {
     Source: row.source,
     "Article URL": row.url,
     Category: row.category,
-    Severity: row.severity,
   };
 }
 
@@ -166,8 +165,8 @@ function buildSummaryRows(data: ResearchDetail, peers: PeerRow[] | null): XlsxSu
     ...(e?.recent_dividends ?? []).slice(0, 3).map((d) => ({ kind: "item" as const, cells: ["Dividend", `${dateText(d.record_date)} · ${currencyText(d.value)} · ${percentText(d.percentage, 2)}`] })),
     { kind: "blank" },
     { kind: "section", cells: ["NEWS TIMELINE"], merge: [0, 3] as [number, number] },
-    { kind: "header", cells: ["Date", "Severity", "Source", "Headline"] },
-    ...data.news.slice(0, 10).map((n) => ({ kind: "item" as const, cells: [n.published_at, n.severity, n.source, n.headline] })),
+    { kind: "header", cells: ["Date", "Source", "Headline"] },
+    ...data.news.slice(0, 10).map((n) => ({ kind: "item" as const, cells: [n.published_at, n.source, n.headline] })),
     { kind: "blank" },
     { kind: "section", cells: ["CONCALLS & INVESTOR PRESENTATIONS"], merge: [0, 3] as [number, number] },
     ...data.concall_transcripts.slice(0, 3).flatMap((c) => [

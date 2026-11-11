@@ -18,6 +18,7 @@ import { getVolatilityBoard } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { stockPath } from "@/lib/seo/stock-symbol";
 import type { VolatilityBoard as Board, VolatilityBoardRow } from "@/lib/api/types";
+import { UpgradeLink } from "@/components/ui/UpgradeLink";
 
 type Which = "top" | "bottom";
 type Universe = "liquid" | "all";
@@ -222,7 +223,7 @@ export function VolatilityBoard({ initialTop, initialBottom }: { initialTop: Boa
                 <Lock size={12} className="text-foreground-faint" />
                 The full ranked list is included with Pro.
               </p>
-              <Link href="/pricing" className="text-[11px] font-medium text-accent">See plans →</Link>
+              <UpgradeLink className="text-[11px] font-medium text-accent">See plans →</UpgradeLink>
             </div>
           )}
         </>

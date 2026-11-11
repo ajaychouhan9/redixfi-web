@@ -8,6 +8,7 @@ import { ApiError } from "@/lib/api/client";
 import { Card } from "@/components/ui/Card";
 import { ResearchDetail } from "./ResearchDetail";
 import type { ResearchDetail as ResearchDetailType, Candle, PeerRow } from "@/lib/api/types";
+import { UpgradeLink } from "@/components/ui/UpgradeLink";
 
 const DEFAULT_GATE_MESSAGE = "You've used today's free Research views.";
 
@@ -92,9 +93,9 @@ export function ResearchViewGate({
         <p className="text-sm">
           {gateMessage} Pro includes unlimited Research access.
         </p>
-        <Link href="/pricing" className="mt-2 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
+        <UpgradeLink className="mt-2 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
           View plans
-        </Link>
+        </UpgradeLink>
       </Card>
     );
   }
