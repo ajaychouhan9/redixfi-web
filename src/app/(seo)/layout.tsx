@@ -11,7 +11,7 @@ export default function SeoLayout({ children }: { children: React.ReactNode }) {
         </Link>
         <nav className="flex items-center gap-4 text-sm">
           <Link href="/signals" className="text-foreground-muted hover:text-foreground">
-            Signal Dashboard
+            Screener
           </Link>
           <Link href="/screens" className="text-foreground-muted hover:text-foreground">
             Stock Screens

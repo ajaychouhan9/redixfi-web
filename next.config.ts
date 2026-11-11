@@ -20,6 +20,12 @@ const nextConfig: NextConfig = {
       { source: "/history/:path*", destination: "/rewind", statusCode: 301 },
       // "/about" is a guessable address; the page is About & Contact.
       { source: "/about", destination: "/more/about-us", statusCode: 301 },
+      // 11 Nov 2026: the Stock Condition and everything built on it were removed. The pages go to their nearest remaining page, permanently.
+      { source: "/signals/movers", destination: "/signals", statusCode: 301 },
+      { source: "/track-record", destination: "/signals", statusCode: 301 },
+      { source: "/track-record/:symbol", destination: "/stocks/:symbol", statusCode: 301 },
+      // The screens built on the Stock Condition change were removed; their pages go to the screens index.
+      { source: "/screens/signal-score-:rest*", destination: "/screens", statusCode: 301 },
       // A company that changed its name got a new NSE symbol: old links go to the new one.
       ...renamedSymbolRedirects(),
     ];

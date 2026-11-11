@@ -134,9 +134,10 @@ export interface SignalRow {
   date: string | null;
   data_as_of: DataAsOf | null;
   price_data_as_of?: DataAsOf | null;
-  composite_score: number | null;
-  delta_1d: number | null;
-  delta_5d: number | null;
+  // The Stock Condition fields (composite_score, delta_1d, delta_5d) are no longer sent (removed 2026-11-11).
+  composite_score?: number | null;
+  delta_1d?: number | null;
+  delta_5d?: number | null;
   delivery_pct: number | null;
   delivery_avg20: number | null;
   sector_rank: number | null;
@@ -152,7 +153,9 @@ export interface SignalRow {
   volatility_text: string | null;
   vol_as_of?: string | null;
   signal_states: string[];
-  event_risk: boolean | null;
+  event_risk?: boolean | null;
+  /** Newest headline that names the company in the last 5 days ("News in the last 5 days"). */
+  news_5d?: NewsInFiveDays | null;
   // Task 16 Part C — written by data-pipeline/anomaly_detector.py directly
   // onto the measured_signals doc this row is joined from.
   anomaly_flags: AnomalyItem[];
@@ -562,8 +565,9 @@ export interface SignalDetail {
   last_price: number | null;
   day_change_pct: number | null;
   vwap: number | null;
-  composite_score: number;
-  delta_1d: number | null;
+  news_5d?: NewsInFiveDays | null;
+  composite_score?: number;
+  delta_1d?: number | null;
   delta_5d: number | null;
   corporate_action?: CorporateActionNote | null;
   signals: SignalDetailSignals;
@@ -815,8 +819,8 @@ export interface IntradayRecap {
 export interface WatchlistBehaviorRow {
   symbol: string;
   company_name: string | null;
-  state: "sustaining" | "fading" | "no_data" | string;
-  since_time: string | null;
+  /** The two measured points (change from the day's open): empty when there are fewer than three 15-minute candles today. */
+  points: { time: string | null; pct: number }[];
   last_price: number | null;
   day_pct: number | null;
 }
@@ -1441,7 +1445,7 @@ export interface AlertPreferences {
 // for the 5 existing B4 triggers) — these are user-DEFINED per-symbol
 // price/score/delivery/volume thresholds, additive, not a replacement.
 
-export type AlertMetric = "price" | "score" | "delivery" | "volume";
+export type AlertMetric = "price" | "delivery" | "volume";
 export type AlertDirection = "above" | "below";
 
 export interface AlertRule {
@@ -2490,4 +2494,12 @@ export interface IntradayTabData {
     banknifty?: IntradayIndexDay;
     vix?: IntradayIndexDay;
   };
+}
+
+
+export interface NewsInFiveDays {
+  headline: string;
+  source?: string | null;
+  url?: string | null;
+  published_at?: string | null;
 }

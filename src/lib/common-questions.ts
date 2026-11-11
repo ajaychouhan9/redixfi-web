@@ -14,56 +14,6 @@ export interface CommonQuestionGroup {
 
 export const COMMON_QUESTION_GROUPS: CommonQuestionGroup[] = [
   {
-    "topic": "Stock Condition",
-    "items": [
-      {
-        "id": "composite_score_q1",
-        "q": "What counts as a 'good' reading?",
-        "a": "There is no 'good' reading. A higher reading means more of the measured signals lined up in the same way; a lower reading means fewer did. It describes the measured signals, not future price."
-      },
-      {
-        "id": "composite_score_q2",
-        "q": "Why did the reading change so much in one day?",
-        "a": "Large single-day moves have historically traced back to one underlying signal flipping state — a delivery spike, a trend crossing its moving average, a fresh event flag — rather than everything shifting a little at once. The Signal Change Log on each stock page names exactly which signal moved."
-      },
-      {
-        "id": "composite_score_q3",
-        "q": "Does a high reading mean the stock will go up?",
-        "a": "No. The reading summarizes what has already been measured — it carries no forward claim. A high reading has historically coincided with broad agreement across signals on a given day; it has not reliably predicted the next day's move, and this product does not track or claim that it does."
-      },
-      {
-        "id": "composite_score_q4",
-        "q": "Can two stocks with the same reading look completely different?",
-        "a": "Yes. The same number can be reached by very different combinations of underlying signals — one stock might show 65 on high delivery and a lower sector rank, another might reach 65 the opposite way. That's why the full breakdown sits right below the number rather than the reading standing alone."
-      }
-    ]
-  },
-  {
-    "topic": "Stock Condition change (1 day)",
-    "items": [
-      {
-        "id": "delta_1d_q1",
-        "q": "Is a big reading change always driven by price?",
-        "a": "Not necessarily. Because the Stock Condition blends trend, delivery, volume, sector standing, options positioning and event risk together, a large move can come from any one of those changing state — price is only one input among several."
-      },
-      {
-        "id": "delta_1d_q2",
-        "q": "What does it mean if the reading barely moved?",
-        "a": "A small delta usually means the underlying signals stayed in roughly the same state as the previous session — no single signal crossed a threshold. It says the picture was stable that day, not that nothing at all happened to the stock."
-      },
-      {
-        "id": "delta_1d_q3",
-        "q": "Can the reading fall even if the price rose?",
-        "a": "Yes — this is exactly the kind of disagreement the Tension panel is built to surface. Price and the Stock Condition are not the same measurement; delivery weakening, sector standing slipping, or an event flag appearing can all pull the composite down on a day the price closed higher."
-      },
-      {
-        "id": "delta_1d_q4",
-        "q": "Does a string of positive deltas mean anything special?",
-        "a": "It shows the underlying signals kept moving in the same direction over several sessions rather than shifting once."
-      }
-    ]
-  },
-  {
     "topic": "Delivery %",
     "items": [
       {
@@ -105,11 +55,6 @@ export const COMMON_QUESTION_GROUPS: CommonQuestionGroup[] = [
         "id": "volume_ratio_q3",
         "q": "What does a ratio below 1 mean for a quiet stock?",
         "a": "It means today's activity was lighter than that stock's own recent norm — not necessarily unusual in absolute terms, since some stocks trade thin most days. The ratio format is what makes 'lighter than usual for this stock' comparable across very different-sized names."
-      },
-      {
-        "id": "volume_ratio_q4",
-        "q": "Can volume spike without any news?",
-        "a": "Yes — bulk deals, block deals, index rebalancing, and F&O expiry effects can all drive volume without a classified news event that day. The Event Risk panel on the same page shows whether any classified news was matched; volume and news are measured and reported separately."
       }
     ]
   },
@@ -170,16 +115,6 @@ export const COMMON_QUESTION_GROUPS: CommonQuestionGroup[] = [
         "id": "sector_rank_q2",
         "q": "What if there aren't many peers to rank against?",
         "a": "Industries with very few classified members produce a rank out of a small total (e.g. #2 of 3), which is disclosed plainly as the total count alongside the rank rather than hidden. A small peer group makes the rank less statistically meaningful, which is why the count is always shown next to it."
-      },
-      {
-        "id": "sector_rank_q3",
-        "q": "Does #1 in the sector mean the stock is a buy?",
-        "a": "No — it means this stock's Stock Condition was the highest among its classified peers today, nothing more. The rank carries no forward claim and is recomputed fresh from scratch every day."
-      },
-      {
-        "id": "sector_rank_q4",
-        "q": "Can a rank swing a lot day to day?",
-        "a": "Yes, especially in smaller peer groups, since each member's Stock Condition is itself a same-day snapshot. A rank moving from #3 to #7 describes a change in relative standing that day — it says nothing about direction on its own."
       }
     ]
   },
@@ -219,31 +154,6 @@ export const COMMON_QUESTION_GROUPS: CommonQuestionGroup[] = [
     ]
   },
   {
-    "topic": "Event risk",
-    "items": [
-      {
-        "id": "event_risk_q1",
-        "q": "What counts as a classified news event?",
-        "a": "A headline that our AI reads and sorts into one of the defined categories (regulatory, promoter/legal, short-seller report, corporate action, macro, sector policy) with an assigned severity and scope. Headlines that don't fit any category are classified as 'none' and don't raise this flag."
-      },
-      {
-        "id": "event_risk_q2",
-        "q": "Why can't price/volume signals catch this on their own?",
-        "a": "Signals computed from price and volume alone have no way to see a regulatory notice or legal development that arrived today — they can only react to the price/volume effects of an event after the fact, if any. This flag exists specifically to surface the event itself."
-      },
-      {
-        "id": "event_risk_q3",
-        "q": "Does an event flag mean the stock will move a lot?",
-        "a": "Stocks with active high-severity events have historically shown wider price ranges than usual, in either direction. This is a documented tendency, not a rule for every case."
-      },
-      {
-        "id": "event_risk_q4",
-        "q": "Why does 'why did it change' sometimes not name a cause?",
-        "a": "A cause is only offered when a classified news event actually matched that stock on that day. If no matching event exists, the honest answer is that the data shows the change but not its cause — several explanations are usually possible, and this product does not invent one."
-      }
-    ]
-  },
-  {
     "topic": "Tension in the data",
     "items": [
       {
@@ -262,7 +172,7 @@ export const COMMON_QUESTION_CHIPS: string[] = [
   "What is delivery, exactly?",
   "Is high delivery always a good sign?",
   "Does PCR always indicate direction?",
-  "What counts as a 'good' reading?",
   "Why compare to the stock's own average instead of a fixed number?",
-  "Why show disagreement instead of just picking a side?"
+  "Does high volume always confirm a price move?",
+  "Why rank within an industry instead of the whole market?"
 ];

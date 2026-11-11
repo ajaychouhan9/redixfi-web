@@ -31,12 +31,11 @@ export const metadata: Metadata = {
 const SOURCES = [
   { name: "Price & volume history", cadence: "Daily, after market close", detail: "NSE/BSE exchange candle data." },
   { name: "Delivery percentage", cadence: "Daily", detail: "Exchange delivery-vs-volume data per stock." },
-  { name: "Stock Conditions", cadence: "Daily, ~16:30 IST", detail: "Computed after market close from the day's measured signals." },
   { name: "FII / DII flow", cadence: "Daily", detail: "Institutional net-flow figures." },
   { name: "Options positioning (PCR)", cadence: "Intraday snapshots", detail: "Put-call ratio and open interest by expiry." },
   { name: "Promoter pledge", cadence: "Quarterly", detail: "NSE pledge disclosures." },
   { name: "Insider filings", cadence: "As disclosed", detail: "Exchange insider-trading disclosures." },
-  { name: "News classification", cadence: "Several times daily", detail: "AI-classified for category, scope and severity." },
+  { name: "News classification", cadence: "Several times daily", detail: "AI-classified for category and scope." },
   { name: "Intraday scanner", cadence: "During market hours, delayed", detail: "Volume vs usual so far from 15-minute candles, and the day's average traded price (VWAP) from the exchange's own figure via a delayed market quote, for liquid stocks." },
 ];
 

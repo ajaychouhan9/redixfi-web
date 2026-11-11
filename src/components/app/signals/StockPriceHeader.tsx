@@ -18,6 +18,7 @@ export function StockPriceHeader({
   pct,
   asOf,
   extra,
+  h1 = false,
 }: {
   symbol: string;
   name?: string | null;
@@ -28,10 +29,19 @@ export function StockPriceHeader({
   asOf?: DataAsOf | null;
   /** Small extra line items next to the price (for example the day's average traded price). */
   extra?: ReactNode;
+  /** Render the company name as the page H1 (the stock page uses it; other pages already have their own H1). */
+  h1?: boolean;
 }) {
   return (
     <div data-testid="stock-price-header">
-      <p className="text-sm text-foreground-muted">{[symbol, displayName(name), group].filter(Boolean).join(" · ")}</p>
+      {h1 ? (
+        <>
+          <h1 className="text-xl font-semibold text-foreground">{displayName(name) || symbol} ({symbol})</h1>
+          {group && <p className="text-sm text-foreground-muted">{group}</p>}
+        </>
+      ) : (
+        <p className="text-sm text-foreground-muted">{[symbol, displayName(name), group].filter(Boolean).join(" · ")}</p>
+      )}
       <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         {typeof price === "number" ? (
           <span className="font-mono text-3xl font-semibold text-foreground" data-testid="header-price">

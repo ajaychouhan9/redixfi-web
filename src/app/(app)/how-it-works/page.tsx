@@ -2,17 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { COMMON_QUESTION_GROUPS, COMMON_QUESTION_NOTE } from "@/lib/common-questions";
-import { READING_EXPLAINER } from "@/lib/reading-copy";
 
 export const metadata: Metadata = {
-  title: "How the Stock Condition works",
+  title: "How RedixFi measures its readings",
   description:
-    "What the 0–100 RedixFi Stock Condition measures, which market inputs it uses, how often it updates, and what it does not tell you.",
+    "What each measured reading on a RedixFi stock page is (trend, sector rank, delivery, volume, RSI, put-call ratio, promoter pledge, FII flow), where the data comes from, how often it updates and what it does not tell you.",
   alternates: { canonical: "/how-it-works" },
   openGraph: {
-    title: "How the Stock Condition works",
+    title: "How RedixFi measures its readings",
     description:
-      "The inputs behind the 0–100 Stock Condition, how often it updates, how to read a change, and the limits.",
+      "Each measured reading on a stock page, where its data comes from, how often it updates and the limits.",
     type: "website",
   },
 };
@@ -67,41 +66,33 @@ const SOURCES = [
   ["Options", "Daily open-interest data. A reading older than seven days is ignored."],
   ["Promoter pledge", "Company filings, latest reading compared with an earlier reading in the past few months."],
   ["FII flows", "Daily cash-market flows for foreign institutions."],
-  ["News", "Classified events from the last five days."],
+  ["News", "Headlines from the last five days that name the company, shown with their source."],
 ] as const;
 
 const FAQ = [
   {
-    q: "Is the Stock Condition a buy or sell recommendation?", // compliance-ignore — it is the question being answered, not a recommendation
-    a: "No. It summarises measured market data. It is not advice, a forecast, a target, or a buy or sell signal.",
+    q: "Is a reading a buy or sell recommendation?", // compliance-ignore — it is the question being answered, not a recommendation
+    a: "No. Each reading is a measured fact about stored market data. None of them is advice, a forecast, a target, or a buy or sell signal, and RedixFi does not combine them into one score.",
   },
   {
-    q: "What does a higher reading mean?",
-    a: "More of the eight measured inputs currently sit in the upper part of their ranges. It describes the measured data only: it is not a rating of the stock, not a probability, and it does not say what happens next.",
+    q: "Which session's delivery do the readings use?",
+    a: "NSE publishes end-of-day delivery data after the daily run. The readings use the latest delivery available at run time, which is usually the previous session. The stock page shows the date where it is known.",
   },
   {
-    q: "Which session's delivery does the reading use?",
-    a: "NSE publishes end-of-day delivery data after the daily run. The reading uses the latest delivery available at run time, which is usually the previous session. The stock page and Reading history show the delivery date where it is known.",
-  },
-  {
-    q: "Why can the reading change from one day to the next?",
+    q: "Why can a reading change from one day to the next?",
     a: "The inputs change with each session: price trend, delivery, volume, momentum, options positioning, pledge and market flows. Small daily moves are normal.",
   },
   {
-    q: "Why is a reading or its change sometimes missing?",
-    a: "An input may be unavailable, or the stock may be held while a corporate action is checked. In that case the price-based readings and the change are withheld, and a note on the page explains why.",
+    q: "Why is a reading sometimes missing?",
+    a: "An input may be unavailable, or the stock may be held while a corporate action is checked. In that case the price-based readings are withheld, and a note on the page explains why.",
   },
   {
-    q: "How often is the reading updated?",
-    a: "Once per trading day, after the market closes. The app serves the latest stored session, so it does not change during the day.",
+    q: "How often are the readings updated?",
+    a: "Once per trading day, after the market closes. The app serves the latest stored session, so they do not change during the day.",
   },
   {
-    q: "Where can I see previous readings?",
-    a: "On a stock page, under Stock Condition history. Free shows the last 3 sessions, Basic 5 and Pro 10.",
-  },
-  {
-    q: "Is volatility part of the reading?",
-    a: "No: volatility is a separate measure of how much a stock's closing price has moved from day to day over the last 21 sessions, shown under Volatility on the stock page and in the Volatility ranking, and it does not change the Stock Condition.",
+    q: "Is volatility one of the readings?",
+    a: "It is a separate measure of how much a stock's closing price has moved from day to day over the last 21 sessions, shown under Volatility on the stock page and in the Volatility ranking.",
   },
 ];
 
@@ -121,16 +112,16 @@ export default function HowItWorksPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       <header>
-        <h1 className="text-xl font-semibold">How the Stock Condition works</h1>
+        <h1 className="text-xl font-semibold">How RedixFi measures its readings</h1>
         <p className="mt-2 text-sm text-foreground-muted">
-          {READING_EXPLAINER} It is a 0–100 summary of measured market data for one stock on one trading
-          session, built from eight inputs that each measure something different. It is not a recommendation.
+          RedixFi shows measured facts about each stock, one reading at a time: each is calculated from stored market data for one stock on one
+          trading session. They are not combined into a score and none of them is a recommendation.
         </p>
       </header>
 
-      <Card title="What goes into the reading">
+      <Card title="The readings">
         <p className="mb-3 text-sm text-foreground-muted">
-          The eight inputs below are each measured from stored market data and combined into one reading.
+          Each reading below is measured from stored market data and shown on its own.
         </p>
         <ul className="space-y-3">
           {INPUT_GROUPS.map((g) => (
@@ -144,10 +135,8 @@ export default function HowItWorksPage() {
           ))}
         </ul>
         <p className="mt-3 border-t border-border pt-3 text-xs text-foreground-muted">
-          A flagged news event within the next five days lowers the reading. When some inputs are missing,
-          the reading is built from the inputs that are available and is marked partial. Trend and RSI are
-          calculated from price; the other inputs are not. Insider activity is shown on the stock page but
-          does not change the reading.
+          When some inputs are missing, the readings that can be measured are shown and the others are marked not available. Trend and RSI are
+          calculated from price. Insider activity is shown on the stock page as disclosed.
         </p>
       </Card>
 
@@ -161,33 +150,16 @@ export default function HowItWorksPage() {
           ))}
         </ul>
         <p className="mt-3 border-t border-border pt-3 text-sm text-foreground-muted">
-          The reading is computed once per trading day, after the session closes (the run is scheduled for
-          16:30 IST). It is stored, and the app serves the latest stored session — it does not change
-          during the day.
+          The readings are computed once per trading day, after the session closes. They are stored, and the app serves the latest stored
+          session. They do not change during the day.
         </p>
       </Card>
 
       <Card title="How to read a change">
         <p className="text-sm text-foreground-muted">
-          A reading can move from one day to the next because the inputs moved. Small daily changes are
-          normal; one day is not a trend.
+          A reading can move from one day to the next because the inputs moved. Small daily changes are normal; one day is not a trend.
+          When the price basis changed, for example after a split, the price-based readings are withheld rather than reported as a move.
         </p>
-        <ul className="mt-2 space-y-2 text-sm text-foreground-muted">
-          <li>
-            <span className="font-medium text-foreground">Stock Condition history</span> shows one row per stored
-            session: the inputs, the reading, the change, direction chips and a plain-words reason line. It
-            shows what moved, not how many points each input contributed.
-          </li>
-          <li>
-            <span className="font-medium text-foreground">Why did this change?</span> lists the components
-            that changed. If a classified news event was matched to that stock on that day, it names the
-            event; otherwise it says the cause is not in the data. The cause is never inferred.
-          </li>
-          <li>
-            When the price basis changed — for example after a split — the change is withheld rather than
-            reported as a move.
-          </li>
-        </ul>
       </Card>
 
       <section id="common-questions" aria-labelledby="common-questions-title" className="space-y-3">
@@ -215,7 +187,7 @@ export default function HowItWorksPage() {
         ))}
       </section>
 
-      <Card title="What the reading is not">
+      <Card title="What the readings are not">
         <ul className="space-y-2 text-sm text-foreground-muted">
           <li>It is not investment advice.</li>
           <li>It is not a forecast of what will happen next.</li>
@@ -229,14 +201,13 @@ export default function HowItWorksPage() {
         <ul className="space-y-2 text-sm text-foreground-muted">
           <li>
             <span className="font-medium text-foreground">Splits, bonuses, demergers and consolidations.</span>{" "}
-            Confirmed splits and bonuses are adjusted before the reading is calculated. While a corporate action is being
-            checked, or after an unexplained large price jump, price-based readings and the reading change
+            Confirmed splits and bonuses are adjusted before the readings are calculated. While a corporate action is being
+            checked, or after an unexplained large price jump, price-based readings
             are held back, and some earlier days are marked “not comparable”.
           </li>
           <li>
             <span className="font-medium text-foreground">New or illiquid stocks.</span> Fewer sessions can
-            mean fewer inputs; small industry groups are not ranked. The reading is then built from what is
-            available.
+            mean fewer inputs; small industry groups are not ranked. The readings that can be measured are shown.
           </li>
           <li>
             <span className="font-medium text-foreground">BE and BZ (trade-for-trade) stocks.</span> Delivery in
@@ -245,11 +216,11 @@ export default function HowItWorksPage() {
           </li>
           <li>
             <span className="font-medium text-foreground">Data can be delayed or missing.</span> The page
-            shows the date of the reading it is serving.
+            shows the date of the data it is serving.
           </li>
           <li>
-            <span className="font-medium text-foreground">One reading, one day.</span> The reading is a
-            relative summary of measured data, updated once a day.
+            <span className="font-medium text-foreground">One day at a time.</span> The readings describe
+            measured data, updated once a day.
           </li>
         </ul>
       </Card>
@@ -266,7 +237,7 @@ export default function HowItWorksPage() {
       </Card>
 
       <p className="text-sm text-foreground-muted">
-        You can see the reading and its history on any{" "}
+        You can see the readings on any{" "}
         <Link href="/signals" className="text-accent underline">
           stock page
         </Link>

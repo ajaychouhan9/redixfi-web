@@ -9,7 +9,7 @@ export const NAV_MOBILE_LAYOUT: NavLayout = process.env.NAV_MOBILE_LAYOUT === "A
 /** Layouts A and B: the item moved out of the bottom bar into More (and onto a Home shortcut card). Layout C moves nothing into More. */
 export const MOVED_TO_MORE =
   NAV_MOBILE_LAYOUT === "A"
-    ? { href: "/research", label: "Research", blurb: "Look up a stock: price, Stock Condition, fundamentals and filings." }
+    ? { href: "/research", label: "Research", blurb: "Look up a stock: price, delivery, volume, fundamentals and filings." }
     : NAV_MOBILE_LAYOUT === "B"
       ? { href: "/intraday", label: "Intraday", blurb: "The market so far today: movers and sessions as they develop." }
       : null;

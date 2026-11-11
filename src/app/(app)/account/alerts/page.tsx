@@ -13,7 +13,7 @@ import type { AlertPreferences, MeProfile } from "@/lib/api/types";
 
 const LABELS: Record<keyof AlertPreferences, { title: string; help: string }> = {
   watchlist: { title: "Signal changes on watchlist", help: "Notified when a signal state flips on a stock you're watching." },
-  market_wide: { title: "Market-wide events", help: "High-severity, market-scope news events." },
+  market_wide: { title: "Market-wide events", help: "Market-wide news items." },
   daily_brief: { title: "AI Daily Brief digest", help: "Morning and post-close market recap." },
 };
 

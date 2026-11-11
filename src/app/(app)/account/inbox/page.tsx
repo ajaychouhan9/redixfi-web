@@ -13,7 +13,7 @@ import type { InboxAlert } from "@/lib/api/types";
 
 
 const KIND_NOUN: Record<string, string> = {
-  signal_delta: "composite signal moves",
+  signal_delta: "retired alert types",
   behavior_state: "behavior updates",
   unusual_activity: "unusual activity alerts",
   news_watchlist: "news alerts",

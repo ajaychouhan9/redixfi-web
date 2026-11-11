@@ -58,6 +58,29 @@ const OLD = [
   "Not yet SEBI-registered",
   "directional research",
   "SEBI RA registration",
+  // 2026-11-11: the combined score and everything built on it were removed from the product; none of its names may appear in displayed text
+  "Stock Condition",
+  "Stock condition",
+  "stock condition",
+  "Conditions Reading",
+  "composite",
+  "Composite",
+  "track record",
+  "Track record",
+  "Track Record",
+  "signal history",
+  "Signal history",
+  "outperformed",
+  "beat the sector",
+  "Beat the sector",
+  "Signal Dashboard",
+  "Signal dashboard",
+  // 2026-11-11: labels that judge a news item or a day's news
+  "high-severity",
+  "High-severity",
+  "Event risk",
+  "event risk",
+  "Event Risk",
 ];
 
 function files(dir) {
@@ -78,7 +101,8 @@ function stripComments(s) {
 
 const hits = [];
 for (const file of files(ROOT)) {
-  const text = stripComments(readFileSync(file, "utf8"));
+  // identifiers of the API fields that no longer carry data (composite_score and the like) are not displayed text
+  const text = stripComments(readFileSync(file, "utf8")).replace(/\w*composite_score\w*/g, "");
   for (const phrase of OLD) {
     if (text.includes(phrase)) hits.push(`${file}: ${phrase}`);
   }
@@ -185,9 +209,6 @@ for (const f of walkSrc(join(ROOT))) {
   const m = stripComments(readFileSync(f, "utf8")).match(OLD_NAMES);
   if (m) historyHits.push(`${f.replace(ROOT, "")}: old name "${m[0]}" in user-visible text`);
 }
-for (const need of ["Stock Condition", "Weighted combination of 8 measured readings. Not a probability, a rating or a forecast."]) {
-  if (!readFileSync(join(ROOT, "lib/reading-copy.ts"), "utf8").includes(need)) historyHits.push(`lib/reading-copy.ts: required text missing: ${need}`);
-}
 // 2026-11-01: 7-Day Review. Price changes over the last sessions and measured readings only: no outlook, rating, hit rate, track record, "top picks" or
 // recommendation wording, and no ranking claim beyond "biggest". The one sentence that says "Not a forecast or a recommendation" and the neutral Ask AI
 // question ("Do not give a forecast or a recommendation") are allowed as written.
@@ -197,7 +218,6 @@ const REVIEW_FILES = [
   "components/app/review/ReviewLists.tsx",
   "components/app/review/YourStocks.tsx",
   "components/app/review/MarketBlock.tsx",
-  "components/app/review/ScChanges.tsx",
   "components/app/review/EventsBlock.tsx",
   "components/app/review/WeekPicker.tsx",
   "components/app/review/MineProvider.tsx",
@@ -240,53 +260,19 @@ const sm = readFileSync(join(ROOT, "app/sitemap.xml/route.ts"), "utf8");
 if (!sm.includes('"/signals/7-day-review"')) reviewHits.push("sitemap.xml/route.ts: /signals/7-day-review missing");
 if (!readFileSync(join(ROOT, "app/llms.txt/route.ts"), "utf8").includes("/signals/7-day-review")) reviewHits.push("llms.txt/route.ts: 7-Day Review missing");
 if (!readFileSync(join(ROOT, "app/(app)/signals/page.tsx"), "utf8").includes("ReviewTabs")) reviewHits.push("signals/page.tsx: Signals | 7-Day Review tabs missing");
-// 2026-11-01: ONE Stock Condition visibility rule. Every component that shows a Stock Condition number must draw the locked state with the shared
-// ProLock / ScValue (a small lock and "Pro", linked to the plans page), never its own blur or "Locked" text; the API already sends no number for those rows.
-const SC_COMPONENTS = [
-  "components/app/TopSignalChangesCard.tsx",
-  "components/app/signals/MoversLists.tsx",
-  "components/app/signals/SignalTableRow.tsx",
-  "components/app/intraday/tabs/StockList.tsx",
-  "components/app/review/ReviewLists.tsx",
-  "components/app/review/ScChanges.tsx",
-  "components/app/review/YourStocks.tsx",
-  "components/app/watchlist/WatchlistMainView.tsx",
-  "components/app/research/ResearchConditionCard.tsx",
-  "app/(seo)/s/[slug]/page.tsx",
-  "app/(seo)/screens/[slug]/page.tsx",
-];
-const scHits = [];
-for (const rel of SC_COMPONENTS) {
-  if (!readFileSync(join(ROOT, rel), "utf8").includes("@/components/ui/ScValue")) scHits.push(`${rel}: must use ProLock / ScValue for a locked Stock Condition`);
-}
-const scValue = readFileSync(join(ROOT, "components/ui/ScValue.tsx"), "utf8");
-for (const need of ['href="/pricing"', "min-h-[44px]", "<Lock", "Pro"]) {
-  if (!scValue.includes(need)) scHits.push(`components/ui/ScValue.tsx: required piece missing: ${need}`);
-}
-if (scHits.length) {
-  console.error("Stock Condition visibility problem:" + String.fromCharCode(10) + scHits.join(String.fromCharCode(10)));
-  process.exit(1);
-}
 // 2026-11-01: AI prompt pills and the Stock Condition history line on stock pages. Neutral wording, neutral colour, nothing sent without a tap on Send,
 // and the line is never on Market Rewind.
 const uxHits = [];
 const UX_FORBIDDEN = /\b(buy|sell|targets?|breakouts?|candidates?|accelerat\w*|decelerat\w*|bullish|bearish|rising|falling|improving|worsening|upward|downward|trend(?:ing|s)?|hit rates?|success rates?|predict\w*|forecast\w*|rating|outperform\w*|underperform\w*)\b/i;
-for (const rel of ["components/app/signals/AskPills.tsx", "components/app/signals/ConditionLine.tsx", "lib/condition-line.ts"]) {
+for (const rel of ["components/app/signals/AskPills.tsx"]) {
   const text = stripComments(readFileSync(join(ROOT, rel), "utf8"));
   const m = text.match(UX_FORBIDDEN);
   if (m) uxHits.push(`${rel}: ${m[0]}`);
 }
-const lineSrc = stripComments(readFileSync(join(ROOT, "components/app/signals/ConditionLine.tsx"), "utf8"));
-if (/text-(up|down|success|danger|red|green|emerald|rose)\b|<(ArrowUp|ArrowDown|TrendingUp|TrendingDown|ChevronUp)/.test(lineSrc)) uxHits.push("ConditionLine.tsx: neutral colour only, no arrows");
-if (!readFileSync(join(ROOT, "lib/condition-line.ts"), "utf8").includes("Stock Condition, last")) uxHits.push("lib/condition-line.ts: the plain caption is missing");
 const pillsSrc = stripComments(readFileSync(join(ROOT, "components/app/signals/AskPills.tsx"), "utf8"));
 if (!pillsSrc.includes("openWithQuestion") || /\b(sendMessage|submit|handleSend|requestSubmit)\b/.test(pillsSrc)) uxHits.push("AskPills.tsx: a pill must only fill the question in (openWithQuestion), never send it");
 for (const [rel, need] of [["components/app/signals/SignalDetailView.tsx", "<AskPills"], ["components/app/research/ResearchDetail.tsx", "<AskPills"]]) {
   if (!readFileSync(join(ROOT, rel), "utf8").includes(need)) uxHits.push(`${rel}: ${need} missing`);
-}
-// 2 Nov 2026 (Tasks 6 and 7): the Stock Condition 30-session line is no longer shown on the stock or Research page (the endpoint and component stay)
-for (const rel of ["components/app/signals/SignalDetailView.tsx", "components/app/research/ResearchConditionCard.tsx", "components/app/research/ResearchDetail.tsx"]) {
-  if (readFileSync(join(ROOT, rel), "utf8").includes("<ConditionLine")) uxHits.push(`${rel}: <ConditionLine must not be rendered`);
 }
 function rewindFiles(dir) {
   const out = [];

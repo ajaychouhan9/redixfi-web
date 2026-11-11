@@ -10,11 +10,10 @@ import type { AlertCapabilities, AlertDirection, AlertMetric } from "@/lib/api/t
 
 const METRIC_LABELS: Record<AlertMetric, string> = {
   price: "Price",
-  score: "Stock Condition",
   delivery: "Delivery %",
   volume: "Volume ratio (5d)",
 };
-const ALL_METRICS: AlertMetric[] = ["price", "score", "delivery", "volume"];
+const ALL_METRICS: AlertMetric[] = ["price", "delivery", "volume"];
 
 /**
  * Threshold-alert creation entry point (2026-08-08, locked spec) — reuses

@@ -19,7 +19,7 @@ import {
   UNIVERSE_ORDER,
 } from "@/lib/intraday-copy";
 import type { IntradayTabData, IntradayUniverse, MorningGapRow, RecapRow, ScanMoveRow } from "@/lib/api/types";
-import { Condition, Pct, Price, StockList, conditionHeader, type Col } from "./StockList";
+import { Pct, Price, StockList, type Col } from "./StockList";
 
 type Side = "up" | "down";
 
@@ -80,7 +80,6 @@ const gapCols: Col<MorningGapRow>[] = [
   { id: "gap", header: "Gap vs previous close", mobileLabel: "Gap", mobile: "main", cell: (r) => <Pct v={r.gap_pct} /> },
   { id: "pre", header: "Pre-open price", mobileLabel: "Pre-open", mobile: "pair", cell: (r) => <Price v={r.pre_open_price} /> },
   { id: "prev", header: "Previous close", mobileLabel: "Previous close", mobile: "pair", cell: (r) => <Price v={r.prev_close} /> },
-  { id: "sc", header: conditionHeader, mobileLabel: "Condition", mobile: "pair", cell: (r) => <Condition sc={r.sc} locked={r.sc_locked} /> },
 ];
 
 export function MorningBody({ d }: { d: IntradayTabData }) {
@@ -164,7 +163,6 @@ const scanCols: Col<ScanMoveRow>[] = [
   { id: "pct", header: "Change vs previous close", mobileLabel: "Change", mobile: "main", cell: (r) => <Pct v={r.pct} /> },
   { id: "price", header: "Price", mobileLabel: "Price", mobile: "pair", cell: (r) => <Price v={r.price} /> },
   { id: "vr", header: "Volume vs usual so far", mobileLabel: "Volume vs usual", mobile: "pair", cell: (r) => <span className="tabular-nums">{r.vr === null ? "-" : `${r.vr.toFixed(1)}x`}</span> },
-  { id: "sc", header: conditionHeader, mobileLabel: "Condition", mobile: "pair", cell: (r) => <Condition sc={r.sc} locked={r.sc_locked} /> },
 ];
 
 /** Scan only: 1-tap steps for volume against the stock's own usual level. Tapping the active step clears it. Changes which rows are shown, never their order. */
@@ -229,7 +227,6 @@ function recapCols(listedHeader: string, listedFmt: (r: RecapRow) => React.React
     { id: "listed", header: listedHeader, mobileLabel: listedHeader, mobile: "pair", cell: listedFmt },
     { id: "close", header: "Last price", mobileLabel: "Last price", mobile: "pair", cell: (r) => <Price v={r.close} /> },
     { id: "range", header: "Day low - high", mobileLabel: "Day low - high", mobile: "pair", cell: (r) => <span className="tabular-nums">{formatNumber(r.low, 2)} - {formatNumber(r.high, 2)}</span> },
-    { id: "sc", header: conditionHeader, mobileLabel: "Condition", mobile: "pair", cell: (r) => <Condition sc={r.sc} locked={r.sc_locked} /> },
   ];
 }
 

@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { SignalsPageBody } from "@/components/app/signals/SignalsPageBody";
 import { ReviewTabs } from "@/components/app/review/ReviewTabs";
-import { getSectorSummary, getSignals, getSharedScreen } from "@/lib/api/endpoints";
+import { getSignals, getSharedScreen } from "@/lib/api/endpoints";
 
 export const metadata: Metadata = {
-  title: "Signal Dashboard",
+  title: "Stock Screener: filter NSE stocks by delivery, volume, 52-week range and volatility",
   alternates: { canonical: "/signals" },
-  description: "Measured Stock Conditions across 2,000+ NSE stocks — trend, delivery, industry standing and options positioning, factually reported.",
+  description: "Filter 2,000+ NSE stocks by measured delivery, volume against its usual level, distance from the 52-week high and volatility, with the sources stated.",
 };
 
 export default async function SignalsPage({ searchParams }: { searchParams: Promise<{ clone?: string }> }) {
@@ -15,8 +15,7 @@ export default async function SignalsPage({ searchParams }: { searchParams: Prom
   // but were previously awaited one at a time, paying each one's full
   // latency in sequence. Promise.all so they run concurrently.
   const { clone } = await searchParams;
-  const [sectorSummary, trackedCount, cloneSource] = await Promise.all([
-    getSectorSummary().then((r) => r.data).catch(() => null),
+  const [trackedCount, cloneSource] = await Promise.all([
     // Real live count for the subtitle below (not hardcoded "2,000+") — same
     // /signals endpoint SignalsExplorer itself lists from, unfiltered
     // (size:1, we only need page_info.total). @auth-ok: SSR, anonymous —
@@ -35,12 +34,12 @@ export default async function SignalsPage({ searchParams }: { searchParams: Prom
     <div>
       <ReviewTabs active="signals" />
       <div className="mb-5">
-        <h1 className="text-lg font-semibold">Signal Dashboard</h1>
+        <h1 className="text-lg font-semibold">Stock Screener</h1>
         <p className="mt-1 text-sm text-foreground-muted">
-          Measured market signals across {trackedCount !== null ? trackedCount.toLocaleString("en-IN") : "2,000+"} tracked {trackedCount === 1 ? "stock" : "stocks"}
+          Measured readings for {trackedCount !== null ? trackedCount.toLocaleString("en-IN") : "2,000+"} tracked {trackedCount === 1 ? "stock" : "stocks"}
         </p>
       </div>
-      <SignalsPageBody sectorSummary={sectorSummary} cloneSource={cloneSource} />
+      <SignalsPageBody cloneSource={cloneSource} />
     </div>
   );
 }

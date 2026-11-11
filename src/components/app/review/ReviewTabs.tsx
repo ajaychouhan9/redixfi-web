@@ -5,7 +5,7 @@ import { REVIEW_PATH, REVIEW_TITLE } from "@/lib/review-copy";
 /** "Signals | 7-Day Review": two pages with their own addresses, so each one can be indexed. */
 export function ReviewTabs({ active }: { active: "signals" | "review" }) {
   const tabs = [
-    { id: "signals", label: "Signals", href: "/signals" },
+    { id: "signals", label: "Screener", href: "/signals" },
     { id: "review", label: REVIEW_TITLE, href: REVIEW_PATH },
   ] as const;
   return (

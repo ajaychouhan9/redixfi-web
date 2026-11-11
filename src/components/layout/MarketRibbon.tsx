@@ -145,7 +145,6 @@ export function MarketRibbon({
   }, [user, getToken]);
 
   const volatile = !!overview && overview.india_vix_change_pct > 5;
-  const eventRisk = !!overview && overview.news_today.items_flagged_high > 0;
 
   return (
     // Mobile-overlap fix (2026-08-16): this was UNCONDITIONALLY `fixed`
@@ -153,8 +152,7 @@ export function MarketRibbon({
     // internally inconsistent below md, where the search box is hidden but
     // the remaining content (state chip, NIFTY, conditional volatility/
     // event-risk badges, ask/bell/avatar/theme icons) can still exceed one
-    // row's width on a real phone (especially the event-risk badge's full
-    // sentence, e.g. "1 high-severity event(s) today") — a wrapped second
+    // row's width on a real phone  — a wrapped second
     // row then rendered OUTSIDE the fixed 64px box, overlapping <main>
     // (whose `pt-16` in layout.tsx assumes the header is always exactly
     // 64px). Fixed the same way this file's own docstring says Sidebar.tsx
@@ -258,18 +256,6 @@ export function MarketRibbon({
                   is only true when items_flagged_high > 0), so there's no
                   0-count case to special-case; kept as a plain span if that
                   ever changes rather than a Link with nothing to navigate to. */}
-              {eventRisk && (
-                <Link
-                  href="/news"
-                  className="rounded-full bg-amber-bg px-2 py-0.5 font-medium text-amber underline decoration-dotted underline-offset-2 hover:decoration-solid"
-                >
-                  <span className="sm:hidden">{overview.news_today.items_flagged_high} event(s)</span>
-                  <span className="hidden sm:inline">
-                    {overview.news_today.items_flagged_high} high-severity event(s)
-                    {overview.news_today.session_date && overview.news_today.session_date !== istToday() ? ` · ${formatShortDate(overview.news_today.session_date)}` : " today"}
-                  </span>
-                </Link>
-              )}
             </>
           )}
         </div>
@@ -278,7 +264,7 @@ export function MarketRibbon({
 
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-foreground-faint sm:gap-x-3">
           {/* Task 10 A3: signals_as_of tells the user which session's
-              composite scores they're looking at (e.g. "Scores as of 21 Jul
+              readings they're looking at (e.g. "Scores as of 21 Jul
               close") — measured_signals now runs post-close (16:30), so
               "today" vs "yesterday" is no longer obvious from the clock alone.
               Font-size audit (2026-08-11): already text-xs = 12px, exactly

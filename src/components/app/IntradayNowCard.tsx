@@ -20,9 +20,8 @@ export function IntradayNowCard({ session }: { session: IntradaySession | null }
             <div>
               <p className="text-sm font-semibold">Intraday: Pre-open, Live scan, After close · {STATE_LABEL[session.state] ?? session.state}</p>
               <p className="mt-0.5 text-xs text-foreground-faint">
-                {session.high_severity_events_today} high-severity event(s)
-                {session.event_session_date ? ` · session of ${formatShortDate(session.event_session_date)}` : ""}
-                {session.breadth_line && ` · ${session.breadth_line}`}
+                {session.event_session_date ? `Session of ${formatShortDate(session.event_session_date)}` : ""}
+                {session.breadth_line && `${session.event_session_date ? " · " : ""}${session.breadth_line}`}
               </p>
             </div>
           </div>

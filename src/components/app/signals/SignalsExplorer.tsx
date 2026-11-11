@@ -7,7 +7,6 @@ import { formatObservationDate } from "@/lib/format";
 import type { SignalRow, SignalsPageInfo, SharedScreenParams } from "@/lib/api/types";
 import { SIGNAL_SECTORS } from "@/data/sectors";
 import { SignalMobileRow, SignalTableRow, type VisibleColumns } from "./SignalTableRow";
-import { UnlockBanner } from "@/components/ui/Locked";
 import { ExportButton } from "@/components/ui/ExportButton";
 import { ShareScreenButton } from "./ShareScreenButton";
 import { downloadCsv } from "@/lib/csv";
@@ -29,11 +28,8 @@ const DEFAULT_SIGNALS_COLUMNS: VisibleColumns = {
 
 const SORT_OPTIONS = [
   { value: "symbol", label: "Symbol (A–Z)" },
-  { value: "abs_delta_1d", label: "Biggest Stock Condition change (up or down)" },
   { value: "name", label: "Name (A–Z)" },
   { value: "market_cap", label: "Market cap" },
-  { value: "composite_score", label: "Stock Condition" },
-  { value: "delta_1d", label: "Stock Condition change" },
   { value: "delivery_pct", label: "Delivery %" },
   { value: "sector_rank", label: "Sector rank" },
   { value: "volume_ratio", label: "Volume ratio" },
@@ -367,7 +363,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   ]);
 
   const canExport = isProEntitled(user);
-  const explorerControlsEnabled = user?.tier !== "basic" && user?.tier !== "paid";
+  const explorerControlsEnabled = true;       // every plan has the sort / filter / search controls (Free, Basic and Pro; 2026-11-11)
 
   const fetchExportRows = useCallback(async () => {
     const token = await getToken();
@@ -391,8 +387,6 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
         price_as_of: r.price_data_as_of?.data_as_of ?? "",
         readings_as_of: labels.readingsDate ?? "",
         day_change_pct: r.day_change_pct ?? "",
-        stock_condition: r.composite_score ?? "",
-        stock_condition_change_1d: r.delta_1d ?? "",
         delivery_pct: r.delivery_pct ?? "",
         delivery_avg20: r.delivery_avg20 ?? "",
         volume_ratio_5d: r.volume_ratio_5d ?? "",
@@ -414,7 +408,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
 
   const exportXlsx = useCallback(async () => {
     downloadXlsx(`redixfi-signals-${new Date().toISOString().slice(0, 10)}.xlsx`, [
-      { name: "Signals", rows: await fetchExportRows(), notes: [DISCLAIMER] },
+      { name: "Screener", rows: await fetchExportRows(), notes: [DISCLAIMER] },
     ]);
   }, [fetchExportRows]);
 
@@ -424,8 +418,6 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   if (q) activeFilters.push({ key: "q", text: `Search: ${q}`, clear: () => setQ("") });
   if (sector) activeFilters.push({ key: "sector", text: `Sector: ${sector}`, clear: () => setSector("") });
   if (industry) activeFilters.push({ key: "industry", text: `Industry: ${industry}`, clear: () => setIndustry("") });
-  if (scoreMin) activeFilters.push({ key: "smin", text: `Stock Condition ≥ ${scoreMin}`, clear: () => setScoreMin("") });
-  if (scoreMax) activeFilters.push({ key: "smax", text: `Stock Condition ≤ ${scoreMax}`, clear: () => setScoreMax("") });
   if (from52Max !== undefined) activeFilters.push({ key: "f52", text: `From 52-week high ≤ ${from52Max}%`, clear: () => { setFrom52Preset(""); setFrom52Custom(""); } });
   if (asNumber(from52Min) !== undefined) activeFilters.push({ key: "f52min", text: `From 52-week high ≥ ${from52Min}%`, clear: () => setFrom52Min("") });
   if (volatilityBand) {
@@ -436,22 +428,14 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   }
   if (volumeMin) activeFilters.push({ key: "volmin", text: `Volume vs usual ≥ ${volumeMin}× (5-session avg)`, clear: () => setVolumeMin("") });
   if (deliveryState) activeFilters.push({ key: "delivery", text: `Delivery: ${deliveryState.replace("_", " ")}`, clear: () => setDeliveryState("") });
-  if (deltaMin) activeFilters.push({ key: "delta", text: `Stock Condition change ≥ ${deltaMin}`, clear: () => setDeltaMin("") });
   if (dmaState) activeFilters.push({ key: "dma", text: `DMA: ${dmaState.replace("_", " ")}`, clear: () => setDmaState("") });
   if (pcrBand) activeFilters.push({ key: "pcr", text: `PCR: ${pcrBand}`, clear: () => setPcrBand("") });
   if (anomalyOnly) activeFilters.push({ key: "anomaly", text: "Unusual activity", clear: () => setAnomalyOnly(false) });
-  if (eventRiskOnly) activeFilters.push({ key: "event", text: "Event risk", clear: () => setEventRiskOnly(false) });
+  if (eventRiskOnly) activeFilters.push({ key: "event", text: "News in the last 5 days", clear: () => setEventRiskOnly(false) });
   if (watchlistOnly) activeFilters.push({ key: "watch", text: "Watchlist only", clear: () => setWatchlistOnly(false) });
 
   return (
     <div ref={containerRef}>
-      {!explorerControlsEnabled && (
-        <p className="mb-3 rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-muted">
-          Basic shows the full table, ordered by Symbol (A–Z). For a filtered or sorted view, ask Ask-RedixFi AI directly — e.g.
-          &quot;highest Stock Condition today&quot; or &quot;IT sector stocks with high delivery&quot;.
-        </p>
-      )}
-
       <div className="mb-3 rounded-xl border border-border bg-surface-raised p-3">
         {explorerControlsEnabled && (
           <div className="grid grid-cols-2 items-end gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
@@ -468,14 +452,6 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
                 <option value="">All sectors</option>
                 {SIGNAL_SECTORS.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
-            </label>
-            <label className={label}>
-              Min reading
-              <input value={scoreMin} onChange={(e) => setScoreMin(e.target.value)} type="number" placeholder="0" className={control} />
-            </label>
-            <label className={label}>
-              Max reading
-              <input value={scoreMax} onChange={(e) => setScoreMax(e.target.value)} type="number" placeholder="100" className={control} />
             </label>
             <label className={label}>
               From 52-week high
@@ -534,10 +510,6 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
                   </select>
                 </label>
                 <label className={label}>
-                  Stock Condition change ≥
-                  <input value={deltaMin} onChange={(e) => setDeltaMin(e.target.value)} type="number" step="0.1" placeholder="e.g. 2" className={control} />
-                </label>
-                <label className={label}>
                   DMA position
                   <select value={dmaState} onChange={(e) => setDmaState(e.target.value)} className={control}>
                     <option value="">Any</option>
@@ -555,7 +527,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
                   </select>
                 </label>
                 <label className="flex h-9 items-center gap-2 rounded-lg border border-border bg-hover px-2 text-xs text-foreground-muted">
-                  <input type="checkbox" checked={eventRiskOnly} onChange={(e) => setEventRiskOnly(e.target.checked)} /> Event risk
+                  <input type="checkbox" checked={eventRiskOnly} onChange={(e) => setEventRiskOnly(e.target.checked)} /> News in the last 5 days
                 </label>
                 <label className="flex h-9 items-center gap-2 rounded-lg border border-border bg-hover px-2 text-xs text-foreground-muted">
                   <input type="checkbox" checked={anomalyOnly} onChange={(e) => setAnomalyOnly(e.target.checked)} /> Unusual activity
@@ -627,7 +599,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
                 {(Object.keys(columns) as (keyof VisibleColumns)[]).map((k) => (
                   <label key={k} className="flex items-center gap-2 py-1 capitalize">
                     <input type="checkbox" checked={columns[k]} onChange={(e) => setColumns((c) => ({ ...c, [k]: e.target.checked }))} />
-                    {k === "eventRisk" ? "Event risk" : k === "from52" ? "From 52-week high" : k === "volatility" ? "Volatility" : k}
+                    {k === "eventRisk" ? "News (5 days)" : k === "from52" ? "From 52-week high" : k === "volatility" ? "Volatility" : k}
                   </label>
                 ))}
               </div>
@@ -663,7 +635,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
           </p>
           <p className="mt-0.5 text-[11px] leading-snug text-foreground-faint">
             <span className="font-medium text-foreground-muted">{labels.readingsHeading}:</span>{" "}
-            Stock Condition, Delivery, Volume, {labels.priceIsLive ? "From 52-week high (current price)" : "From 52-week high"}, Volatility, Signals
+            Delivery, Volume, {labels.priceIsLive ? "From 52-week high (current price)" : "From 52-week high"}, Volatility, State chips
           </p>
         </div>
         <ul className="divide-y divide-border md:hidden">
@@ -679,14 +651,13 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
                 <th colSpan={1} className="border-l border-border px-3 py-2 text-[11px] normal-case tracking-normal text-foreground-muted">
                   {labels.priceHeading}
                 </th>
-                <th colSpan={1 + (columns.delivery ? 1 : 0) + (columns.volume ? 1 : 0) + (columns.from52 || from52Max !== undefined ? 1 : 0) + (columns.volatility ? 1 : 0) + (columns.chips ? 1 : 0) + (columns.eventRisk ? 1 : 0)} className="border-l border-border px-3 py-2 text-[11px] normal-case tracking-normal text-foreground-muted">
+                <th colSpan={0 + (columns.delivery ? 1 : 0) + (columns.volume ? 1 : 0) + (columns.from52 || from52Max !== undefined ? 1 : 0) + (columns.volatility ? 1 : 0) + (columns.chips ? 1 : 0) + (columns.eventRisk ? 1 : 0)} className="border-l border-border px-3 py-2 text-[11px] normal-case tracking-normal text-foreground-muted">
                   {labels.readingsHeading}
                 </th>
                 <th rowSpan={2} className="px-3 py-2" />
               </tr>
               <tr className="border-b border-border text-left font-mono text-[12px] uppercase tracking-wider text-foreground-faint">
                 <th className="border-l border-border px-3 py-2">Price</th>
-                <th className="border-l border-border px-3 py-2">Stock Condition</th>
                 {columns.delivery && <th className="hidden px-3 py-2 sm:table-cell">Delivery</th>}
                 {columns.volume && <th className="hidden px-3 py-2 sm:table-cell" title="Last five full sessions vs prior 20 full sessions">Volume vs usual</th>}
                 {(columns.from52 || from52Max !== undefined) && (
@@ -698,8 +669,8 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
                   </th>
                 )}
                 {columns.volatility && <th className="hidden px-3 py-2 md:table-cell">Volatility</th>}
-                {columns.chips && <th className="hidden px-3 py-2 lg:table-cell">Signals</th>}
-                {columns.eventRisk && <th className="hidden px-3 py-2 text-center sm:table-cell">Event</th>}
+                {columns.chips && <th className="hidden px-3 py-2 lg:table-cell">State</th>}
+                {columns.eventRisk && <th className="hidden px-3 py-2 sm:table-cell">News (5 days)</th>}
               </tr>
             </thead>
             <tbody>
@@ -720,9 +691,6 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
         {!loading && rows.length === 0 && <div className="p-4 text-center text-sm text-foreground-muted">No stocks match these filters.</div>}
         {error && <div className="p-4 text-center text-sm text-down">{error}</div>}
 
-        {!user?.tier || user.tier === "free" ? (
-          <UnlockBanner label="Locked rows show 🔒 in place of readings — a fixed sample of 20 stocks (A–Z) stays visible on the free tier." />
-        ) : null}
       </div>
 
       {!watchlistOnly && (

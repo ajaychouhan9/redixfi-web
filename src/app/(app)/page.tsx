@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getMarketOverview, getSignalMovers, getLatestBrief, getIntradaySession, getAnomalies, getMarketState, getPriceMovers, getNews, getBillingPlans, getMarketActivitySummary } from "@/lib/api/endpoints";
+import { getMarketOverview, getLatestBrief, getIntradaySession, getAnomalies, getMarketState, getPriceMovers, getNews, getBillingPlans, getMarketActivitySummary } from "@/lib/api/endpoints";
 import { MarketPulseCard } from "@/components/app/MarketPulseCard";
 import { MarketStatusStrip } from "@/components/app/MarketStatusStrip";
 import { PriceMoversCard } from "@/components/app/PriceMoversCard";
-import { TopSignalChangesCard } from "@/components/app/TopSignalChangesCard";
 import { AiDailyBriefCard } from "@/components/app/AiDailyBriefCard";
 import { EventRiskCard } from "@/components/app/EventRiskCard";
 import { IntradayNowCard } from "@/components/app/IntradayNowCard";
@@ -29,16 +28,14 @@ export const metadata: Metadata = { alternates: { canonical: "/" } };
 // docstring) — this fetch never sees a paid user's data, so it can't leak
 // the mistake this pattern originally guarded against.
 export default async function HomePage() {
-  const [overviewR, moversR, briefR, sessionR, anomaliesR, newsR, plansR, marketActivityR, marketStateR, priceMoversR] = await Promise.allSettled([
+  const [overviewR, briefR, sessionR, anomaliesR, newsR, plansR, marketActivityR, marketStateR, priceMoversR] = await Promise.allSettled([
     getMarketOverview(),
-    // @auth-ok: SSR, anonymous (Stock Condition locked outside the free sample); TopSignalChangesCard asks again with the token of a signed-in visitor.
-    getSignalMovers(undefined, 3),
     getLatestBrief(),
     getIntradaySession(),
     getAnomalies({ size: 200 }),
     // @auth-ok: SSR, always anonymous — see the module docstring above.
     // Corrected client-side by EventRiskCard once a real token resolves.
-    getNews({ severity: "high", size: 3 }),
+    getNews({ size: 30 }),
     // @auth-ok: public — billing/plans has no auth dependency at all
     // (same fetch /pricing's own page.tsx already makes server-side).
     getBillingPlans(),
@@ -52,7 +49,6 @@ export default async function HomePage() {
   ]);
 
   const overview = overviewR.status === "fulfilled" ? overviewR.value.data : null;
-  const movers = moversR.status === "fulfilled" ? moversR.value.data : null;
   const brief = briefR.status === "fulfilled" ? briefR.value : null;
   const session = sessionR.status === "fulfilled" ? sessionR.value.data : null;
   const anomalies = anomaliesR.status === "fulfilled" ? anomaliesR.value : null;
@@ -70,8 +66,7 @@ export default async function HomePage() {
     // width up to the sidebar's edge on one side and the viewport edge on
     // the other, instead of floating centered with dead space either side.
     <div className="w-full max-w-[1800px] space-y-5">
-      {/* Order (2 Nov 2026): market status and breadth, today's price movers, your stocks, the latest brief, Market Pulse, the Stock Condition
-          changes, unusual activity, the news scan, Market Activity, the report promo. The visitor intro (anonymous only) stays on top; the
+      {/* Order (2 Nov 2026): market status and breadth, today's price movers, your stocks, the latest brief, Market Pulse, unusual activity, the news scan, Market Activity, the report promo. The visitor intro (anonymous only) stays on top; the
           marketing cards that only anonymous visitors see are below the report promo. */}
       <VisitorIntroStrip />
       <MarketStatusStrip overview={overview} session={session} marketState={marketState} />
@@ -85,11 +80,6 @@ export default async function HomePage() {
       <AiDailyBriefCard brief={brief} />
 
       <MarketPulseCard overview={overview} />
-
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        <TopSignalChangesCard movers={movers} marketState={marketState} />
-        <AnomalyCard compact results={anomalies?.data ?? []} scan={anomalies?.page_info.scan ?? null} marketState={marketState} />
-      </div>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         <EventRiskCard newsToday={overview?.news_today ?? null} initialItems={newsItems} />

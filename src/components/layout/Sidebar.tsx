@@ -33,14 +33,14 @@ const REWIND_ITEM = { href: "/rewind", label: "Rewind", icon: Rewind } as const;
 const NAV_ITEMS_BY_LAYOUT = {
   A: [
     { href: "/", label: "Home", icon: Home },
-    { href: "/signals", label: "Signals", icon: BarChart3 },
+    { href: "/signals", label: "Screener", icon: BarChart3 },
     { href: "/intraday", label: "Intraday", icon: Zap },
     REWIND_ITEM,
     { href: "/more", label: "More", icon: MoreHorizontal },
   ],
   B: [
     { href: "/", label: "Home", icon: Home },
-    { href: "/signals", label: "Signals", icon: BarChart3 },
+    { href: "/signals", label: "Screener", icon: BarChart3 },
     { href: "/research", label: "Research", icon: Search },
     REWIND_ITEM,
     { href: "/more", label: "More", icon: MoreHorizontal },
@@ -48,7 +48,7 @@ const NAV_ITEMS_BY_LAYOUT = {
   // C: no More tab. Everything that lived in More is in the header avatar menu (see UserMenu.tsx); the bell stays in the header.
   C: [
     { href: "/", label: "Home", icon: Home },
-    { href: "/signals", label: "Signals", icon: BarChart3 },
+    { href: "/signals", label: "Screener", icon: BarChart3 },
     { href: "/intraday", label: "Intraday", icon: Zap },
     { href: "/research", label: "Research", icon: Search },
     REWIND_ITEM,
@@ -58,13 +58,13 @@ const NAV_ITEMS_NO_REWIND =
   NAV_MOBILE_LAYOUT === "C"
     ? ([
         { href: "/", label: "Home", icon: Home },
-        { href: "/signals", label: "Signals", icon: BarChart3 },
+        { href: "/signals", label: "Screener", icon: BarChart3 },
         { href: "/intraday", label: "Intraday", icon: Zap },
         { href: "/research", label: "Research", icon: Search },
       ] as const)
     : ([
         { href: "/", label: "Home", icon: Home },
-        { href: "/signals", label: "Signals", icon: BarChart3 },
+        { href: "/signals", label: "Screener", icon: BarChart3 },
         { href: "/intraday", label: "Intraday", icon: Zap },
         { href: "/research", label: "Research", icon: Search },
         { href: "/more", label: "More", icon: MoreHorizontal },
@@ -89,7 +89,7 @@ function NewBadge() {
 // represent one feature.
 const SIDEBAR_LINK_ITEMS = [
   { href: "/", label: "Home", icon: Home },
-  { href: "/signals", label: "Signals", icon: BarChart3 },
+  { href: "/signals", label: "Screener", icon: BarChart3 },
   { href: "/intraday", label: "Intraday", icon: Zap },
   { href: "/research", label: "Research", icon: Search },
   { href: "/account/alerts", label: "Alerts", icon: Bell },

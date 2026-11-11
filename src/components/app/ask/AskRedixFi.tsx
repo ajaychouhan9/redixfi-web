@@ -20,7 +20,6 @@ import { displayName } from "@/lib/company-name";
 import { useMobileViewport } from "@/lib/ask-panel/useMobileViewport";
 import { resolveVisibleChatSymbol } from "@/lib/ask-panel/contextHeader";
 import { CompareResultCard } from "@/components/app/signals/CompareResultCard";
-import { ScoreHistoryChart } from "@/components/app/ask/ScoreHistoryChart";
 import { MarkdownAnswer } from "@/components/app/ask/MarkdownAnswer";
 import { SourcesSection } from "@/components/app/ask/SourcesSection";
 import { ScopeTag } from "@/components/app/ask/ScopeTag";
@@ -39,7 +38,6 @@ import type {
   AskUsageInfo,
   ResearchSearchRow,
 } from "@/lib/api/types";
-import { ConditionLabel } from "@/components/ui/ConditionLabel";
 
 const GROUP_LABELS: Record<string, string> = {
   Recent: "Recent (last 12 months)",
@@ -954,7 +952,6 @@ export function AskRedixFi() {
                               <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wide text-foreground-faint">
                                 <th className="px-3 py-2">Symbol</th>
                                 <th className="px-3 py-2">Sector</th>
-                                <th className="px-3 py-2"><ConditionLabel /></th>
                                 <th className="px-3 py-2">Delivery</th>
                                 <th className="px-3 py-2">Signals</th>
                                 <th className="px-3 py-2" />
@@ -1032,18 +1029,6 @@ export function AskRedixFi() {
                           </table>
                         </div>
                       </div>
-                    )}
-
-                    {/* Inline trend/comparison chart. */}
-                    {m.compare && m.compare.symbols.length > 0 && Object.keys(m.compare.score_history ?? {}).length > 0 && (
-                      <ScoreHistoryChart
-                        series={m.compare.symbols
-                          .filter((sym) => m.compare!.score_history[sym])
-                          .map((sym) => ({ symbol: sym, points: m.compare!.score_history[sym] }))}
-                      />
-                    )}
-                    {!m.compare && m.scoreHistory && m.scoreHistory.length > 0 && m.resolvedSymbol && (
-                      <ScoreHistoryChart series={[{ symbol: m.resolvedSymbol, points: m.scoreHistory }]} />
                     )}
 
                     {/* Clarification choices — tapping answers the ORIGINAL

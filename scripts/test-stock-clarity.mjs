@@ -16,24 +16,20 @@ const { quickReadParts, quickReadAllowed, moreVolatileThanPct, formatRupeesCompa
 const base = { composite_score: 74, delta_1d: -4, delta_5d: -8, delivery_pct: 42.9, delivery_avg20: 48.9, delivery_series: null,
   volume_ratio_5d: 1.5, vol_rank: 1136, ranked_of: 2132, series: "EQ", corporate_action_status: null, limited_data: false };
 
-// the example from the task
+// the Quick read has no Stock Condition part (removed 2026-11-11): delivery, volume and the volatility rank
 assert.deepEqual(quickReadParts(base), [
-  "Stock Condition 74 (-4 vs previous session, -8 over 5 sessions)", "Delivery 42.9% vs 48.9% 20-day avg", "Volume 1.5x usual", "Volatility rank 1,136 of 2,132 (1 = most volatile)"]);
-// a blanked 5-day change (stale baseline) is not shown, and a blank 1-day change is not shown either
-assert.equal(quickReadParts({ ...base, delta_5d: null })[0], "Stock Condition 74 (-4 vs previous session)");
-assert.equal(quickReadParts({ ...base, delta_1d: null, delta_5d: null })[0], "Stock Condition 74");
-assert.equal(quickReadParts({ ...base, delta_1d: 0 })[0], "Stock Condition 74 (0 vs previous session, -8 over 5 sessions)");
-// at least 3 parts, otherwise nothing
-assert.equal(quickReadParts({ ...base, delivery_pct: null, volume_ratio_5d: null }).length, 0, "score + volatility only = 2 parts");
-assert.equal(quickReadParts({ ...base, delivery_pct: null }).length, 3);
-assert.equal(quickReadParts({ ...base, vol_rank: null }).length, 3);
+  "Delivery 42.9% vs 48.9% 20-day avg", "Volume 1.5x usual", "Volatility rank 1,136 of 2,132 (1 = most volatile)"]);
+// at least 2 parts, otherwise nothing
+assert.equal(quickReadParts({ ...base, delivery_pct: null, volume_ratio_5d: null }).length, 0, "volatility only = 1 part");
+assert.equal(quickReadParts({ ...base, delivery_pct: null }).length, 2);
+assert.equal(quickReadParts({ ...base, vol_rank: null }).length, 2);
 // omission rules
 for (const [name, patch] of Object.entries({
-  "missing score": { composite_score: null }, "limited data": { limited_data: true }, "hold (review)": { corporate_action_status: "review" },
+  "limited data": { limited_data: true }, "hold (review)": { corporate_action_status: "review" },
   "hold (unconfirmed)": { corporate_action_status: "unconfirmed" }, "BE (delivery series)": { delivery_series: "BE" }, "BE (volatility series)": { series: "BE" }, "BZ": { series: "BZ" },
 })) assert.deepEqual(quickReadParts({ ...base, ...patch }), [], name);
 assert.equal(quickReadAllowed({ ...base, corporate_action_status: "adjusted" }), true, "an adjusted stock is not a hold");
-assert.ok(quickReadParts({ ...base, corporate_action_status: "adjusted" }).length === 4);
+assert.ok(quickReadParts({ ...base, corporate_action_status: "adjusted" }).length === 3);
 
 // "more volatile than X%": rank 1136 of 2132 gives 47
 assert.equal(moreVolatileThanPct(1136, 2132), 47);

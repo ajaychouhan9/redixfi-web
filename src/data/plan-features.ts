@@ -1,47 +1,35 @@
 import type { AskTopupTier } from "@/lib/api/types";
 
-// Multi-tier restructure (2026-08-08) — Basic/Pro replace the single paid
-// tier. Feature lists deliberately state each tier's FULL capability set
-// rather than "everything in Basic, plus X" — Pro's Ask-AI cap (25/day)
-// and compare cap (10 stocks) aren't "Basic's numbers plus something",
-// they're different numbers entirely (core/plan_limits.py is the real
-// source of truth these mirror; kept in sync manually, same established
-// convention as this codebase's other cross-file duplicated constants —
-// there is no API endpoint exposing capabilities_for() as data, so this
-// prose can't be generated at runtime; it CAN be the single shared
-// constant every card-rendering surface imports, which is what this file
-// is for).
-//
-// Extracted out of CheckoutView.tsx (2026-08-08, homepage pricing reveal)
-// so /pricing and the homepage's pricing section render byte-identical
-// copy from one place, instead of two near-duplicate literals that could
-// drift apart the same way this project's numeric configs repeatedly
-// have.
-export const BASIC_FEATURES = [
-  "All 2,000+ NSE stocks' measured Stock Conditions — full data, no masking",
-  "Unlimited Research Pro company lookups",
-  "Same-day news (no 24h delay)",
-  "Watchlist alerts: signal changes, event risk, market-wide events",
-  "AI Daily Brief digest",
-  "Ask-RedixFi AI: 10 questions/day",
-  "Compare up to 2 stocks side by side",
-  "Company report PDF: 3 different stocks a month",
-  "Market Rewind: custom filters for one stock or a sector",
-  "View-only signal table — ask Ask-RedixFi to filter or sort for you",
+// The plan matrix (11 Nov 2026). Every higher plan includes everything a lower plan has; the numbers mirror api/app/core/plan_limits.py and
+// api/app/core/config.py (kept in sync by hand: there is no endpoint that exposes them as data). /pricing, the Home pricing section and the
+// cards all read from here, so they cannot drift apart. No plan mentions a score: RedixFi does not publish one.
+export interface PlanRow {
+  feature: string;
+  free: string;
+  basic: string;
+  pro: string;
+}
+
+export const PLAN_MATRIX: PlanRow[] = [
+  { feature: "Stock screener: sort, filter and search the table", free: "Yes", basic: "Yes", pro: "Yes" },
+  { feature: "Delivery, volume, 52-week range and volatility data for 2,000+ NSE stocks", free: "Yes", basic: "Yes", pro: "Yes" },
+  { feature: "Research page lookups", free: "3 per day", basic: "Unlimited", pro: "Unlimited" },
+  { feature: "News", free: "Delayed 24 hours", basic: "Same day", pro: "Same day" },
+  { feature: "Compare stocks side by side", free: "Up to 5", basic: "Up to 5", pro: "Up to 10" },
+  { feature: "Watchlist", free: "10 stocks", basic: "50 stocks", pro: "50 stocks" },
+  { feature: "Ask AI", free: "1 question per stock per day", basic: "10 a day, 200 a month", pro: "25 a day, 500 a month" },
+  { feature: "Ask AI chat history kept", free: "6 hours", basic: "7 days", pro: "30 days" },
+  { feature: "Alerts", free: "None", basic: "5 active, price, in-app and email", pro: "Unlimited: price, delivery, volume; in-app, email, push, Telegram" },
+  { feature: "Company report PDF", free: "Free sample only", basic: "3 different stocks a month", pro: "15 different stocks a month" },
+  { feature: "Market Rewind", free: "Example filters, 5 rows", basic: "Custom filters for one stock or a sector, 50 rows", pro: "All stocks, similar volatility, saved filters, 200 rows, CSV" },
+  { feature: "Market Activity (deals, insider trades, events)", free: "5 rows", basic: "20 rows", pro: "Full history with filters" },
+  { feature: "CSV and Excel export", free: "No", basic: "No", pro: "Yes" },
 ];
 
-export const PRO_FEATURES = [
-  "All 2,000+ NSE stocks' measured Stock Conditions — full data, no masking",
-  "Unlimited Research Pro company lookups",
-  "Same-day news (no 24h delay)",
-  "Watchlist alerts: signal changes, event risk, market-wide events",
-  "AI Daily Brief digest",
-  "Ask-RedixFi AI: 25 questions/day",
-  "Compare up to 10 stocks side by side",
-  "Company report PDF: 15 different stocks a month",
-  "Market Rewind: all stocks, similar volatility, saved filters and CSV",
-  "Full sort/filter/search + CSV export on the Signal Dashboard",
-];
+// The cards list what each plan adds to the one below it (the full table is on /pricing).
+export const FREE_FEATURES = PLAN_MATRIX.map((r) => `${r.feature}: ${r.free}`);
+export const BASIC_FEATURES = ["Everything in Free, and:", ...PLAN_MATRIX.filter((r) => r.basic !== r.free).map((r) => `${r.feature}: ${r.basic}`)];
+export const PRO_FEATURES = ["Everything in Basic, and:", ...PLAN_MATRIX.filter((r) => r.pro !== r.basic).map((r) => `${r.feature}: ${r.pro}`)];
 
 // 4-tier addon structure (2026-09-11, locked with founder), replacing the
 // old single 50-question/₹99 option. Mirrors api/app/core/config.py::

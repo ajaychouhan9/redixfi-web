@@ -11,7 +11,7 @@ export interface MoreLink {
 
 export const MORE_LINKS: MoreLink[] = [
   { href: "/signals/7-day-review", label: "7-Day Review", icon: CalendarDays },
-  { href: "/how-it-works", label: "How Stock Condition works", icon: BookOpen },
+  { href: "/how-it-works", label: "How RedixFi measures its readings", icon: BookOpen },
   { href: "/volatility", label: "Volatility ranking", icon: Activity },
   { href: "/sample-report", label: "Sample report", icon: FileText },
   { href: "/more/disclaimer", label: "Full disclaimer", icon: ShieldCheck },
@@ -46,7 +46,7 @@ export const MENU_GROUPS: { title: string; links: MoreLink[] }[] = [
   {
     title: "About RedixFi",
     links: [
-      { href: "/how-it-works", label: "Methodology: how Stock Condition works", icon: BookOpen },
+      { href: "/how-it-works", label: "Methodology: how RedixFi measures its readings", icon: BookOpen },
       { href: "/more/data-sources", label: "Data sources & update times", icon: Database },
       { href: "/more/disclaimer", label: "Full disclaimer", icon: ShieldCheck },
       { href: "/more/about-us", label: "About & Contact", icon: Info },

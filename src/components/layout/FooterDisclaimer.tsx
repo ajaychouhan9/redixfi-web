@@ -6,7 +6,7 @@ export function FooterDisclaimer() {
     <footer className="border-t border-border bg-surface px-4 py-2 text-center text-[12px] text-foreground-faint">
       {STANDARD_LINE}{" "}
       <Link href="/how-it-works" className="underline">
-        How Stock Condition works
+        How RedixFi measures its readings
       </Link>{" "}
       ·{" "}
       <Link href="/volatility" className="underline">

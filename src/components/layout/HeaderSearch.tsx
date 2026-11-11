@@ -49,7 +49,7 @@ export function HeaderSearch() {
           router.push(stockPath(searchTargetBase(pathname), row.canonicalSymbol));
         }}
         links={(row) => [
-          { label: "Signals", href: stockPath("/signals", row.canonicalSymbol) },
+          { label: "Data", href: stockPath("/signals", row.canonicalSymbol) },
           { label: "Research", href: stockPath("/research", row.canonicalSymbol) },
         ]}
         placeholder="Search stocks, sectors, news..."

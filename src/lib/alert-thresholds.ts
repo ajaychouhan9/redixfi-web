@@ -1,6 +1,6 @@
 // Sensible thresholds for a user-set alert, checked in the form before it is sent (the API checks the same bounds).
 
-export type AlertMetricKey = "price" | "score" | "delivery" | "volume";
+export type AlertMetricKey = "price" | "delivery" | "volume";
 
 /** A clear message when `value` is not a sensible threshold for `metric`, else null. */
 export function thresholdError(metric: AlertMetricKey, value: number): string | null {
@@ -8,8 +8,6 @@ export function thresholdError(metric: AlertMetricKey, value: number): string | 
   switch (metric) {
     case "price":
       return value > 0 ? null : "Price must be above 0.";
-    case "score":
-      return value >= 0 && value <= 100 ? null : "Stock Condition must be between 0 and 100.";
     case "delivery":
       return value >= 0 && value <= 100 ? null : "Delivery % must be between 0 and 100.";
     case "volume":

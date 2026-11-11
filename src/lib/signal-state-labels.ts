@@ -18,7 +18,7 @@ export const SIGNAL_STATE_LABELS: Record<string, string> = {
   FII_BUY_STREAK: "FII buy streak",
   PCR_CALL_HEAVY: "PCR call-heavy",
   PCR_PUT_HEAVY: "PCR put-heavy",
-  EVENT_RISK: "Event risk",
+  EVENT_RISK: "News in the last 5 days",
 };
 
 export function signalStateLabel(code: string): string {

@@ -22,23 +22,6 @@ export interface DetailTextRow {
   value: string;
 }
 
-export function getWhyDidThisChangeRows(detail: SignalDetail): DetailTextRow[] {
-  const explanation = detail.change_explanation;
-  const rows: DetailTextRow[] = [{ label: "Summary", value: explanation.descriptive }];
-  rows.push(
-    ...detail.component_changes.map((change) => ({
-      label: COMPONENT_LABEL[change.signal] ?? change.signal,
-      value: `${ARROW[change.change ?? change.direction ?? ""] ?? "–"} ${change.note}`,
-    }))
-  );
-  rows.push({
-    label: explanation.cause ? "Matched news event" : "Context",
-    value: explanation.cause
-      ? `A matched news event on this date: ${explanation.cause.headline} (${explanation.cause.category.replace(/_/g, " ")}, ${explanation.cause.severity} severity)`
-      : explanation.note ?? "Not available",
-  });
-  return rows;
-}
 
 export function getWhatDataShowsRows(detail: SignalDetail): DetailTextRow[] {
   const s = detail.signals;
@@ -65,7 +48,7 @@ export function getWhatDataShowsRows(detail: SignalDetail): DetailTextRow[] {
     { label: "RSI (14)", value: s.rsi_14 == null ? "Not available" : String(s.rsi_14) },
     { label: "Promoter pledge", value: s.pledge_pct == null ? "Not available" : `${s.pledge_pct}%${s.pledge_trend ? ` · ${s.pledge_trend.toLowerCase()}` : ""}` },
     { label: "Insider activity (30d)", value: s.insider_net_30d == null ? "Not available" : String(s.insider_net_30d) },
-    { label: "Event risk (5d)", value: s.event_risk_5d ? `Yes — ${s.event_categories.join(", ")}` : "None" },
+    { label: "News in the last 5 days", value: detail.news_5d ? detail.news_5d.headline : "No headline naming the company" },
   ];
 }
 
@@ -115,12 +98,6 @@ export function getChecklistRows(detail: SignalDetail, fundamentals?: Fundamenta
             : "No industry classification on file yet for this stock — not enough to rank."
           : `Ranks #${s.sector_rank} of ${s.sector_count} stocks measured in ${detail.industry} today.`,
     },
-    {
-      label: "Event risk",
-      value: s.event_risk_5d
-        ? `An AI-classified news event matched this stock in the last 5 days (${s.event_categories.join(", ") || "uncategorized"}).`
-        : "No AI-classified news event matched this stock in the last 5 days.",
-    },
   ];
   if (fundamentals?.coverage.has_quarterly) {
     const q = fundamentals.quarterly;
@@ -157,9 +134,6 @@ export function buildSignalSummaryRows(detail: SignalDetail, fundamentals?: Fund
   const section = (label: string) => rows.push({ kind: "section", cells: [label, "", "", ""] }, { kind: "blank" });
   const table = (headers: string[]) => rows.push({ kind: "header", cells: headers });
   const items = (values: DetailTextRow[]) => values.forEach((row) => rows.push({ kind: "item", cells: [row.label, row.value] }));
-  const scoreMovement = detail.delta_1d == null
-    ? "Stock Condition movement: Not available."
-    : `Stock Condition moved from ${detail.composite_score - detail.delta_1d} to ${detail.composite_score} today (${detail.delta_1d > 0 ? "+" : ""}${detail.delta_1d}).`;
   const week52 = detail.week52;
   const r52 = week52 ? resolve52Week(week52.week52_high, week52.week52_low, week52.last_close) : null;
   section("52-week range");
@@ -174,27 +148,14 @@ export function buildSignalSummaryRows(detail: SignalDetail, fundamentals?: Fund
 
   rows.push(
     { kind: "title", cells: ["RedixFi — Market. Simplified."] , merge: [0, 3] },
-    { kind: "subtitle", cells: [`${detail.symbol} — Signal Summary`], merge: [0, 3] },
-    { kind: "metadata", cells: ["Date", detail.date, "Stock Condition", detail.composite_score] },
-    { kind: "metadata", cells: ["Industry / Sector", `${detail.industry ?? "Not available"} / ${detail.sector}`, "Stock Condition change", detail.delta_1d] },
+    { kind: "subtitle", cells: [`${detail.symbol} — Delivery, volume and price data`], merge: [0, 3] },
+    { kind: "metadata", cells: ["Date", detail.date, "Industry / Sector", `${detail.industry ?? "Not available"} / ${detail.sector}`] },
     { kind: "blank" },
   );
 
-  section("AI SUMMARY");
-  rows.push({ kind: "narrative", cells: ["Summary", detail.narrative ?? "Not available"], merge: [1, 3] }, { kind: "blank" });
   if (detail.corporate_action?.note) {
     rows.push({ kind: "narrative", cells: ["Note", detail.corporate_action.note], merge: [1, 3] }, { kind: "blank" });
   }
-
-  section("WHY DID THIS CHANGE?");
-  table(["Factor", "Change", "Explanation"]);
-  rows.push({ kind: "item", cells: ["Stock Condition", detail.delta_1d == null ? "Not available" : `${detail.delta_1d > 0 ? "+" : ""}${detail.delta_1d}`, scoreMovement] });
-  if (detail.component_changes.length) {
-    rows.push(...detail.component_changes.map((change) => ({ kind: "item" as const, cells: [COMPONENT_LABEL[change.signal] ?? change.signal, change.direction, change.note] })));
-  } else {
-    rows.push({ kind: "item", cells: ["Factors", "Not available", "No component-level change was returned."] });
-  }
-  rows.push({ kind: "narrative", cells: ["Context", detail.change_explanation.cause ? `A matched news event on this date: ${detail.change_explanation.cause.headline} (${detail.change_explanation.cause.category.replace(/_/g, " ")}, ${detail.change_explanation.cause.severity} severity)` : detail.change_explanation.note ?? "Not available"], merge: [1, 3] }, { kind: "blank" });
 
   section("TENSION IN THE DATA");
   rows.push({ kind: "narrative", cells: ["Observation", detail.conflicts.length ? detail.conflicts.map((conflict) => conflict.text ?? JSON.stringify(conflict)).join("\n") : "No material tension identified in the current measured signals."], merge: [1, 3] }, { kind: "blank" });
@@ -221,9 +182,6 @@ export function buildSignalDetailCsvRows(detail: SignalDetail, candles: Candle[]
     price: detail.last_price ?? "",
     day_change_pct: detail.day_change_pct ?? "",
     vwap: detail.vwap ?? "",
-    composite_score: detail.composite_score,
-    score_change_1d: detail.delta_1d,
-    score_change_5d: detail.delta_5d,
     signal_states: detail.signal_states.join(", "),
     trend_10d_pct: s.trend_10d_pct,
     volume_ratio_5d: s.volume_ratio_5d,
@@ -238,15 +196,11 @@ export function buildSignalDetailCsvRows(detail: SignalDetail, candles: Candle[]
     pledge_pct: s.pledge_pct,
     pledge_trend: s.pledge_trend,
     insider_net_30d: s.insider_net_30d,
-    event_risk_5d: s.event_risk_5d,
-    event_categories: s.event_categories.join(", "),
   };
   const rows: Record<string, unknown>[] = [{ record_type: "signal", ...base }];
-  rows.push(...detail.component_changes.map((change) => ({ record_type: "component_change", symbol: detail.symbol, company_name: detail.company_name, component_signal: change.signal, component_direction: change.direction, component_note: change.note })));
-  rows.push(...detail.change_log.map((change) => ({ record_type: "change_log", symbol: detail.symbol, company_name: detail.company_name, change_date: change.date, change_delta: change.delta, changed_signal: change.changed_signal, change_note: change.note, change_state: change.state, change_flip: change.flip, change_created_at: change.created_at })));
   rows.push(...candles.map((candle) => ({ record_type: "candle", symbol: detail.symbol, company_name: detail.company_name, candle_timestamp: candle.timestamp, open: candle.open, high: candle.high, low: candle.low, close: candle.close, volume: candle.volume })));
   rows.push(...delivery30d.map((point) => ({ record_type: "delivery_history", symbol: detail.symbol, company_name: detail.company_name, delivery_date: point.date, delivery_pct_history: point.delivery_pct })));
-  rows.push(...detail.news.map((item) => ({ record_type: "news", symbol: detail.symbol, company_name: detail.company_name, news_uuid: item.uuid, news_category: item.category, news_headline: item.headline, news_description: item.description, news_published_at: item.published_at, news_source: item.source, news_url: item.url, news_scope: item.scope ?? "", news_severity: item.severity, news_impact: item.impact, news_high_priority: item.high_priority, news_entities: item.entities, news_matched_symbols: item.matched_symbols ?? [] })));
+  rows.push(...detail.news.map((item) => ({ record_type: "news", symbol: detail.symbol, company_name: detail.company_name, news_uuid: item.uuid, news_category: item.category, news_headline: item.headline, news_description: item.description, news_published_at: item.published_at, news_source: item.source, news_url: item.url, news_scope: item.scope ?? "", news_entities: item.entities, news_matched_symbols: item.matched_symbols ?? [] })));
   return rows;
 }
 
@@ -258,9 +212,6 @@ export function buildSignalDetailSheets(detail: SignalDetail, candles: Candle[],
     industry: detail.industry ?? "",
     price: detail.last_price ?? "",
     day_change_pct: detail.day_change_pct ?? "",
-    composite_score: detail.composite_score ?? "",
-    score_change_1d: detail.delta_1d ?? "",
-    score_change_5d: detail.delta_5d ?? "",
     signal_states: detail.signal_states.join(", "),
     trend_10d_pct: detail.signals.trend_10d_pct ?? "",
     sector_rank: detail.signals.sector_rank ?? "",
@@ -272,20 +223,16 @@ export function buildSignalDetailSheets(detail: SignalDetail, candles: Candle[],
     rsi_14: detail.signals.rsi_14 ?? "",
     pledge_pct: detail.signals.pledge_pct ?? "",
     insider_net_30d: detail.signals.insider_net_30d,
-    event_risk_5d: detail.signals.event_risk_5d,
-    event_categories: detail.signals.event_categories.join(", "),
     week52_high: detail.week52?.week52_high ?? "",
     week52_low: detail.week52?.week52_low ?? "",
     pct_below_52w_high: detail.week52?.pct_below_52w_high ?? "",
     week52_as_of: detail.week52?.as_of ?? "",
     week52_reason: detail.week52?.reason ?? "",
-    narrative: detail.narrative,
   }];
-  const newsRows = detail.news.map((item) => ({ ...item, entities: JSON.stringify(item.entities), matched_symbols: item.matched_symbols?.join(", ") ?? "" }));
+  const newsRows = detail.news.map(({ severity: _s, impact: _i, high_priority: _h, ...item }: any) => ({ ...item, entities: JSON.stringify(item.entities), matched_symbols: item.matched_symbols?.join(", ") ?? "" }));
   return [
-    { name: "Signal Summary", rows: [], summaryRows: buildSignalSummaryRows(detail, fundamentals) },
+    { name: "Summary", rows: [], summaryRows: buildSignalSummaryRows(detail, fundamentals) },
     { name: "Signal", rows: exportRows },
-    { name: "Change Log", rows: detail.change_log.map((row) => ({ ...row })) },
     { name: "Candles", rows: candles.map((row) => ({ ...row })) },
     { name: "Delivery", rows: (delivery30d ?? []).map((row) => ({ ...row })) },
     { name: "News", rows: newsRows },

@@ -92,8 +92,7 @@ export function IntradayScreen({
           </span>
         )}
         <span className="text-foreground-muted">
-          {session.high_severity_events_today} high-severity event(s)
-          {session.event_session_date ? ` · session of ${formatShortDate(session.event_session_date)}` : " today"}
+          {session.event_session_date ? `Session of ${formatShortDate(session.event_session_date)}` : "Today"}
         </span>
       </div>
 

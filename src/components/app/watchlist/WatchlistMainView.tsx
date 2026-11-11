@@ -1,6 +1,5 @@
 "use client";
 
-import { ProLock } from "@/components/ui/ScValue";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Plus, AlertTriangle } from "lucide-react";
@@ -9,17 +8,11 @@ import { ApiError } from "@/lib/api/client";
 import { getSignalDetail, getWatchlistStates } from "@/lib/api/endpoints";
 import { getWatchlist, addToWatchlist, removeFromWatchlist, getPortfolioBrief, getPortfolioAnalytics } from "@/lib/api/mutations";
 import { PortfolioBriefCard, PortfolioAnalyticsCard } from "@/components/app/account/PortfolioCards";
-import { Chip } from "@/components/ui/Chip";
+import { intradayPointsLine } from "@/lib/intraday-points";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import type { PortfolioAnalytics, PortfolioBrief, SignalDetail, WatchlistBehaviorRow } from "@/lib/api/types";
 import { stockPath } from "@/lib/seo/stock-symbol";
 import { displayName } from "@/lib/company-name";
-
-const BEHAVIOR_LABELS: Record<string, { label: string; tone: "up" | "down" | "neutral" }> = {
-  sustaining: { label: "Sustaining", tone: "up" },
-  fading: { label: "Fading", tone: "down" },
-  no_data: { label: "No data", tone: "neutral" },
-};
 
 interface WatchlistRow {
   symbol: string;
@@ -34,8 +27,6 @@ interface WatchlistRow {
   day_change_pct: number | null;
   delivery_pct: number | null;
   delivery_avg20: number | null;
-  composite_score: number | null;
-  delta_1d: number | null;
   locked: boolean;
   behavior: WatchlistBehaviorRow | null;
 }
@@ -113,8 +104,6 @@ export function WatchlistMainView() {
           day_change_pct: detail?.day_change_pct ?? null,
           delivery_pct: detail?.locked ? null : detail?.signals.delivery_pct ?? null,
           delivery_avg20: detail?.locked ? null : detail?.signals.delivery_avg20 ?? null,
-          composite_score: detail?.locked ? null : detail?.composite_score ?? null,
-          delta_1d: detail?.locked ? null : detail?.delta_1d ?? null,
           locked: detail?.locked ?? false,
           behavior: behaviorBySymbol.get(sym) ?? null,
         };
@@ -166,7 +155,7 @@ export function WatchlistMainView() {
   }
 
   // The Behavior column appears only when at least one row has behavior data (no empty "Not available" column).
-  const showBehavior = rows.some((r) => r.behavior && r.behavior.state !== "no_data");
+  const showBehavior = rows.some((r) => r.behavior && r.behavior.points.length === 2);
   const colCount = 5 + (showBehavior ? 1 : 0);
 
   return (
@@ -222,9 +211,8 @@ export function WatchlistMainView() {
                 <th className="px-4 py-3">Symbol</th>
                 <th className="hidden px-3 py-3 sm:table-cell">Industry</th>
                 <th className="px-3 py-3">Price</th>
-                <th className="px-3 py-3">Stock Condition</th>
                 <th className="hidden px-3 py-3 sm:table-cell">Delivery</th>
-                {showBehavior && <th className="px-3 py-3">Behavior</th>}
+                {showBehavior && <th className="px-3 py-3">Intraday</th>}
                 <th className="hidden px-4 py-3 sm:table-cell" />
               </tr>
             </thead>
@@ -240,14 +228,14 @@ export function WatchlistMainView() {
                   <td colSpan={colCount} className="px-4 py-6 text-center text-sm text-foreground-muted">
                     No stocks yet.{" "}
                     <Link href="/signals" className="font-medium text-accent">
-                      Browse the Signal Dashboard
+                      Browse the screener
                     </Link>{" "}
                     to add some.
                   </td>
                 </tr>
               ) : (
                 rows.map((r) => {
-                  const behavior = r.behavior ? BEHAVIOR_LABELS[r.behavior.state] ?? BEHAVIOR_LABELS.no_data : null;
+                  const behaviorLine = r.behavior ? intradayPointsLine(r.behavior.points) : null;
                   return (
                     <tr key={r.symbol} className="border-b border-border last:border-0">
                       <td className="px-4 py-3">
@@ -276,18 +264,6 @@ export function WatchlistMainView() {
                           </div>
                         )}
                       </td>
-                      <td className="px-3 py-3">
-                        {r.locked ? (
-                          <ProLock className="justify-start" />
-                        ) : r.composite_score === null ? (
-                          <span className="text-xs text-foreground-faint">—</span>
-                        ) : (
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-mono font-semibold">{r.composite_score}</span>
-                            {r.delta_1d !== null && <DeltaValue value={r.delta_1d} className="text-[12px]" />}
-                          </div>
-                        )}
-                      </td>
                       <td className="hidden px-3 py-3 sm:table-cell">
                         {r.locked ? (
                           <span className="text-xs text-foreground-faint">Locked</span>
@@ -302,8 +278,8 @@ export function WatchlistMainView() {
                       </td>
                       {showBehavior && (
                         <td className="px-3 py-3">
-                          {behavior ? (
-                            <Chip tone={behavior.tone}>{behavior.label}</Chip>
+                          {behaviorLine ? (
+                            <span className="text-xs text-foreground-muted">{behaviorLine}</span>
                           ) : (
                             <span className="text-xs text-foreground-faint">Not available</span>
                           )}
@@ -328,10 +304,10 @@ export function WatchlistMainView() {
         </div>
       </div>
 
-      {rows.some((r) => r.behavior?.state === "sustaining" || r.behavior?.state === "fading") && (
+      {rows.some((r) => r.behavior && r.behavior.points.length === 2) && (
         <p className="flex items-start gap-1.5 text-xs text-foreground-faint">
           <AlertTriangle size={12} className="mt-0.5 shrink-0" />
-          Behavior states describe intraday participation on stocks you&apos;re watching — factual, not a prediction.
+          The intraday column shows the change from the day&apos;s open at two points of the session. Measured, not a prediction.
         </p>
       )}
     </div>

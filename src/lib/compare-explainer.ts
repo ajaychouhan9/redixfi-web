@@ -10,8 +10,6 @@ import type { CompareRow } from "@/lib/api/types";
 // sentence with just the one live figure injected — a deliberate, honest
 // simplification rather than a broken one.
 const PRIMARY_PLACEHOLDER: Record<string, string> = {
-  composite_score: "composite_score",
-  delta_1d: "delta_1d",
   trend_10d_pct: "trend_10d_pct",
   delivery_pct: "delivery_pct",
   volume_ratio_5d: "volume_ratio",

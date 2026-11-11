@@ -45,9 +45,8 @@ export function VisitorIntroStrip() {
           Understand Indian stocks through measured data, not predictions.
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-foreground-muted sm:text-[15px]">
-          Measured Stock Conditions across 2,000+ NSE stocks, AI summaries across major NSE-listed companies&rsquo;
-          annual reports and concalls, and a governance radar that highlights disclosed governance items for further review — all
-          updated daily.
+          Delivery, volume and price data for 2,000+ NSE stocks, concall and annual-report summaries with their sources, disclosed
+          governance items, and Market Rewind: what happened around past big moves. Updated daily.
         </p>
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -79,7 +78,7 @@ export function VisitorIntroStrip() {
             <TrendingUp size={16} className="mt-0.5 shrink-0 text-accent" />
             <div>
               <div className="text-[13px] font-semibold text-foreground">2,000+ NSE stocks</div>
-              <div className="text-xs text-foreground-muted">Measured Stock Conditions, full universe, no masking</div>
+              <div className="text-xs text-foreground-muted">Delivery, volume and price data for every stock</div>
             </div>
           </div>
           <div className="flex items-start gap-2.5 rounded-lg border border-border bg-surface px-3 py-2.5">

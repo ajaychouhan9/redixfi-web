@@ -3,13 +3,8 @@
 import { SlowestInputNote } from "@/components/ui/SlowestInputNote";
 import { CorporateActionNote } from "@/components/ui/CorporateActionNote";
 import { Card } from "@/components/ui/Card";
-import { DeltaValue } from "@/components/ui/DeltaValue";
 import { AiLabel } from "@/components/ui/AiLabel";
 import { ExplainTerm } from "@/components/ui/ExplainTerm";
-import { WhyDidThisChange } from "@/components/app/signals/WhyDidThisChange";
-import { ScoreAsOf } from "@/components/app/signals/ScoreAsOf";
-import { READING_EXPLAINER, READING_NAME, conditionChangeText } from "@/lib/reading-copy";
-import { ScoreHistorySection } from "@/components/app/signals/ScoreHistorySection";
 import { AskPills } from "@/components/app/signals/AskPills";
 import { Week52Range } from "@/components/app/signals/Week52Range";
 import { VolatilitySection } from "@/components/app/signals/VolatilitySection";
@@ -17,10 +12,9 @@ import { StockPriceHeader } from "@/components/app/signals/StockPriceHeader";
 import { notableCombination } from "@/lib/notable-combination";
 import { getChecklistRows } from "@/lib/signal-detail-export";
 import dynamic from "next/dynamic";
-import { StockConditionCard } from "@/components/app/signals/StockConditionCard";
 import { PriceGapNote } from "@/components/app/signals/PriceGapNote";
 import { QuickRead } from "@/components/app/signals/QuickRead";
-import { chartCaption, isTradeForTrade, visibleChangeLog } from "@/lib/stock-clarity";
+import { chartCaption, isTradeForTrade } from "@/lib/stock-clarity";
 import { displayName } from "@/lib/company-name";
 import { NewsList } from "@/components/app/NewsList";
 import { WatchlistButton } from "@/components/app/WatchlistButton";
@@ -31,7 +25,6 @@ import { RecordView } from "@/components/app/RecordView";
 import { CompareIndicator } from "@/components/app/CompareIndicator";
 import { CurrentSymbolSync } from "@/components/app/CurrentSymbolSync";
 import { formatDataAsOf, formatPriceAsOf, formatShortDate } from "@/lib/format";
-import Link from "next/link";
 import type { Candle, DeliveryPoint, FundamentalsBlock, SignalConflict, SignalDetail, DataAsOf } from "@/lib/api/types";
 import { ExportButton } from "@/components/ui/ExportButton";
 import { downloadXlsx } from "@/lib/xlsx";
@@ -76,7 +69,7 @@ export function SignalDetailView({
   const exportSheets = buildSignalDetailSheets(detail, candles, delivery30d, fundamentals);
   const exportXlsx = () => downloadXlsx(`redixfi-signal-${detail.symbol.toLowerCase()}.xlsx`, exportSheets);
   const combination = notableCombination({ ...detail.signals, pcr: detail.signals.pcr, pcr_available: detail.signals.pcr_available });
-  const readingsDate = detail.signal_freshness?.composite_score?.data_as_of;
+  const readingsDate = detail.date;
   const asOfClose = readingsDate ? `As of ${formatShortDate(String(readingsDate).slice(0, 10))} close` : "";
   // the two checklist items that appear nowhere else on the page (growth and valuation, which need the fundamentals block)
   const checklistExtras = getChecklistRows(detail, fundamentals).filter((r) => r.label === "Growth trend" || r.label === "Valuation vs peers");
@@ -87,8 +80,8 @@ export function SignalDetailView({
       <RecordView symbol={detail.symbol} companyName={detail.company_name} />
       {detail.limited_data && (
         <div className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-muted">
-          <span className="font-medium text-foreground">Limited data.</span>{" "}
-          {detail.limited_data_note || "This stock's feed is incomplete; the reading is partial."}
+          <span className="font-medium text-foreground">Feed incomplete.</span>{" "}
+          {detail.limited_data_note || "Part of this stock's price or volume feed is missing, so some readings are partial."}
         </div>
       )}
       {detail.partial && !detail.limited_data && !isTradeForTrade(s.delivery_series) && (
@@ -101,6 +94,7 @@ export function SignalDetailView({
       <div>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <StockPriceHeader
+            h1
             symbol={detail.symbol}
             name={detail.company_name}
             group={detail.industry || detail.sector}
@@ -126,7 +120,7 @@ export function SignalDetailView({
           </p>
         )}
         <QuickRead detail={detail} />
-        <PriceGapNote pct={detail.day_change_pct} readingsDate={detail.signal_freshness?.composite_score?.data_as_of} />
+        <PriceGapNote pct={detail.day_change_pct} readingsDate={detail.date} />
         <CorporateActionNote info={detail.corporate_action} />
         <Week52Range
           week52={detail.week52}
@@ -139,12 +133,7 @@ export function SignalDetailView({
 
       <PriceChartLazy candles={candles} high52={detail.week52?.week52_high} low52={detail.week52?.week52_low} />
 
-      {/* Directly under the composite-score card (and never on the Signals or
-          Research lists). A corporate-action hold renders only the existing
-          note above — the component returns null in that case. */}
-      <ScoreHistorySection symbol={detail.symbol} corporateAction={detail.corporate_action} />
       <VolatilitySection symbol={detail.symbol} />
-      <StockConditionCard detail={detail} />
 
       <Card title="What the data shows">
         {combination && (
@@ -245,44 +234,17 @@ export function SignalDetailView({
               {r.value}
             </DataRow>
           ))}
-          <DataRow label="Event risk (5d)" asOf={detail.signal_freshness?.event_risk_5d}>
-            <ExplainTerm metricKey="event_risk" symbol={detail.symbol} ctx={{ symbol: detail.symbol, event_risk_state: s.event_risk_5d ? "an event was flagged" : "no event flagged" }}>
-              {s.event_risk_5d ? `Yes — ${s.event_categories.join(", ")}` : "None"}
-            </ExplainTerm>
+          <DataRow label="News in the last 5 days">
+            {detail.news_5d ? (
+              <a href={detail.news_5d.url ?? undefined} target="_blank" rel="noopener noreferrer" className="text-accent underline-offset-2 hover:underline">
+                {detail.news_5d.headline}
+              </a>
+            ) : (
+              <span className="text-foreground-faint">No headline naming the company</span>
+            )}
           </DataRow>
         </dl>
       </Card>
-
-      <details className="rounded-xl border border-border bg-surface" data-testid="signal-changes">
-        <summary className="flex min-h-11 cursor-pointer items-center px-4 text-sm font-medium text-foreground-muted">Signal changes and why the Stock Condition changed</summary>
-        <div className="space-y-4 px-4 pb-4">
-      {detail.change_explanation && (
-            <Card title="Why did this change?">
-              <WhyDidThisChange componentChanges={detail.component_changes ?? []} explanation={detail.change_explanation} />
-            </Card>
-          )}
-
-      <Card title="Signal Change Log">
-            {visibleChangeLog(detail.change_log, detail.corporate_action).length === 0 ? (
-              <p className="text-sm text-foreground-muted">No signal changes logged yet.</p>
-            ) : (
-              <ul className="divide-y divide-border">
-                {visibleChangeLog(detail.change_log, detail.corporate_action).map((c, i) => (
-                  <li key={i} className="flex items-center justify-between py-2 text-sm">
-                    <span className="text-foreground-muted">{formatShortDate(c.date)}</span>
-                    <DeltaValue value={c.delta} className="w-14" />
-                    <span className="flex-1 px-2">{c.note}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <Link href={stockPath("/track-record", detail.symbol)} className="mt-3 inline-block text-sm font-medium text-accent">
-              See full signal history →
-            </Link>
-          </Card>
-
-        </div>
-      </details>
 
       <AskPills symbol={detail.symbol} />
 

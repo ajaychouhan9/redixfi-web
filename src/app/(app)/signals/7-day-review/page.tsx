@@ -13,7 +13,6 @@ import { MineProvider } from "@/components/app/review/MineProvider";
 import { ReviewDataProvider } from "@/components/app/review/ReviewData";
 import { ReviewLists } from "@/components/app/review/ReviewLists";
 import { ReviewTabs } from "@/components/app/review/ReviewTabs";
-import { ScChanges } from "@/components/app/review/ScChanges";
 import { WeekPicker } from "@/components/app/review/WeekPicker";
 import { YourStocks } from "@/components/app/review/YourStocks";
 import {
@@ -101,7 +100,7 @@ function Footnotes({ r }: { r: SevenDayReview }) {
       <p>
         The lists rank by the price change over the window only. See{" "}
         <Link href="/how-it-works" className="font-medium text-foreground underline decoration-accent underline-offset-2 hover:decoration-2">
-          how Stock Condition works
+          how RedixFi measures its readings
         </Link>{" "}
         and{" "}
         <Link href="/rewind" className="font-medium text-foreground underline decoration-accent underline-offset-2 hover:decoration-2">
@@ -133,7 +132,7 @@ export default async function SevenDayReviewPage({ searchParams }: { searchParam
         "@type": "BreadcrumbList",
         itemListElement: [
           { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
-          { "@type": "ListItem", position: 2, name: "Signals", item: `${SITE_URL}/signals` },
+          { "@type": "ListItem", position: 2, name: "Screener", item: `${SITE_URL}/signals` },
           { "@type": "ListItem", position: 3, name: REVIEW_TITLE, item: `${SITE_URL}${REVIEW_PATH}` },
         ],
       },
@@ -188,9 +187,6 @@ export default async function SevenDayReviewPage({ searchParams }: { searchParam
             <YourStocks />
             <Card title="Market this week">
               <MarketBlock review={review} />
-            </Card>
-            <Card title="Biggest change in Stock Condition">
-              <ScChanges review={review} />
             </Card>
             <Card title="What happened this week">
               <EventsBlock review={review} />

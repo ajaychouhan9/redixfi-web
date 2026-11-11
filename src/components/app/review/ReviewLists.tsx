@@ -3,11 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import { ConditionLabel } from "@/components/ui/ConditionLabel";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { Spark } from "@/components/app/review/Spark";
 import { useReviewData } from "@/components/app/review/ReviewData";
-import { ProLock } from "@/components/ui/ScValue";
 import { displayName } from "@/lib/company-name";
 import { formatNumber } from "@/lib/format";
 import { stockPath } from "@/lib/seo/stock-symbol";
@@ -26,17 +24,6 @@ function Links({ symbol }: { symbol: string }) {
       <Link href={stockPath("/research", symbol)} className={cls}>
         Research page
       </Link>
-    </span>
-  );
-}
-
-function Condition({ r }: { r: ReviewRow }) {
-  if (r.sc_locked) return <ProLock />;
-  if (r.sc_start === null && r.sc_end === null) return <span className="text-foreground-muted">-</span>;
-  return (
-    <span className="-my-3 inline-flex min-h-[44px] items-center gap-1 tabular-nums text-foreground-muted">
-      {r.sc_start ?? "-"}<span aria-hidden>→</span>
-      <span className="sr-only"> to </span> {r.sc_end ?? "-"}
     </span>
   );
 }
@@ -67,12 +54,6 @@ function RowCards({ rows }: { rows: ReviewRow[] }) {
               <dd className="tabular-nums">{r.close === null ? "-" : formatNumber(r.close, 2)}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-foreground-muted">Condition</dt>
-              <dd>
-                <Condition r={r} />
-              </dd>
-            </div>
-            <div className="flex justify-between gap-2">
               <dt className="text-foreground-muted">Volume vs 20-day</dt>
               <dd className="tabular-nums">{vr(r)}</dd>
             </div>
@@ -101,9 +82,6 @@ function RowTable({ rows }: { rows: ReviewRow[] }) {
             <th className={th}>Company</th>
             <th className={`${th} text-right`}>Change</th>
             <th className={`${th} text-right`}>Last close</th>
-            <th className={`${th} text-right`}>
-              <ConditionLabel /> (start → now)
-            </th>
             <th className={`${th} text-right`}>Volume vs 20-day avg</th>
             <th className={`${th} text-right`}>Delivery</th>
             <th className={th}>5 sessions</th>
@@ -126,9 +104,6 @@ function RowTable({ rows }: { rows: ReviewRow[] }) {
                 <DeltaValue value={r.pct} kind="pct" />
               </td>
               <td className="px-2 py-1.5 text-right tabular-nums">{r.close === null ? "-" : formatNumber(r.close, 2)}</td>
-              <td className="px-2 py-1.5 text-right">
-                <Condition r={r} />
-              </td>
               <td className="px-2 py-1.5 text-right tabular-nums">{vr(r)}</td>
               <td className="px-2 py-1.5 text-right tabular-nums">{dl(r)}</td>
               <td className="px-2 py-1.5">

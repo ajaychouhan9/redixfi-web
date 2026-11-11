@@ -8,7 +8,7 @@ import { TopupCard } from "@/components/app/billing/TopupCard";
 import { SubscriptionStatusCard } from "@/components/app/account/SubscriptionStatusCard";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getMe, validatePromoCode } from "@/lib/api/mutations";
-import { BASIC_FEATURES, PRO_FEATURES } from "@/data/plan-features";
+import { BASIC_FEATURES, PRO_FEATURES, PLAN_MATRIX } from "@/data/plan-features";
 import type { BillingPlan, MeProfile, PromoValidation } from "@/lib/api/types";
 
 const ANNUAL_SAVINGS_NOTE = "Save vs paying monthly for a year";
@@ -131,7 +131,7 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="mb-2 text-lg font-semibold">Checkout</h1>
+      <h1 className="mb-2 text-lg font-semibold">Pricing</h1>
       <p className="mb-6 max-w-xl text-sm text-foreground-muted">
         Our current focus is building the most trusted analytics platform in India. Any future regulated research
         services will only be introduced after we receive the necessary regulatory approvals.
@@ -228,6 +228,31 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
             onPurchased={reload}
           />
         )}
+      </div>
+
+      <div className="mt-8 overflow-x-auto rounded-xl border border-border bg-surface-raised" data-testid="plan-matrix">
+        <table className="w-full min-w-[640px] text-left text-sm">
+          <caption className="px-3 pt-3 text-left text-sm font-semibold">What each plan includes</caption>
+          <thead>
+            <tr className="border-b border-border text-xs uppercase tracking-wide text-foreground-faint">
+              <th className="px-3 py-2">Feature</th>
+              <th className="px-3 py-2">Free</th>
+              <th className="px-3 py-2">Basic</th>
+              <th className="px-3 py-2">Pro</th>
+            </tr>
+          </thead>
+          <tbody>
+            {PLAN_MATRIX.map((r) => (
+              <tr key={r.feature} className="border-b border-border last:border-0 align-top">
+                <th scope="row" className="px-3 py-2 font-medium">{r.feature}</th>
+                <td className="px-3 py-2 text-foreground-muted">{r.free}</td>
+                <td className="px-3 py-2 text-foreground-muted">{r.basic}</td>
+                <td className="px-3 py-2 text-foreground-muted">{r.pro}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="px-3 py-2 text-xs text-foreground-faint">Every higher plan includes everything the plan below it has. A 5-day Pro trial is free once per account, with no payment details.</p>
       </div>
 
       {profile && profile.tier !== "free" && !profile.is_pro_trial && (

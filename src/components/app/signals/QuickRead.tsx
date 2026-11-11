@@ -50,9 +50,6 @@ export function QuickRead({ detail }: { detail: SignalDetail }) {
   const s = detail.signals;
   const ranked = !!vol && vol.available && vol.eligible && !vol.locked;
   const parts = quickReadParts({
-    composite_score: detail.composite_score,
-    delta_1d: detail.delta_1d,
-    delta_5d: detail.delta_5d,
     delivery_pct: s?.delivery_pct,
     delivery_avg20: s?.delivery_avg20,
     delivery_series: s?.delivery_series,
@@ -83,8 +80,8 @@ export function QuickRead({ detail }: { detail: SignalDetail }) {
         <p className="text-[13px] leading-snug text-foreground">
           <span className="mr-1.5 font-mono text-[11px] uppercase tracking-wide text-foreground-faint">Quick read</span>
           {parts.join(" · ")}
-          {detail.signal_freshness?.composite_score?.data_as_of && (
-            <span className="ml-1.5 text-[11px] text-foreground-faint">As of {formatShortDate(String(detail.signal_freshness.composite_score.data_as_of).slice(0, 10))} close</span>
+          {detail.date && (
+            <span className="ml-1.5 text-[11px] text-foreground-faint">As of {formatShortDate(String(detail.date).slice(0, 10))} close</span>
           )}
         </p>
       )}

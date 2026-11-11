@@ -1,11 +1,10 @@
 /**
- * Scan volume filter and Stock Condition history line helpers (2026-11-01).
+ * Scan volume filter and the price-gap note (2026-11-01).
  * Run: node --experimental-strip-types scripts/test-ux-small.ts
  */
 import assert from "node:assert/strict";
 
 import { VOLUME_STEPS, filterByVolume, volumeCountText, volumePillLabel, volumeStepLabel } from "../src/lib/intraday-volume-filter.ts";
-import { CONDITION_LINE_MIN_POINTS, conditionLineCaption, conditionLinePath, usableConditionPoints } from "../src/lib/condition-line.ts";
 
 const row = (symbol: string, vr: number | null) => ({ symbol, vr });
 const rows = [row("A", 12.4), row("B", 5), row("C", 3.2), row("D", 0.9), row("E", null), row("F", 10)];
@@ -25,20 +24,6 @@ assert.deepEqual(filterByVolume([row("X", null)], 3), []);                      
 assert.equal(rows.length, 6);                                                                // the input is not changed
 assert.equal(volumeCountText(3, 25, 5), "3 of 25 listed rows match.");
 assert.equal(volumeCountText(25, 25, null), "Showing 25.");
-
-// history line: caption, minimum, path
-assert.equal(conditionLineCaption(30), "Stock Condition, last 30 sessions");
-assert.equal(conditionLineCaption(12), "Stock Condition, last 12 sessions (all stored so far)");
-const pts = (n: number) => Array.from({ length: n }, (_, i) => ({ date: `2026-10-${String(i + 1).padStart(2, "0")}`, value: 40 + (i % 7) }));
-assert.equal(CONDITION_LINE_MIN_POINTS, 5);
-assert.equal(usableConditionPoints(pts(4)).length, 0);
-assert.equal(usableConditionPoints(pts(5)).length, 5);
-assert.equal(usableConditionPoints(undefined).length, 0);
-assert.equal(usableConditionPoints([...pts(5), { date: "x", value: NaN }]).length, 5);
-const { d, min, max } = conditionLinePath([10, 20, 15], 100, 40);
-assert.ok(d.startsWith("M4.0 ") && d.split("L").length === 3 && min === 10 && max === 20);
-assert.ok(conditionLinePath([50, 50, 50], 100, 40).d.includes("20.0"));                      // a flat series is drawn in the middle
-
 
 // price-first: the difference line (Task 3)
 import { priceGapNote } from "../src/lib/price-gap.ts";

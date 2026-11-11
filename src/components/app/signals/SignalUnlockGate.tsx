@@ -97,7 +97,7 @@ export function SignalUnlockGate({
       <div className="mx-auto max-w-3xl space-y-3">
         <PublicStockSummary detail={initialDetail} />
         <p className="text-xs text-foreground-muted">
-          {initialDetail.company_name ?? symbol} — the Stock Condition and its detail open when your free stock view for the day is counted. Logged-out and
+          {initialDetail.company_name ?? symbol} — the detail opens when your free stock view for the day is counted. Logged-out and
           Free visitors can open a few stocks each day.
         </p>
         <div className="animate-pulse space-y-3">

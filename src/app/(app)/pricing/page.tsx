@@ -5,7 +5,7 @@ import { CheckoutView } from "@/components/app/billing/CheckoutView";
 export const metadata: Metadata = {
   title: "Pricing",
   alternates: { canonical: "/pricing" },
-  description: "RedixFi Pro — measured signals, alerts and screeners across 2,000+ NSE stocks.",
+  description: "RedixFi plans and prices: Free, Basic (Rs 249 a month) and Pro (Rs 399 a month), with a free 5-day Pro trial. Measured delivery, volume and price data for 2,000+ NSE stocks.",
 };
 
 export default async function CheckoutPage() {

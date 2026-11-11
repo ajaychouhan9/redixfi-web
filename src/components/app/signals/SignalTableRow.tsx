@@ -6,7 +6,6 @@ import { Plus, Check } from "lucide-react";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { SignalStateChip } from "@/components/ui/Chip";
 import { LockedInline } from "@/components/ui/Locked";
-import { ProLock } from "@/components/ui/ScValue";
 import {
   COMPARISON_QUEUE_MAX,
   addToComparisonQueue,
@@ -134,10 +133,10 @@ export function SignalTableRow({
         </Link>
         {row.limited_data && (
           <span
-            className="ml-1.5 rounded bg-surface-raised px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide text-foreground-faint"
-            title={row.limited_data_note ?? "Limited data"}
+            className="ml-1.5 rounded bg-surface-raised px-1 py-0.5 text-[9px] font-medium tracking-wide text-foreground-faint"
+            title={row.limited_data_note ?? "Part of this stock's price or volume feed is missing"}
           >
-            Limited
+            Feed incomplete
           </span>
         )}
         <div className="max-w-[16rem] truncate text-[12px] text-foreground-faint">{displayName(row.company_name)}</div>
@@ -171,17 +170,6 @@ export function SignalTableRow({
           already has the correct fallback for this (`primary === null` +
           `locked` false -> plain "—", see its own docstring above) — this
           callsite was just never letting that branch be reached. */}
-      <td className="px-3 py-2.5">
-        {locked ? (
-          <ProLock className="justify-start" />
-        ) : (
-          <StackedCell
-            locked={false}
-            primary={row.composite_score}
-            subtitle={row.delta_1d !== null ? <DeltaValue value={row.delta_1d} className="text-[12px]" /> : undefined}
-          />
-        )}
-      </td>
       {columns.delivery && (
         <td className="hidden px-3 py-2.5 sm:table-cell">
           <StackedCell
@@ -240,7 +228,13 @@ export function SignalTableRow({
           responsive hide at all. Tapping a row's Symbol still opens the
           full stock detail page for everything hidden here. */}
       {columns.eventRisk && (
-        <td className="hidden px-3 py-2.5 text-center sm:table-cell">{row.event_risk ? <span title="Event risk">⚠️</span> : ""}</td>
+        <td className="hidden px-3 py-2.5 sm:table-cell">
+          {row.news_5d ? (
+            <a href={row.news_5d.url ?? undefined} target="_blank" rel="noopener noreferrer" className="text-[12px] text-accent underline-offset-2 hover:underline" title={row.news_5d.headline}>
+              News in the last 5 days
+            </a>
+          ) : ""}
+        </td>
       )}
       <td className="px-3 py-2.5 text-right">
         <button
@@ -325,16 +319,10 @@ export function SignalMobileRow({
         {showPriceAsOf && <div className="text-[10px] text-foreground-faint">{formatPriceAsOf(row.price_data_as_of)}</div>}
       </div>
       <div className="flex w-14 shrink-0 flex-col items-end gap-0.5">
-        {row.locked ? (
-          <ProLock />
-        ) : row.composite_score === null ? (
-          <span className="text-foreground-faint">—</span>
-        ) : (
-          <span className="rounded-md bg-neutral-bg px-2 py-0.5 font-mono text-sm font-semibold" aria-label={`Stock Condition ${row.composite_score}`}>
-            {row.composite_score}
-          </span>
-        )}
-        {!row.locked && row.delta_1d !== null && <DeltaValue value={row.delta_1d} className="text-[11px]" />}
+        {row.delivery_pct !== null && row.delivery_pct !== undefined ? (
+          <span className="font-mono text-[12px]" aria-label={`Delivery ${row.delivery_pct} percent`}>{row.delivery_pct}%</span>
+        ) : <span className="text-foreground-faint">—</span>}
+        <span className="text-[10px] text-foreground-faint">Delivery</span>
       </div>
       <div className="mt-1 flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <div className="flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-foreground-faint">

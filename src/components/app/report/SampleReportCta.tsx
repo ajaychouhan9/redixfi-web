@@ -29,7 +29,7 @@ export function SampleReportCta() {
   return (
     <Card title="Get reports for the stocks you follow">
       <p className="text-sm text-foreground-muted">
-        Create a free account to follow stocks and see their Stock Conditions. Company report PDFs for any stock with enough data are part of Basic and Pro.
+        Create a free account to follow stocks and see their delivery, volume and price data. Company report PDFs for any stock with enough data are part of Basic and Pro.
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         <Link href="/login" className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground" data-testid="sample-signup">

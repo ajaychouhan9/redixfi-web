@@ -3,7 +3,6 @@
 import Link from "next/link";
 
 import { Card } from "@/components/ui/Card";
-import { ConditionLabel } from "@/components/ui/ConditionLabel";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { Spark } from "@/components/app/review/Spark";
 import { useMine } from "@/components/app/review/MineProvider";
@@ -12,18 +11,6 @@ import { formatNumber } from "@/lib/format";
 import { stockPath } from "@/lib/seo/stock-symbol";
 import { MINE_STATUS_TEXT, REVIEW_EMPTY_WATCHLIST, REVIEW_LOGIN_PROMPT } from "@/lib/review-copy";
 import type { ReviewMineRow } from "@/lib/api/types";
-import { ProLock } from "@/components/ui/ScValue";
-
-function Condition({ r }: { r: ReviewMineRow }) {
-  if (r.sc_locked) return <ProLock />;
-  if (r.sc_start === null && r.sc_end === null) return <span className="text-foreground-muted">-</span>;
-  return (
-    <span className="-my-3 inline-flex min-h-[44px] items-center gap-1 tabular-nums text-foreground-muted">
-      {r.sc_start ?? "-"}<span aria-hidden>→</span>
-      <span className="sr-only"> to </span> {r.sc_end ?? "-"}
-    </span>
-  );
-}
 
 function Row({ r }: { r: ReviewMineRow }) {
   const ok = r.status === "ok" && r.pct !== null;
@@ -43,12 +30,6 @@ function Row({ r }: { r: ReviewMineRow }) {
           </span>
           <span className="justify-self-end">
             <Spark values={r.spark} label={`${r.symbol} closes, last 5 sessions`} tone={(r.pct ?? 0) > 0 ? "up" : "down"} />
-          </span>
-          <span className="text-foreground-muted">
-            Stock Condition <Condition r={r} />
-          </span>
-          <span className="justify-self-end">
-            <Spark values={r.sc_spark} label={`${r.symbol} Stock Condition, last 5 sessions`} />
           </span>
         </div>
       ) : (
@@ -86,9 +67,6 @@ export function YourStocks() {
             </p>
           ) : (
             <>
-              <p className="mb-1 text-xs text-foreground-muted">
-                <ConditionLabel /> is shown at the start of the window and at its end, with the last 5 sessions of each line.
-              </p>
               <ul className="divide-y divide-border">
                 {mine.data.rows.map((r) => (
                   <Row key={r.symbol} r={r} />

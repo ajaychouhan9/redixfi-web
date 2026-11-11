@@ -19,21 +19,9 @@ const BASE_SCREENS: CannedScreen[] = [
     params: { sort: "delivery_pct", order: "desc" },
   },
   {
-    slug: "signal-score-gainers-today",
-    title: "Largest reading increases today",
-    description: "Stocks whose measured Stock Condition rose the most versus the previous session.",
-    params: { sort: "delta_1d", order: "desc" },
-  },
-  {
-    slug: "signal-score-decliners-today",
-    title: "Largest reading decreases today",
-    description: "Stocks whose measured Stock Condition fell the most versus the previous session.",
-    params: { sort: "delta_1d", order: "asc" },
-  },
-  {
     slug: "event-risk-stocks-today",
-    title: "Stocks with event risk today",
-    description: "Stocks with an AI-classified news event matched in the last 5 days.",
+    title: "Stocks with news in the last 5 days",
+    description: "Stocks with a news headline that names the company in the last 5 days.",
     params: { event_risk: true, sort: "name", order: "asc" },
   },
   {
@@ -53,7 +41,7 @@ const BASE_SCREENS: CannedScreen[] = [
 // not the nicer /intraday taxonomy). Generated once at module load, not
 // hand-maintained, so adding a sector to SIGNAL_SECTORS automatically
 // grows the screen set. `sector` is passed through to the same
-// SignalsListParams.sector the manual Signals Dashboard filter already
+// SignalsListParams.sector the manual screener filter already
 // uses — no new backend param.
 const SECTOR_METRICS: Array<{ suffix: string; title: (s: string) => string; description: (s: string) => string; params: Omit<SignalsListParams, "sector"> }> = [
   {
@@ -63,15 +51,9 @@ const SECTOR_METRICS: Array<{ suffix: string; title: (s: string) => string; desc
     params: { sort: "delivery_pct", order: "desc" },
   },
   {
-    suffix: "signal-score-gainers",
-    title: (s) => `Largest reading increases in ${s}`,
-    description: (s) => `${s} stocks whose measured Stock Condition rose the most versus the previous session.`,
-    params: { sort: "delta_1d", order: "desc" },
-  },
-  {
     suffix: "event-risk",
-    title: (s) => `Stocks with event risk in ${s}`,
-    description: (s) => `${s} stocks with an AI-classified news event matched in the last 5 days.`,
+    title: (s) => `Stocks with news in the last 5 days in ${s}`,
+    description: (s) => `${s} stocks with a news headline that names the company in the last 5 days.`,
     params: { event_risk: true, sort: "name", order: "asc" },
   },
 ];

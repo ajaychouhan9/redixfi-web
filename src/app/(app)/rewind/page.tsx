@@ -66,7 +66,7 @@ export default function HistoryPage() {
       </Suspense>
       <section className="space-y-2 text-sm text-foreground-muted" aria-labelledby="rewind-about">
         <h2 id="rewind-about" className="text-sm font-semibold text-foreground">
-          About Market Rewind, Chance Check and Stock Condition
+          About Market Rewind and Chance Check
         </h2>
         <p>
           <span className="font-medium text-foreground">Market Rewind</span> lists the past days on which an Indian stock moved by a size you choose, and shows the measured readings
@@ -77,19 +77,15 @@ export default function HistoryPage() {
           sessions before the move, and compares that with how often the same reading was present on all days of the same stock and period. A reading is marked &ldquo;Stood out&rdquo; only
           when the difference is large and larger than chance alone would explain. It is not a forecast or a recommendation.
         </p>
-        <p>
-          <span className="font-medium text-foreground">Stock Condition</span> is the 0 to 100 weighted combination of 8 measured readings shown on each stock page. It describes
-          current measured conditions; it is not a rating or a forecast.
-        </p>
       </section>
       <p className="text-xs text-foreground-muted">
         Readings use the same measured states as the{" "}
         <Link href="/signals" className="text-foreground underline">
-          Signals pages
+          Screener pages
         </Link>
         . See{" "}
         <Link href="/how-it-works" className="text-foreground underline">
-          how Stock Condition works
+          how RedixFi measures its readings
         </Link>
         .
       </p>

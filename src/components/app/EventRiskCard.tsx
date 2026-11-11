@@ -4,28 +4,16 @@ import Link from "next/link";
 import { Newspaper } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/Card";
-import { Chip } from "@/components/ui/Chip";
-import { AiLabel } from "@/components/ui/AiLabel";
-import { formatShortDate, formatTimeIst } from "@/lib/format";
+import { formatShortDate } from "@/lib/format";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getNews } from "@/lib/api/endpoints";
+import { sourceName } from "@/lib/news-source";
 import type { NewsItem, NewsToday } from "@/lib/api/types";
 
-const SEVERITY_TONE = { high: "down", medium: "amber", low: "neutral", none: "neutral" } as const;
-
 /**
- * Client component. The Home page is a Server Component and can't read the
- * browser's localStorage-held auth token, so it passes `initialItems` —
- * the SAME anonymous/free-tier feed (24h-delayed per B8) any logged-out
- * visitor or crawler should see — fetched server-side with no token. That
- * SSR data is used as this component's initial render, closing the SEO/
- * content-completeness gap this card used to have (raw HTML showed a bare
- * "Loading…" placeholder with no fallback content). A real, currently-
- * logged-in caller then gets corrected client-side with their own token
- * once resolved, exactly the pattern already used for the Signals paywall
- * bug (SSR anonymous-by-default, client component upgrades if entitled) —
- * this is NOT a UA/IP branch, it's the same real-token check used
- * everywhere else in this app.
+ * "Today's news: N headlines read", the headlines grouped by category with date and source (11 Nov 2026). No severity, flag or ribbon:
+ * only what was read and what it was. The Home page is a Server Component and cannot read the browser's token, so it passes `initialItems`
+ * (the anonymous feed, which for a free plan is delayed 24h); a signed-in visitor gets their own feed once the token resolves.
  */
 export function EventRiskCard({
   newsToday,
@@ -41,11 +29,9 @@ export function EventRiskCard({
     let cancelled = false;
     (async () => {
       const token = await getToken();
-      // Anonymous visitor whose SSR fetch already succeeded: the anonymous
-      // feed we already have IS the correct feed for them — no refetch.
       if (!token && items !== null) return;
       try {
-        const env = await getNews({ severity: "high", size: 20 }, { token });
+        const env = await getNews({ size: 30 }, { token });
         if (!cancelled) setItems(env.data);
       } catch {
         if (!cancelled) setItems((prev) => prev ?? []);
@@ -57,45 +43,37 @@ export function EventRiskCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getToken]);
 
-  // One window for the header badge, this text and the list: the current trading session, or the last completed one.
   const since = newsToday?.session_date ?? null;
-  // the same filter as the count: high severity, market or sector scope, current or last session (newest three)
-  const shown = (items ?? [])
-    .filter((n) => (!since || n.published_at.slice(0, 10) >= since) && (n.scope === "market" || n.scope === "sector"))
-    .slice(0, 3);
-  const highCount = newsToday?.items_flagged_high ?? 0;
+  const shown = (items ?? []).filter((n) => !since || n.published_at.slice(0, 10) >= since);
+  const groups = new Map<string, NewsItem[]>();
+  for (const n of shown) {
+    const key = n.category && n.category !== "none" ? n.category.replace(/_/g, " ") : "other news";
+    groups.set(key, [...(groups.get(key) ?? []), n]);
+  }
+  const read = newsToday?.items_read;
   return (
-    <Card title="Today\u2019s news scan" action={<AiLabel />}>
-      {newsToday && (
-        <p className="mb-2 text-xs text-foreground-muted">
-          {since ? `Session of ${formatShortDate(since)}: ` : "Latest session: "}AI read {newsToday.items_read} item(s) —{" "}
-          <span className="text-accent">{newsToday.items_flagged} flagged</span>, {highCount} high-severity (market or sector-wide).
-        </p>
-      )}
+    <Card title={typeof read === "number" ? `Today’s news: ${read} headline${read === 1 ? "" : "s"} read` : "Today’s news"}>
+      {since && <p className="mb-2 text-xs text-foreground-muted">Session of {formatShortDate(since)}.</p>}
       {items === null ? (
         <p className="text-sm text-foreground-faint">Loading…</p>
+      ) : shown.length === 0 ? (
+        <p className="text-sm text-foreground-faint">No headlines to list for this session yet (free plans see news after a delay).</p>
       ) : (
-        <ul className="space-y-2">
-          {shown.map((n) => (
-            <li key={n.uuid} className="text-sm">
-              <div className="mb-0.5 flex items-center gap-2 text-xs text-foreground-faint">
-                <Chip tone={SEVERITY_TONE[(n.severity as keyof typeof SEVERITY_TONE) ?? "none"] ?? "neutral"}>{n.severity}</Chip>
-                {n.category !== "none" && <Chip tone="accent">{n.category.replace(/_/g, " ")}</Chip>}
-                <span className="font-mono">{formatShortDate(n.published_at)} · {formatTimeIst(n.published_at)}</span>
-              </div>
-              <a href={n.url} target="_blank" rel="noopener noreferrer" className="hover:text-accent">
-                {n.headline}
-              </a>
-            </li>
+        <div className="space-y-3">
+          {[...groups.entries()].slice(0, 4).map(([category, rows]) => (
+            <div key={category}>
+              <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">{category}</h3>
+              <ul className="space-y-1.5">
+                {rows.slice(0, 2).map((n) => (
+                  <li key={n.uuid} className="text-sm">
+                    <a href={n.url} target="_blank" rel="noopener noreferrer" className="hover:text-accent">{n.headline}</a>
+                    <span className="block text-[11px] text-foreground-faint">{formatShortDate(n.published_at)} · {sourceName(n.source)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
-          {shown.length === 0 && (
-            <li className="text-sm text-foreground-faint">
-              {highCount > 0
-                ? "The high-severity items of this session are not listed here yet (free plans see news after a delay); see all news for the full list."
-                : "No high-severity events in this session."}
-            </li>
-          )}
-        </ul>
+        </div>
       )}
       <div className="mt-3 flex items-center gap-1 border-t border-border pt-3">
         <Newspaper size={12} className="text-accent" />

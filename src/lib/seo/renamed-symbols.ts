@@ -10,7 +10,7 @@ export const RENAMED_SYMBOLS: Record<string, string> = {
   ICICIPRULI: "ICICILIFE", // ICICI Prudential Life Insurance -> ICICI Life Insurance, Oct 2026 (ISIN INE726G01019)
 };
 
-const STOCK_PAGES = ["stocks", "signals", "research", "track-record"] as const;
+const STOCK_PAGES = ["stocks", "signals", "research"] as const;
 
 type Redirect = { source: string; destination: string; statusCode: 301 };
 

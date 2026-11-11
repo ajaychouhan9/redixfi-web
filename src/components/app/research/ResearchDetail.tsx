@@ -1,12 +1,9 @@
 import { SlowestInputNote } from "@/components/ui/SlowestInputNote";
 import { CorporateActionNote } from "@/components/ui/CorporateActionNote";
 import Link from "next/link";
-import { ScoreAsOf } from "@/components/app/signals/ScoreAsOf";
-import { ResearchConditionCard } from "@/components/app/research/ResearchConditionCard";
 import { AskPills } from "@/components/app/signals/AskPills";
 import { StockPriceHeader } from "@/components/app/signals/StockPriceHeader";
 import { Week52Range } from "@/components/app/signals/Week52Range";
-import { READING_EXPLAINER, READING_NAME, conditionChangeText } from "@/lib/reading-copy";
 import type { ResearchDetail as ResearchDetailType, Candle, PeerRow } from "@/lib/api/types";
 import { Card } from "@/components/ui/Card";
 import { AiLabel } from "@/components/ui/AiLabel";
@@ -100,21 +97,6 @@ export function ResearchDetail({
           livePrice={/^As of \d{2}:\d{2} IST \(delayed\)$/.test(formatPriceAsOf(data.price.data_as_of)) ? lastPrice : null}
           liveLabel={formatPriceAsOf(data.price.data_as_of)}
         />
-        {/* B1 Signal Snapshot (2026-08-11) — compact, near the top, per the
-            task. Uses ONLY data already fetched for this page
-            (signal_summary: composite_score/delta_1d — ResearchSignalSummary,
-            confirmed via types.ts), no new API call. The task's fuller
-            mockup also asked for a Price Momentum/Volume/Trend/News/
-            Ownership Positive/Negative/Neutral breakdown — audited and
-            REPORTED rather than guessed: that breakdown doesn't exist in
-            this page's fetched data at all (it lives behind /signals/
-            {symbol}'s SignalDetail.signals, a different endpoint
-            AnalystChecklist.tsx uses on the Signals page) — building it
-            here would mean either a new backend request (not allowed this session) or inventing
-            thresholds not backed by real measured_signals categorization,
-            so it was deliberately left out rather than fabricated. The
-            fuller "Signal summary" card lower on this page (narrative +
-            link to the full Signal Dashboard) is unchanged. */}
         <AskPills symbol={data.symbol} />
         <TrialCta className="mt-3" />
       </div>
@@ -125,8 +107,6 @@ export function ResearchDetail({
         </Link>
         <span className="ml-2 text-xs text-foreground-muted">Daily closes on the stock page.</span>
       </p>
-
-      <ResearchConditionCard symbol={data.symbol} initial={data.signal_summary} />
 
       <ErrorBoundary>
         <FundamentalsPanels
@@ -308,7 +288,7 @@ export function ResearchDetail({
 
       <p className="text-sm">
         <Link href={stockPath("/signals", data.symbol)} className="font-medium text-accent">
-          Open full Signal Dashboard →
+          Open the delivery and volume page →
         </Link>
       </p>
     </div>

@@ -5,10 +5,10 @@ export const REVIEW_TITLE = "7-Day Review";
 export const REVIEW_PATH = "/signals/7-day-review";
 export const REVIEW_TAGLINE = "Biggest gains and falls of the week";
 export const REVIEW_INTRO =
-  "The price changes of the last trading sessions, the market for the week, the biggest changes in Stock Condition and what was announced. Measured data only.";
+  "The price changes of the last trading sessions, the market for the week and what was announced. Measured data only.";
 export const REVIEW_SEO_TITLE = "7-Day Review - biggest gains and falls of the week | RedixFi";
 export const REVIEW_SEO_DESCRIPTION =
-  "The biggest price gains and falls of Indian stocks over the week's trading sessions, with Stock Condition at the start and the end of the window, the market for the week (Nifty, Bank Nifty, India VIX, advancing and declining stocks) and what was announced. Measured data. Not a forecast or a recommendation.";
+  "The biggest price gains and falls of Indian stocks over the week's trading sessions, the market for the week (Nifty, Bank Nifty, India VIX, advancing and declining stocks) and what was announced. Measured data. Not a forecast or a recommendation.";
 
 export const REVIEW_LIST_NOTE = `Price change over the window. ${HISTORY_DISCLAIMER}`;
 export const REVIEW_INDEPENDENCE_NOTE = SW_INDEPENDENCE_NOTE;

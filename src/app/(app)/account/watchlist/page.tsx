@@ -5,16 +5,14 @@ import Link from "next/link";
 import { AccountTabs } from "@/components/app/account/AccountTabs";
 import { RequireAuth } from "@/components/app/account/RequireAuth";
 import { Card } from "@/components/ui/Card";
-import { WatchlistSummaryCard } from "@/components/app/education/SummaryCard";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { getWatchlist, removeFromWatchlist, getWatchlistSummary, getWatchlistAnomalies } from "@/lib/api/mutations";
-import type { WatchlistResponse, WatchlistSummary, AnomalyFlagDoc } from "@/lib/api/types";
+import { getWatchlist, removeFromWatchlist, getWatchlistAnomalies } from "@/lib/api/mutations";
+import type { WatchlistResponse, AnomalyFlagDoc } from "@/lib/api/types";
 import { stockPath } from "@/lib/seo/stock-symbol";
 
 function WatchlistManager() {
   const { getToken } = useAuth();
   const [wl, setWl] = useState<WatchlistResponse | null>(null);
-  const [summary, setSummary] = useState<WatchlistSummary | null>(null);
   const [anomalies, setAnomalies] = useState<AnomalyFlagDoc[]>([]);
 
   useEffect(() => {
@@ -22,7 +20,6 @@ function WatchlistManager() {
       const token = await getToken();
       if (!token) return;
       setWl(await getWatchlist(token));
-      getWatchlistSummary(token).then(setSummary).catch(() => setSummary(null));
       getWatchlistAnomalies(token).then(setAnomalies).catch(() => setAnomalies([]));
     })();
   }, [getToken]);
@@ -49,13 +46,12 @@ function WatchlistManager() {
 
   return (
     <div className="space-y-4">
-      {summary && <WatchlistSummaryCard data={summary} />}
       <Card title={`Watchlist (${wl.symbols.length}/${wl.limit})`}>
       {wl.symbols.length === 0 ? (
         <p className="text-sm text-foreground-muted">
           No stocks yet.{" "}
           <Link href="/signals" className="font-medium text-accent">
-            Browse the Signal Dashboard
+            Browse the screener
           </Link>{" "}
           to add some — alerts fire on stocks you watch.
         </p>

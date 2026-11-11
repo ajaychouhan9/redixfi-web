@@ -17,9 +17,17 @@ export const revalidate = 60;
 export async function generateMetadata({ params }: { params: Promise<{ symbol: string }> }): Promise<Metadata> {
   const { symbol: raw } = await params;
   const symbol = stockSymbolFromParam(raw) ?? raw.toUpperCase();
+  // The company name makes the title useful to a searcher; the same fetch as the page body below (memoised within one render).
+  let name: string | null = null;
+  try {
+    name = (await getSignalDetail(symbol, 6, { revalidate: 60 })).data.company_name ?? null;
+  } catch {
+    /* the title falls back to the symbol */
+  }
+  const label = name ? `${name} (${symbol})` : symbol;
   return {
-    title: `${symbol} Stock Condition`,
-    description: `Measured Stock Condition, trend, delivery, sector standing and options positioning for ${symbol} — factual, not a prediction.`,
+    title: `${label}: delivery, volume and price data`,
+    description: `Measured delivery, volume against its usual level, 52-week range and price data for ${label}, with the sources stated. Not investment advice.`,
     alternates: { canonical: stockPath("/signals", symbol) },
   };
 }

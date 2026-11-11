@@ -3,9 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 
-import { ConditionLabel } from "@/components/ui/ConditionLabel";
 import { DeltaValue } from "@/components/ui/DeltaValue";
-import { ScValue } from "@/components/ui/ScValue";
 import { Spark } from "@/components/app/review/Spark";
 import { displayName } from "@/lib/company-name";
 import { formatNumber } from "@/lib/format";
@@ -27,13 +25,6 @@ export function Price({ v }: { v: number | null | undefined }) {
 export function Pct({ v }: { v: number | null | undefined }) {
   return <DeltaValue value={v} kind="pct" />;
 }
-
-/** Stock Condition cell: the number, or the usual lock for anonymous and free callers (prices and changes stay public). */
-export function Condition({ sc, locked }: { sc: number | null; locked?: boolean }) {
-  return <ScValue value={sc} locked={locked} className="text-foreground-muted" />;
-}
-
-export const conditionHeader = <ConditionLabel />;
 
 function Links({ symbol, rewind }: { symbol: string; rewind: boolean }) {
   const cls = "inline-flex min-h-[44px] items-center text-xs font-medium text-foreground underline decoration-accent underline-offset-2 hover:decoration-2";

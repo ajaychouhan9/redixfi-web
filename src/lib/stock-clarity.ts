@@ -3,9 +3,6 @@
 
 /** "Quick read": which parts of the one-line summary can be shown. */
 export interface QuickReadInput {
-  composite_score: number | null | undefined;
-  delta_1d: number | null | undefined;
-  delta_5d: number | null | undefined;
   delivery_pct: number | null | undefined;
   delivery_avg20: number | null | undefined;
   /** "BE" means trade-for-trade: delivery is not applicable. */
@@ -43,9 +40,8 @@ export function moreVolatileThanPct(rank: number, rankedOf: number): number {
   return Math.round(((rankedOf - rank) / rankedOf) * 100);
 }
 
-/** Whether the Quick read is allowed for this stock at all (held, limited-data, BE/BZ stocks and a missing score omit it). */
+/** Whether the Quick read is allowed for this stock at all (held, limited-data and BE/BZ stocks omit it). */
 export function quickReadAllowed(i: QuickReadInput): boolean {
-  if (!num(i.composite_score)) return false;
   if (i.limited_data) return false;
   if (isHeldStatus(i.corporate_action_status)) return false;
   if (isTradeForTrade(i.delivery_series) || isTradeForTrade(i.series)) return false;
@@ -53,15 +49,10 @@ export function quickReadAllowed(i: QuickReadInput): boolean {
 }
 
 /** The parts of the Quick read that can be shown, in order. A change that is blank (including one blanked by the
- *  stale-baseline guard) is left out of the score part, never shown as 0. Empty when fewer than 3 parts exist. */
+ *  stale-baseline guard) is left out of the score part, never shown as 0. Empty when fewer than 2 parts exist. (The Stock Condition part was removed 2026-11-11.) */
 export function quickReadParts(i: QuickReadInput): string[] {
   if (!quickReadAllowed(i)) return [];
   const parts: string[] = [];
-
-  const changes: string[] = [];
-  if (num(i.delta_1d)) changes.push(`${signed(i.delta_1d)} vs previous session`);
-  if (num(i.delta_5d)) changes.push(`${signed(i.delta_5d)} over 5 sessions`);
-  parts.push(`Stock Condition ${i.composite_score}${changes.length ? ` (${changes.join(", ")})` : ""}`);
 
   if (num(i.delivery_pct) && num(i.delivery_avg20)) {
     parts.push(`Delivery ${i.delivery_pct}% vs ${i.delivery_avg20}% 20-day avg`);
@@ -72,7 +63,7 @@ export function quickReadParts(i: QuickReadInput): string[] {
   if (num(i.vol_rank) && num(i.ranked_of) && i.ranked_of > 0) {
     parts.push(`Volatility rank ${i.vol_rank.toLocaleString("en-IN")} of ${i.ranked_of.toLocaleString("en-IN")} (1 = most volatile)`);
   }
-  return parts.length >= 3 ? parts : [];
+  return parts.length >= 2 ? parts : [];
 }
 
 /** Change-log families that come from price history. */

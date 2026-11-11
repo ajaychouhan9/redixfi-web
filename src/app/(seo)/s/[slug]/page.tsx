@@ -1,11 +1,9 @@
 import { GuestOnly } from "@/components/app/GuestOnly";
 import type { Metadata } from "next";
-import { ProLock } from "@/components/ui/ScValue";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSharedScreen, getSignals } from "@/lib/api/endpoints";
 import { DeltaValue } from "@/components/ui/DeltaValue";
-import { ConditionLabel } from "@/components/ui/ConditionLabel";
 
 // Public, unauthenticated view of a "Share this screen" link
 // (2026-09-11 task). NOT ISR-cached like the canned /screens/[slug] pages
@@ -84,7 +82,6 @@ export default async function SharedScreenPage({ params }: { params: Promise<{ s
             <tr>
               <th className="px-3 py-2">Symbol</th>
               <th className="px-3 py-2">Sector</th>
-              <th className="px-3 py-2"><ConditionLabel /></th>
               <th className="px-3 py-2">Change</th>
               <th className="px-3 py-2">Delivery</th>
             </tr>
@@ -94,7 +91,6 @@ export default async function SharedScreenPage({ params }: { params: Promise<{ s
               <tr key={r.symbol} className="border-t border-border">
                 <td className="px-3 py-2 font-medium">{r.symbol}</td>
                 <td className="px-3 py-2 text-xs text-foreground-muted">{r.sector}</td>
-                <td className="px-3 py-2 tabular-nums">{r.locked ? <ProLock className="justify-start" /> : (r.composite_score ?? "—")}</td>
                 <td className="px-3 py-2 tabular-nums">{r.delta_1d !== null ? <DeltaValue value={r.delta_1d} /> : "—"}</td>
                 <td className="px-3 py-2 tabular-nums text-xs">{r.delivery_pct !== null ? `${r.delivery_pct}%` : "—"}</td>
               </tr>
@@ -121,7 +117,7 @@ export default async function SharedScreenPage({ params }: { params: Promise<{ s
           </GuestOnly>
         </div>
         <p className="mt-2 text-xs text-foreground-faint">
-          Log in to clone directly into your own Signal Dashboard — no account yet? Sign up first, then open this
+          Log in to clone directly into your own screener — no account yet? Sign up first, then open this
           link again.
         </p>
       </div>

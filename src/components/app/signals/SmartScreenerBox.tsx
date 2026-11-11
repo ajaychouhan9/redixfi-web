@@ -18,7 +18,6 @@ import {
 } from "@/lib/comparison-queue";
 import type { SmartScreenResult } from "@/lib/api/types";
 import { hasAnyFilter, hasOnlyUnsupported, toFilterPatch, type SmartFilterPatch } from "./smartFilterPatch";
-import { ConditionLabel } from "@/components/ui/ConditionLabel";
 
 // Used only for the Basic-tier legacy AI result view. Free/Pro apply the
 // parsed filters to the one main table below instead of rendering a second one.
@@ -34,9 +33,6 @@ export function filterChips(result: { parsed_filters: SmartScreenResult["parsed_
   if (!f) return [];
   const chips: string[] = [];
   if (f.sector) chips.push(`Sector: ${f.sector}`);
-  if (f.score_min !== null) chips.push(`Stock Condition ≥ ${f.score_min}`);
-  if (f.score_max !== null) chips.push(`Stock Condition ≤ ${f.score_max}`);
-  if (f.delta_1d_min !== null) chips.push(`Stock Condition change ≥ ${f.delta_1d_min}`);
   if (f.delivery_state) chips.push(`Delivery: ${f.delivery_state.replace(/_/g, " ")}`);
   if (f.vwap_side) chips.push(`Price vs day's average: ${f.vwap_side}`);
   if (f.volume_ratio_min !== null) chips.push(`Volume vs usual ≥ ${f.volume_ratio_min}× (5-session avg)`);
@@ -56,7 +52,7 @@ export function filterChips(result: { parsed_filters: SmartScreenResult["parsed_
   if (f.volatility_min != null || f.volatility_max != null) {
     chips.push(`Volatility: ${f.volatility_min ?? 0}–${f.volatility_max ?? 100}%`);
   }
-  if (f.event_risk !== null) chips.push(f.event_risk ? "Has event risk" : "No event risk");
+  if (f.event_risk !== null) chips.push(f.event_risk ? "News in the last 5 days" : "No news in the last 5 days");
   if (f.watchlist_only) chips.push("Watchlist only");
   return chips;
 }
@@ -263,7 +259,6 @@ export function SmartScreenerBox({ onApplyFilters }: { onApplyFilters?: (patch: 
                       <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wide text-foreground-faint">
                         <th className="px-3 py-2">Symbol</th>
                         <th className="px-3 py-2">Sector</th>
-                        <th className="px-3 py-2"><ConditionLabel /></th>
                         <th className="px-3 py-2">Delivery</th>
                         <th className="px-3 py-2">Signals</th>
                         <th className="px-3 py-2" />

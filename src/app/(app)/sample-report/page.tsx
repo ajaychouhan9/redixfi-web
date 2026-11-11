@@ -11,7 +11,7 @@ const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "https://api.redixfi.com/ap
 
 const TITLE = "Free sample company report";
 const DESCRIPTION =
-  "See what a RedixFi company report PDF contains: price and 52-week range, Stock Condition, growth, peers, ownership, events, filing summaries and governance items, each with its source and date.";
+  "See what a RedixFi company report PDF contains: price and 52-week range, growth, peers, ownership, events, filing summaries and governance items, each with its source and date.";
 const OG_IMAGE = `/api/og?${new URLSearchParams({
   type: "report",
   title: "Sample company report",
