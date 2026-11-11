@@ -173,6 +173,8 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
         <Link href={stockPath("/track-record", data.symbol)} className="text-accent hover:underline">signal history</Link>
       </p>
 
+      <TrialCta className="mt-5" />
+
       {sortedDelivery.length > 1 && (
         <div className="mt-6">
           <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground-faint">
@@ -218,7 +220,7 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
         </p>
       )}
 
-<TrialCta className="mt-8" />
+
     </div>
   );
 }
