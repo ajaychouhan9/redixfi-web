@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getMarketOverview, getSignalMovers, getLatestBrief, getIntradaySession, getAnomalies, getMarketState, getLiveToday, getPriceMovers, getNews, getBillingPlans, getMarketActivitySummary } from "@/lib/api/endpoints";
+import { getMarketOverview, getSignalMovers, getLatestBrief, getIntradaySession, getAnomalies, getMarketState, getPriceMovers, getNews, getBillingPlans, getMarketActivitySummary } from "@/lib/api/endpoints";
 import { MarketPulseCard } from "@/components/app/MarketPulseCard";
 import { MarketStatusStrip } from "@/components/app/MarketStatusStrip";
 import { PriceMoversCard } from "@/components/app/PriceMoversCard";
-import { LiveTodayCard } from "@/components/app/LiveTodayCard";
 import { TopSignalChangesCard } from "@/components/app/TopSignalChangesCard";
 import { AiDailyBriefCard } from "@/components/app/AiDailyBriefCard";
 import { EventRiskCard } from "@/components/app/EventRiskCard";
@@ -30,7 +29,7 @@ export const metadata: Metadata = { alternates: { canonical: "/" } };
 // docstring) — this fetch never sees a paid user's data, so it can't leak
 // the mistake this pattern originally guarded against.
 export default async function HomePage() {
-  const [overviewR, moversR, briefR, sessionR, anomaliesR, newsR, plansR, marketActivityR, marketStateR, liveTodayR, priceMoversR] = await Promise.allSettled([
+  const [overviewR, moversR, briefR, sessionR, anomaliesR, newsR, plansR, marketActivityR, marketStateR, priceMoversR] = await Promise.allSettled([
     getMarketOverview(),
     // @auth-ok: SSR, anonymous (Stock Condition locked outside the free sample); TopSignalChangesCard asks again with the token of a signed-in visitor.
     getSignalMovers(undefined, 3),
@@ -46,9 +45,8 @@ export default async function HomePage() {
     // @auth-ok: public — market_activity_summary()'s rollup counts are
     // identical for every tier (no B8 masking on these 4 data types).
     getMarketActivitySummary(),
-    // @auth-ok: public — the market state and the live-today list are the same for every caller.
+    // @auth-ok: public — the market state is the same for every caller.
     getMarketState(),
-    getLiveToday(),
     // @auth-ok: SSR, anonymous (Stock Condition locked outside the free sample); PriceMoversCard asks again with the token of a signed-in visitor.
     getPriceMovers(),
   ]);
@@ -62,7 +60,6 @@ export default async function HomePage() {
   const plans = plansR.status === "fulfilled" ? plansR.value.data : [];
   const marketActivity = marketActivityR.status === "fulfilled" ? marketActivityR.value.data : null;
   const marketState = marketStateR.status === "fulfilled" ? marketStateR.value.data : null;
-  const liveToday = liveTodayR.status === "fulfilled" ? liveTodayR.value.data : null;
   const priceMovers = priceMoversR.status === "fulfilled" ? priceMoversR.value.data : null;
 
   return (
@@ -78,8 +75,6 @@ export default async function HomePage() {
           marketing cards that only anonymous visitors see are below the report promo. */}
       <VisitorIntroStrip />
       <MarketStatusStrip overview={overview} session={session} marketState={marketState} />
-      <LiveTodayCard initial={liveToday} />
-
       <PriceMoversCard initial={priceMovers} />
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
