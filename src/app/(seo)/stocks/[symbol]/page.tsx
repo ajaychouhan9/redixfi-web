@@ -245,6 +245,11 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
             <Fact label="Debt to equity" note={resultsNote}>{val.debt_to_equity == null ? "n/a" : inr(val.debt_to_equity)}</Fact>
           </div>
         )}
+        {f?.fallback_source && f.fallback_source.fields.length > 0 && (
+          <p className="mt-2 text-xs text-foreground-faint">
+            Where the main data source had no value, {f.fallback_source.fields.length} {f.fallback_source.fields.length === 1 ? "figure comes" : "figures come"} from {f.fallback_source.source}.
+          </p>
+        )}
         {sh?.latest_date && (
           <p className="mt-3 text-sm text-foreground-muted">
             Shareholding on {quarterDate(sh.latest_date)}: promoters {pct(sh.promoter_pct)}, foreign institutions {pct(sh.fii_pct)}, mutual funds {pct(sh.mf_pct)}.
