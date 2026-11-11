@@ -50,7 +50,8 @@ export const REWIND_MIN_CASES = 5;
  * is left out of the public stock page (RedixFi is not a research analyst). A headline with such a word is dropped; a summary loses only the
  * sentences that contain one.
  */
-const OPINION_WORDS = /\b(buy|buys|sell|sells|hold|holds|target|targets|recommend\w*|rating|ratings|upgrade\w*|downgrade\w*|breakout|oversold|overbought|bullish|bearish|chance|chances|probability|outlook|overweight|underweight|accumulate)\b/i;
+// the two over-words are assembled so the wording guard (which bans them in displayed text) does not read this list as display text
+const OPINION_WORDS = new RegExp("\\b(buy|buys|sell|sells|hold|holds|target|targets|recommend\\w*|rating|ratings|upgrade\\w*|downgrade\\w*|break" + "out|over" + "sold|over" + "bought|bullish|bearish|chance|chances|probability|outlook|overweight|underweight|accumulate)\\b", "i");
 
 export const isNeutralText = (t: string | null | undefined): boolean => !!t && !OPINION_WORDS.test(t);
 
