@@ -1,5 +1,6 @@
 import type { Week52Detail } from "@/lib/api/types";
 import { formatObservationDate } from "@/lib/format";
+import { formatPrice52, resolve52Week } from "@/lib/week52";
 
 /** The shared 52-week range bar used on Signal detail and Research. */
 export function Week52Range({
@@ -21,9 +22,9 @@ export function Week52Range({
   const storedHigh = week52.week52_high;
   const storedLow = week52.week52_low;
   const useLive = typeof livePrice === "number" && Number.isFinite(livePrice) && !!liveLabel;
-  const high = storedHigh != null && useLive ? Math.max(storedHigh, livePrice as number) : storedHigh;
-  const low = storedLow != null && useLive ? Math.min(storedLow, livePrice as number) : storedLow;
-  if (high == null || low == null) {
+  const last = useLive ? (livePrice as number) : (week52.last_close ?? lastPrice);
+  const resolved = resolve52Week(storedHigh, storedLow, last);
+  if (!resolved) {
     return (
       <div className={`${className} rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-muted`}>
         <span className="font-medium text-foreground">52-week range.</span>{" "}
@@ -32,13 +33,8 @@ export function Week52Range({
       </div>
     );
   }
-  const last = useLive ? (livePrice as number) : (week52.last_close ?? lastPrice);
-  const position = last != null && high > low
-    ? Math.max(0, Math.min(100, ((last - low) / (high - low)) * 100))
-    : 50;
-  const below = last != null && high > 0
-    ? Math.max(0, (1 - last / high) * 100)
-    : week52.pct_below_52w_high;
+  const { high, low, positionPct: position } = resolved;
+  const below = last != null ? resolved.belowHighPct : week52.pct_below_52w_high;
   return (
     <div className={className}>
       <p className="text-[11px] font-medium uppercase tracking-wide text-foreground-faint">52-week range</p>
@@ -46,8 +42,8 @@ export function Week52Range({
         <div className="h-1.5 rounded-full bg-accent" style={{ width: `${position}%` }} />
       </div>
       <div className="mt-1 flex justify-between gap-2 text-xs text-foreground-faint">
-        <span>52wk low ₹{low.toLocaleString("en-IN")}</span>
-        <span>52wk high ₹{high.toLocaleString("en-IN")}</span>
+        <span>52wk low ₹{formatPrice52(low)}</span>
+        <span>52wk high ₹{formatPrice52(high)}</span>
       </div>
       <p className="mt-1 text-xs text-foreground-muted">
         {below == null

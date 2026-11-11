@@ -1,3 +1,4 @@
+import { formatPrice52, resolve52Week } from "@/lib/week52";
 import type { Candle, DeliveryPoint, FundamentalsBlock, SignalDetail } from "./api/types";
 import { formatYmd } from "./format";
 import type { XlsxSheet, XlsxSummaryRow } from "./xlsx";
@@ -160,12 +161,13 @@ export function buildSignalSummaryRows(detail: SignalDetail, fundamentals?: Fund
     ? "Stock Condition movement: Not available."
     : `Stock Condition moved from ${detail.composite_score - detail.delta_1d} to ${detail.composite_score} today (${detail.delta_1d > 0 ? "+" : ""}${detail.delta_1d}).`;
   const week52 = detail.week52;
+  const r52 = week52 ? resolve52Week(week52.week52_high, week52.week52_low, week52.last_close) : null;
   section("52-week range");
   items(week52?.week52_high != null
     ? [
-        { label: "52-week low", value: week52.week52_low != null ? `₹${week52.week52_low}` : "Not available from data source" },
-        { label: "52-week high", value: `₹${week52.week52_high}` },
-        { label: "Distance from high", value: week52.pct_below_52w_high != null ? `${week52.pct_below_52w_high.toFixed(1)}% below` : "Not available from data source" },
+        { label: "52-week low", value: week52.week52_low != null ? `₹${formatPrice52(r52?.low ?? week52.week52_low)}` : "Not available from data source" },
+        { label: "52-week high", value: `₹${formatPrice52(r52?.high ?? week52.week52_high)}` },
+        { label: "Distance from high", value: r52 ? `${r52.belowHighPct.toFixed(1)}% below` : week52.pct_below_52w_high != null ? `${week52.pct_below_52w_high.toFixed(1)}% below` : "Not available from data source" },
         { label: "As of", value: week52.as_of ?? "Not available from data source" },
       ]
     : [{ label: "52-week range", value: week52?.reason ?? "Price history incomplete" }]);

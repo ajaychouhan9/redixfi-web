@@ -26,6 +26,7 @@ import { AlertCreateButton } from "@/components/app/alerts/AlertCreateButton";
 import { CompareIndicator } from "@/components/app/CompareIndicator";
 import { displayName } from "@/lib/company-name";
 import { WatchlistButton } from "@/components/app/WatchlistButton";
+import { TrialCta } from "@/components/app/TrialCta";
 import { CurrentSymbolSync } from "@/components/app/CurrentSymbolSync";
 import { ConcallSummary } from "@/components/app/research/ConcallSummary";
 import { AnnualReportSummaryCard } from "@/components/app/research/AnnualReportSummaryCard";
@@ -71,6 +72,7 @@ export function ResearchDetail({
       <RecordView symbol={data.symbol} companyName={data.company_name} />
 
       <div>
+        <h1 className="mb-1 text-xl font-semibold text-foreground">{displayName(data.company_name) || data.symbol}</h1>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm text-foreground-muted">
             {[data.symbol, displayName(data.company_name), data.sector].filter(Boolean).join(" · ")}
@@ -114,6 +116,7 @@ export function ResearchDetail({
             fuller "Signal summary" card lower on this page (narrative +
             link to the full Signal Dashboard) is unchanged. */}
         <AskPills symbol={data.symbol} />
+        <TrialCta className="mt-3" />
       </div>
 
       <p className="text-sm" data-testid="research-chart-link">

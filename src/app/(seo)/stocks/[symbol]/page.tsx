@@ -1,4 +1,4 @@
-import { GuestOnly } from "@/components/app/GuestOnly";
+import { TrialCta } from "@/components/app/TrialCta";
 import type { Metadata } from "next";
 import { cache } from "react";
 import Link from "next/link";
@@ -8,7 +8,9 @@ import { ApiError } from "@/lib/api/client";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { Sparkline } from "@/components/ui/Sparkline";
 import { NewsList } from "@/components/app/NewsList";
-import { formatDataAsOf } from "@/lib/format";
+import { formatDataAsOf, formatDateIst } from "@/lib/format";
+import { Week52Range } from "@/components/app/signals/Week52Range";
+import { resolve52Week } from "@/lib/week52";
 import { stockPath, stockSymbolFromParam } from "@/lib/seo/stock-symbol";
 import { CorporateActionNote } from "@/components/ui/CorporateActionNote";
 import type { ResearchDetail } from "@/lib/api/types";
@@ -50,6 +52,16 @@ function rangeHidden(data: ResearchDetail): boolean {
   return st === "unconfirmed" || st === "review";
 }
 
+// One delivery window on the page: the last DELIVERY_SESSIONS sessions, oldest first. The label, the chart, the average in the text and
+// the table all use it (the stored 30 calendar days hold about 20 sessions; the page said "30 days" and "20 sessions" in different places).
+const DELIVERY_SESSIONS = 20;
+function deliveryWindow(data: ResearchDetail) {
+  return [...data.delivery_30d]
+    .filter((d) => Number.isFinite(d.delivery_pct))
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(-DELIVERY_SESSIONS);
+}
+
 function fmtInr(n: number): string {
   return n.toLocaleString("en-IN", { maximumFractionDigits: 2 });
 }
@@ -60,13 +72,11 @@ function introSentences(data: ResearchDetail): string[] {
   const p = data.price;
   const out = [`${data.company_name} (${data.symbol}) is listed on the NSE${data.sector ? ` and grouped under ${data.sector}` : ""}.`];
   out.push(`Its latest price is ₹${fmtInr(p.last_price)}${p.day_change_pct === null ? "" : `, ${p.day_change_pct > 0 ? "+" : ""}${p.day_change_pct.toFixed(2)}% from the previous close`}.`);
-  const high52 = p.week52_high;
-  const low52 = p.week52_low;
-  const position52 = p.week52_position_pct;
-  if (!rangeHidden(data) && high52 != null && low52 != null && position52 != null && high52 > 0) {
-    out.push(`Over the past 52 weeks it traded between ₹${fmtInr(low52)} and ₹${fmtInr(high52)}; the latest price sits ${Math.round(position52)}% of the way up that range.`);
+  const r52 = rangeHidden(data) ? null : resolve52Week(p.week52_high, p.week52_low, p.last_price);
+  if (r52) {
+    out.push(`Over the past 52 weeks it traded between ₹${fmtInr(r52.low)} and ₹${fmtInr(r52.high)}; the latest price sits ${Math.round(r52.positionPct)}% of the way up that range.`);
   }
-  const dl = data.delivery_30d.map((d) => d.delivery_pct).filter((v) => Number.isFinite(v));
+  const dl = deliveryWindow(data).map((d) => d.delivery_pct).filter((v) => Number.isFinite(v));
   if (dl.length >= 5) {
     out.push(`Across the last ${dl.length} sessions, an average of ${(dl.reduce((a, b) => a + b, 0) / dl.length).toFixed(1)}% of traded shares were taken for delivery.`);
   }
@@ -81,11 +91,8 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
   if (!data) return { title: `${symbol.toUpperCase()} not found` };
   const title = `${data.company_name} (${data.symbol}) — Price, Delivery & News`;
   const dc = data.price.day_change_pct;
-  const high52 = data.price.week52_high;
-  const low52 = data.price.week52_low;
-  const rangeText = !rangeHidden(data) && high52 != null && low52 != null
-    ? `52-week range ₹${fmtInr(low52)}–₹${fmtInr(high52)}, `
-    : "";
+  const r52 = rangeHidden(data) ? null : resolve52Week(data.price.week52_high, data.price.week52_low, data.price.last_price);
+  const rangeText = r52 ? `52-week range ₹${fmtInr(r52.low)}–₹${fmtInr(r52.high)}, ` : "";
   const description = `${data.company_name} (${data.symbol}): ₹${fmtInr(data.price.last_price)}, ${dc === null ? "" : `${dc > 0 ? "+" : ""}${dc.toFixed(2)}% today, `}${rangeText}delivery trend and latest news — measured data, not advice.`;
   const ogImage = `/api/og?${new URLSearchParams({
     type: "stock",
@@ -117,8 +124,8 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
   const data = await loadCompany(normalizedSymbol);
   if (!data) notFound();
 
-  const positionPct = Math.max(0, Math.min(100, data.price.week52_position_pct ?? 0));
-  const sortedDelivery = [...data.delivery_30d].sort((a, b) => a.date.localeCompare(b.date));
+  const sortedDelivery = deliveryWindow(data);
+  const lastFive = sortedDelivery.slice(-5).reverse();
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -149,15 +156,11 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
       <p className="mt-1 text-xs text-foreground-faint">{formatDataAsOf(data.price.data_as_of)}</p>
       <CorporateActionNote info={data.price.corporate_action ?? data.corporate_action} className="mt-1 text-xs text-foreground-muted" />
       {!rangeHidden(data) && (
-      <div className="mt-3 max-w-xs">
-        <div className="h-1.5 w-full rounded-full bg-neutral-bg">
-          <div className="h-1.5 rounded-full bg-accent" style={{ width: `${positionPct}%` }} />
-        </div>
-        <div className="mt-1 flex justify-between text-xs text-foreground-faint">
-          <span>52wk low ₹{data.price.week52_low}</span>
-          <span>52wk high ₹{data.price.week52_high}</span>
-        </div>
-      </div>
+        <Week52Range
+          className="mt-3 max-w-xs"
+          week52={{ week52_high: data.price.week52_high, week52_low: data.price.week52_low, last_close: data.price.last_price, as_of: data.price.data_as_of?.data_as_of?.slice(0, 10) ?? null } as never}
+          lastPrice={data.price.last_price}
+        />
       )}
 
       <p className="mt-5 text-sm leading-relaxed text-foreground-muted">{introSentences(data).join(" ")}</p>
@@ -173,11 +176,28 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
       {sortedDelivery.length > 1 && (
         <div className="mt-6">
           <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground-faint">
-            Delivery % (30 days)
+            Delivery % (last {sortedDelivery.length} sessions)
           </h2>
           <div className="text-accent">
             <Sparkline values={sortedDelivery.map((d) => d.delivery_pct)} height={40} />
           </div>
+          <table className="mt-3 w-full max-w-xs text-sm">
+            <caption className="sr-only">Delivery percentage, last 5 sessions</caption>
+            <thead className="text-left text-xs font-semibold uppercase tracking-wide text-foreground-faint">
+              <tr>
+                <th className="py-1 pr-3">Session</th>
+                <th className="py-1 text-right">Delivery %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lastFive.map((d) => (
+                <tr key={d.date} className="border-t border-border">
+                  <td className="py-1 pr-3">{formatDateIst(d.date)}</td>
+                  <td className="py-1 text-right tabular-nums">{d.delivery_pct.toFixed(1)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -198,26 +218,7 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
         </p>
       )}
 
-<GuestOnly>
-      <div className="mt-8 rounded-xl border border-accent/30 bg-accent/5 p-5 text-center">
-        <p className="text-sm font-medium">
-          See {data.symbol}&apos;s full Research Pro page — insider trades, promoter pledge trend, options
-          positioning, corporate events and an AI-generated summary.
-        </p>
-        <Link
-          href="/login"
-          className="mt-3 inline-block rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground"
-        >
-          Sign up free
-        </Link>
-      </div>
-      </GuestOnly>
-
-      <p className="mt-6 text-center text-xs text-foreground-faint">
-        <Link href="/pricing" className="underline">
-          See pricing
-        </Link>
-      </p>
+<TrialCta className="mt-8" />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { personCategory, sideLabel } from "@/lib/insider-display";
+import { resolve52Week } from "@/lib/week52";
 import { safeNumber } from "./safe-format";
 import type {
   AnnualReportSummary,
@@ -114,7 +115,7 @@ function buildSummaryRows(data: ResearchDetail, peers: PeerRow[] | null): XlsxSu
     { kind: "metadata", cells: ["Sector / Industry", `${data.sector || "Not available"} / ${f?.identity.industry ?? "Not available"}`, "Data as of", dateText(f?.as_of)] },
     { kind: "metadata", cells: ["Price", currencyText(data.price.last_price), "Day change", percentText(data.price.day_change_pct)] },
     ...(data.corporate_action?.note ? [{ kind: "metadata" as const, cells: ["Note", data.corporate_action.note, "", ""] }] : []),
-    { kind: "metadata", cells: ["52-week low", currencyText(data.price.week52_low), "52-week high", currencyText(data.price.week52_high)] },
+    { kind: "metadata", cells: ["52-week low", currencyText(resolve52Week(data.price.week52_high, data.price.week52_low, data.price.last_price)?.low ?? data.price.week52_low), "52-week high", currencyText(resolve52Week(data.price.week52_high, data.price.week52_low, data.price.last_price)?.high ?? data.price.week52_high)] },
     { kind: "metadata", cells: ["Stock Condition", data.signal_summary.sc_locked ? "Shown on the Pro plan" : data.signal_summary.composite_score === null ? "Not available" : `${data.signal_summary.composite_score}/100`, "Stock Condition change", missing(data.signal_summary.delta_1d)] },
     { kind: "blank" },
     { kind: "section", cells: ["GROWTH SNAPSHOT"], merge: [0, 3] as [number, number] },
