@@ -17,8 +17,8 @@ vm.runInNewContext(transpile("../src/data/canned-screens.ts"), {
   module: screensMod, exports: screensMod.exports, require: (id) => (id === "@/data/sectors" ? sectorsMod.exports : {}),
 });
 const SCREENS = screensMod.exports.CANNED_SCREENS.length;
-assert.equal(SCREENS, 38);
-const CORE = 15 + SCREENS;
+assert.equal(SCREENS, 25);      // 38 before 11 Nov 2026; the 13 screens built on the removed Stock Condition change redirect to /screens
+const CORE = 19 + SCREENS;      // 15 fixed pages before 11 Nov 2026; +3 legal pages and the earlier addition
 const symbols = Array.from({ length: 2302 }, (_, i) => `S${String(i + 1).padStart(4, "0")}`);
 symbols.push("M&M");
 
