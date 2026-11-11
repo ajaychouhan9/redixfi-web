@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import { getChart, getResearch, getResearchPeers } from "@/lib/api/endpoints";
@@ -57,7 +58,9 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
   if (!data) return { title: `${symbol} not found` };
   return {
     title: `${data.symbol} Research`,
-    alternates: { canonical: stockPath("/research", data.symbol) },
+    // One public page per stock: this signed-in view points to /stocks/<symbol> and is kept out of the index.
+    alternates: { canonical: stockPath("/stocks", data.symbol) },
+    robots: { index: false, follow: true },
     description: `Company profile, delivery trend, insider activity, pledge history, fundamentals and peer comparison for ${data.company_name} (${data.symbol}) — not investment advice.`,
   };
 }
@@ -82,6 +85,9 @@ export default async function ResearchDetailPage({ params }: { params: Promise<{
 
   return (
     <div className="mx-auto max-w-3xl">
+      <p className="mb-2 text-xs text-foreground-muted">
+        <Link href={stockPath("/stocks", data.symbol)} className="text-accent hover:underline">Public page for {data.company_name} ({data.symbol})</Link>
+      </p>
       <ResearchViewGate data={data} dailyCandles={dailyCandles} peers={peers} peersError={peersError} />
     </div>
   );

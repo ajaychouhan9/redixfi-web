@@ -90,6 +90,14 @@ export interface SignalsListParams {
   dma_state?: "above_20dma" | "below_20dma";
   pcr_band?: "low" | "neutral" | "high";
   anomaly?: boolean;
+  /** Reported-figure filters (12 Nov 2026). A stock missing the figure is not matched. */
+  pe_min?: number;
+  pe_max?: number;
+  roe_min?: number;
+  eps_positive?: boolean;
+  profit_growth_min?: number;
+  sales_growth_min?: number;
+  ema200_state?: "above" | "below";
   q?: string;
   sort?: string;
   order?: "asc" | "desc";

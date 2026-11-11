@@ -18,6 +18,8 @@ import { signalsListLabels } from "@/lib/signals-list-labels";
 import { from52Display } from "@/lib/from52-display";
 import { getWatchlist } from "@/lib/api/mutations";
 import type { SmartFilterPatch } from "./smartFilterPatch";
+import { EMPTY_FUND, FundamentalFilters, fundActive, fundChips, fundParams, type FundFilterState } from "./FundamentalFilters";
+import type { FundamentalsCoverage } from "@/lib/api/types";
 import { track } from "@/lib/analytics";
 import { FeedbackBox } from "@/components/app/FeedbackBox";
 
@@ -109,6 +111,9 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   const [dmaState, setDmaState] = useState(initialParams?.dma_state ?? "");
   const [pcrBand, setPcrBand] = useState(initialParams?.pcr_band ?? "");
   const [anomalyOnly, setAnomalyOnly] = useState(!!initialParams?.anomaly);
+  // reported-figure filters (P/E, ROE, EPS, growth, price vs 200-day EMA); shown only when the API reports their coverage
+  const [fund, setFund] = useState<FundFilterState>(EMPTY_FUND);
+  const [fundCoverage, setFundCoverage] = useState<FundamentalsCoverage | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
 
   const [sort, setSort] = useState<string>(initialParams?.sort ?? "symbol");
@@ -217,6 +222,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
     setDmaState("");
     setPcrBand("");
     setAnomalyOnly(false);
+    setFund(EMPTY_FUND);
     setEventRiskOnly(false);
     setWatchlistOnly(false);
     setPage(1);
@@ -292,6 +298,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
       dma_state: (dmaState || undefined) as "above_20dma" | "below_20dma" | undefined,
       pcr_band: (pcrBand || undefined) as "low" | "neutral" | "high" | undefined,
       anomaly: anomalyOnly ? true : undefined,
+      ...fundParams(fund),
       sort,
       order,
       page,
@@ -299,7 +306,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
     }),
     [q, sector, industry, scoreMin, scoreMax, eventRiskOnly, from52Max, from52Min,
      volatilityBand, volatilityMin, volatilityMax, volumeMin, deliveryState, deltaMin,
-     dmaState, pcrBand, anomalyOnly, sort, order, page]
+     dmaState, pcrBand, anomalyOnly, fund, sort, order, page]
   );
 
   const shareParams: SharedScreenParams = useMemo(
@@ -349,6 +356,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
           setIncompleteHistoryCount(info.incomplete_history_count ?? null);
           setExcludedInMasterCount(info.excluded_in_master_count ?? null);
           setExtrasAsOf(info.extras_as_of ?? null);
+          setFundCoverage(info.fundamentals_coverage ?? null);
         })
         .catch((e) => !cancelled && setError(e instanceof Error ? e.message : "Failed to load signals."))
         .finally(() => !cancelled && setLoading(false));
@@ -361,11 +369,11 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   useEffect(() => setPage(1), [
     q, sector, industry, scoreMin, scoreMax, eventRiskOnly, watchlistOnly, from52Preset,
     from52Custom, from52Min, volatilityBand, volMin, volMax, volumeMin, deliveryState,
-    deltaMin, dmaState, pcrBand, anomalyOnly, sort, order,
+    deltaMin, dmaState, pcrBand, anomalyOnly, fund, sort, order,
   ]);
 
   // screener_filter_used: counts a change that leaves at least one filter on (first change per page view per filter set is enough for a count)
-  const filtersOn = [q, sector, industry, eventRiskOnly ? "1" : "", watchlistOnly ? "1" : "", from52Preset, volatilityBand, volMin, volMax, volumeMin, deliveryState, dmaState, pcrBand, anomalyOnly ? "1" : ""].filter(Boolean).length;
+  const filtersOn = [q, sector, industry, eventRiskOnly ? "1" : "", watchlistOnly ? "1" : "", from52Preset, volatilityBand, volMin, volMax, volumeMin, deliveryState, dmaState, pcrBand, anomalyOnly ? "1" : "", fundActive(fund) ? "1" : ""].filter(Boolean).length;
   useEffect(() => {
     if (filtersOn > 0) track("screener_filter_used", { filters: filtersOn });
   }, [filtersOn]);
@@ -438,6 +446,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   if (deliveryState) activeFilters.push({ key: "delivery", text: `Delivery: ${deliveryState.replace("_", " ")}`, clear: () => setDeliveryState("") });
   if (dmaState) activeFilters.push({ key: "dma", text: `DMA: ${dmaState.replace("_", " ")}`, clear: () => setDmaState("") });
   if (pcrBand) activeFilters.push({ key: "pcr", text: `PCR: ${pcrBand}`, clear: () => setPcrBand("") });
+  activeFilters.push(...fundChips(fund, (patch) => setFund((f) => ({ ...f, ...patch }))));
   if (anomalyOnly) activeFilters.push({ key: "anomaly", text: "Unusual activity", clear: () => setAnomalyOnly(false) });
   if (eventRiskOnly) activeFilters.push({ key: "event", text: "News in the last 5 days", clear: () => setEventRiskOnly(false) });
   if (watchlistOnly) activeFilters.push({ key: "watch", text: "Watchlist only", clear: () => setWatchlistOnly(false) });
@@ -552,6 +561,9 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
                   </label>
                 )}
               </div>
+            )}
+            {moreOpen && fundCoverage && (
+              <FundamentalFilters value={fund} onChange={(patch) => setFund((f) => ({ ...f, ...patch }))} coverage={fundCoverage} />
             )}
           </div>
         )}

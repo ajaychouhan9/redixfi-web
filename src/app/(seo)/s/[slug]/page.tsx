@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!loaded) return { title: "Shared screen not found" };
   const { screen } = loaded;
   const title = `${screen.title} — Shared Screen`;
-  const description = `A RedixFi Signals screen shared by a user: ${screen.title}. Live, current data — measured, not advice.`;
+  const description = `A RedixFi Screener screen shared by a user: ${screen.title}. Live, current data — measured, not advice.`;
   const ogImage = `/api/og?${new URLSearchParams({ type: "screener", title: screen.title, subtitle: "Shared screen · live data" }).toString()}`;
   return {
     title,

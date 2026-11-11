@@ -23,6 +23,8 @@ export interface PageInfo {
   page: number;
   size: number;
   total: number;
+  /** Signals list only: per-filter coverage of the reported-figure filters (absent on an API without them). */
+  fundamentals_coverage?: FundamentalsCoverage | null;
 }
 
 export interface PagedEnvelope<T> {
@@ -40,6 +42,20 @@ export interface SignalsPageInfo extends PageInfo {
   incomplete_history_count?: number;
   excluded_in_master_count?: number;
   extras_as_of?: string | null;
+  /** How many stocks each reported-figure filter can check, and the quarter-end dates of the figures. Absent on an API without the filters. */
+  fundamentals_coverage?: FundamentalsCoverage | null;
+}
+
+export interface FundamentalsCoverage {
+  pe: number;
+  roe: number;
+  eps: number;
+  profit_growth: number;
+  sales_growth: number;
+  ema200: number;
+  quarter_end_latest: string | null;
+  quarter_end_median: string | null;
+  quarter_end_earliest: string | null;
 }
 
 // ---------- market ----------
@@ -111,6 +127,16 @@ export interface MarketOverview {
 // ---------- signals ----------
 
 export interface SignalRow {
+  /** Reported figures (null when the stock has none) and the quarter they belong to; ema200 position from adjusted daily closes. */
+  pe?: number | null;
+  roe?: number | null;
+  eps?: number | null;
+  profit_growth_pct?: number | null;
+  sales_growth_pct?: number | null;
+  fund_quarter_end?: string | null;
+  ema200?: number | null;
+  ema200_state?: "above" | "below" | null;
+  ema200_as_of?: string | null;
   limited_data?: boolean;
   limited_data_note?: string | null;
   symbol: string;
@@ -1438,6 +1464,8 @@ export interface AlertPreferences {
   watchlist: boolean;
   market_wide: boolean;
   daily_brief: boolean;
+  /** Saturday weekly market review email: off until the user ticks it (absent on older accounts). */
+  weekly_review?: boolean;
 }
 
 // ---------- threshold alerts (2026-08-08, locked spec) ----------
@@ -2267,6 +2295,13 @@ export interface SharedScreenParams {
   dma_state?: "above_20dma" | "below_20dma" | null;
   pcr_band?: "low" | "neutral" | "high" | null;
   anomaly?: boolean | null;
+  pe_min?: number | null;
+  pe_max?: number | null;
+  roe_min?: number | null;
+  eps_positive?: boolean | null;
+  profit_growth_min?: number | null;
+  sales_growth_min?: number | null;
+  ema200_state?: "above" | "below" | null;
   watchlist_only?: boolean | null;
   sort: string;
   order: "asc" | "desc";

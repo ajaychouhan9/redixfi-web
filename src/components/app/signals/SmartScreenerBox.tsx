@@ -260,7 +260,7 @@ export function SmartScreenerBox({ onApplyFilters }: { onApplyFilters?: (patch: 
                         <th className="px-3 py-2">Symbol</th>
                         <th className="px-3 py-2">Sector</th>
                         <th className="px-3 py-2">Delivery</th>
-                        <th className="px-3 py-2">Signals</th>
+                        <th className="px-3 py-2">Readings</th>
                         <th className="px-3 py-2" />
                       </tr>
                     </thead>

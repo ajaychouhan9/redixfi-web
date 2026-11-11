@@ -15,6 +15,7 @@ import { ReviewLists } from "@/components/app/review/ReviewLists";
 import { ReviewTabs } from "@/components/app/review/ReviewTabs";
 import { WeekPicker } from "@/components/app/review/WeekPicker";
 import { YourStocks } from "@/components/app/review/YourStocks";
+import { WeeklyEmailOptIn } from "@/components/app/review/WeeklyEmailOptIn";
 import {
   REVIEW_INTRO,
   REVIEW_PATH,
@@ -154,7 +155,7 @@ export default async function SevenDayReviewPage({ searchParams }: { searchParam
             <li aria-hidden>/</li>
             <li>
               <Link href="/signals" className="hover:text-foreground">
-                Signals
+                Screener
               </Link>
             </li>
             <li aria-hidden>/</li>
@@ -164,7 +165,13 @@ export default async function SevenDayReviewPage({ searchParams }: { searchParam
         <h1 className="text-lg font-semibold">{REVIEW_TITLE}</h1>
         <p className="mt-1 text-sm font-medium">{REVIEW_TAGLINE}</p>
         <p className="mt-1 text-sm text-foreground-muted">{REVIEW_INTRO}</p>
+        <p className="mt-1 text-sm">
+          <Link href="/weekly" className="font-medium text-accent hover:underline">
+            Every past week as its own page
+          </Link>
+        </p>
       </div>
+      <WeeklyEmailOptIn />
 
       {!review || !review.available || !review.lists ? (
         <Card>

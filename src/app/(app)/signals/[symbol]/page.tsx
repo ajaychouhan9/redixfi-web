@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSignalDetail, getChart, getResearch } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
@@ -29,8 +30,18 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
   return {
     title: `${label}: delivery, volume and price data`,
     description: `Measured delivery, volume against its usual level, 52-week range and price data for ${label}, with the sources stated. Not investment advice.`,
-    alternates: { canonical: stockPath("/signals", symbol) },
+    // One public page per stock: this signed-in view points to /stocks/<symbol> and is kept out of the index.
+    alternates: { canonical: stockPath("/stocks", symbol) },
+    robots: { index: false, follow: true },
   };
+}
+
+function PublicPageLink({ symbol }: { symbol: string }) {
+  return (
+    <p className="mx-auto mb-2 max-w-3xl text-xs text-foreground-muted">
+      <Link href={stockPath("/stocks", symbol)} className="text-accent hover:underline">Public page for {symbol}</Link>
+    </p>
+  );
 }
 
 export default async function SignalDetailPage({ params }: { params: Promise<{ symbol: string }> }) {
@@ -61,7 +72,7 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
   // subscriber. SignalUnlockGate (client) corrects this after hydration
   // when it's actually needed — see that file for the full writeup.
   if (detail.locked) {
-    return <SignalUnlockGate symbol={symbol} initialDetail={detail} initialCandles={[]} />;
+    return (<><PublicPageLink symbol={symbol} /><SignalUnlockGate symbol={symbol} initialDetail={detail} initialCandles={[]} /></>);
   }
 
   // Bug 2/3 fix (2026-08-22): `has_score: false` means this symbol is a
@@ -85,6 +96,7 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
   if (detail.has_score === false) {
     return (
       <div className="mx-auto max-w-3xl">
+        <PublicPageLink symbol={symbol} />
         <Card>
           {detail.limited_data ? (
             <p className="text-sm">
@@ -128,5 +140,5 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
   // the caller's own watchlist) — renders directly, no client correction
   // needed, matches Task 14's "server-render everything that doesn't
   // genuinely need to be client-side" philosophy.
-  return <SignalDetailView detail={detail} candles={candles} delivery30d={delivery30d} fundamentals={fundamentals} />;
+  return (<><PublicPageLink symbol={symbol} /><SignalDetailView detail={detail} candles={candles} delivery30d={delivery30d} fundamentals={fundamentals} /></>);
 }

@@ -16,9 +16,16 @@ const screensMod = { exports: {} };
 vm.runInNewContext(transpile("../src/data/canned-screens.ts"), {
   module: screensMod, exports: screensMod.exports, require: (id) => (id === "@/data/sectors" ? sectorsMod.exports : {}),
 });
+const fundMod = { exports: {} };
+vm.runInNewContext(transpile("../src/data/fundamental-screens.ts"), { module: fundMod, exports: fundMod.exports, require: () => ({}) });
+const PRESETS = fundMod.exports.FUNDAMENTAL_SCREENS.length;
+assert.ok(PRESETS >= 7, "at least the presets the owner named");
+const WEEKS = ["2026-11-06", "2026-11-05", "2026-10-30"];
+const getSevenDayReview = async () => ({ data: { weeks: WEEKS.map((as_of) => ({ as_of, sessions: 5, label: "x" })) } });
 const SCREENS = screensMod.exports.CANNED_SCREENS.length;
 assert.equal(SCREENS, 25);      // 38 before 11 Nov 2026; the 13 screens built on the removed Stock Condition change redirect to /screens
-const CORE = 19 + SCREENS;      // 15 fixed pages before 11 Nov 2026; +3 legal pages and the earlier addition
+const CORE_ONLY = 20 + SCREENS; // fixed pages (the weekly archive joined on 12 Nov 2026) and the canned screens
+const CORE = CORE_ONLY + WEEKS.length;   // plus one page per stored week once the stock list is complete
 const symbols = Array.from({ length: 2302 }, (_, i) => `S${String(i + 1).padStart(4, "0")}`);
 symbols.push("M&M");
 
@@ -51,9 +58,10 @@ async function scenario(name, behavior, expectedCount, warningExpected) {
   const module = { exports: {} };
   vm.runInNewContext(code, {
     module, exports: module.exports, require(id) {
-      if (id === "@/lib/api/endpoints") return { getSignals };
+      if (id === "@/lib/api/endpoints") return { getSignals, getSevenDayReview };
       if (id === "@/lib/api/client") return { ApiError };
       if (id === "@/data/canned-screens") return screensMod.exports;
+      if (id === "@/data/fundamental-screens") return fundMod.exports;
       if (id === "next/cache") return { unstable_cache: (fn) => async () => {
         if (cached) return cached;
         cached = await fn();
@@ -101,12 +109,12 @@ const recovered = await scenario("transient 504", (page, attempt) => page === 3 
 assert.equal(recovered.calls.get(3), 2);
 const timeoutRecovered = await scenario("transient timeout", (page, attempt) => page === 3 && attempt === 1 ? "timeout" : null, 2303 + CORE, false);
 assert.equal(timeoutRecovered.calls.get(3), 2);
-const persistent = await scenario("persistent 504", (page) => page === 3 ? 504 : null, CORE, true);
+const persistent = await scenario("persistent 504", (page) => page === 3 ? 504 : null, CORE_ONLY, true);
 assert.equal(persistent.calls.get(3), 2);
-const permanent = await scenario("permanent 404", (page) => page === 1 ? 404 : null, CORE, true);
+const permanent = await scenario("permanent 404", (page) => page === 1 ? 404 : null, CORE_ONLY, true);
 assert.equal(permanent.calls.get(1), 1);
-await scenario("malformed pagination", (page) => page === 2 ? { page_info: { page: 2, total: symbols.length }, data: [] } : null, CORE, true);
-await scenario("midstream 503", (page) => page === 8 ? 503 : null, CORE, true);
+await scenario("malformed pagination", (page) => page === 2 ? { page_info: { page: 2, total: symbols.length }, data: [] } : null, CORE_ONLY, true);
+await scenario("midstream 503", (page) => page === 8 ? 503 : null, CORE_ONLY, true);
 
 // A malformed symbol is skipped on its own; the rest of the stock list stays.
 {
@@ -123,9 +131,10 @@ await scenario("midstream 503", (page) => page === 8 ? 503 : null, CORE, true);
   };
   vm.runInNewContext(code, {
     module: mod, exports: mod.exports, require(id) {
-      if (id === "@/lib/api/endpoints") return { getSignals };
+      if (id === "@/lib/api/endpoints") return { getSignals, getSevenDayReview };
       if (id === "@/lib/api/client") return { ApiError };
       if (id === "@/data/canned-screens") return screensMod.exports;
+      if (id === "@/data/fundamental-screens") return fundMod.exports;
       if (id === "next/cache") return { unstable_cache: (fn) => fn };
       throw new Error(`Unexpected module: ${id}`);
     },
@@ -138,4 +147,46 @@ await scenario("midstream 503", (page) => page === 8 ? 503 : null, CORE, true);
   assert.ok(urls.includes("https://www.redixfi.com/stocks/M%26M"));
   assert.equal(warnings.length, 1);
   process.stdout.write(`malformed symbol skipped: ${urls.length} URLs, ${warnings.length} warning(s)\n`);
+}
+
+// 12 Nov 2026: lastmod dates, Rewind pages only for stocks with a 52-week figure, weekly pages, presets only when the API runs the filters,
+// and nothing that carries a noindex or a canonical to another page.
+for (const supportsFilters of [false, true]) {
+  const warnings = [];
+  const mod = { exports: {} };
+  const rows = symbols.slice(0, 400).map((symbol, i) => ({ symbol, date: i % 2 ? "2026-11-11" : "2026-11-10", pct_below_52w_high: i < 300 ? 12.5 : null }));
+  const getSignals = async ({ page, size }) => ({
+    page_info: { page, size, total: rows.length, ...(supportsFilters ? { fundamentals_coverage: { pe: 1 } } : {}) },
+    data: rows.slice((page - 1) * size, page * size),
+  });
+  vm.runInNewContext(code, {
+    module: mod, exports: mod.exports, require(id) {
+      if (id === "@/lib/api/endpoints") return { getSignals, getSevenDayReview };
+      if (id === "@/lib/api/client") return { ApiError };
+      if (id === "@/data/canned-screens") return screensMod.exports;
+      if (id === "@/data/fundamental-screens") return fundMod.exports;
+      if (id === "next/cache") return { unstable_cache: (fn) => fn };
+      throw new Error(`Unexpected module: ${id}`);
+    },
+    Response, setTimeout, console: { warn: (m) => warnings.push(m) },
+  });
+  const xml = await (await mod.exports.GET()).text();
+  const entries = [...xml.matchAll(/<url><loc>([^<]+)<\/loc>(?:<lastmod>([^<]+)<\/lastmod>)?<\/url>/g)].map((m) => ({ url: m[1], lastmod: m[2] }));
+  const urls = entries.map((e) => e.url);
+  const by = (u) => entries.find((e) => e.url === `https://www.redixfi.com${u}`);
+  assert.equal(warnings.length, 0);
+  assert.equal(urls.length, entries.length);
+  assert.equal(urls.filter((u) => /\/stocks\/[^/]+$/.test(u)).length, 400);
+  assert.equal(urls.filter((u) => /\/stocks\/[^/]+\/rewind$/.test(u)).length, 300, "Rewind pages only for stocks with a 52-week figure");
+  assert.equal(by(`/stocks/${symbols[0]}`).lastmod, "2026-11-10");
+  assert.equal(by(`/stocks/${symbols[1]}`).lastmod, "2026-11-11");
+  assert.equal(by("/stocks/" + symbols[350] + "/rewind"), undefined, "no Rewind page for a stock without enough history");
+  assert.ok(by("/weekly") && WEEKS.every((d) => by(`/weekly/${d}`)?.lastmod === d), "archive and one page per stored week, lastmod is the week-end date");
+  assert.equal(by("/signals").lastmod, "2026-11-11", "session pages carry the latest session date");
+  assert.equal(by("/more/terms").lastmod, undefined, "static pages carry no invented date");
+  const presetUrls = fundMod.exports.FUNDAMENTAL_SCREENS.map((p) => `https://www.redixfi.com/screens/${p.slug}`);
+  assert.equal(presetUrls.every((u) => urls.includes(u)), supportsFilters, "presets are listed only when the API runs the filters");
+  assert.ok(urls.every((u) => !/\/(research|signals)\/[A-Z0-9&]+$/.test(u) || u.endsWith("/7-day-review")), "no /research/<symbol> or /signals/<symbol>");
+  assert.ok(urls.every((u) => !u.includes("?")), "no query-string addresses");
+  process.stdout.write(`12 Nov rules (filters ${supportsFilters}): ${urls.length} URLs\n`);
 }

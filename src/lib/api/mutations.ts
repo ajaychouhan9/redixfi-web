@@ -100,8 +100,9 @@ export async function updateProfile(token: string, body: { name?: string; email?
 }
 
 export async function updateAlertPrefs(token: string, body: Partial<AlertPreferences>) {
-  const env = await apiMutate<AlertPreferences>("/me/alerts", "PATCH", body, { token });
-  return env.data;
+  const env = await apiMutate<AlertPreferences | { alerts_opt_in: AlertPreferences }>("/me/alerts", "PATCH", body, { token });
+  // the API answers { alerts_opt_in: {...} }; an older shape was the preferences themselves
+  return "alerts_opt_in" in env.data ? env.data.alerts_opt_in : env.data;
 }
 
 // "Always allow" opt-out session (2026-08-21) — "Don't ask me again" on

@@ -72,7 +72,7 @@ export function CompareIndicator({ symbol, companyName }: { symbol: string; comp
           </div>
           <div className="border-t border-border px-4 py-3">
             <Link href="/signals" className="flex items-center gap-1 text-xs font-medium text-accent" onClick={() => setOpen(false)}>
-              Open full comparison on Signals <ChevronRight size={12} />
+              Open full comparison in the Screener <ChevronRight size={12} />
             </Link>
           </div>
         </div>

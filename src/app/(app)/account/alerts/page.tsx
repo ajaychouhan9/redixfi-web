@@ -15,6 +15,7 @@ const LABELS: Record<keyof AlertPreferences, { title: string; help: string }> = 
   watchlist: { title: "Signal changes on watchlist", help: "Notified when a signal state flips on a stock you're watching." },
   market_wide: { title: "Market-wide events", help: "Market-wide news items." },
   daily_brief: { title: "AI Daily Brief digest", help: "Morning and post-close market recap." },
+  weekly_review: { title: "Saturday weekly review email", help: "One email on Saturday morning with the week's market data. Off until you turn it on." },
 };
 
 function AlertsForm() {

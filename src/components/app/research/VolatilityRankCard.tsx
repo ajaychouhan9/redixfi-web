@@ -52,7 +52,7 @@ export function VolatilityRankCard({ symbol }: { symbol: string }) {
       <p className="text-[11px] text-foreground-faint">
         Past price movement, not a forecast. Measured market data, not investment advice.{" "}
         <Link href={stockPath("/signals", symbol)} className="text-accent underline decoration-dotted underline-offset-2">
-          Open the Volatility card on the Signals page
+          Open the Volatility card on the Screener page
         </Link>
       </p>
     </div>

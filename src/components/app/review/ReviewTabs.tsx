@@ -9,7 +9,7 @@ export function ReviewTabs({ active }: { active: "signals" | "review" }) {
     { id: "review", label: REVIEW_TITLE, href: REVIEW_PATH },
   ] as const;
   return (
-    <nav aria-label="Signals views" className="mb-4 inline-flex rounded-lg border border-border p-0.5" data-testid="signals-tabs">
+    <nav aria-label="Screener views" className="mb-4 inline-flex rounded-lg border border-border p-0.5" data-testid="signals-tabs">
       {tabs.map((t) => (
         <Link
           key={t.id}
