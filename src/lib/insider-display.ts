@@ -31,3 +31,10 @@ export function sideLabel(type: string | null | undefined): string {
   const s = String(type).trim().toLowerCase();
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
+
+/** The disclosed mode of the trade (ESOP, Market Purchase, Market Sale, Off Market, Gift, Preferential Offer ...), as filed. The API sends `mode`;
+ *  an older API that does not falls back to the filing's own field. Shown so an ESOP exercise at a fixed price is not read as a market purchase. */
+export function modeLabel(t: { mode?: string | null; raw_data?: Record<string, unknown> | null }): string {
+  const raw = String(t.mode ?? (t.raw_data?.acqMode as string | undefined) ?? "").trim();
+  return !raw || raw === "-" ? "Not disclosed" : raw;
+}

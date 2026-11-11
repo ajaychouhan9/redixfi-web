@@ -11,7 +11,7 @@ import { useMemo, useState } from "react";
 
 import { GenericRecordTable } from "@/components/ui/GenericRecordTable";
 import { formatDateIst } from "@/lib/format";
-import { personCategory, sideLabel } from "@/lib/insider-display";
+import { modeLabel, personCategory, sideLabel } from "@/lib/insider-display";
 import { formatRupeesCompact, splitLast12Months } from "@/lib/stock-clarity";
 import type { GenericRecord, InsiderTrade } from "@/lib/api/types";
 
@@ -24,6 +24,7 @@ function InsiderTable({ rows }: { rows: InsiderTrade[] }) {
             <th className="py-1.5 pr-3">Date</th>
             <th className="py-1.5 pr-3">Category</th>
             <th className="py-1.5 pr-3">Type</th>
+            <th className="py-1.5 pr-3">Mode</th>
             <th className="py-1.5 pr-3">Qty</th>
             <th className="py-1.5 pr-3">Value</th>
           </tr>
@@ -34,6 +35,7 @@ function InsiderTable({ rows }: { rows: InsiderTrade[] }) {
               <td className="py-1.5 pr-3">{formatDateIst(t.trade_date)}</td>
               <td className="py-1.5 pr-3">{personCategory(t)}</td>
               <td className="py-1.5 pr-3">{sideLabel(t.transaction_type)}</td>
+              <td className="py-1.5 pr-3">{modeLabel(t)}</td>
               <td className="py-1.5 pr-3 tabular-nums">{safeNumber(t.quantity)}</td>
               <td className="py-1.5 pr-3 tabular-nums">{formatRupeesCompact(t.value_amount)}</td>
             </tr>

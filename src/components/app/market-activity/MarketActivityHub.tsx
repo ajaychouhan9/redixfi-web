@@ -1,6 +1,6 @@
 "use client";
 
-import { personCategory, sideLabel } from "@/lib/insider-display";
+import { modeLabel, personCategory, sideLabel } from "@/lib/insider-display";
 import { TabBoundary } from "./TabBoundary";
 import { safeNumber, safeRupees } from "@/lib/safe-format";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -150,6 +150,7 @@ export function MarketActivityHub() {
             date: row.trade_date,
             person_category: personCategory(row),
             transaction_type: sideLabel(row.transaction_type),
+            mode: modeLabel(row),
             quantity: row.quantity,
             value_amount: row.value_amount,
           };

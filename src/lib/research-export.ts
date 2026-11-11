@@ -1,4 +1,4 @@
-import { personCategory, sideLabel } from "@/lib/insider-display";
+import { modeLabel, personCategory, sideLabel } from "@/lib/insider-display";
 import { resolve52Week } from "@/lib/week52";
 import { safeNumber } from "./safe-format";
 import type {
@@ -214,7 +214,7 @@ function detailRows(data: ResearchDetail, peers: PeerRow[] | null): XlsxSheet[] 
     { name: "Splits", rows: e?.recent_splits.map((row) => ({ "Record date": row.record_date, Remarks: row.remarks })) ?? [] },
     { name: "Delivery", rows: data.delivery_30d.map((row) => ({ Date: row.date, "Delivery %": row.delivery_pct })) },
     { name: "Events", rows: data.corporate_events.map(cleanGenericEvent) },
-    { name: "Insider Trades", rows: data.insider_trades.map((row) => ({ Date: row.trade_date, Category: personCategory(row), Type: sideLabel(row.transaction_type), Quantity: row.quantity, Value: row.value_amount })) },
+    { name: "Insider Trades", rows: data.insider_trades.map((row) => ({ Date: row.trade_date, Category: personCategory(row), Type: sideLabel(row.transaction_type), Mode: modeLabel(row), Quantity: row.quantity, Value: row.value_amount })) },
     { name: "Bulk Block", rows: data.bulk_block_deals.map(cleanBulkBlockRow) },
     { name: "Pledge History", rows: data.pledge_history.map((row) => ({ Quarter: row.quarter, Date: row.as_of_date, "Pledged %": row.pledged_pct, "Pledge change": row.pledge_change ?? "", Trend: row.pledge_trend ?? "" })) },
     { name: "Options PCR", rows: data.options_pcr_history.map((row) => ({ Timestamp: row.timestamp, Expiry: row.expiry, PCR: row.pcr, "PCR volume": row.pcr_vol, "Last price": row.last_price, "Max pain": row.max_pain, "CE resistance": row.ce_resistance, "PE support": row.pe_support, "CE OI change": row.ce_oi_change, "PE OI change": row.pe_oi_change })) },

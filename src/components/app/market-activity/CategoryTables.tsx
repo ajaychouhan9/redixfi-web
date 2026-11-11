@@ -9,7 +9,7 @@ import type {
   MarketActivityRow,
 } from "@/lib/api/types";
 import { formatDateIst } from "@/lib/format";
-import { personCategory, sideLabel } from "@/lib/insider-display";
+import { modeLabel, personCategory, sideLabel } from "@/lib/insider-display";
 import { stockPath } from "@/lib/seo/stock-symbol";
 
 /** Per-category tables (2026-08-15) — each reuses the EXACT column
@@ -117,6 +117,7 @@ export function InsiderTable({ rows }: { rows: MarketActivityInsiderRow[] }) {
             <th className="py-1.5 pr-3">Symbol</th>
             <th className="py-1.5 pr-3">Category</th>
             <th className="py-1.5 pr-3">Type</th>
+            <th className="py-1.5 pr-3">Mode</th>
             <th className="py-1.5 pr-3">Qty</th>
             <th className="py-1.5 pr-3">Value</th>
           </tr>
@@ -130,6 +131,7 @@ export function InsiderTable({ rows }: { rows: MarketActivityInsiderRow[] }) {
               </td>
               <td className="py-1.5 pr-3">{personCategory(t)}</td>
               <td className="py-1.5 pr-3">{sideLabel(t.transaction_type)}</td>
+              <td className="py-1.5 pr-3">{modeLabel(t)}</td>
               <td className="py-1.5 pr-3 tabular-nums">{safeNumber(t.quantity)}</td>
               <td className="py-1.5 pr-3 tabular-nums">{safeRupees(t.value_amount)}</td>
             </tr>
