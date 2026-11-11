@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { growthText, metaDescription, pageH1, pageTitle, quarterDate, REWIND_MIN_CASES } from "../src/lib/seo/stock-facts.ts";
+import { isNeutralText, neutralSentences, growthText, metaDescription, pageH1, pageTitle, quarterDate, REWIND_MIN_CASES } from "../src/lib/seo/stock-facts.ts";
 import { fiveSessionChange, hasEnoughHistory, REWIND_CONDITIONS, resultSentence, summarise, periodLine, type RawStock } from "../src/lib/seo/stock-rewind.ts";
 import { isWeekDate, weekDescription, weekH1, weekSentences, weekTitle, weekPath } from "../src/lib/seo/weekly.ts";
 import { FILTERS_NOTE, FUNDAMENTAL_SCREENS, getFundamentalScreen } from "../src/data/fundamental-screens.ts";
@@ -50,6 +50,15 @@ const noForbidden = (t: string, where: string) => {
   assert.equal(growthText(-250, "profit"), "-250.0%");              // a profit fall below -100% is a loss, not a data problem
   assert.equal(growthText(null, "sales"), "n/a");
   assert.equal(growthText(12.34, "sales"), "+12.3%");
+}
+
+// ---- third-party text: opinion words are left out
+{
+  assert.equal(isNeutralText("Infosys draws four downgrades in a day on weaker annual sales outlook"), false);
+  assert.equal(isNeutralText("Motilal Oswal reveals 9 stock ratings and target prices"), false);
+  assert.equal(isNeutralText("ITC shares rise 2% after Q2 results"), true);
+  assert.equal(neutralSentences("Revenue grew 10%. The outlook is strong. Margins were 25%."), "Revenue grew 10%. Margins were 25%.");
+  assert.equal(neutralSentences("We target 20% growth."), "");
 }
 
 // ---- per-stock Rewind

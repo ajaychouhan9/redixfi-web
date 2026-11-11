@@ -44,3 +44,17 @@ export function metaDescription(o: { company: string; symbol: string; price: num
 }
 
 export const REWIND_MIN_CASES = 5;
+
+/**
+ * Third-party headlines and filed-transcript summaries are shown as written, but anything that reads as a rating, target, call or view
+ * is left out of the public stock page (RedixFi is not a research analyst). A headline with such a word is dropped; a summary loses only the
+ * sentences that contain one.
+ */
+const OPINION_WORDS = /\b(buy|buys|sell|sells|hold|holds|target|targets|recommend\w*|rating|ratings|upgrade\w*|downgrade\w*|breakout|oversold|overbought|bullish|bearish|chance|chances|probability|outlook|overweight|underweight|accumulate)\b/i;
+
+export const isNeutralText = (t: string | null | undefined): boolean => !!t && !OPINION_WORDS.test(t);
+
+export function neutralSentences(text: string | null | undefined): string {
+  if (!text) return "";
+  return (text.match(/[^.!?]+[.!?]+(\s|$)|[^.!?]+$/g) ?? []).filter((s) => !OPINION_WORDS.test(s)).join("").trim();
+}
