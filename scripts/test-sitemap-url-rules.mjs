@@ -31,7 +31,7 @@ const hit = (path) => {
 assert.equal(hit("/stocks/SILLYMONKS"), "/stocks/CRESTO");
 assert.equal(hit("/signals/sillymonks"), "/signals/CRESTO");
 assert.equal(hit("/research/HEG"), "/research/HEGAM");
-assert.equal(hit("/track-record/MANBRO"), "/track-record/KDGREEN");
+assert.equal(hit("/stocks/MANBRO"), "/stocks/KDGREEN");      // /track-record/<symbol> now redirects to /stocks/<symbol> (11 Nov 2026)
 assert.equal(hit("/stocks/HEG/concall-summary"), "/stocks/HEGAM/concall-summary");
 assert.equal(hit("/stocks/HEGAM"), null, "the new symbol is not redirected");
 assert.equal(hit("/signals/ICICIPRULI"), "/signals/ICICILIFE");
