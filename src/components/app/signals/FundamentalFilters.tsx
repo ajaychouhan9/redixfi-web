@@ -1,51 +1,12 @@
 "use client";
 
 import type { FundamentalsCoverage } from "@/lib/api/types";
-import type { SignalsListParams } from "@/lib/api/endpoints";
 import { FILTERS_NOTE } from "@/data/fundamental-screens";
 import { quarterDate } from "@/lib/seo/stock-facts";
 
-/** The Screener's filters on reported figures. A stock with no figure for a field is not matched by a filter on that field. */
-export interface FundFilterState {
-  peMax: string;
-  roeMin: string;
-  epsPositive: boolean;
-  profitGrowthMin: string;
-  salesGrowthMin: string;
-  ema200: "" | "above" | "below";
-}
+export { EMPTY_FUND, fundActive, fundChips, fundParams, type FundFilterState } from "./fund-filter-model";
+import type { FundFilterState } from "./fund-filter-model";
 
-export const EMPTY_FUND: FundFilterState = { peMax: "", roeMin: "", epsPositive: false, profitGrowthMin: "", salesGrowthMin: "", ema200: "" };
-
-const num = (v: string): number | undefined => {
-  if (v.trim() === "") return undefined;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : undefined;
-};
-
-export function fundParams(f: FundFilterState): Partial<SignalsListParams> {
-  return {
-    pe_max: num(f.peMax),
-    roe_min: num(f.roeMin),
-    eps_positive: f.epsPositive ? true : undefined,
-    profit_growth_min: num(f.profitGrowthMin),
-    sales_growth_min: num(f.salesGrowthMin),
-    ema200_state: f.ema200 || undefined,
-  };
-}
-
-export function fundChips(f: FundFilterState, set: (patch: Partial<FundFilterState>) => void): { key: string; text: string; clear: () => void }[] {
-  const out: { key: string; text: string; clear: () => void }[] = [];
-  if (num(f.peMax) !== undefined) out.push({ key: "pe", text: `P/E ≤ ${f.peMax}`, clear: () => set({ peMax: "" }) });
-  if (num(f.roeMin) !== undefined) out.push({ key: "roe", text: `ROE ≥ ${f.roeMin}%`, clear: () => set({ roeMin: "" }) });
-  if (f.epsPositive) out.push({ key: "eps", text: "EPS above zero", clear: () => set({ epsPositive: false }) });
-  if (num(f.profitGrowthMin) !== undefined) out.push({ key: "pg", text: `Profit growth ≥ ${f.profitGrowthMin}%`, clear: () => set({ profitGrowthMin: "" }) });
-  if (num(f.salesGrowthMin) !== undefined) out.push({ key: "sg", text: `Sales growth ≥ ${f.salesGrowthMin}%`, clear: () => set({ salesGrowthMin: "" }) });
-  if (f.ema200) out.push({ key: "ema", text: `Price ${f.ema200} 200-day EMA`, clear: () => set({ ema200: "" }) });
-  return out;
-}
-
-export const fundActive = (f: FundFilterState) => fundChips(f, () => undefined).length > 0;
 
 const label = "flex flex-col gap-1 text-[11px] text-foreground-muted";
 const control = "h-9 rounded-lg border border-border bg-hover px-2 text-sm text-foreground";
@@ -85,6 +46,45 @@ export function FundamentalFilters({ value, onChange, coverage }: { value: FundF
           <input type="checkbox" checked={value.epsPositive} onChange={(e) => onChange({ epsPositive: e.target.checked })} /> EPS above zero{count(coverage.eps)}
         </label>
       </div>
+      {coverage.promoter !== undefined && (<>
+      <p className="mt-3 text-xs font-semibold text-foreground">Holding, dividend and disclosed activity</p>
+      <div className="mt-1 grid grid-cols-2 items-end gap-2 sm:grid-cols-3 lg:grid-cols-4">
+        <label className={label}>
+          Debt-to-equity at most{count(coverage.de)}
+          <input type="number" min={0} step="0.1" value={value.deMax} onChange={(e) => onChange({ deMax: e.target.value })} placeholder="e.g. 1" className={control} />
+        </label>
+        <label className={label}>
+          Promoter holding at least (%){count(coverage.promoter)}
+          <input type="number" min={0} max={100} value={value.promoterMin} onChange={(e) => onChange({ promoterMin: e.target.value })} placeholder="e.g. 50" className={control} />
+        </label>
+        <label className={label}>
+          Dividend yield at least (%){count(coverage.dividend_yield)}
+          <input type="number" min={0} step="0.1" value={value.dividendYieldMin} onChange={(e) => onChange({ dividendYieldMin: e.target.value })} placeholder="e.g. 2" className={control} />
+        </label>
+        <label className={label}>
+          Promoter pledge at most (%){count(coverage.pledge)}
+          <input type="number" min={0} max={100} value={value.pledgeMax} onChange={(e) => onChange({ pledgeMax: e.target.value })} placeholder="e.g. 10" className={control} />
+        </label>
+        <label className={label}>
+          Delivery at least (%){count(coverage.delivery)}
+          <input type="number" min={0} max={100} value={value.deliveryMin} onChange={(e) => onChange({ deliveryMin: e.target.value })} placeholder="e.g. 60" className={control} />
+        </label>
+        <label className={label}>
+          Insider trades disclosed, last 30 days{count(coverage.insider_30d)}
+          <select value={value.insider} onChange={(e) => onChange({ insider: e.target.value as FundFilterState["insider"] })} className={control}>
+            <option value="">Any</option>
+            <option value="net_buying">Net buying as disclosed</option>
+            <option value="net_selling">Net selling as disclosed</option>
+          </select>
+        </label>
+        <label className="flex h-9 items-center gap-2 self-end rounded-lg border border-border bg-hover px-2 text-xs text-foreground-muted">
+          <input type="checkbox" checked={value.deal30d} onChange={(e) => onChange({ deal30d: e.target.checked })} /> Bulk/block deal, last 30 days{count(coverage.deal_30d)}
+        </label>
+      </div>
+      <p className="mt-2 text-[11px] text-foreground-faint">
+        Dates of the figures: promoter holding is from the shareholding pattern of {coverage.shareholding_date_latest ? quarterDate(coverage.shareholding_date_latest) : "the latest filing"}; delivery, pledge and insider figures are as of {coverage.measured_as_of ?? "the latest session"}; deals are those disclosed up to {coverage.deal_latest ?? "the latest session"}. Insider filters use the net value of insider trades disclosed in the last 30 days, by trade date. ROCE is not stored, so it cannot be filtered.
+      </p>
+      </>)}
       <p className="mt-2 text-[11px] text-foreground-faint">
         {FILTERS_NOTE} A stock with no reported figure for a filter is not matched by it. Profit and sales growth compare the latest quarter with the same quarter a year earlier.
         {q ? ` ${q}` : ""}

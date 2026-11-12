@@ -277,8 +277,8 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
       <FeedbackBox page="pricing" className="mt-6" />
 
       <p className="mt-3 text-xs text-foreground-faint">
-        Prices are GST-inclusive; invoices show the breakup. Subscriptions renew automatically and can be cancelled
-        anytime — cancellation is pro-rata.
+        One-time payment for the period. It does not renew automatically; you can renew when it ends. You receive a payment receipt
+        by email. You can cancel anytime — the refund for the unused part is pro-rata.
       </p>
     </div>
   );

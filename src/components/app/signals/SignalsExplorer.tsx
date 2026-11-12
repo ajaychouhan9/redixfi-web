@@ -9,6 +9,7 @@ import { SIGNAL_SECTORS } from "@/data/sectors";
 import { SignalMobileRow, SignalTableRow, type VisibleColumns } from "./SignalTableRow";
 import { ExportButton } from "@/components/ui/ExportButton";
 import { ShareScreenButton } from "./ShareScreenButton";
+import { MyScreens } from "./MyScreens";
 import { downloadCsv } from "@/lib/csv";
 import { downloadXlsx } from "@/lib/xlsx";
 import { isProEntitled } from "@/lib/entitlements";
@@ -327,12 +328,48 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
       dma_state: (dmaState || undefined) as SharedScreenParams["dma_state"],
       pcr_band: (pcrBand || undefined) as SharedScreenParams["pcr_band"],
       anomaly: anomalyOnly ? true : undefined,
+      industry: industry || undefined,
+      ...fundParams(fund),
       sort,
       order,
     }),
-    [q, sector, scoreMin, scoreMax, eventRiskOnly, from52Max, from52Min, volatilityBand,
-     volatilityMin, volatilityMax, volumeMin, deliveryState, deltaMin, dmaState, pcrBand, anomalyOnly, sort, order]
+    [q, sector, industry, scoreMin, scoreMax, eventRiskOnly, from52Max, from52Min, volatilityBand,
+     volatilityMin, volatilityMax, volumeMin, deliveryState, deltaMin, dmaState, pcrBand, anomalyOnly, fund, sort, order]
   );
+
+  // Apply a saved screen's filters to the controls (My screens).
+  const applySaved = useCallback((p: SharedScreenParams) => {
+    const str = (v: number | null | undefined) => (v != null ? String(v) : "");
+    setQ(p.q ?? "");
+    setSector(p.sector ?? "");
+    setIndustry(p.industry ?? "");
+    setScoreMin(str(p.score_min));
+    setScoreMax(str(p.score_max));
+    setEventRiskOnly(!!p.event_risk);
+    setWatchlistOnly(false);
+    const has52 = p.from_52w_max != null || p.from_52w_min != null;
+    setFrom52Preset(has52 ? "custom" : "");
+    setFrom52Custom(str(p.from_52w_max));
+    setFrom52Min(str(p.from_52w_min));
+    setVolatilityBand(p.volatility_band ?? (p.volatility_min != null || p.volatility_max != null ? "custom" : ""));
+    setVolMin(str(p.volatility_min));
+    setVolMax(str(p.volatility_max));
+    setVolumeMin(str(p.volume_ratio_min));
+    setDeliveryState(p.delivery_state ?? "");
+    setDeltaMin(str(p.delta_1d_min));
+    setDmaState(p.dma_state ?? "");
+    setPcrBand(p.pcr_band ?? "");
+    setAnomalyOnly(!!p.anomaly);
+    setFund({
+      peMax: str(p.pe_max), roeMin: str(p.roe_min), epsPositive: !!p.eps_positive, profitGrowthMin: str(p.profit_growth_min),
+      salesGrowthMin: str(p.sales_growth_min), ema200: p.ema200_state ?? "", deMax: str(p.de_max), promoterMin: str(p.promoter_min),
+      dividendYieldMin: str(p.dividend_yield_min), pledgeMax: str(p.pledge_max), deliveryMin: str(p.delivery_pct_min),
+      insider: p.insider_30d ?? "", deal30d: !!p.deal_30d,
+    });
+    setSort(p.sort ?? "symbol");
+    setOrder(p.order ?? "asc");
+    setMoreOpen(true);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -634,6 +671,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
             enabledTitle="Export current filter as CSV"
             className="flex h-9 w-auto items-center gap-1 rounded-lg border border-border bg-hover px-2 text-xs text-foreground-muted disabled:opacity-40"
           />
+          {explorerControlsEnabled && fundCoverage?.promoter !== undefined && <MyScreens params={shareParams} onApply={applySaved} />}
           {explorerControlsEnabled && <ShareScreenButton params={shareParams} />}
         </div>
       </div>

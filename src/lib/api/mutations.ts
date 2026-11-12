@@ -490,6 +490,53 @@ export async function getMySharedScreens(token: string): Promise<SharedScreenSum
   return env.data;
 }
 
+// ---------- private saved screens ("My screens", 13 Nov 2026) ----------
+
+export interface MyScreen {
+  id: string;
+  name: string;
+  params: SharedScreenParams;
+  created_at: string | null;
+  last_viewed_at: string | null;
+}
+
+export interface MyScreensList {
+  screens: MyScreen[];
+  limit: number;
+  count: number;
+}
+
+export interface MyScreenView {
+  first_view: boolean;
+  added: string[];
+  member_count: number;
+  previous_view_at: string | null;
+  previous_member_count: number | null;
+}
+
+export async function listMyScreens(token: string): Promise<MyScreensList> {
+  const env = await apiGet<MyScreensList>("/my-screens", { token });
+  return env.data;
+}
+
+export async function createMyScreen(token: string, name: string, params: SharedScreenParams): Promise<MyScreen> {
+  const env = await apiMutate<MyScreen>("/my-screens", "POST", { name, params }, { token });
+  return env.data;
+}
+
+export async function renameMyScreen(token: string, id: string, name: string): Promise<void> {
+  await apiMutate<{ id: string; name: string }>(`/my-screens/${encodeURIComponent(id)}`, "PATCH", { name }, { token });
+}
+
+export async function deleteMyScreen(token: string, id: string): Promise<void> {
+  await apiMutate<{ deleted: boolean }>(`/my-screens/${encodeURIComponent(id)}`, "DELETE", undefined, { token });
+}
+
+export async function viewMyScreen(token: string, id: string, symbols: string[]): Promise<MyScreenView> {
+  const env = await apiMutate<MyScreenView>(`/my-screens/${encodeURIComponent(id)}/view`, "POST", { symbols }, { token });
+  return env.data;
+}
+
 export async function deleteSharedScreen(token: string, slug: string): Promise<void> {
   await apiMutate<{ ok: boolean }>(`/shared-screens/${encodeURIComponent(slug)}`, "DELETE", undefined, { token });
 }

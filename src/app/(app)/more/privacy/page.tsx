@@ -69,7 +69,7 @@ export default function PrivacyPage() {
             <ul className="list-disc space-y-1 pl-5">
               <li>Account details: while your account is open, and for a short period after you ask us to delete it so that we can finish refunds or disputes.</li>
               <li>Ask AI history: for the period your plan keeps chat history (6 hours on Free, 7 days on Basic, 30 days on Pro).</li>
-              <li>Payment and invoice records: for as long as tax and accounting law requires.</li>
+              <li>Payment and receipt records: for as long as tax and accounting law requires.</li>
               <li>Feedback answers: up to 2 years.</li>
               <li>Server logs: a few weeks.</li>
             </ul>

@@ -22,6 +22,7 @@ import { inr, isNeutralText, metaDescription, neutralSentences, pageH1, pageTitl
 import { modeLabel, personCategory, sideLabel } from "@/lib/insider-display";
 import { safeNumber, safeRupees } from "@/lib/safe-format";
 import { sourceName } from "@/lib/news-source";
+import { coverageLine } from "@/lib/seo/data-coverage";
 
 // ONE public page per stock (12 Nov 2026). /research/<symbol> and /signals/<symbol> stay for signed-in work and point here with a
 // canonical tag and noindex. Public, anonymous, ISR: the page shows a subset that is the same for every visitor.
@@ -180,6 +181,10 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
         {q?.latest_quarter_end ? ` Its latest reported quarter ended ${quarterDate(q.latest_quarter_end)}.` : ""}
       </p>
 
+      <p className="mt-2 text-xs text-foreground-faint" data-testid="data-coverage">
+        {coverageLine(f)} <Link href="/more/data-sources" className="underline">What &ldquo;not available&rdquo; means</Link>
+      </p>
+
       <TrialCta className="mt-4" />
 
       <Section id="range" title="52-week range" note={closeDate ? `As of ${dateOf(closeDate)} close` : undefined}>
@@ -257,6 +262,23 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
         )}
         {f?.events?.next_results_date && f.events.next_results_date.slice(0, 10) >= istToday() && <p className="mt-1 text-xs text-foreground-faint">Next results date announced: {quarterDate(f.events.next_results_date)}.</p>}
       </Section>
+
+      {data.industry_comparison && data.industry_comparison.rows.some((r) => r.value !== null) && (
+        <Section
+          id="industry-median"
+          title="Against the industry median"
+          note={`Industry: ${data.industry_comparison.industry ?? "not on record"}${data.industry_comparison.n_stocks ? ` (${data.industry_comparison.n_stocks} stocks)` : ""}. Medians use each company's latest reported quarter${data.industry_comparison.as_of ? `, up to the quarter ended ${quarterDate(data.industry_comparison.as_of)}` : ""}. This is a comparison of reported figures, not a rating.`}
+        >
+          <ul className="space-y-2 text-sm" data-testid="industry-median">
+            {data.industry_comparison.rows.filter((r) => r.value !== null).map((r) => (
+              <li key={r.key}>{r.text}</li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-foreground-faint">
+            &ldquo;Above&rdquo; and &ldquo;below&rdquo; only say where the figure sits against the median of the stocks that have it. An industry needs at least {data.industry_comparison.min_stocks} stocks with the figure to show a median.
+          </p>
+        </Section>
+      )}
 
       <Section id="insider" title="Insider trade disclosures" note="Filed disclosures, shown by trade date. Category of the person and mode as filed; names are not shown.">
         {insider.length > 0 ? (

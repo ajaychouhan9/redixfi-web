@@ -53,6 +53,17 @@ export interface FundamentalsCoverage {
   profit_growth: number;
   sales_growth: number;
   ema200: number;
+  /** 13 Nov 2026: counts and dates for the holding, dividend, delivery, pledge, insider and deal filters (absent on an older API). */
+  de?: number;
+  promoter?: number;
+  dividend_yield?: number;
+  delivery?: number;
+  pledge?: number;
+  insider_30d?: number;
+  deal_30d?: number;
+  shareholding_date_latest?: string | null;
+  measured_as_of?: string | null;
+  deal_latest?: string | null;
   quarter_end_latest: string | null;
   quarter_end_median: string | null;
   quarter_end_earliest: string | null;
@@ -137,6 +148,12 @@ export interface SignalRow {
   ema200?: number | null;
   ema200_state?: "above" | "below" | null;
   ema200_as_of?: string | null;
+  de?: number | null;
+  promoter_pct?: number | null;
+  shareholding_date?: string | null;
+  dividend_yield_pct?: number | null;
+  deal_30d_last?: string | null;
+  deal_30d_count?: number | null;
   limited_data?: boolean;
   limited_data_note?: string | null;
   symbol: string;
@@ -1200,7 +1217,33 @@ export interface AnnualReportSummary {
   compliance_note: string;
 }
 
+/** One comparison with the industry median (13 Nov 2026). `position` is above / below / equal; null when there are too few stocks. */
+export interface IndustryComparisonRow {
+  key: "roe" | "profit_growth" | "sales_growth";
+  label: string;
+  value: number | null;
+  median: number | null;
+  n: number;
+  n_stocks?: number;
+  industry?: string;
+  position: "above" | "below" | "equal" | null;
+  too_few: boolean;
+  as_of?: string | null;
+  text: string;
+}
+
+export interface IndustryComparison {
+  industry: string | null;
+  n_stocks: number | null;
+  as_of: string | null;
+  stock_quarter_end: string | null;
+  min_stocks: number;
+  rows: IndustryComparisonRow[];
+}
+
 export interface ResearchDetail {
+  /** Absent on an API without the industry comparison. */
+  industry_comparison?: IndustryComparison | null;
   symbol: string;
   company_name: string;
   sector: string;
@@ -1466,6 +1509,8 @@ export interface AlertPreferences {
   daily_brief: boolean;
   /** Saturday weekly market review email: off until the user ticks it (absent on older accounts). */
   weekly_review?: boolean;
+  /** Daily watchlist digest by email (and Telegram on Pro): off until the user turns it on (absent on older accounts). */
+  watchlist_digest?: boolean;
 }
 
 // ---------- threshold alerts (2026-08-08, locked spec) ----------
@@ -2302,6 +2347,17 @@ export interface SharedScreenParams {
   profit_growth_min?: number | null;
   sales_growth_min?: number | null;
   ema200_state?: "above" | "below" | null;
+  /** 13 Nov 2026 filters. A stock missing the figure is not matched. */
+  de_max?: number | null;
+  promoter_min?: number | null;
+  promoter_max?: number | null;
+  dividend_yield_min?: number | null;
+  pledge_min?: number | null;
+  pledge_max?: number | null;
+  delivery_pct_min?: number | null;
+  insider_30d?: "net_buying" | "net_selling" | null;
+  deal_30d?: boolean | null;
+  industry?: string | null;
   watchlist_only?: boolean | null;
   sort: string;
   order: "asc" | "desc";
@@ -2314,6 +2370,19 @@ export interface SharedScreen {
   params: SharedScreenParams;
   created_at: string;
   view_count: number;
+}
+
+/** GET /data-status: per-source "as of" dates read from the stored data, and per-field coverage. */
+export interface DataStatus {
+  generated_at: string;
+  sources: { key: string; name: string; as_of: string | null; cadence: string; detail: string }[];
+  coverage: {
+    universe: number;
+    quarter_end_earliest: string | null;
+    quarter_end_latest: string | null;
+    fields: { label: string; count: number; as_of: string | null; quarter_end?: boolean }[];
+  };
+  not_available_text: string;
 }
 
 export interface SharedScreenSummary {

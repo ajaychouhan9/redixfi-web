@@ -43,6 +43,7 @@ import type {
   EventKind,
   MarketActivitySummary,
   SharedScreen,
+  DataStatus,
   IntradayTabData,
   IntradayTabId,
 } from "./types";
@@ -98,6 +99,16 @@ export interface SignalsListParams {
   profit_growth_min?: number;
   sales_growth_min?: number;
   ema200_state?: "above" | "below";
+  /** 13 Nov 2026 filters. A stock missing the figure is not matched. */
+  de_max?: number;
+  promoter_min?: number;
+  promoter_max?: number;
+  dividend_yield_min?: number;
+  pledge_min?: number;
+  pledge_max?: number;
+  delivery_pct_min?: number;
+  insider_30d?: "net_buying" | "net_selling";
+  deal_30d?: boolean;
   q?: string;
   sort?: string;
   order?: "asc" | "desc";
@@ -167,6 +178,9 @@ export const getScoreHistory = (symbol: string, opts?: FetchOpts) =>
 // summary, Pro also the 5 and 15 session windows (server-configured).
 export const getVolatility = (symbol: string, opts?: FetchOpts) =>
   apiGet<VolatilityResponse>(`/signals/${encodeURIComponent(symbol)}/volatility`, opts);
+
+// @auth public — the data-sources page: the body is the same for everyone and carries no user data.
+export const getDataStatus = (opts?: FetchOpts) => apiGet<DataStatus>("/data-status", opts);
 
 // @auth required — tier-aware: Free reads the first 20 of each list, Pro the whole list.
 export const getVolatilityBoard = (

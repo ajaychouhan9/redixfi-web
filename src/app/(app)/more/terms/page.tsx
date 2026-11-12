@@ -43,10 +43,10 @@ export default function TermsPage() {
           heading: "Plans, billing and renewal",
           body: (
             <>
-              <p>RedixFi has a Free plan and two paid plans, Basic and Pro, each available monthly or annually. The prices, and what each plan includes, are on the <Link href="/pricing" className="text-accent underline">pricing page</Link>. Prices include GST; the invoice shows the breakup.</p>
-              <p>You pay through Razorpay. A paid plan renews automatically at the end of each period until you cancel. You can cancel at any time from your account; how cancellation and refunds work is in the <Link href="/more/refund-policy" className="text-accent underline">refund policy</Link>.</p>
+              <p>RedixFi has a Free plan and two paid plans, Basic and Pro, each available monthly or annually. The prices, and what each plan includes, are on the <Link href="/pricing" className="text-accent underline">pricing page</Link>. The price shown is the total you pay. After each payment we email you a payment receipt.</p>
+              <p>You pay through Razorpay. Each payment is a one-time payment for the period you choose. A paid plan does not renew automatically: when the period ends your account returns to the Free plan, and you can renew whenever you like. You can cancel at any time from your account; how cancellation and refunds work is in the <Link href="/more/refund-policy" className="text-accent underline">refund policy</Link>.</p>
               <p>A monthly plan can be upgraded to the annual plan. Ask AI question packs (top-ups) are bought separately and stay usable after a subscription ends.</p>
-              <p>We may change prices for future periods. We will tell you before a change applies to your next renewal.</p>
+              <p>We may change prices for future periods. Prices shown at checkout are the prices you pay for that period.</p>
             </>
           ),
         },

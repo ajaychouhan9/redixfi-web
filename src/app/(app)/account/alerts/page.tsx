@@ -16,6 +16,7 @@ const LABELS: Record<keyof AlertPreferences, { title: string; help: string }> = 
   market_wide: { title: "Market-wide events", help: "Market-wide news items." },
   daily_brief: { title: "AI Daily Brief digest", help: "Morning and post-close market recap." },
   weekly_review: { title: "Saturday weekly review email", help: "One email on Saturday morning with the week's market data. Off until you turn it on." },
+  watchlist_digest: { title: "Daily watchlist digest by email", help: "After the market closes, one email with the measured facts for the stocks on your watchlist (price change, delivery, volume, 52-week range, disclosed insider and bulk/block deals, next result date). On the Pro plan it is also sent to your linked Telegram. Off until you turn it on; every email has an unsubscribe link." },
 };
 
 function AlertsForm() {

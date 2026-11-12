@@ -66,7 +66,7 @@ export function SubscriptionStatusCard({ profile, onChange }: { profile: MeProfi
         <dd>{profile.subscription.plan ?? "None"}</dd>
         <dt className="text-foreground-muted">Status</dt>
         <dd className="capitalize">{profile.subscription.status}</dd>
-        <dt className="text-foreground-muted">Renews</dt>
+        <dt className="text-foreground-muted">Plan ends</dt>
         <dd>{profile.subscription.renews ? formatShortDate(profile.subscription.renews) : "—"}</dd>
       </dl>
 
