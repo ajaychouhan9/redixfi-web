@@ -11,6 +11,7 @@ export type AnalyticsEvent =
   | "lock_click"
   | "rewind_query_run"
   | "screener_filter_used"
+  | "screener_csv_export"
   | "ask_ai_question";
 
 export function track(event: AnalyticsEvent, props?: Record<string, string | number | boolean | null>): void {

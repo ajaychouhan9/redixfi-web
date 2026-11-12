@@ -15,7 +15,7 @@
     "test:stock-clarity": "node scripts/test-stock-clarity.mjs",
     "test:signals-grouping": "node scripts/test-signals-grouping.mjs",
     "check:sitemap-live": "node scripts/check-sitemap-live.mjs",
-    "check:wording": "node scripts/test-wording.mjs && node --experimental-strip-types scripts/test-ux-small.ts && node --experimental-strip-types scripts/test-market-activity.ts && node --experimental-strip-types scripts/test-insider-display.ts && node --experimental-strip-types scripts/test-trust-fixes.ts && node scripts/test-legal-pages.mjs && node --experimental-strip-types --import ./scripts/ts-alias.mjs scripts/test-prompt3.ts && node --experimental-strip-types --import ./scripts/ts-alias.mjs scripts/test-prompt5.ts"
+    "check:wording": "node scripts/test-wording.mjs && node --experimental-strip-types scripts/test-ux-small.ts && node --experimental-strip-types scripts/test-market-activity.ts && node --experimental-strip-types scripts/test-insider-display.ts && node --experimental-strip-types scripts/test-trust-fixes.ts && node scripts/test-legal-pages.mjs && node --experimental-strip-types --import ./scripts/ts-alias.mjs scripts/test-prompt3.ts && node --experimental-strip-types --import ./scripts/ts-alias.mjs scripts/test-prompt5.ts && node --experimental-strip-types --import ./scripts/ts-alias.mjs scripts/test-prompt6.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^1.5.0",

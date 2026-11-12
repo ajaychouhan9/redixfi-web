@@ -112,6 +112,10 @@ export interface SignalsListParams {
   q?: string;
   sort?: string;
   order?: "asc" | "desc";
+  /** Extra row fields to send (14 Nov 2026), comma-separated: pledge_pct, insider_net_30d. */
+  fields?: string;
+  /** CSV export pages: the API requires a plan with CSV export and caps the rows. */
+  export?: boolean;
   page?: number;
   size?: number;
 }

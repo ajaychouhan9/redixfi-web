@@ -1,22 +1,24 @@
 "use client";
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { Search, Filter, ArrowUpDown, SlidersHorizontal, X, ChevronDown } from "lucide-react";
+import { Search, Filter, ArrowUpDown, SlidersHorizontal, X, ChevronDown, Download, Lock } from "lucide-react";
 import { getSignals } from "@/lib/api/endpoints";
 import { formatObservationDate } from "@/lib/format";
 import type { SignalRow, SignalsPageInfo, SharedScreenParams } from "@/lib/api/types";
 import { SIGNAL_SECTORS } from "@/data/sectors";
-import { SignalMobileRow, SignalTableRow, type VisibleColumns } from "./SignalTableRow";
-import { ExportButton } from "@/components/ui/ExportButton";
+import { SignalMobileRow, SignalTableRow } from "./SignalTableRow";
+import { UpgradeLink } from "@/components/ui/UpgradeLink";
 import { ShareScreenButton } from "./ShareScreenButton";
 import { MyScreens } from "./MyScreens";
-import { downloadCsv } from "@/lib/csv";
-import { downloadXlsx } from "@/lib/xlsx";
 import { isProEntitled } from "@/lib/entitlements";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useMarketState } from "@/lib/market/useMarketState";
 import { signalsListLabels } from "@/lib/signals-list-labels";
-import { from52Display } from "@/lib/from52-display";
+import {
+  COLUMN_BY_ID, COLUMN_GROUPS, COLUMNS, DEFAULT_COLUMNS, PRESETS, apiSort, buildScreenerCsv, columnAvailable, exportPages, filterColumns, fromLegacyColumns,
+  isPageSort, neededFields, resolveColumns, sanitizeColumns, sortAvailable, sortOptionsFor, sortPage, EXPORT_MAX_ROWS, fmtDate,
+  type ApiCaps, type ColumnCtx, type ColumnId,
+} from "@/lib/screener-columns";
 import { getWatchlist } from "@/lib/api/mutations";
 import type { SmartFilterPatch } from "./smartFilterPatch";
 import { EMPTY_FUND, FundamentalFilters, fundActive, fundChips, fundParams, type FundFilterState } from "./FundamentalFilters";
@@ -24,22 +26,26 @@ import type { FundamentalsCoverage } from "@/lib/api/types";
 import { track } from "@/lib/analytics";
 import { FeedbackBox } from "@/components/app/FeedbackBox";
 
-const SIGNALS_COLUMNS_KEY = "redixfi:signals-columns:v1";
+const SIGNALS_COLUMNS_KEY = "redixfi:signals-columns:v1";          // the old yes/no choice for seven columns (read once to carry the choice over)
+const SIGNALS_COLUMNS_KEY_V2 = "redixfi:signals-columns:v2";       // the list of chosen column ids
 const FROM52_DEFAULT_MIGRATION_KEY = "redixfi:signals-columns:from52-default:v1";
-const DEFAULT_SIGNALS_COLUMNS: VisibleColumns = {
-  sector: true, delivery: true, volume: true, chips: true, eventRisk: true,
-  from52: true, volatility: true,
-};
 
-const SORT_OPTIONS = [
+/** The Screener's reported-figure controls as the state the column rules read. */
+function fundFromParams(p: SharedScreenParams): FundFilterState {
+  const str = (v: number | null | undefined) => (v != null ? String(v) : "");
+  return {
+    peMax: str(p.pe_max), roeMin: str(p.roe_min), epsPositive: !!p.eps_positive, profitGrowthMin: str(p.profit_growth_min),
+    salesGrowthMin: str(p.sales_growth_min), ema200: p.ema200_state ?? "", deMax: str(p.de_max), promoterMin: str(p.promoter_min),
+    dividendYieldMin: str(p.dividend_yield_min), pledgeMax: str(p.pledge_max), deliveryMin: str(p.delivery_pct_min),
+    insider: p.insider_30d ?? "", deal30d: !!p.deal_30d,
+  };
+}
+
+const BASE_SORT_OPTIONS = [
   { value: "symbol", label: "Symbol (A–Z)" },
   { value: "name", label: "Name (A–Z)" },
   { value: "market_cap", label: "Market cap" },
-  { value: "delivery_pct", label: "Delivery %" },
   { value: "sector_rank", label: "Sector rank" },
-  { value: "volume_ratio", label: "Volume ratio" },
-  { value: "pct_below_52w_high", label: "From 52-week high" },
-  { value: "vol_pct_more", label: "Volatility" },
 ] as const;
 
 const PAGE_SIZE = 50;
@@ -113,49 +119,49 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   const [pcrBand, setPcrBand] = useState(initialParams?.pcr_band ?? "");
   const [anomalyOnly, setAnomalyOnly] = useState(!!initialParams?.anomaly);
   // reported-figure filters (P/E, ROE, EPS, growth, price vs 200-day EMA); shown only when the API reports their coverage
-  const [fund, setFund] = useState<FundFilterState>(EMPTY_FUND);
+  const [fund, setFund] = useState<FundFilterState>(() => (initialParams ? fundFromParams(initialParams) : EMPTY_FUND));
   const [fundCoverage, setFundCoverage] = useState<FundamentalsCoverage | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
 
   const [sort, setSort] = useState<string>(initialParams?.sort ?? "symbol");
   const [order, setOrder] = useState<"asc" | "desc">(initialParams?.order ?? "asc");
   const [page, setPage] = useState(1);
-  const [columns, setColumns] = useState<VisibleColumns>({
-    sector: true, delivery: true, volume: true, chips: true, eventRisk: true,
-    from52: true, volatility: true,
+  // The columns the user ticked (ids). Filters add their own on top (see `shown`); a screen opened from a saved or shared link brings its own.
+  const [chosen, setChosen] = useState<ColumnId[]>(() => {
+    const fromLink = sanitizeColumns(initialParams?.columns);
+    return fromLink.length ? fromLink : DEFAULT_COLUMNS;
   });
   const [columnPickerOpen, setColumnPickerOpen] = useState(false);
   const columnsHydrated = useRef(false);
 
   useEffect(() => {
-    let saved: Partial<VisibleColumns> | null = null;
-    try {
-      const raw = window.localStorage.getItem(SIGNALS_COLUMNS_KEY);
-      saved = raw ? JSON.parse(raw) : null;
-    } catch {
-      saved = null;
-    }
-    const next: VisibleColumns = { ...DEFAULT_SIGNALS_COLUMNS, ...(saved ?? {}) };
-    try {
-      if (!window.localStorage.getItem(FROM52_DEFAULT_MIGRATION_KEY)) {
-        next.from52 = true;
-        window.localStorage.setItem(FROM52_DEFAULT_MIGRATION_KEY, "1");
+    if (!sanitizeColumns(initialParams?.columns).length) {
+      try {
+        const v2 = window.localStorage.getItem(SIGNALS_COLUMNS_KEY_V2);
+        const ids = v2 ? sanitizeColumns(JSON.parse(v2)) : [];
+        if (ids.length) setChosen(ids);
+        else {
+          const raw = window.localStorage.getItem(SIGNALS_COLUMNS_KEY);
+          const legacy = raw ? JSON.parse(raw) : null;
+          if (legacy && !window.localStorage.getItem(FROM52_DEFAULT_MIGRATION_KEY)) legacy.from52 = true;
+          setChosen(fromLegacyColumns(legacy));
+        }
+      } catch {
+        // Storage can be unavailable (private mode, blocked site data): the default columns still show.
       }
-    } catch {
-      // Storage can be unavailable in private modes; defaults still show the column.
     }
-    setColumns(next);
     columnsHydrated.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (!columnsHydrated.current) return;
     try {
-      window.localStorage.setItem(SIGNALS_COLUMNS_KEY, JSON.stringify(columns));
+      window.localStorage.setItem(SIGNALS_COLUMNS_KEY_V2, JSON.stringify(chosen));
     } catch {
       // No-op when storage is unavailable.
     }
-  }, [columns]);
+  }, [chosen]);
 
   function toggleSort(field: string) {
     setSort(field);
@@ -169,6 +175,8 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   const [incompleteHistoryCount, setIncompleteHistoryCount] = useState<number | null>(null);
   const [excludedInMasterCount, setExcludedInMasterCount] = useState<number | null>(null);
   const [extrasAsOf, setExtrasAsOf] = useState<string | null>(null);
+  const [supportsColumns, setSupportsColumns] = useState(false);
+  const [pledgeAsOf, setPledgeAsOf] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -280,6 +288,31 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
     applySmartFilters,
   }));
 
+  const caps: ApiCaps = useMemo(() => ({
+    fundamentals: !!fundCoverage, filters13: fundCoverage?.promoter !== undefined, columns: supportsColumns,
+  }), [fundCoverage, supportsColumns]);
+  const forcedIds = useMemo(() => filterColumns({
+    peMax: fund.peMax, roeMin: fund.roeMin, epsPositive: fund.epsPositive, profitGrowthMin: fund.profitGrowthMin, salesGrowthMin: fund.salesGrowthMin,
+    ema200: fund.ema200, deMax: fund.deMax, promoterMin: fund.promoterMin, dividendYieldMin: fund.dividendYieldMin, pledgeMax: fund.pledgeMax,
+    deliveryMin: fund.deliveryMin, insider: fund.insider, deal30d: fund.deal30d,
+    from52: from52Max !== undefined || asNumber(from52Min) !== undefined, volatility: !!volatilityBand, volumeMin: asNumber(volumeMin) !== undefined,
+    deliveryState: !!deliveryState, news: eventRiskOnly,
+  }), [fund, from52Max, from52Min, volatilityBand, volumeMin, deliveryState, eventRiskOnly]);
+  const shown = useMemo(() => {
+    const r = resolveColumns(chosen, forcedIds);
+    return { ids: r.ids.filter((id) => columnAvailable(id, caps)), forced: r.forced };
+  }, [chosen, forcedIds, caps]);
+  const extraFields = neededFields(shown.ids);
+  const colCtx: ColumnCtx = useMemo(() => ({
+    measuredAsOf: fundCoverage?.measured_as_of ?? null, pledgeAsOf, dealLatest: fundCoverage?.deal_latest ?? null,
+  }), [fundCoverage, pledgeAsOf]);
+  const sortOptions = useMemo(() => {
+    const cols = sortOptionsFor(shown.ids).filter((o) => sortAvailable(o.value, caps));
+    const seen = new Set<string>();
+    return [...BASE_SORT_OPTIONS.map((o) => ({ ...o, pageOnly: false })), ...cols].filter((o) => (seen.has(o.value) ? false : (seen.add(o.value), true)));
+  }, [shown.ids, caps]);
+  const apiSortName = sortAvailable(sort, caps) ? apiSort(sort) : "symbol";
+
   const params = useMemo(
     () => ({
       q: q || undefined,
@@ -300,14 +333,15 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
       pcr_band: (pcrBand || undefined) as "low" | "neutral" | "high" | undefined,
       anomaly: anomalyOnly ? true : undefined,
       ...fundParams(fund),
-      sort,
+      fields: extraFields || undefined,
+      sort: apiSortName,
       order,
       page,
       size: PAGE_SIZE,
     }),
     [q, sector, industry, scoreMin, scoreMax, eventRiskOnly, from52Max, from52Min,
      volatilityBand, volatilityMin, volatilityMax, volumeMin, deliveryState, deltaMin,
-     dmaState, pcrBand, anomalyOnly, fund, sort, order, page]
+     dmaState, pcrBand, anomalyOnly, fund, extraFields, apiSortName, order, page]
   );
 
   const shareParams: SharedScreenParams = useMemo(
@@ -330,11 +364,12 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
       anomaly: anomalyOnly ? true : undefined,
       industry: industry || undefined,
       ...fundParams(fund),
-      sort,
+      columns: shown.ids,
+      sort: apiSort(sort),
       order,
     }),
     [q, sector, industry, scoreMin, scoreMax, eventRiskOnly, from52Max, from52Min, volatilityBand,
-     volatilityMin, volatilityMax, volumeMin, deliveryState, deltaMin, dmaState, pcrBand, anomalyOnly, fund, sort, order]
+     volatilityMin, volatilityMax, volumeMin, deliveryState, deltaMin, dmaState, pcrBand, anomalyOnly, fund, shown.ids, sort, order]
   );
 
   // Apply a saved screen's filters to the controls (My screens).
@@ -360,12 +395,9 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
     setDmaState(p.dma_state ?? "");
     setPcrBand(p.pcr_band ?? "");
     setAnomalyOnly(!!p.anomaly);
-    setFund({
-      peMax: str(p.pe_max), roeMin: str(p.roe_min), epsPositive: !!p.eps_positive, profitGrowthMin: str(p.profit_growth_min),
-      salesGrowthMin: str(p.sales_growth_min), ema200: p.ema200_state ?? "", deMax: str(p.de_max), promoterMin: str(p.promoter_min),
-      dividendYieldMin: str(p.dividend_yield_min), pledgeMax: str(p.pledge_max), deliveryMin: str(p.delivery_pct_min),
-      insider: p.insider_30d ?? "", deal30d: !!p.deal_30d,
-    });
+    setFund(fundFromParams(p));
+    const saved = sanitizeColumns(p.columns);
+    if (saved.length) setChosen(saved);
     setSort(p.sort ?? "symbol");
     setOrder(p.order ?? "asc");
     setMoreOpen(true);
@@ -394,6 +426,8 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
           setExcludedInMasterCount(info.excluded_in_master_count ?? null);
           setExtrasAsOf(info.extras_as_of ?? null);
           setFundCoverage(info.fundamentals_coverage ?? null);
+          setSupportsColumns(!!info.supports_columns);
+          setPledgeAsOf(info.pledge_as_of ?? null);
         })
         .catch((e) => !cancelled && setError(e instanceof Error ? e.message : "Failed to load signals."))
         .finally(() => !cancelled && setLoading(false));
@@ -415,55 +449,50 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
     if (filtersOn > 0) track("screener_filter_used", { filters: filtersOn });
   }, [filtersOn]);
 
-  const canExport = isProEntitled(user);
+  const canExport = isProEntitled(user);      // Pro, founding and the 5-day trial (the account's plan already counts the trial); the API checks it again
   const explorerControlsEnabled = true;       // every plan has the sort / filter / search controls (Free, Basic and Pro; 2026-11-11)
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
-  const fetchExportRows = useCallback(async () => {
-    const token = await getToken();
-    const size = 200;
-    const first = await getSignals({ ...params, page: 1, size }, { token });
-    const pages = Math.ceil(first.page_info.total / size);
-    const rest = await Promise.all(
-      Array.from({ length: Math.max(0, pages - 1) }, (_, i) =>
-        getSignals({ ...params, page: i + 2, size }, { token })
-      )
-    );
-    const all = [first, ...rest].flatMap((p) => p.data);
-    return all.map((r) => {
-      const f52 = from52Display(r.week52_high, r.pct_below_52w_high, r.last_price);
-      return {
-        symbol: r.symbol,
-        company_name: r.company_name,
-        sector: r.sector,
-        industry: r.industry ?? "",
-        price: r.last_price ?? "",
-        price_as_of: r.price_data_as_of?.data_as_of ?? "",
-        readings_as_of: labels.readingsDate ?? "",
-        day_change_pct: r.day_change_pct ?? "",
-        delivery_pct: r.delivery_pct ?? "",
-        delivery_avg20: r.delivery_avg20 ?? "",
-        volume_ratio_5d: r.volume_ratio_5d ?? "",
-        volume_basis: "Last 5 full sessions vs prior 20 full sessions, as of close",
-        from_52_week_high: f52.belowPct == null ? "n/a" : f52.atHigh ? "at 52-week high" : `${f52.belowPct.toFixed(1)}% below`,
-        week_52_high: f52.high ?? "",
-        volatility: r.volatility_text ?? "n/a",
-        volatility_rank: r.vol_rank ?? "",
-        volatility_ranked_of: r.vol_ranked_of ?? "",
-        signal_chips: r.signal_states.join(", "),
-        event_risk: r.event_risk ?? "",
-      };
-    });
-  }, [params, getToken, labels.readingsDate]);
-
+  // CSV export: exactly the visible columns, up to the rows the Pro plan allows for tables (the API caps and checks the plan too).
   const exportCsv = useCallback(async () => {
-    downloadCsv(`redixfi-signals-${new Date().toISOString().slice(0, 10)}.csv`, await fetchExportRows(), [DISCLAIMER]);
-  }, [fetchExportRows]);
+    setExporting(true);
+    setExportError(null);
+    try {
+      const token = await getToken();
+      const size = 200;
+      const first = await getSignals({ ...params, page: 1, size, export: true }, { token });
+      const cap = (first.page_info as SignalsPageInfo).export_max_rows ?? EXPORT_MAX_ROWS;
+      const pages = exportPages(first.page_info.total, size, cap);
+      const rest = await Promise.all(
+        Array.from({ length: Math.max(0, pages - 1) }, (_, i) => getSignals({ ...params, page: i + 2, size, export: true }, { token })),
+      );
+      let all = [first, ...rest].flatMap((pg) => pg.data).slice(0, cap);
+      if (watchlistOnly) {
+        const set = new Set(watchlistSymbols ?? []);
+        all = all.filter((r) => set.has(r.symbol));
+      }
+      all = sortPage(all, sort, order);
+      const text = buildScreenerCsv(all, shown.ids, colCtx, fmtDate(labels.priceDate));
+      const blob = new Blob(["\uFEFF" + text], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `redixfi-screener-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      track("screener_csv_export", { rows: all.length, columns: shown.ids.length });
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : "The export did not complete.");
+    } finally {
+      setExporting(false);
+    }
+  }, [params, getToken, watchlistOnly, watchlistSymbols, sort, order, shown.ids, colCtx, labels.priceDate]);
 
-  const exportXlsx = useCallback(async () => {
-    downloadXlsx(`redixfi-signals-${new Date().toISOString().slice(0, 10)}.xlsx`, [
-      { name: "Screener", rows: await fetchExportRows(), notes: [DISCLAIMER] },
-    ]);
-  }, [fetchExportRows]);
+  const displayRows = useMemo(() => sortPage(rows, sort, order), [rows, sort, order]);
+  const phoneExtraIds = shown.ids.filter((id) => !["delivery", "volume", "from52", "volatility", "chips"].includes(id));
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -639,8 +668,8 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
         <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
           {explorerControlsEnabled && (
             <>
-              <select value={sort} onChange={(e) => setSort(e.target.value)} className="h-9 w-auto rounded-lg border border-border bg-hover px-2 text-xs text-foreground-muted">
-                {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>Sort: {o.label}</option>)}
+              <select value={sortOptions.some((o) => o.value === sort) ? sort : "symbol"} onChange={(e) => setSort(e.target.value)} className="h-9 w-auto rounded-lg border border-border bg-hover px-2 text-xs text-foreground-muted" aria-label="Sort by">
+                {sortOptions.map((o) => <option key={o.value} value={o.value}>Sort: {o.label}</option>)}
               </select>
               <button onClick={() => setOrder((o) => (o === "asc" ? "desc" : "asc"))} className="flex h-9 w-auto items-center gap-1 rounded-lg border border-border bg-hover px-2 text-xs text-foreground-muted" title="Toggle sort order">
                 <ArrowUpDown size={11} /> {order === "asc" ? "Ascending" : "Descending"}
@@ -648,34 +677,63 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
             </>
           )}
           <div className="relative" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setColumnPickerOpen((o) => !o)} className="flex h-9 w-auto items-center gap-1 rounded-lg border border-border bg-hover px-2 text-xs text-foreground-muted">
+            <button type="button" onClick={() => setColumnPickerOpen((o) => !o)} aria-expanded={columnPickerOpen} className="flex h-9 w-auto items-center gap-1 rounded-lg border border-border bg-hover px-2 text-xs text-foreground-muted">
               <SlidersHorizontal size={11} /> Columns
             </button>
             {columnPickerOpen && (
-              <div className="absolute left-0 top-full z-20 mt-1 w-48 rounded-lg border border-border bg-surface-raised p-2 text-sm shadow-lg">
-                {(Object.keys(columns) as (keyof VisibleColumns)[]).map((k) => (
-                  <label key={k} className="flex items-center gap-2 py-1 capitalize">
-                    <input type="checkbox" checked={columns[k]} onChange={(e) => setColumns((c) => ({ ...c, [k]: e.target.checked }))} />
-                    {k === "eventRisk" ? "News (5 days)" : k === "from52" ? "From 52-week high" : k === "volatility" ? "Volatility" : k}
-                  </label>
-                ))}
+              <div className="fixed inset-x-4 top-24 z-20 max-h-[70vh] overflow-y-auto rounded-lg sm:absolute sm:inset-x-auto sm:left-0 sm:top-full sm:mt-1 sm:w-80 border border-border bg-surface-raised p-3 text-sm shadow-lg" data-testid="columns-panel">
+                <p className="mb-1.5 text-[11px] font-semibold text-foreground-muted">Presets</p>
+                <div className="mb-2 flex flex-wrap gap-1.5">
+                  {PRESETS.map((pr) => (
+                    <button key={pr.id} type="button" onClick={() => setChosen(pr.ids)} className="rounded-full border border-border bg-hover px-2.5 py-1 text-[11px] text-foreground-muted hover:text-foreground">
+                      {pr.label}
+                    </button>
+                  ))}
+                </div>
+                {COLUMN_GROUPS.map((g) => {
+                  const defs = COLUMNS.filter((c) => c.group === g && columnAvailable(c.id, caps));
+                  if (!defs.length) return null;
+                  return (
+                    <fieldset key={g} className="mb-2">
+                      <legend className="mb-0.5 text-[11px] font-semibold text-foreground-muted">{g}</legend>
+                      {defs.map((c) => {
+                        const forced = shown.forced.has(c.id);
+                        return (
+                          <label key={c.id} className="flex items-center gap-2 py-0.5 text-xs">
+                            <input
+                              type="checkbox"
+                              checked={forced || chosen.includes(c.id)}
+                              disabled={forced}
+                              onChange={(e) => setChosen((cur) => sanitizeColumns(e.target.checked ? [...cur, c.id] : cur.filter((x) => x !== c.id)))}
+                            />
+                            <span>{c.label}</span>
+                            {forced && <span className="text-[10px] text-foreground-faint">(its filter is on)</span>}
+                          </label>
+                        );
+                      })}
+                    </fieldset>
+                  );
+                })}
+                <p className="mt-1 text-[10px] leading-snug text-foreground-faint">Your choice is remembered in this browser and saved with a screen.</p>
               </div>
             )}
           </div>
-          <ExportButton
-            onExport={exportCsv}
-            onCsv={exportCsv}
-            onXlsx={exportXlsx}
-            canExport={!!canExport}
-            label="Download"
-            enabledTitle="Export current filter as CSV"
-            className="flex h-9 w-auto items-center gap-1 rounded-lg border border-border bg-hover px-2 text-xs text-foreground-muted disabled:opacity-40"
-          />
+          {canExport ? (
+            <button type="button" onClick={exportCsv} disabled={exporting} title={`Export the stocks in this result (up to ${EXPORT_MAX_ROWS.toLocaleString("en-IN")}) with the visible columns`} className="flex h-9 w-auto items-center gap-1 rounded-lg border border-border bg-hover px-2 text-xs text-foreground-muted disabled:opacity-40">
+              <Download size={11} /> {exporting ? "Exporting…" : "Export CSV"}
+            </button>
+          ) : (
+            <span className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-hover px-2 text-xs text-foreground-muted" data-testid="csv-locked">
+              <Lock size={11} /> Export CSV
+              <UpgradeLink className="text-accent underline-offset-2 hover:underline">Upgrade to Pro</UpgradeLink>
+            </span>
+          )}
           {explorerControlsEnabled && fundCoverage?.promoter !== undefined && <MyScreens params={shareParams} onApply={applySaved} />}
           {explorerControlsEnabled && <ShareScreenButton params={shareParams} />}
         </div>
       </div>
 
+      {exportError && <p className="mb-2 text-[11px] text-down" role="alert">{exportError}</p>}
       <div className="mb-2 space-y-0.5 text-[11px] leading-snug text-foreground-faint">
         <p>
           <span className="font-medium text-foreground-muted">Price:</span>{" "}
@@ -697,46 +755,46 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
           </p>
         </div>
         <ul className="divide-y divide-border md:hidden">
-          {rows.map((row) => <SignalMobileRow key={row.symbol} row={row} priceGroupAsOf={labels.priceAsOf} priceGroupDate={labels.priceDate} />)}
+          {displayRows.map((row) => <SignalMobileRow key={row.symbol} row={row} priceGroupAsOf={labels.priceAsOf} priceGroupDate={labels.priceDate} extraIds={phoneExtraIds} ctx={colCtx} />)}
         </ul>
         <div className="hidden overflow-x-auto md:block">
-          <p className="mb-2 hidden text-[11px] text-foreground-faint md:block lg:hidden">Scroll the table sideways to see all columns.</p>
+          {shown.ids.length > 5 && <p className="px-3 pt-2 text-[11px] text-foreground-faint">Scroll the table sideways to see all columns.</p>}
           <table className="w-full min-w-[900px] text-sm">
             <thead>
               <tr className="border-b border-border text-left font-mono text-[12px] uppercase tracking-wider text-foreground-faint">
-                <th rowSpan={2} className="px-4 py-2">Symbol</th>
-                {columns.sector && <th rowSpan={2} className="hidden px-3 py-2 md:table-cell">Sector</th>}
-                <th colSpan={1} className="border-l border-border px-3 py-2 text-[11px] normal-case tracking-normal text-foreground-muted">
-                  {labels.priceHeading}
+                <th className="px-4 py-2 align-top">Symbol</th>
+                <th className="border-l border-border px-3 py-2 align-top">
+                  Price
+                  <span className="block text-[10px] normal-case tracking-normal text-foreground-muted">{labels.priceHeading}</span>
                 </th>
-                <th colSpan={0 + (columns.delivery ? 1 : 0) + (columns.volume ? 1 : 0) + (columns.from52 || from52Max !== undefined ? 1 : 0) + (columns.volatility ? 1 : 0) + (columns.chips ? 1 : 0) + (columns.eventRisk ? 1 : 0)} className="border-l border-border px-3 py-2 text-[11px] normal-case tracking-normal text-foreground-muted">
-                  {labels.readingsHeading}
-                </th>
-                <th rowSpan={2} className="px-3 py-2" />
-              </tr>
-              <tr className="border-b border-border text-left font-mono text-[12px] uppercase tracking-wider text-foreground-faint">
-                <th className="border-l border-border px-3 py-2">Price</th>
-                {columns.delivery && <th className="hidden px-3 py-2 sm:table-cell">Delivery</th>}
-                {columns.volume && <th className="hidden px-3 py-2 sm:table-cell" title="Last five full sessions vs prior 20 full sessions">Volume vs usual</th>}
-                {(columns.from52 || from52Max !== undefined) && (
-                  <th className="hidden px-3 py-2 sm:table-cell" aria-sort={sort === "pct_below_52w_high" ? (order === "asc" ? "ascending" : "descending") : "none"}>
-                    <button type="button" onClick={() => toggleSort("pct_below_52w_high")} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-foreground" title="Sort by distance from 52-week high">
-                      {labels.priceIsLive ? "From 52-week high (current price)" : "From 52-week high"}
-                      <ArrowUpDown size={10} />
-                    </button>
-                  </th>
-                )}
-                {columns.volatility && <th className="hidden px-3 py-2 md:table-cell">Volatility</th>}
-                {columns.chips && <th className="hidden px-3 py-2 lg:table-cell">State</th>}
-                {columns.eventRisk && <th className="hidden px-3 py-2 sm:table-cell">News (5 days)</th>}
+                {shown.ids.map((id) => {
+                  const def = COLUMN_BY_ID[id];
+                  const sortKey = def.sort ?? (def.pageSort ? `page:${id}` : null);
+                  const canSort = !!sortKey && sortAvailable(sortKey, caps);
+                  const dated = def.measured && id !== "pledge" && id !== "insider" ? labels.readingsHeading : (def.asOf(null, colCtx) ? `As of ${def.asOf(null, colCtx)}` : null);
+                  return (
+                    <th key={id} className="px-3 py-2 align-top" aria-sort={sortKey && sort === sortKey ? (order === "asc" ? "ascending" : "descending") : "none"}>
+                      {canSort ? (
+                        <button type="button" onClick={() => toggleSort(sortKey as string)} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-foreground" title={isPageSort(sortKey as string) ? "Sorts the stocks on this page only" : `Sort by ${def.label}`}>
+                          {id === "from52" && labels.priceIsLive ? "From 52-week high (current price)" : def.label}
+                          <ArrowUpDown size={10} />
+                        </button>
+                      ) : def.label}
+                      {dated && <span className="block max-w-[10rem] text-[10px] normal-case tracking-normal text-foreground-muted">{dated}</span>}
+                    </th>
+                  );
+                })}
+                <th className="px-3 py-2" />
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {displayRows.map((row) => (
                 <SignalTableRow
                   key={row.symbol}
                   row={row}
-                  columns={{ ...columns, from52: columns.from52 || from52Max !== undefined }}
+                  columns={{ sector: true, delivery: true, volume: true, chips: true, eventRisk: true, from52: true, volatility: true }}
+                  ids={shown.ids}
+                  ctx={colCtx}
                   priceGroupAsOf={labels.priceAsOf}
                   priceGroupDate={labels.priceDate}
                   readingsGroupDate={labels.readingsDate}

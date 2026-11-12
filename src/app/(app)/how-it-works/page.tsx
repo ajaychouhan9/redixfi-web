@@ -59,6 +59,42 @@ const INPUT_GROUPS = [
   },
 ];
 
+const ALSO_SHOWN = [
+  {
+    name: "Screener",
+    text: "Lists stocks that match filters you choose, such as price against the 200-day EMA, P/E, ROE, profit and sales growth, debt-to-equity, promoter holding, promoter pledge, dividend yield, delivery, insider trades and bulk/block deals. Every filter you use adds a column showing the measured value for each stock, with its unit and the date of the figure, and \"n/a\" where the source gave none. A filter is a filter on reported data, not a recommendation. You can choose your columns and, on Pro or during the free trial, export the result as CSV.",
+    href: "/signals",
+  },
+  {
+    name: "Saved screens",
+    text: "Save a set of filters, sort order and columns under a name, reopen it later and see which stocks are new in it since you last looked. Free keeps 1, Basic 5 and Pro 20.",
+  },
+  {
+    name: "Ask AI",
+    text: "Answers questions from the measured data RedixFi stores, and says where a figure is missing. It declines questions that ask for advice or for what a stock will do next.",
+  },
+  {
+    name: "Market Activity",
+    text: "Insider trades, bulk and block deals and concall summaries, shown as disclosed by the exchange and the companies.",
+    href: "/market-activity",
+  },
+  {
+    name: "Market Rewind",
+    text: "Shows how often a measured condition occurred in the past, as counts and dates only.",
+    href: "/rewind",
+  },
+  {
+    name: "7-Day Review and weekly pages",
+    text: "A look back at the last seven sessions across the market, and a page for each week, built from the same stored data.",
+    href: "/signals/7-day-review",
+  },
+  {
+    name: "Company report PDF",
+    text: "A downloadable report for one company with price, growth, peers, ownership, filings and sources.",
+    href: "/sample-report",
+  },
+];
+
 const SOURCES = [
   ["Prices and volume", "Daily exchange data for the completed session."],
   ["Delivery", "NSE end-of-day delivery data. It is published after the daily run, so the reading uses the latest delivery available at run time — usually the previous session."],
@@ -140,6 +176,19 @@ export default function HowItWorksPage() {
         </p>
       </Card>
 
+      <Card title="What else RedixFi shows">
+        <ul className="space-y-3" data-testid="what-else">
+          {ALSO_SHOWN.map((g) => (
+            <li key={g.name} className="border-t border-border pt-3 first:border-t-0 first:pt-0">
+              <p className="text-sm font-medium">
+                {g.href ? <Link href={g.href} className="hover:text-accent hover:underline">{g.name}</Link> : g.name}
+              </p>
+              <p className="mt-0.5 text-sm text-foreground-muted">{g.text}</p>
+            </li>
+          ))}
+        </ul>
+      </Card>
+
       <Card title="Where the data comes from">
         <ul className="space-y-2">
           {SOURCES.map(([name, text]) => (
@@ -170,7 +219,7 @@ export default function HowItWorksPage() {
             allowance. {COMMON_QUESTION_NOTE}
           </p>
         </div>
-        {COMMON_QUESTION_GROUPS.map((g) => (
+        {[{ topic: "About the readings", items: FAQ.map((f, i) => ({ id: `about-${i}`, q: f.q, a: f.a })) }, ...COMMON_QUESTION_GROUPS].map((g) => (
           <Card key={g.topic} title={g.topic}>
             <div className="divide-y divide-border">
               {g.items.map((it) => (
@@ -223,17 +272,6 @@ export default function HowItWorksPage() {
             measured data, updated once a day.
           </li>
         </ul>
-      </Card>
-
-      <Card title="Common questions">
-        <dl className="space-y-4">
-          {FAQ.map((item) => (
-            <div key={item.q}>
-              <dt className="text-sm font-medium">{item.q}</dt>
-              <dd className="mt-0.5 text-sm text-foreground-muted">{item.a}</dd>
-            </div>
-          ))}
-        </dl>
       </Card>
 
       <p className="text-sm text-foreground-muted">

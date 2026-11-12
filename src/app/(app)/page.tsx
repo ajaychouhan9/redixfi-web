@@ -17,6 +17,7 @@ import { HomePricingSection } from "@/components/app/HomePricingSection";
 import { GovernanceRadarCard } from "@/components/app/marketing/GovernanceRadarCard";
 import { AskAiTeaserCard } from "@/components/app/marketing/AskAiTeaserCard";
 import { SmallCapPositioningStrip } from "@/components/app/marketing/SmallCapPositioningStrip";
+import { TrustStrip } from "@/components/layout/TrustStrip";
 
 export const metadata: Metadata = { alternates: { canonical: "/" } };
 
@@ -103,6 +104,7 @@ export default async function HomePage() {
       <SmallCapPositioningStrip />
 
       <HomePricingSection plans={plans} />
+      <TrustStrip />
     </div>
   );
 }

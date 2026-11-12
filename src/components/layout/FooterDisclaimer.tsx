@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { STANDARD_LINE } from "@/lib/compliance/standard-line";
 import { LegalLinks } from "@/components/layout/LegalLinks";
+import { FooterTrustStrip } from "@/components/layout/TrustStrip";
 
 export function FooterDisclaimer() {
   return (
@@ -23,6 +24,7 @@ export function FooterDisclaimer() {
       </Link>{" "}
       ·{" "}
       <LegalLinks />
+      <FooterTrustStrip />
     </footer>
   );
 }

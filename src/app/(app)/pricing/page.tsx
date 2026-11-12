@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getBillingPlans } from "@/lib/api/endpoints";
 import { CheckoutView } from "@/components/app/billing/CheckoutView";
+import { TrustStrip } from "@/components/layout/TrustStrip";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -10,5 +11,10 @@ export const metadata: Metadata = {
 
 export default async function CheckoutPage() {
   const { data: plans } = await getBillingPlans();
-  return <CheckoutView initialPlans={plans} />;
+  return (
+    <>
+      <CheckoutView initialPlans={plans} />
+      <TrustStrip className="mt-6" />
+    </>
+  );
 }

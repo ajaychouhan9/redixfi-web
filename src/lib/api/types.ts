@@ -42,6 +42,10 @@ export interface SignalsPageInfo extends PageInfo {
   incomplete_history_count?: number;
   excluded_in_master_count?: number;
   extras_as_of?: string | null;
+  /** 14 Nov 2026: the API accepts ?fields=, ?export= and the column sorts; pledge disclosure date (only when pledge was asked for); export row cap. */
+  supports_columns?: boolean;
+  pledge_as_of?: string | null;
+  export_max_rows?: number;
   /** How many stocks each reported-figure filter can check, and the quarter-end dates of the figures. Absent on an API without the filters. */
   fundamentals_coverage?: FundamentalsCoverage | null;
 }
@@ -154,6 +158,9 @@ export interface SignalRow {
   dividend_yield_pct?: number | null;
   deal_30d_last?: string | null;
   deal_30d_count?: number | null;
+  /** Only sent when asked for with ?fields= (14 Nov 2026). */
+  pledge_pct?: number | null;
+  insider_net_30d?: number | null;
   limited_data?: boolean;
   limited_data_note?: string | null;
   symbol: string;
@@ -2359,6 +2366,8 @@ export interface SharedScreenParams {
   deal_30d?: boolean | null;
   industry?: string | null;
   watchlist_only?: boolean | null;
+  /** The Screener columns chosen with the screen (ids such as "pe", "ema200"). */
+  columns?: string[] | null;
   sort: string;
   order: "asc" | "desc";
 }

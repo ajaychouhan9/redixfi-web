@@ -18,6 +18,7 @@ import { formatDataAsOf, formatPriceAsOf } from "@/lib/format";
 import { from52Display } from "@/lib/from52-display";
 import { stockPath } from "@/lib/seo/stock-symbol";
 import { displayName } from "@/lib/company-name";
+import { COLUMN_BY_ID, type ColumnCtx, type ColumnDef, type ColumnId } from "@/lib/screener-columns";
 
 // Column order (2026-08-08, finalized spec): Symbol | Sector | Price |
 // Score | Delivery | Volume | Signals | Event. Symbol/Price/Score are
@@ -85,15 +86,49 @@ function StackedCell({
   );
 }
 
+/** One Screener value: the measured figure with its unit and date, "n/a" when the source gave none, the lock on masked readings. */
+export function ColumnValue({ def, row, ctx }: { def: ColumnDef; row: SignalRow; ctx: ColumnCtx }) {
+  if (def.measured && row.locked) return <LockedInline><span className="font-mono font-semibold">--</span></LockedInline>;
+  if (def.kind === "chips") {
+    return <div className="flex flex-wrap gap-1">{(row.signal_states ?? []).slice(0, 2).map((s) => <SignalStateChip key={s} code={s} />)}</div>;
+  }
+  if (def.kind === "news") {
+    return row.news_5d ? (
+      <a href={row.news_5d.url ?? undefined} target="_blank" rel="noopener noreferrer" className="text-[12px] text-accent underline-offset-2 hover:underline" title={row.news_5d.headline}>News in the last 5 days</a>
+    ) : <span className="text-foreground-faint">—</span>;
+  }
+  const c = def.cell(row, ctx);
+  if (!c) return <span className="text-foreground-faint" data-testid={`na-${def.id}`}>n/a</span>;
+  return (
+    <div className="whitespace-nowrap">
+      <div className="font-mono font-semibold">{c.primary}</div>
+      {c.sub && <div className="text-[11px] text-foreground-faint">{c.sub}</div>}
+    </div>
+  );
+}
+
+/** The same value as one line of text, for the phone card: "P/E 18.4 (31 Mar 2026 qtr)" or "n/a". */
+export function ColumnText({ def, row, ctx }: { def: ColumnDef; row: SignalRow; ctx: ColumnCtx }) {
+  if (def.measured && row.locked) return <span className="text-foreground-faint">locked</span>;
+  const c = def.cell(row, ctx);
+  if (!c) return <span className="text-foreground-faint">n/a</span>;
+  return <span className="font-mono text-foreground">{c.primary}{c.sub ? <span className="font-sans text-foreground-faint"> ({c.sub})</span> : null}</span>;
+}
+
 export function SignalTableRow({
   row,
   columns,
   priceGroupAsOf,
   priceGroupDate,
   readingsGroupDate,
+  ids,
+  ctx,
 }: {
   row: SignalRow;
   columns: VisibleColumns;
+  /** The Screener passes the chosen columns (14 Nov 2026); the other tables keep `columns`. */
+  ids?: ColumnId[];
+  ctx?: ColumnCtx;
   priceGroupAsOf?: string | null;
   priceGroupDate?: string | null;
   readingsGroupDate?: string | null;
@@ -125,8 +160,7 @@ export function SignalTableRow({
     else addToComparisonQueue({ symbol: row.symbol, company_name: row.company_name });
   }
 
-  return (
-    <tr className="border-b border-border last:border-0 hover:bg-hover">
+  const symbolTd = (
       <td className="whitespace-nowrap px-3 py-2.5">
         <Link href={stockPath("/signals", row.symbol)} className="font-mono font-semibold hover:text-accent">
           {row.symbol}
@@ -142,11 +176,8 @@ export function SignalTableRow({
         <div className="max-w-[16rem] truncate text-[12px] text-foreground-faint">{displayName(row.company_name)}</div>
         {showReadingsAsOf && <div className="whitespace-nowrap text-[10px] text-foreground-faint">{formatDataAsOf(row.data_as_of)}</div>}
       </td>
-      {columns.sector && <td className="hidden px-3 py-2.5 text-xs text-foreground-muted md:table-cell">{row.sector}</td>}
-      {/* Price: always visible (never hidden by the column picker or by
-          viewport width) — last_price/day_change_pct are identity-level
-          basic market data, never B8-masked, so `locked` is never passed
-          here. */}
+  );
+  const priceTd = (
       <td className="px-3 py-2.5">
         <StackedCell
           primary={row.last_price !== null ? `₹${row.last_price.toLocaleString("en-IN")}` : null}
@@ -154,6 +185,51 @@ export function SignalTableRow({
         />
         {showPriceAsOf && <div className="text-[10px] text-foreground-faint">{formatPriceAsOf(row.price_data_as_of)}</div>}
       </td>
+  );
+  const compareTd = (
+      <td className="px-3 py-2.5 text-right">
+        <button
+          onClick={toggleCompare}
+          disabled={!queued && full}
+          className="ml-auto flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[12px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+          style={
+            queued
+              ? { background: "var(--hover)", color: "var(--accent)", border: "1px solid color-mix(in srgb, var(--accent) 30%, transparent)" }
+              : { background: "transparent", color: "var(--foreground-faint)", border: "1px solid var(--border)" }
+          }
+          title={!queued && full ? `Comparison is full (max ${COMPARISON_QUEUE_MAX} stocks)` : undefined}
+        >
+          {queued ? <Check size={11} /> : <Plus size={11} />}
+          {queued ? "Added" : "Compare"}
+        </button>
+      </td>
+  );
+
+  if (ids) {
+    const c = ctx ?? {};
+    return (
+      <tr className="border-b border-border last:border-0 hover:bg-hover">
+        {symbolTd}
+        {priceTd}
+        {ids.map((id) => (
+          <td key={id} className="px-3 py-2.5">
+            <ColumnValue def={COLUMN_BY_ID[id]} row={row} ctx={c} />
+          </td>
+        ))}
+        {compareTd}
+      </tr>
+    );
+  }
+
+  return (
+    <tr className="border-b border-border last:border-0 hover:bg-hover">
+      {symbolTd}
+      {columns.sector && <td className="hidden px-3 py-2.5 text-xs text-foreground-muted md:table-cell">{row.sector}</td>}
+      {/* Price: always visible (never hidden by the column picker or by
+          viewport width) — last_price/day_change_pct are identity-level
+          basic market data, never B8-masked, so `locked` is never passed
+          here. */}
+      {priceTd}
       {/* Score: always visible — unchanged position/behavior.
           Bug 1 fix (2026-08-22): `locked` here must be ONLY the real B8
           tier gate (`row.locked`), never OR'd with a `=== null` data check.
@@ -236,22 +312,7 @@ export function SignalTableRow({
           ) : ""}
         </td>
       )}
-      <td className="px-3 py-2.5 text-right">
-        <button
-          onClick={toggleCompare}
-          disabled={!queued && full}
-          className="ml-auto flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[12px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40"
-          style={
-            queued
-              ? { background: "var(--hover)", color: "var(--accent)", border: "1px solid color-mix(in srgb, var(--accent) 30%, transparent)" }
-              : { background: "transparent", color: "var(--foreground-faint)", border: "1px solid var(--border)" }
-          }
-          title={!queued && full ? `Comparison is full (max ${COMPARISON_QUEUE_MAX} stocks)` : undefined}
-        >
-          {queued ? <Check size={11} /> : <Plus size={11} />}
-          {queued ? "Added" : "Compare"}
-        </button>
-      </td>
+      {compareTd}
     </tr>
   );
 }
@@ -263,11 +324,17 @@ export function SignalMobileRow({
   row,
   priceGroupAsOf,
   priceGroupDate,
+  extraIds,
+  ctx,
 }: {
   row: SignalRow;
   priceGroupAsOf?: string | null;
   priceGroupDate?: string | null;
+  /** Screener columns beyond the fixed lines of the card: up to 4 shown, then "+N more". */
+  extraIds?: ColumnId[];
+  ctx?: ColumnCtx;
 }) {
+  const [showAll, setShowAll] = useState(false);
   const [queued, setQueued] = useState(false);
   const [full, setFull] = useState(false);
 
@@ -345,6 +412,18 @@ export function SignalMobileRow({
           {queued ? "Added" : "Compare"}
         </button>
       </div>
+      {extraIds && extraIds.length > 0 && (
+        <div className="flex w-full flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-foreground-muted" data-testid="mobile-extra-values">
+          {(showAll ? extraIds : extraIds.slice(0, 4)).map((id) => (
+            <span key={id} className="whitespace-nowrap">{COLUMN_BY_ID[id].label}: <ColumnText def={COLUMN_BY_ID[id]} row={row} ctx={ctx ?? {}} /></span>
+          ))}
+          {extraIds.length > 4 && (
+            <button type="button" onClick={() => setShowAll((v) => !v)} className="text-accent underline-offset-2 hover:underline">
+              {showAll ? "Show fewer" : `+${extraIds.length - 4} more`}
+            </button>
+          )}
+        </div>
+      )}
     </li>
   );
 }
