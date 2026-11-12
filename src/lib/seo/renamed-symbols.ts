@@ -8,6 +8,7 @@ export const RENAMED_SYMBOLS: Record<string, string> = {
   HEG: "HEGAM",           // HEG -> HEG Advanced Materials, 22 Sep 2026
   MANBRO: "KDGREEN",      // Manbro Industries -> KD Green Industries, 3 Sep 2026
   ICICIPRULI: "ICICILIFE", // ICICI Prudential Life Insurance -> ICICI Life Insurance, Oct 2026 (ISIN INE726G01019)
+  ABCOTS: "ABCIND",       // A B Cotspin India -> ABC Industries India (ISIN INE08PH01015), NSE symbol change effective 2 Nov 2026
 };
 
 const STOCK_PAGES = ["stocks", "signals", "research"] as const;
