@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { SymbolTypeahead } from "@/components/ui/SymbolTypeahead";
+import { FeedbackBox } from "@/components/app/FeedbackBox";
 import { searchTargetBase, stockPath } from "@/lib/seo/stock-symbol";
 
 /**
@@ -52,6 +53,7 @@ export function HeaderSearch() {
           { label: "Data", href: stockPath("/signals", row.canonicalSymbol) },
           { label: "Research", href: stockPath("/research", row.canonicalSymbol) },
         ]}
+        emptyFooter={<FeedbackBox page="no_result" idSuffix="header-search" className="!border-0 !bg-transparent !p-0" />}
         placeholder="Search stocks, sectors, news..."
         ariaLabel="Search stocks, sectors, news"
         wrapperClassName="relative w-full"

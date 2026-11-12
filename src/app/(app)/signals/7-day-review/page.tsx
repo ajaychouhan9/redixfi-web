@@ -184,6 +184,11 @@ export default async function SevenDayReviewPage({ searchParams }: { searchParam
           <div className="rounded-lg border border-border bg-surface px-3 py-2.5" data-testid="review-window">
             <p className="text-sm font-semibold">{review.window!.label}</p>
             <p className="text-xs text-foreground-muted">{review.window!.as_of_label}</p>
+            {review.provisional && (
+              <p className="mt-1 text-xs font-medium text-foreground-muted" data-testid="review-provisional">
+                Closing figures not final yet. This page refreshes once the exchange publishes its final closing prices.
+              </p>
+            )}
           </div>
           <WeekPicker review={review} />
           <ReviewDataProvider asOf={review.as_of!}>

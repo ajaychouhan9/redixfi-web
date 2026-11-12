@@ -2408,6 +2408,8 @@ export interface SevenDayReview {
   available: boolean;
   as_of?: string;
   built_at?: string | null;
+  /** true while the latest day's closing figures are still the 15-minute build and not the exchange's final ones */
+  provisional?: boolean;
   window?: { sessions: string[]; n: number; before: string; label: string; as_of_label: string; holidays: string[]; notes: string[] };
   thresholds?: { min_avg_turnover_cr: number; min_price: number; sessions: number };
   universe?: Record<ReviewUniverse, { n: number; members: number | null }>;

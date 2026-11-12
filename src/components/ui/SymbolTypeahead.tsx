@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { searchResearch } from "@/lib/api/endpoints";
@@ -28,6 +28,7 @@ export function SymbolTypeahead({
   showIcon = true,
   minChars = 2,
   links,
+  emptyFooter,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -40,9 +41,12 @@ export function SymbolTypeahead({
   minChars?: number;
   /** Small links shown next to each stock name (for example Signals and Research); the name itself uses onSelect. */
   links?: (row: ResearchSearchRow) => { label: string; href: string }[];
+  /** Shown under "No stocks matched" once the search for the current text has finished with no result (for example a one-question feedback box). */
+  emptyFooter?: ReactNode;
 }) {
   const [results, setResults] = useState<ResearchSearchRow[]>([]);
   const [open, setOpen] = useState(false);
+  const [finishedFor, setFinishedFor] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -52,7 +56,11 @@ export function SymbolTypeahead({
     }
     let cancelled = false;
     const id = setTimeout(() => {
-      searchResearch(value.trim(), 8).then((env) => !cancelled && setResults(env.data));
+      searchResearch(value.trim(), 8).then((env) => {
+        if (cancelled) return;
+        setResults(env.data);
+        setFinishedFor(value.trim());
+      });
     }, 250);
     return () => {
       cancelled = true;
@@ -128,8 +136,13 @@ export function SymbolTypeahead({
         </ul>
       )}
       {open && value.trim().length >= minChars && results.length === 0 && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[260px] rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-faint shadow-lg">
+        <div
+          className={`absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-faint shadow-lg ${
+            emptyFooter ? "min-w-[min(320px,calc(100vw-2rem))]" : "min-w-[260px]"
+          }`}
+        >
           No stocks matched &ldquo;{value}&rdquo;.
+          {emptyFooter && finishedFor === value.trim() && <div className="mt-2 text-foreground">{emptyFooter}</div>}
         </div>
       )}
     </div>

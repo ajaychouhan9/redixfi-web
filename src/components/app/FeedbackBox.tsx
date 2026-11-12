@@ -7,7 +7,8 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { submitFeedback } from "@/lib/api/mutations";
 
 /** One question, "What were you looking for?", with an optional email (11 Nov 2026). Stored with the page and the plan; rate limited by the API. */
-export function FeedbackBox({ page, className = "" }: { page: "stock" | "no_result" | "pricing"; className?: string }) {
+export function FeedbackBox({ page, className = "", idSuffix = "" }: { page: "stock" | "no_result" | "pricing"; className?: string; idSuffix?: string }) {
+  const fieldId = `feedback-${page}${idSuffix ? `-${idSuffix}` : ""}`;
   const { getToken } = useAuth();
   const path = usePathname() || "";
   const [text, setText] = useState("");
@@ -34,9 +35,9 @@ export function FeedbackBox({ page, className = "" }: { page: "stock" | "no_resu
   }
   return (
     <div className={`rounded-xl border border-border bg-surface-raised p-3 ${className}`} data-testid="feedback-box">
-      <label className="block text-sm font-medium" htmlFor={`feedback-${page}`}>What were you looking for?</label>
+      <label className="block text-sm font-medium" htmlFor={fieldId}>What were you looking for?</label>
       <textarea
-        id={`feedback-${page}`}
+        id={fieldId}
         value={text}
         onChange={(e) => setText(e.target.value)}
         maxLength={500}
