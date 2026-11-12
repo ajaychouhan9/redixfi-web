@@ -45,7 +45,7 @@ export function HomePricingSection({ plans }: { plans: BillingPlan[] }) {
       <div className="mb-4 text-center">
         <h2 className="text-lg font-semibold">Simple, transparent pricing</h2>
         <p className="mt-1 text-sm text-foreground-muted">
-          Cancel anytime. Annual plans and promo codes available on the full{" "}
+          No automatic renewal. Annual plans and promo codes available on the full{" "}
           <Link href="/pricing" className="font-medium text-accent hover:underline">
             pricing page
           </Link>

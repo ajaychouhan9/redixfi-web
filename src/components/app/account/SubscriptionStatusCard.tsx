@@ -45,12 +45,9 @@ export function SubscriptionStatusCard({ profile, onChange }: { profile: MeProfi
       const token = await getToken();
       if (!token) return;
       const pendingBefore = !!profile.pending_plan_change;
-      await cancelBilling(token);
-      setMessage(
-        pendingBefore
-          ? "The scheduled annual upgrade was cancelled and refunded — your current plan keeps running as-is."
-          : "Subscription cancelled — you'll keep access until the end of the current period (pro-rata refund issued)."
-      );
+      const res = await cancelBilling(token);
+      // The server states the end date. Cancelling never refunds and the plan does not renew by itself.
+      setMessage(res.message ?? (pendingBefore ? "Your paid plans stay as they are. They do not renew automatically." : "Cancelled. Your plan does not renew automatically."));
       onChange(await getMe(token));
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Could not cancel.");
@@ -77,13 +74,24 @@ export function SubscriptionStatusCard({ profile, onChange }: { profile: MeProfi
         </p>
       )}
 
-      {profile.subscription.status === "active" && (
+      {profile.subscription.status === "active" && profile.subscription.cancel_requested_at && (
+        <p className="mt-3 text-sm text-foreground-muted" data-testid="cancel-notice">
+          Your plan stays active until {profile.subscription.renews ? formatShortDate(profile.subscription.renews) : "the end of the period"}. It does not renew automatically.
+        </p>
+      )}
+      {profile.subscription.status === "active" && !profile.subscription.cancel_requested_at && (
+        <p className="mt-3 text-xs text-foreground-faint">
+          Your plan does not renew automatically. Cancelling does not refund; the plan stays active until it ends. See the{" "}
+          <Link href="/more/refund-policy" className="underline">refund policy</Link>.
+        </p>
+      )}
+      {profile.subscription.status === "active" && !profile.subscription.cancel_requested_at && (
         <button
           onClick={handleCancel}
           disabled={cancelling}
           className="mt-3 rounded-lg border border-down px-3 py-1.5 text-sm font-medium text-down disabled:opacity-50"
         >
-          {cancelling ? "Cancelling…" : profile.pending_plan_change ? "Cancel scheduled upgrade" : "Cancel subscription"}
+          {cancelling ? "Cancelling…" : "Cancel subscription"}
         </button>
       )}
       {profile.subscription.status !== "active" && (

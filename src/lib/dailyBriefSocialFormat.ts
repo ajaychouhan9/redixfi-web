@@ -2,13 +2,10 @@ import { sentencesIn } from "./dailyBriefSplit";
 import { STANDARD_LINE } from "./compliance/standard-line";
 import type { DailyBrief } from "./api/types";
 
-// Same canonical wording as components/layout/FooterDisclaimer.tsx —
-// shortened per platform's character budget, never re-authored. The
-// medium/long footer is that exact sentence pair verbatim; the short
-// (X-length) footer is a compressed version of the SAME two claims
-// (measured-data-not-advice, not SEBI-registered), not new wording.
+// Same canonical wording as components/layout/FooterDisclaimer.tsx: the one sentence (14 Nov 2026).
+// It is already short, so the short (X-length) footer is the same sentence.
 const FULL_FOOTER = STANDARD_LINE;
-const SHORT_FOOTER = "Measured data only, not investment advice. Not a SEBI-registered Research Analyst or Investment Adviser.";
+const SHORT_FOOTER = STANDARD_LINE;
 
 function periodLabel(period: string): string {
   return period === "close" ? "Close" : "Morning";

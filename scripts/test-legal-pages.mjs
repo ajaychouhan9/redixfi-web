@@ -13,9 +13,9 @@ for (const p of ["terms", "privacy", "refund-policy"]) {
   assert.ok(read("lib/legal.ts").includes(`/more/${p}`), `${p} missing from LEGAL_LINKS`);
 }
 // every footer and the Subscribe button carry the three links
-for (const rel of ["components/layout/FooterDisclaimer.tsx", "app/(seo)/layout.tsx", "components/app/billing/PlanCard.tsx"]) {
-  assert.ok(read(rel).includes("LegalLinks"), `${rel}: legal links missing`);
-}
+assert.ok(read("components/app/billing/PlanCard.tsx").includes("LegalLinks"), "PlanCard: legal links missing");
+for (const href of ["/more/about-us", "/more/terms", "/more/privacy", "/more/refund-policy", "/more/disclaimer"]) assert.ok(read("components/layout/FooterDisclaimer.tsx").includes(href), `footer: ${href}`);
+assert.ok(read("app/(seo)/layout.tsx").includes("<FooterDisclaimer />") && read("app/(app)/layout.tsx").includes("<FooterDisclaimer />"), "both layouts use the one footer");
 // About & Contact shows who operates the site
 const about = read("app/(app)/more/about-us/page.tsx");
 for (const need of ["LEGAL.operator", "LEGAL.address", "LEGAL.grievanceOfficer"]) assert.ok(about.includes(need), `about-us: ${need}`);

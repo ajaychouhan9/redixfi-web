@@ -17,7 +17,6 @@ import { retryTransientPublicGet } from "@/lib/api/retry-public-upstream";
 import { FeedbackBox } from "@/components/app/FeedbackBox";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { DataTable, Section } from "@/components/seo/DataTable";
-import { StandardLineNote } from "@/components/seo/StandardLine";
 import { inr, isNeutralText, metaDescription, neutralSentences, pageH1, pageTitle, pct, quarterDate } from "@/lib/seo/stock-facts";
 import { modeLabel, personCategory, sideLabel } from "@/lib/insider-display";
 import { safeNumber, safeRupees } from "@/lib/safe-format";
@@ -385,7 +384,6 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
         )}
       </Section>
 
-      <StandardLineNote className="mt-8" />
       <FeedbackBox page="stock" className="mt-6" />
     </div>
   );

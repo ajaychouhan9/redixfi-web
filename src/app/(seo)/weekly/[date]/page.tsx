@@ -8,7 +8,6 @@ import { retryTransientPublicGet } from "@/lib/api/retry-public-upstream";
 import type { ReviewRow, SevenDayReview } from "@/lib/api/types";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { DataTable, Section } from "@/components/seo/DataTable";
-import { StandardLineNote } from "@/components/seo/StandardLine";
 import { WeeklyEmailOptIn } from "@/components/app/review/WeeklyEmailOptIn";
 import { TrialCta } from "@/components/app/TrialCta";
 import { stockPath } from "@/lib/seo/stock-symbol";
@@ -155,7 +154,6 @@ export default async function WeeklyReviewPage({ params }: { params: Promise<{ d
 
       <WeeklyEmailOptIn className="mt-5" />
       <TrialCta className="mt-5" />
-      <StandardLineNote className="mt-8" />
     </div>
   );
 }

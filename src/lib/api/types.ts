@@ -1508,6 +1508,8 @@ export interface SubscriptionState {
   started: string | null;
   renews: string | null;
   status: "none" | "active" | "cancelled" | string;
+  /** Set when the user pressed Cancel: the plan stays active to `renews` and does not renew. Absent on older accounts. */
+  cancel_requested_at?: string | null;
 }
 
 export interface AlertPreferences {

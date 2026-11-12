@@ -32,6 +32,7 @@ import { downloadXlsx } from "@/lib/xlsx";
 import { isProEntitled } from "@/lib/entitlements";
 import { UpgradeLink } from "@/components/ui/UpgradeLink";
 import { track } from "@/lib/analytics";
+import { STANDARD_LINE } from "@/lib/compliance/standard-line";
 import type {
   AskConversationListItem,
   AskChatContext,
@@ -112,8 +113,8 @@ const STATUS_STAGES = ["Searching signals...", "Analyzing data...", "Composing a
 const STATUS_STAGES_WITH_CONCALL = ["Searching signals...", "Reading concall transcript...", "Analyzing data...", "Composing answer..."];
 
 // Fixed UI copy (never LLM-generated) shown directly above the input. Uses
-// the approved pre-RA phrase already used across the site.
-const COMPLIANCE_LINE = "Informational only — not investment advice.";
+// the one-sentence line used in every footer.
+const COMPLIANCE_LINE = STANDARD_LINE;
 
 /** Top-ribbon entry point. Same Sparkles mark as the sidebar nav item. */
 export function AskRedixFiTrigger() {

@@ -9,7 +9,7 @@ import { EMPTY_FUND, fundChips, fundParams } from "../src/components/app/signals
 const root = new URL("../src/", import.meta.url);
 const read = (p: string) => readFileSync(new URL(p, root), "utf8");
 const FORBIDDEN = /\b(buy|sell|hold|target|targets|recommend\w*|breakout|oversold|overbought|bullish|bearish|outlook|better than|worse than)\b/i;
-const STANDARD = "RedixFi is not a SEBI-registered Research Analyst or Investment Adviser. It provides measured market data and analytics only: not investment advice, recommendations or predictions.";
+const STANDARD = "RedixFi shows market data for information only. It gives no buy or sell advice or predictions.";
 const stripStandard = (t: string) => t.split(STANDARD).join("");
 
 // ---- billing wording says what the code does
@@ -58,7 +58,7 @@ const stripStandard = (t: string) => t.split(STANDARD).join("");
   const src = read("components/app/signals/MyScreens.tsx");
   assert.ok(src.includes("added since your last view"), "neutral wording for the difference");
   assert.ok(src.includes("First time you open"), "first view shows no difference");
-  assert.ok(src.includes(STANDARD), "the panel carries the standard line");
+  assert.ok(src.includes("{STANDARD_LINE}"), "the panel carries the one-sentence line");
   assert.ok(!FORBIDDEN.test(stripStandard(src.replace(/e\.target\./g, "e.t.").replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, ""))), "My screens text has no forbidden word");
   assert.ok(read("components/app/signals/SignalsExplorer.tsx").includes("<MyScreens"), "the Screener shows My screens");
 }
@@ -88,7 +88,7 @@ const stripStandard = (t: string) => t.split(STANDARD).join("");
   const page = read("app/(app)/more/data-sources/page.tsx");
   assert.ok(page.includes("getDataStatus") && page.includes("Newest data:"), "as-of dates come from the data");
   assert.ok(page.includes("How many stocks have each field") && page.includes("What “Not available” means"));
-  assert.ok(page.includes("<StandardLineNote"), "standard line on the data-sources page");
+  assert.ok(!page.includes("StandardLineNote"), "the footer carries the sentence; no per-page block");
   assert.ok(!/UNRESOLVED, flagged not fixed/.test(page), "the stale cadence comment is gone");
   assert.ok(!FORBIDDEN.test(stripStandard(page.replace(/\/\/.*$/gm, ""))), "data-sources page has no forbidden word");
 }

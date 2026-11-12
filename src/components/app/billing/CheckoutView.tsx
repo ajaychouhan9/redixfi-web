@@ -138,8 +138,7 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
     <div className="mx-auto max-w-3xl">
       <h1 className="mb-2 text-lg font-semibold">Pricing</h1>
       <p className="mb-6 max-w-xl text-sm text-foreground-muted">
-        Our current focus is building the most trusted analytics platform in India. Any future regulated research
-        services will only be introduced after we receive the necessary regulatory approvals.
+        Each payment is for one plan period and does not renew automatically.
       </p>
 
       {profile && (activeSub || profile.is_pro_trial) && (
@@ -278,7 +277,7 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
 
       <p className="mt-3 text-xs text-foreground-faint">
         One-time payment for the period. It does not renew automatically; you can renew when it ends. You receive a payment receipt
-        by email. You can cancel anytime — the refund for the unused part is pro-rata.
+        by email. Money paid for a plan period is not refunded once the plan is active, and cancelling does not refund. Refunds are made only if the same plan was charged more than once, or the payment was taken but the plan was not activated (write to support@redixfi.com with the payment id). Top-ups and add-ons are not refunded. The 5-day free Pro trial is there to try the product.
       </p>
     </div>
   );

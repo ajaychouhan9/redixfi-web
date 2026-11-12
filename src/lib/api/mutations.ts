@@ -212,7 +212,7 @@ export async function verifyBilling(
 }
 
 export async function cancelBilling(token: string) {
-  const env = await apiMutate<{ ok: boolean }>("/billing/cancel", "POST", undefined, { token });
+  const env = await apiMutate<{ ok?: boolean; success?: boolean; message?: string }>("/billing/cancel", "POST", undefined, { token });
   return env.data;
 }
 

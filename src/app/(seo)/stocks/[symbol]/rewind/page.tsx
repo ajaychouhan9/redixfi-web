@@ -6,7 +6,6 @@ import { apiMutate, ApiError } from "@/lib/api/client";
 import { getResearch } from "@/lib/api/endpoints";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { DataTable, Section } from "@/components/seo/DataTable";
-import { StandardLineNote } from "@/components/seo/StandardLine";
 import { TrialCta } from "@/components/app/TrialCta";
 import { formatDateIst } from "@/lib/format";
 import { stockPath, stockSymbolFromParam } from "@/lib/seo/stock-symbol";
@@ -185,7 +184,6 @@ export default async function StockRewindPage({ params }: { params: Promise<{ sy
         </Link>
       </p>
       <TrialCta className="mt-4" />
-      <StandardLineNote className="mt-8" />
     </div>
   );
 }

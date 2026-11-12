@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { STANDARD_LINE } from "@/lib/compliance/standard-line";
 import { useCallback, useState } from "react";
 import { BookmarkPlus, Check, Pencil, Trash2, X } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -231,7 +232,7 @@ export function MyScreens({ params, onApply }: { params: SharedScreenParams; onA
           {full && <p className="mt-1 text-[11px] text-foreground-faint">Your plan keeps up to {data?.limit} saved screen{data?.limit === 1 ? "" : "s"}. Delete one to save another, or see <Link href="/pricing" className="underline">pricing</Link>.</p>}
           {error && <p className="mt-2 text-xs text-negative">{error}</p>}
           <p className="mt-2 text-[10px] leading-snug text-foreground-faint">
-            A screen lists stocks by measured data only. RedixFi is not a SEBI-registered Research Analyst or Investment Adviser. It provides measured market data and analytics only: not investment advice, recommendations or predictions.
+            A screen lists stocks by measured data only. {STANDARD_LINE}
           </p>
         </div>
       )}

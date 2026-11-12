@@ -69,7 +69,7 @@ for (const c of COLUMNS) if (c.sort) assert.match(c.sort, /^[a-z0-9_]+$/);
 // ---- CSV: standard line first, exactly the visible columns, unit and date in each header
 const csv = buildScreenerCsv([row(), row({ symbol: "X", pe: null, locked: false })], ["pe", "ema200", "sector"], ctx, "12 Nov 2026");
 const lines = csv.trim().split("\r\n");
-assert.ok(lines[0].startsWith('"RedixFi is not a SEBI-registered Research Analyst'), "row 1 is the standard line");
+assert.ok(lines[0] === "RedixFi shows market data for information only. It gives no buy or sell advice or predictions.", "row 1 is the one-sentence line");
 assert.equal(lines[1], 'Symbol,Company,"Price (₹, as of 12 Nov 2026)",Day change (%),"P/E (x, as of 31 Mar 2026 qtr)","200-day EMA (% vs EMA, as of 12 Nov 2026)",Sector');
 assert.equal(lines[2], "TCS,Tata Consultancy,1050,1.2,18.44,5,IT");
 assert.equal(lines[3].split(",")[4], "n/a", "a missing value is n/a");
@@ -89,10 +89,10 @@ for (const c of COLUMNS) assert.ok(!FORBIDDEN.test(`${c.label} ${c.unit}`), `col
 for (const p of PRESETS) assert.ok(!FORBIDDEN.test(p.label));
 
 // ---- pages: how-it-works section, one Common questions block, trust strip, export gate
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 const root = new URL("../src/", import.meta.url);
 const read = (f: string) => readFileSync(new URL(f, root), "utf8");
-const STANDARD = "RedixFi is not a SEBI-registered Research Analyst or Investment Adviser. It provides measured market data and analytics only: not investment advice, recommendations or predictions.";
+const STANDARD = "RedixFi shows market data for information only. It gives no buy or sell advice or predictions.";
 {
   const how = read("app/(app)/how-it-works/page.tsx");
   assert.ok(how.includes('title="What else RedixFi shows"'));
@@ -106,13 +106,10 @@ const STANDARD = "RedixFi is not a SEBI-registered Research Analyst or Investmen
   assert.ok(!FORBIDDEN.test(block), `new section wording: ${block.match(FORBIDDEN)}`);
 }
 {
-  const strip = read("components/layout/TrustStrip.tsx");
-  assert.ok(strip.includes('"Operated by Ajay Chouhan, Faridabad · Data from NSE and company filings · support@redixfi.com"'));
-  assert.ok(strip.includes('href="/more/about-us"'));
-  assert.ok(!/regulated|approved|registered|SEBI|compliant|trusted by/i.test(strip.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "")), "facts only");
-  assert.ok(read("components/layout/FooterDisclaimer.tsx").includes("<FooterTrustStrip />") && read("components/layout/FooterDisclaimer.tsx").includes("STANDARD_LINE"), "footer: strip added, standard line kept");
-  assert.ok(read("app/(app)/page.tsx").includes("<TrustStrip />") && read("app/(app)/pricing/page.tsx").includes("<TrustStrip"), "Home and Pricing show it");
-  assert.ok(read("lib/compliance/standard-line.ts").includes(STANDARD), "standard line unchanged");
+  // prompt 7 (14 Nov 2026) removed the trust strip entirely: facts about the operator live on the four legal/about pages only
+  assert.ok(!existsSync(new URL("components/layout/TrustStrip.tsx", root)), "trust strip removed");
+  assert.ok(!read("components/layout/FooterDisclaimer.tsx").includes("TrustStrip") && !read("app/(app)/page.tsx").includes("TrustStrip") && !read("app/(app)/pricing/page.tsx").includes("TrustStrip"), "no page shows a trust strip");
+  assert.ok(read("lib/compliance/standard-line.ts").includes(STANDARD), "the one-sentence line");
 }
 {
   const ex = read("components/app/signals/SignalsExplorer.tsx");

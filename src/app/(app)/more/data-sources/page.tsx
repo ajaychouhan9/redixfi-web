@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { getDataStatus, getMarketOverview } from "@/lib/api/endpoints";
 import { FreshnessDot } from "@/components/ui/FreshnessDot";
 import { Card } from "@/components/ui/Card";
-import { StandardLineNote } from "@/components/seo/StandardLine";
 import { quarterDate } from "@/lib/seo/stock-facts";
 import type { DataStatus } from "@/lib/api/types";
 
@@ -117,7 +116,6 @@ export default async function DataSourcesPage() {
             "Not available means the source did not give RedixFi a value for that stock and date. It is shown as “Not available” instead of a zero or an estimate."}
         </p>
       </Card>
-      <StandardLineNote className="mt-6" />
     </div>
   );
 }

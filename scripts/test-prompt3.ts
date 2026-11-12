@@ -13,7 +13,7 @@ const FORBIDDEN = /\b(buy|sell|hold|target|targets|recommend\w*|breakout|oversol
 const VERDICT = /\b(positive|negative)\b(?! EPS)/i;
 // The two sentences the owner prescribed contain the word "recommendations".
 const ALLOWED = [
-  "RedixFi is not a SEBI-registered Research Analyst or Investment Adviser. It provides measured market data and analytics only: not investment advice, recommendations or predictions.",
+  "RedixFi shows market data for information only. It gives no buy or sell advice or predictions.",
   "Filters on reported data; not recommendations.",
 ];
 const clean = (t: string) => ALLOWED.reduce((acc, a) => acc.split(a).join(""), t);
@@ -159,7 +159,7 @@ const noForbidden = (t: string, where: string) => {
   ];
   for (const rel of pages) {
     const src = readFileSync(new URL(rel, root), "utf8");
-    assert.ok(src.includes("<StandardLineNote"), `${rel}: standard line`);
+    assert.ok(!src.includes("StandardLineNote"), `${rel}: the footer carries the sentence now, no per-page block`);
   }
   const printed = [...pages, "components/seo/ScreenTable.tsx", "components/seo/ScreenMoreRows.tsx", "components/app/review/WeeklyEmailOptIn.tsx", "components/app/signals/FundamentalFilters.tsx", "lib/seo/stock-facts.ts", "lib/seo/stock-rewind.ts", "lib/seo/weekly.ts", "data/fundamental-screens.ts"];
   for (const rel of printed) {

@@ -1,7 +1,6 @@
-import { STANDARD_LINE } from "@/lib/compliance/standard-line";
+import { FooterDisclaimer } from "@/components/layout/FooterDisclaimer";
 import Link from "next/link";
 import { RedixFiLogo } from "@/components/brand/RedixFiLogo";
-import { LegalLinks } from "@/components/layout/LegalLinks";
 
 export default function SeoLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -26,14 +25,7 @@ export default function SeoLayout({ children }: { children: React.ReactNode }) {
         </nav>
       </header>
       <main className="flex-1 px-4 py-6 sm:px-6">{children}</main>
-      <footer className="border-t border-border px-4 py-3 text-center text-[12px] text-foreground-faint sm:px-6">
-        {STANDARD_LINE}{" "}
-        <Link href="/more/disclaimer" className="underline">
-          Full disclaimer
-        </Link>{" "}
-        ·{" "}
-        <LegalLinks />
-      </footer>
+      <FooterDisclaimer />
     </div>
   );
 }

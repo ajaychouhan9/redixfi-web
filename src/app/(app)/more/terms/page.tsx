@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage } from "@/components/app/LegalPage";
 import { LEGAL } from "@/lib/legal";
-import { STANDARD_LINE } from "@/lib/compliance/standard-line";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -21,8 +20,7 @@ export default function TermsPage() {
           body: (
             <>
               <p>RedixFi shows measured market data and analytics about Indian listed companies: prices, delivery, volume, filings, summaries of company documents and similar facts, each with its source where we have one.</p>
-              <p>{STANDARD_LINE}</p>
-              <p>Nothing on RedixFi is a recommendation to trade any security. Decisions you take are yours. Please talk to a registered adviser if you need advice.</p>
+              <p>Nothing on RedixFi is a recommendation to trade any security. Decisions you take are yours. Please talk to a qualified adviser if you need advice. Read the <Link href="/more/disclaimer" className="text-accent underline">disclaimer</Link>.</p>
             </>
           ),
         },
@@ -44,7 +42,7 @@ export default function TermsPage() {
           body: (
             <>
               <p>RedixFi has a Free plan and two paid plans, Basic and Pro, each available monthly or annually. The prices, and what each plan includes, are on the <Link href="/pricing" className="text-accent underline">pricing page</Link>. The price shown is the total you pay. After each payment we email you a payment receipt.</p>
-              <p>You pay through Razorpay. Each payment is a one-time payment for the period you choose. A paid plan does not renew automatically: when the period ends your account returns to the Free plan, and you can renew whenever you like. You can cancel at any time from your account; how cancellation and refunds work is in the <Link href="/more/refund-policy" className="text-accent underline">refund policy</Link>.</p>
+              <p>You pay through Razorpay. Each payment is a one-time payment for the period you choose. A paid plan does not renew automatically: when the period ends your account returns to the Free plan, and you can renew whenever you like. Money paid for a plan period is not refunded once the plan is active, and cancelling does not refund: the plan stays active until the period ends. Refunds are made only if the same plan was charged more than once, or the payment was taken but the plan was not activated. The full rules are in the <Link href="/more/refund-policy" className="text-accent underline">refund policy</Link>.</p>
               <p>A monthly plan can be upgraded to the annual plan. Ask AI question packs (top-ups) are bought separately and stay usable after a subscription ends.</p>
               <p>We may change prices for future periods. Prices shown at checkout are the prices you pay for that period.</p>
             </>
@@ -89,7 +87,7 @@ export default function TermsPage() {
         },
         {
           heading: "Suspension and ending",
-          body: <p>You can stop using RedixFi and ask us to delete your account at any time. We may suspend or end an account that breaks these terms or puts the service or other users at risk. If we end a paid account without a breach on your side, we will refund the unused part of the period in the way described in the refund policy.</p>,
+          body: <p>You can stop using RedixFi and ask us to delete your account at any time. We may suspend or end an account that breaks these terms or puts the service or other users at risk. The refund rules are in the refund policy.</p>,
         },
         {
           heading: "Changes to these terms",

@@ -1,4 +1,3 @@
-import { STANDARD_LINE } from "@/lib/compliance/standard-line";
 import type { Metadata } from "next";
 import { ContactForm } from "@/components/app/ContactForm";
 import { LEGAL } from "@/lib/legal";
@@ -26,7 +25,7 @@ export default function AboutUsPage() {
         <p>
           RedixFi tracks measured signals, delivery and options data, and AI-classified news every day — analytics,
           not advice. Every figure on the platform describes something that has already happened or is currently
-          observed; nothing states or implies what a stock will do next. {STANDARD_LINE}
+          observed; nothing states or implies what a stock will do next.
         </p>
       </section>
 
@@ -44,7 +43,7 @@ export default function AboutUsPage() {
           Grievance officer: {LEGAL.grievanceOfficer} ({LEGAL.email}). Complaints are acknowledged within {LEGAL.acknowledgeWithin} and resolved within {LEGAL.resolveWithin}.
         </p>
         <p className="text-foreground-muted">
-          <a href="/more/terms" className="underline">Terms of Service</a> · <a href="/more/privacy" className="underline">Privacy Policy</a> · <a href="/more/refund-policy" className="underline">Refund policy</a>
+          <a href="/more/terms" className="underline">Terms of Service</a> · <a href="/more/privacy" className="underline">Privacy Policy</a> · <a href="/more/refund-policy" className="underline">Refund policy</a> · <a href="/more/disclaimer" className="underline">Disclaimer</a>
         </p>
       </section>
 

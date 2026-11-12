@@ -3,7 +3,6 @@ import Link from "next/link";
 import { getSevenDayReview } from "@/lib/api/endpoints";
 import { retryTransientPublicGet } from "@/lib/api/retry-public-upstream";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
-import { StandardLineNote } from "@/components/seo/StandardLine";
 import { weekPath } from "@/lib/seo/weekly";
 
 export const revalidate = 900;
@@ -56,7 +55,6 @@ export default async function WeeklyArchivePage() {
           ))}
         </ul>
       )}
-      <StandardLineNote className="mt-8" />
     </div>
   );
 }

@@ -3,7 +3,6 @@ import Link from "next/link";
 import { CANNED_SCREENS } from "@/data/canned-screens";
 import { FUNDAMENTAL_SCREENS, FILTERS_NOTE } from "@/data/fundamental-screens";
 import { getSignals } from "@/lib/api/endpoints";
-import { StandardLineNote } from "@/components/seo/StandardLine";
 
 export const revalidate = 600;
 
@@ -51,7 +50,6 @@ export default async function ScreensIndexPage() {
           </li>
         ))}
       </ul>
-      <StandardLineNote className="mt-8" />
     </div>
   );
 }

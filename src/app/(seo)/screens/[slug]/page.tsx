@@ -7,7 +7,6 @@ import { DeltaValue } from "@/components/ui/DeltaValue";
 import { cache } from "react";
 import { getFundamentalScreen, FILTERS_NOTE, type FundamentalScreen } from "@/data/fundamental-screens";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
-import { StandardLineNote } from "@/components/seo/StandardLine";
 import { ScreenTable } from "@/components/seo/ScreenTable";
 import { ScreenMoreRows } from "@/components/seo/ScreenMoreRows";
 import { TrialCta } from "@/components/app/TrialCta";
@@ -85,7 +84,6 @@ async function FundamentalScreenPage({ slug }: { slug: string }) {
       <p className="mt-4 text-sm">
         <Link href="/screens" className="text-accent hover:underline">More screens</Link> · <Link href="/signals" className="text-accent hover:underline">Build your own in the Screener</Link>
       </p>
-      <StandardLineNote className="mt-8" />
     </div>
   );
 }
