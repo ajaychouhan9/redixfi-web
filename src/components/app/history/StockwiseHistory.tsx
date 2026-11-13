@@ -24,7 +24,7 @@ import {
   type StockwiseStock,
 } from "@/lib/api/history";
 import {
-  HISTORY_CHANCE_NOTE,
+  HISTORY_CAUTION_NOTE,
   HISTORY_DISCLAIMER,
   HISTORY_EXAMPLES_TITLE,
   SW_INDEPENDENCE_NOTE,
@@ -860,7 +860,7 @@ export function StockwiseHistory({ initialSymbol }: { initialSymbol?: string }) 
         <p className="text-xs font-medium text-foreground-muted" data-testid="sw-disclaimer">
           {HISTORY_DISCLAIMER}
         </p>
-        <p className="text-xs text-foreground-muted">{HISTORY_CHANCE_NOTE}</p>
+        <p className="text-xs text-foreground-muted">{HISTORY_CAUTION_NOTE}</p>
         <p className="text-xs text-foreground-muted">{SW_INDEPENDENCE_NOTE}</p>
       </div>
     </div>

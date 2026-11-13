@@ -66,16 +66,16 @@ export default function HistoryPage() {
       </Suspense>
       <section className="space-y-2 text-sm text-foreground-muted" aria-labelledby="rewind-about">
         <h2 id="rewind-about" className="text-sm font-semibold text-foreground">
-          About Market Rewind and Chance Check
+          About Market Rewind and Past occurrences
         </h2>
         <p>
           <span className="font-medium text-foreground">Market Rewind</span> lists the past days on which an Indian stock moved by a size you choose, and shows the measured readings
           the day before, on the day and the day after. It reports counts of past days only.
         </p>
         <p>
-          <span className="font-medium text-foreground">Chance Check</span> is a base-rate comparison. It takes the days found, counts how often each reading was present in the
+          <span className="font-medium text-foreground">Past occurrences</span> is a base-rate comparison. It takes the days found, counts how often each reading was present in the
           sessions before the move, and compares that with how often the same reading was present on all days of the same stock and period. A reading is marked &ldquo;Stood out&rdquo; only
-          when the difference is large and larger than chance alone would explain. It is not a forecast or a recommendation.
+          when the difference is large and larger than ordinary day-to-day variation. It is not a forecast or a recommendation.
         </p>
       </section>
       <p className="text-xs text-foreground-muted">

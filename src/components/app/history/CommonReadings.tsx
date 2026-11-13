@@ -20,6 +20,8 @@ import {
   COMMON_NEEDS_MOVE,
   COMMON_SUB,
   COMMON_SUBLABEL,
+  PERIOD_LONG,
+  tidyApiLine,
   COMMON_TOO_FEW,
   COUNTS_TITLE,
 } from "@/lib/history-common-copy";
@@ -97,7 +99,7 @@ function RowTable({ rows }: { rows: CommonRow[] }) {
 }
 
 /**
- * "Chance Check": a button under the result summary. `body` is the request the result came from (kept opaque here), `days` the
+ * "Past occurrences": a button under the result summary. `body` is the request the result came from (kept opaque here), `days` the
  * number of days found with the chosen move, `moveAny` true when no move size was chosen.
  */
 export function CommonReadings({ mode, body, days, moveAny }: { mode: "stockwise" | "pooled"; body: Record<string, unknown>; days: number; moveAny: boolean }) {
@@ -157,6 +159,9 @@ export function CommonReadings({ mode, body, days, moveAny }: { mode: "stockwise
           {COMMON_SUB}
         </p>
       </div>
+      <p className="text-sm font-medium tabular-nums" data-testid="common-count">
+        Past occurrences: {fmtInt(days)} {days === 1 ? "day" : "days"}, {PERIOD_LONG[String((body as { period?: unknown }).period ?? "3y")] ?? "3 years"}
+      </p>
       {blocked && (
         <p className="text-sm text-foreground-muted" data-testid="common-blocked">
           {blocked}
@@ -181,7 +186,7 @@ export function CommonReadings({ mode, body, days, moveAny }: { mode: "stockwise
       {open && res && res.status === "ok" && res.rows && (
         <div className="space-y-4" data-testid="common-panel">
           <p className="text-base font-semibold" data-testid="common-headline">
-            {res.headline}
+            {tidyApiLine(res.headline)}
           </p>
           <p className="text-xs text-foreground-muted" data-testid="common-stood-out-note">{res.fixed?.stood_out_note}</p>
           <p className="text-xs text-foreground-muted">{res.fixed?.before_only}</p>
@@ -226,7 +231,7 @@ export function CommonReadings({ mode, body, days, moveAny }: { mode: "stockwise
             {res.results_dates && <p className="mt-2 text-[11px] text-foreground-muted">{res.results_dates}</p>}
           </div>
           <div className="space-y-1">
-            <p className="text-xs font-medium text-foreground-muted">{res.fixed?.caution}</p>
+            <p className="text-xs font-medium text-foreground-muted">{tidyApiLine(res.fixed?.caution)}</p>
             <p className="text-xs text-foreground-muted">{res.fixed?.independence}</p>
           </div>
           <Fold title={COMMON_HOW_TITLE} open={how} onToggle={() => setHow((h) => !h)} testid="common-how">

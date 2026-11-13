@@ -28,7 +28,7 @@ import {
 } from "@/lib/api/history";
 import {
   HISTORY_BUILDING,
-  HISTORY_CHANCE_NOTE,
+  HISTORY_CAUTION_NOTE,
   HISTORY_DISCLAIMER,
   HISTORY_EXAMPLES_TITLE,
   HISTORY_NOT_ENOUGH,
@@ -714,7 +714,7 @@ export function HistoryExplorer() {
       )}
 
       <div className="space-y-1">
-        <p className="text-xs text-foreground-muted">{HISTORY_CHANCE_NOTE}</p>
+        <p className="text-xs text-foreground-muted">{HISTORY_CAUTION_NOTE}</p>
         <p className="text-xs font-medium text-foreground-muted" data-testid="history-disclaimer">
           {HISTORY_DISCLAIMER}
         </p>

@@ -245,7 +245,7 @@ export const downloadStockwiseCsv = (p: StockwiseParams, token: string) =>
     },
   });
 
-// ---- Chance Check -------------------------------------------------------------------------------------------
+// ---- Past occurrences -------------------------------------------------------------------------------------------
 
 export interface CommonRow {
   key: string;

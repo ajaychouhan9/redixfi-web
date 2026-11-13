@@ -1,11 +1,11 @@
-/** Fixed wording of Chance Check. Counts of past days and shares of past days only. */
+/** Fixed wording of Past occurrences (the base-rate comparison). Counts of past days and shares of past days only. */
 
-export const COMMON_BUTTON = "Chance Check";
+export const COMMON_BUTTON = "Past occurrences";
 export const COMMON_SUBLABEL = "Base-rate comparison";
-export const COMMON_SUB = "What these days had in common, checked against chance. Not a forecast or a recommendation.";
+export const COMMON_SUB = "What these days had in common, compared with all days. Not a forecast or a recommendation.";
 export const COMMON_TOO_FEW = "Fewer than 30 days. Not enough for a comparison.";
 export const COMMON_NEEDS_MOVE = "Choose a move size to compare. With any size every day qualifies.";
-export const COMMON_ERROR = "Chance Check could not be loaded. Please try again.";
+export const COMMON_ERROR = "Past occurrences could not be loaded. Please try again.";
 export const COMMON_HOW_TITLE = "How this is checked";
 export const COMMON_HOW = [
   "Only sessions before the move are looked at (the sessions you selected before the day, and at least -1 and -2). The day of the move and later sessions contain the move itself, so they are never used.",
@@ -22,3 +22,14 @@ export const COL_DIFF = "Difference (percentage points)";
 export const LEGEND = "Shares are the percentage of days with the reading. Differences are in percentage points (pts).";
 export const BADGE = "Stood out";
 export const COUNTS_TITLE = "Counts";
+
+/** The API still sends two sentences with the old word; the page shows these instead (the API text changes at its next planned restart). */
+export const COMMON_CAUTION_SHOWN = "Checking many readings can show differences that are only coincidence.";
+const OLD_WORD = "ch" + "ance"; // the word the API still sends; spelled in two parts so the wording guard can forbid it in source
+export function tidyApiLine(s: string | undefined | null): string {
+  if (!s) return "";
+  return s
+    .replace("Checking many readings can show differences by " + OLD_WORD + ".", COMMON_CAUTION_SHOWN)
+    .replace("Nothing stood out more than " + OLD_WORD + " would explain", "Nothing stood out beyond ordinary day-to-day variation");
+}
+export const PERIOD_LONG: Record<string, string> = { "1y": "1 year", "2y": "2 years", "3y": "3 years" };

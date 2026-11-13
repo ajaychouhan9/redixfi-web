@@ -148,7 +148,7 @@ if (reportHits.length) {
   process.exit(1);
 }
 // 2026-10-30: the History Explorer shows counts of past days only. Its texts may not use forecast or recommendation language.
-// Two sentences are allowed as written by the owner: the "by chance" caution and the disclaimer ("Not a forecast").
+// One sentence is allowed as written by the owner: the disclaimer ("Not a forecast"). 13 Nov 2026: "Chance Check" became "Past occurrences"; chance, probability, odds and likelihood wording is not allowed anywhere on the Market Rewind page.
 const HISTORY_FILES = [
   "lib/history-copy.ts",
   "lib/api/history.ts",
@@ -163,8 +163,8 @@ const HISTORY_FILES = [
   "components/app/history/HistoryLinks.tsx",
   "app/(app)/rewind/page.tsx",
 ];
-const HISTORY_FORBIDDEN = /\b(chance|probabilit(?:y|ies)|likely|predict\w*|buy|sell|(?<!\.)targets?(?!=)|best|top picks?|breakout|setup|bullish|opportunit(?:y|ies)|momentum|red flags?)\b|strong stock|weak stock|matches today|same as today/i;
-const HISTORY_ALLOWED = ["Trying many filters can produce good-looking numbers by chance.", "Not a forecast or a recommendation.", "checked against chance", "larger than chance alone would explain", "Chance Check"];
+const HISTORY_FORBIDDEN = /\b(chance|chances|probabilit(?:y|ies)|odds|likelihood|likely|predict\w*|buy|sell|(?<!\.)targets?(?!=)|best|top picks?|breakout|setup|bullish|opportunit(?:y|ies)|momentum|red flags?)\b|strong stock|weak stock|matches today|same as today/i;
+const HISTORY_ALLOWED = ["Not a forecast or a recommendation."];
 const historyHits = [];
 for (const rel of HISTORY_FILES) {
   let text = stripComments(readFileSync(join(ROOT, rel), "utf8"));
@@ -187,16 +187,16 @@ for (const rel of ["components/app/history/CommonReadings.tsx", "components/app/
   if (m) historyHits.push(`${rel}: ${m[0]}`);
 }
 const histCopy = readFileSync(join(ROOT, "lib/history-copy.ts"), "utf8");
-for (const need of ["Many stocks move on the same market days; these days are not independent.", "Next session pending", "No days in this period", "Past record of measured data. Not a forecast or a recommendation.", "Trying many filters can produce good-looking numbers by chance.", "Examples to start with"]) {
+for (const need of ["Many stocks move on the same market days; these days are not independent.", "Next session pending", "No days in this period", "Past record of measured data. Not a forecast or a recommendation.", "Trying many filters can produce good-looking numbers that are only coincidence.", "Examples to start with"]) {
   if (!histCopy.includes(need)) historyHits.push(`lib/history-copy.ts: required line missing: ${need}`);
 }
 const commonCopy = readFileSync(join(ROOT, "lib/history-common-copy.ts"), "utf8");
-for (const need of ["Chance Check", "Base-rate comparison", "What these days had in common, checked against chance. Not a forecast or a recommendation.", "Fewer than 30 days. Not enough for a comparison."]) {
+for (const need of ["Past occurrences", "Base-rate comparison", "What these days had in common, compared with all days. Not a forecast or a recommendation.", "Fewer than 30 days. Not enough for a comparison."]) {
   if (!commonCopy.includes(need)) historyHits.push(`lib/history-common-copy.ts: required line missing: ${need}`);
 }
 // 2026-10-31 rename: the old names may not reappear in anything a user, crawler or AI model sees (all of src/).
 // Allowed places: internal identifiers (they have no spaces), comments and the redirect table, none of which is user-visible.
-const OLD_NAMES = /History Explorer|Conditions Readings?|Common readings/i;
+const OLD_NAMES = /History Explorer|Conditions Readings?|Common readings|Chance[ -]?Checks?/i;
 function walkSrc(dir, out = []) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     const p = join(dir, e.name);

@@ -4,7 +4,7 @@ export const HISTORY_TITLE = "Market Rewind";
 export const HISTORY_TAGLINE = "See what happened before and after big moves.";
 export const HISTORY_INTRO = "Past days when a stock moved by a chosen size, with the measured readings around each day.";
 export const HISTORY_DISCLAIMER = "Past record of measured data. Not a forecast or a recommendation.";
-export const HISTORY_CHANCE_NOTE = "Trying many filters can produce good-looking numbers by chance.";
+export const HISTORY_CAUTION_NOTE = "Trying many filters can produce good-looking numbers that are only coincidence.";
 export const HISTORY_EXAMPLES_TITLE = "Examples to start with";
 export const HISTORY_NOT_ENOUGH = "Not enough days to show a summary";
 export const HISTORY_BUILDING =
@@ -12,7 +12,7 @@ export const HISTORY_BUILDING =
 
 export const HISTORY_SEO_TITLE = "Market Rewind - see what happened before and after big stock moves | RedixFi";
 export const HISTORY_SEO_DESCRIPTION =
-  "Market Rewind shows the past days when an Indian stock moved by 1% to 20%, with the measured readings the day before, on the day and the day after. Chance Check compares what those days had in common against all days. Counts of past days with the base rate, from three years of exchange data.";
+  "Market Rewind shows the past days when an Indian stock moved by 1% to 20%, with the measured readings the day before, on the day and the day after. Past occurrences compares what those days had in common against all days. Counts of past days with the base rate, from three years of exchange data.";
 
 export type MatchMode = "all" | `any${number}`;
 
