@@ -40,7 +40,7 @@ const load = cache(async (symbol: string): Promise<RewindData | null> => {
   let company: string | null = null;
   try {
     // @auth-ok: public SEO page, anonymous by design.
-    company = (await getResearch(symbol, { revalidate: 21600 })).data.company_name;
+    company = (await getResearch(symbol, { revalidate: 86400 })).data.company_name;
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) return null;
     throw e;
