@@ -14,6 +14,9 @@ import { quarterDate } from "@/lib/seo/stock-facts";
 import type { FundamentalsCoverage } from "@/lib/api/types";
 
 export const revalidate = 120;
+// Without generateStaticParams a dynamic route is rendered on EVERY request and `revalidate` is ignored (found 14 Nov 2026: no-store, no ISR).
+// Returning [] builds nothing up front and turns on cached on-demand pages (ISR).
+export function generateStaticParams() { return []; }
 
 // Reported-figure screens: the first ten rows are rendered for everyone (and for search engines); the rest sit behind the lock component.
 // When the API cannot run the filters yet the page does not exist (404) instead of showing an unfiltered list as if it were filtered.

@@ -22,6 +22,9 @@ import {
 
 // History only. Rebuilt hourly: the stored history changes once a day.
 export const revalidate = 86400; // 24 h: the readings change once a day (cut Vercel/VM CPU, 14 Nov 2026)
+// Without generateStaticParams a dynamic route is rendered on EVERY request and `revalidate` is ignored (found 14 Nov 2026: no-store, no ISR).
+// Returning [] builds nothing up front and turns on cached on-demand pages (ISR).
+export function generateStaticParams() { return []; }
 
 const dateOf = (ymd: string) => formatDateIst(`${ymd.slice(0, 10)}T00:00:00Z`);
 const signed = (n: number | null) => (n === null ? "n/a" : `${n > 0 ? "+" : ""}${n.toFixed(2)}%`);
@@ -37,7 +40,7 @@ const load = cache(async (symbol: string): Promise<RewindData | null> => {
   let company: string | null = null;
   try {
     // @auth-ok: public SEO page, anonymous by design.
-    company = (await getResearch(symbol, { revalidate: 300 })).data.company_name;
+    company = (await getResearch(symbol, { revalidate: 21600 })).data.company_name;
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) return null;
     throw e;
@@ -50,14 +53,16 @@ const load = cache(async (symbol: string): Promise<RewindData | null> => {
           "/history/stockwise",
           "POST",
           { symbols: [symbol], move: c.move, direction: c.direction, period: "3y", offsets: [1, 2, 3, 4, 5] },
-          { revalidate: 3600, timeoutMs: 20_000 },
+          { revalidate: 86400, timeoutMs: 20_000 },
         );
-        return { c, stock: env.data.stocks?.[0] ?? null, asOf: env.data.as_of };
+        return { c, stock: env.data.stocks?.[0] ?? null, asOf: env.data.as_of, failed: false };
       } catch {
-        return { c, stock: null, asOf: "" };
+        return { c, stock: null, asOf: "", failed: true };
       }
     }),
   );
+  // Every reading failed (API down or restarting): throw, so the failure is never kept as a 24 h cached page. A real "no data" answer is not a failure.
+  if (runs.every((r) => r.failed)) throw new Error("rewind readings unavailable");
   const first = runs.find((r) => r.stock);
   const stock = first?.stock ?? null;
   return {

@@ -12,8 +12,6 @@ const nextConfig: NextConfig = {
       { source: "/admin/:path*", headers: [{ key: "Cache-Control", value: "private, no-store, max-age=0" }] },
       { source: "/login", headers: [{ key: "Cache-Control", value: "private, no-store, max-age=0" }] },
       { source: "/watchlist", headers: [{ key: "Cache-Control", value: "private, no-store, max-age=0" }] },
-      // Share-card images depend only on the query string, so a CDN may keep them.
-      { source: "/api/og", headers: [{ key: "Cache-Control", value: "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400" }] },
       { source: "/manifest.webmanifest", headers: [{ key: "Cache-Control", value: "public, max-age=3600" }] },
     ];
   },

@@ -26,12 +26,15 @@ import { coverageLine } from "@/lib/seo/data-coverage";
 // ONE public page per stock (12 Nov 2026). /research/<symbol> and /signals/<symbol> stay for signed-in work and point here with a
 // canonical tag and noindex. Public, anonymous, ISR: the page shows a subset that is the same for every visitor.
 export const revalidate = 21600; // 6 h: stock data changes once a day (cut CPU, 14 Nov 2026)
+// Without generateStaticParams a dynamic route is rendered on EVERY request and `revalidate` is ignored (found 14 Nov 2026: no-store, no ISR).
+// Returning [] builds nothing up front and turns on cached on-demand pages (ISR).
+export function generateStaticParams() { return []; }
 
 const loadCompany = cache(async (symbol: string) => {
   try {
     // @auth-ok: public SEO snapshot, ISR-cached and crawlable; a visitor's token must never reach a shared cache entry.
     const env = await retryTransientPublicGet(
-      () => getResearch(symbol, { revalidate: 300 }),
+      () => getResearch(symbol, { revalidate: 21600 }),
       () => getResearch(symbol, { timeoutMs: 10_000 }),
     );
     return env.data;
@@ -90,7 +93,7 @@ async function sectorPeers(data: ResearchDetail, marketCap: number | null): Prom
   if (!data.sector) return [];
   try {
     // @auth-ok: public identity list only (symbol, name), anonymous by design.
-    const env = await getSignals({ industry: data.sector, size: 100, sort: "name", order: "asc" }, { revalidate: 3600 });
+    const env = await getSignals({ industry: data.sector, size: 100, sort: "name", order: "asc" }, { revalidate: 21600 });
     const rows = env.data.filter((r) => r.symbol !== data.symbol);
     if (marketCap && marketCap > 0) {
       const dist = (r: SignalRow) => (r.market_cap && r.market_cap > 0 ? Math.abs(Math.log(r.market_cap / marketCap)) : 99);
@@ -123,8 +126,8 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
 
   // The extra readings are anonymous reads of public data. A locked or failed read leaves that block out; nothing is guessed.
   const [detailR, volR] = await Promise.allSettled([
-    getSignalDetail(data.symbol, 0, { revalidate: 300 }), // @auth-ok: public SEO page, anonymous
-    getVolatility(data.symbol, { revalidate: 300 }), // @auth-ok: public SEO page, anonymous
+    getSignalDetail(data.symbol, 0, { revalidate: 21600 }), // @auth-ok: public SEO page, anonymous
+    getVolatility(data.symbol, { revalidate: 21600 }), // @auth-ok: public SEO page, anonymous
   ]);
   const detail: SignalDetail | null =
     detailR.status === "fulfilled" && !detailR.value.data.locked && detailR.value.data.has_score !== false && detailR.value.data.signals ? detailR.value.data : null;

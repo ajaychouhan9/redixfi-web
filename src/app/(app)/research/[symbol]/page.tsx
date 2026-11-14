@@ -23,6 +23,9 @@ import { stockPath, stockSymbolFromParam } from "@/lib/seo/stock-symbol";
 // close). The heavy research body is still cached server-side for 900s; only
 // the page response is re-read once a minute so the price label is honest.
 export const revalidate = 21600; // 6 h; noindex page, kept out of crawlers (14 Nov 2026)
+// Without generateStaticParams a dynamic route is rendered on EVERY request and `revalidate` is ignored (found 14 Nov 2026: no-store, no ISR).
+// Returning [] builds nothing up front and turns on cached on-demand pages (ISR).
+export function generateStaticParams() { return []; }
 
 // PERF_ANALYSIS_2026-10-05 fix (2026-10-07): generateMetadata and the page
 // body both invoke loadResearch(sym) for the same request — React's cache()
@@ -30,7 +33,7 @@ export const revalidate = 21600; // 6 h; noindex page, kept out of crawlers (14 
 // instead of re-issuing the getResearch fetch.
 const loadResearch = cache(async (symbol: string) => {
   try {
-    // @auth-ok: SSR + ISR-cached (revalidate: 900) — a token could not be
+    // @auth-ok: SSR + ISR-cached (revalidate: 21600) — a token could not be
     // attached here even if we wanted to (Server Components can't reach
     // localStorage, AND this response is a SHARED cache entry across every
     // visitor for 15 minutes, so a personal token would be a genuine
@@ -44,7 +47,7 @@ const loadResearch = cache(async (symbol: string) => {
     // Freshness contract bump: Vercel's persistent fetch cache can outlive an
     // API-only deploy. This request is deliberately uncached so the page does
     // not reuse a pre-freshness response lacking source dates.
-    return (await getResearch(symbol, { revalidate: 60 })).data;
+    return (await getResearch(symbol, { revalidate: 21600 })).data;
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) return null;
     throw e;
@@ -76,8 +79,8 @@ export default async function ResearchDetailPage({ params }: { params: Promise<{
   // (Promise.allSettled + graceful per-source fallback) — a chart or
   // peers hiccup must not take down the whole page.
   const [chartR, peersR] = await Promise.allSettled([
-    getChart(sym, { interval: "1d" }, { revalidate: 900 }),
-    getResearchPeers(sym, { revalidate: 900 }),
+    getChart(sym, { interval: "1d" }, { revalidate: 21600 }),
+    getResearchPeers(sym, { revalidate: 21600 }),
   ]);
   const dailyCandles = chartR.status === "fulfilled" ? chartR.value.data.candles : [];
   const peers = peersR.status === "fulfilled" ? peersR.value.data.peers : null;

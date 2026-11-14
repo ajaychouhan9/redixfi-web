@@ -16,7 +16,10 @@ import { retryTransientPublicGet } from "@/lib/api/retry-public-upstream";
 // tier-gated in the first place"), so this page shows the exact same data
 // a logged-in Basic or Pro visitor would see — only the surrounding CTA
 // differs (signup funnel), never the underlying content.
-export const revalidate = 300;
+export const revalidate = 21600; // 6 h, same as the stock page (14 Nov 2026)
+// Without generateStaticParams a dynamic route is rendered on EVERY request and `revalidate` is ignored (found 14 Nov 2026: no-store, no ISR).
+// Returning [] builds nothing up front and turns on cached on-demand pages (ISR).
+export function generateStaticParams() { return []; }
 
 // PERF_ANALYSIS_2026-10-05 fix (2026-10-07): generateMetadata and the page
 // body both invoke loadCompany(sym) for the same request — React's cache()
@@ -27,7 +30,7 @@ const loadCompany = cache(async (symbol: string) => {
     // @auth-ok: public SEO snapshot, ISR-cached and crawlable — see the
     // module docstring above.
     const env = await retryTransientPublicGet(
-      () => getResearch(symbol, { revalidate: 300 }),
+      () => getResearch(symbol, { revalidate: 21600 }),
       () => getResearch(symbol, { timeoutMs: 10_000 }),
     );
     return env.data;

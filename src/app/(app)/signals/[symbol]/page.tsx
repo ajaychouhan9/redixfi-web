@@ -14,6 +14,9 @@ import { stockPath, stockSymbolFromParam } from "@/lib/seo/stock-symbol";
 // visitors does not hit the API for every request and a brief API outage serves the last good page instead of a 500. Every fetch below
 // is anonymous and carries `revalidate`, which is what keeps the route cacheable.
 export const revalidate = 21600; // 6 h; noindex page, kept out of crawlers (14 Nov 2026)
+// Without generateStaticParams a dynamic route is rendered on EVERY request and `revalidate` is ignored (found 14 Nov 2026: no-store, no ISR).
+// Returning [] builds nothing up front and turns on cached on-demand pages (ISR).
+export function generateStaticParams() { return []; }
 
 export async function generateMetadata({ params }: { params: Promise<{ symbol: string }> }): Promise<Metadata> {
   const { symbol: raw } = await params;
@@ -22,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
   let name: string | null = null;
   try {
     // @auth-ok: SSR metadata, always anonymous (only the public company name is used)
-    name = (await getSignalDetail(symbol, 6, { revalidate: 60 })).data.company_name ?? null;
+    name = (await getSignalDetail(symbol, 6, { revalidate: 21600 })).data.company_name ?? null;
   } catch {
     /* the title falls back to the symbol */
   }
@@ -57,8 +60,8 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
     // true for a real logged-in entitled user. See that component and
     // the comment just below.
     detail = (await retryTransientPublicGet(
-      () => getSignalDetail(symbol, 6, { revalidate: 60 }),
-      () => getSignalDetail(symbol, 6, { timeoutMs: 10_000, revalidate: 60 }),
+      () => getSignalDetail(symbol, 6, { revalidate: 21600 }),
+      () => getSignalDetail(symbol, 6, { timeoutMs: 10_000, revalidate: 21600 }),
     )).data;
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) notFound();
@@ -129,8 +132,8 @@ export default async function SignalDetailPage({ params }: { params: Promise<{ s
   // not fixed here — no client-side "correction" for metering exists yet
   // anywhere in the app, unlike the masking-correction pattern above.
   const [chartR, deliveryR] = await Promise.allSettled([
-    getChart(symbol, { interval: "1d" }, { revalidate: 60 }),
-    getResearch(symbol, { revalidate: 60 }),
+    getChart(symbol, { interval: "1d" }, { revalidate: 21600 }),
+    getResearch(symbol, { revalidate: 21600 }),
   ]);
   const candles = chartR.status === "fulfilled" ? chartR.value.data.candles : [];
   const delivery30d = deliveryR.status === "fulfilled" ? deliveryR.value.data.delivery_30d : undefined;

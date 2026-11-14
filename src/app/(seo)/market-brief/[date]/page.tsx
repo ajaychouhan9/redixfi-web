@@ -4,6 +4,9 @@ import { getLatestBrief } from "@/lib/api/endpoints";
 import { AiLabel } from "@/components/ui/AiLabel";
 
 export const revalidate = 300;
+// Without generateStaticParams a dynamic route is rendered on EVERY request and `revalidate` is ignored (found 14 Nov 2026: no-store, no ISR).
+// Returning [] builds nothing up front and turns on cached on-demand pages (ISR).
+export function generateStaticParams() { return []; }
 
 export async function generateMetadata({ params }: { params: Promise<{ date: string }> }): Promise<Metadata> {
   const { date } = await params;

@@ -16,6 +16,9 @@ import { isWeekDate, weekDescription, weekH1, weekPath, weekSentences, weekTitle
 
 // A past week does not change once built; the newest one can be rebuilt the same night.
 export const revalidate = 900;
+// Without generateStaticParams a dynamic route is rendered on EVERY request and `revalidate` is ignored (found 14 Nov 2026: no-store, no ISR).
+// Returning [] builds nothing up front and turns on cached on-demand pages (ISR).
+export function generateStaticParams() { return []; }
 
 const dateOf = (ymd: string) => formatDateIst(`${ymd}T00:00:00Z`);
 
