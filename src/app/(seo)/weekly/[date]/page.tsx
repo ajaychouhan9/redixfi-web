@@ -11,7 +11,7 @@ import { DataTable, Section } from "@/components/seo/DataTable";
 import { WeeklyEmailOptIn } from "@/components/app/review/WeeklyEmailOptIn";
 import { TrialCta } from "@/components/app/TrialCta";
 import { stockPath } from "@/lib/seo/stock-symbol";
-import { formatDateIst } from "@/lib/format";
+import { formatDateSafe } from "@/lib/format";
 import { isWeekDate, weekDescription, weekH1, weekPath, weekSentences, weekTitle } from "@/lib/seo/weekly";
 
 // A past week does not change once built; the newest one can be rebuilt the same night.
@@ -20,7 +20,7 @@ export const revalidate = 900;
 // Returning [] builds nothing up front and turns on cached on-demand pages (ISR).
 export function generateStaticParams() { return []; }
 
-const dateOf = (ymd: string) => formatDateIst(`${ymd}T00:00:00Z`);
+const dateOf = (ymd: string) => formatDateSafe(`${ymd}T00:00:00Z`);
 
 const load = cache(async (date: string): Promise<SevenDayReview | null> => {
   try {

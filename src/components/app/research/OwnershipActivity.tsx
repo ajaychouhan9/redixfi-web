@@ -10,7 +10,7 @@ import { safeNumber } from "@/lib/safe-format";
 import { useMemo, useState } from "react";
 
 import { GenericRecordTable } from "@/components/ui/GenericRecordTable";
-import { formatDateIst } from "@/lib/format";
+import { formatDateSafe } from "@/lib/format";
 import { modeLabel, personCategory, sideLabel } from "@/lib/insider-display";
 import { formatRupeesCompact, splitLast12Months } from "@/lib/stock-clarity";
 import type { GenericRecord, InsiderTrade } from "@/lib/api/types";
@@ -32,7 +32,7 @@ function InsiderTable({ rows }: { rows: InsiderTrade[] }) {
         <tbody>
           {rows.map((t) => (
             <tr key={t.filing_id} className="border-t border-border">
-              <td className="py-1.5 pr-3">{formatDateIst(t.trade_date)}</td>
+              <td className="py-1.5 pr-3">{formatDateSafe(t.trade_date)}</td>
               <td className="py-1.5 pr-3">{personCategory(t)}</td>
               <td className="py-1.5 pr-3">{sideLabel(t.transaction_type)}</td>
               <td className="py-1.5 pr-3">{modeLabel(t)}</td>

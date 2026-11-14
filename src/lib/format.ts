@@ -46,6 +46,17 @@ export function formatDateIst(iso: string): string {
   return IST_DATE.format(new Date(iso));
 }
 
+/**
+ * Same as formatDateIst(), but a value that is not a real date (for example the "-" the exchange feed sometimes
+ * leaves in an insider trade date, or null/undefined) shows "-" instead of throwing "RangeError: Invalid time value"
+ * and taking the whole page down.
+ */
+export function formatDateSafe(iso: string | null | undefined): string {
+  if (typeof iso !== "string" || iso === "") return "-";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "-" : IST_DATE.format(d);
+}
+
 export function formatTimeIst(iso: string): string {
   return IST_TIME.format(new Date(iso));
 }

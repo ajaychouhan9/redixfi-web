@@ -7,7 +7,7 @@ import { getResearch, getSignalDetail, getSignals, getVolatility } from "@/lib/a
 import { ApiError } from "@/lib/api/client";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { Sparkline } from "@/components/ui/Sparkline";
-import { formatDateIst, formatPriceAsOf, istToday } from "@/lib/format";
+import { formatDateSafe, formatPriceAsOf, istToday } from "@/lib/format";
 import { Week52Range } from "@/components/app/signals/Week52Range";
 import { resolve52Week } from "@/lib/week52";
 import { stockPath, stockSymbolFromParam } from "@/lib/seo/stock-symbol";
@@ -115,7 +115,7 @@ function Fact({ label, children, note }: { label: string; children: React.ReactN
   );
 }
 
-const dateOf = (ymd: string) => formatDateIst(`${ymd.slice(0, 10)}T00:00:00Z`);
+const dateOf = (ymd: string) => formatDateSafe(`${ymd.slice(0, 10)}T00:00:00Z`);
 
 export default async function StockSnapshotPage({ params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = await params;

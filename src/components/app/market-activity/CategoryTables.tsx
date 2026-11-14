@@ -8,7 +8,7 @@ import type {
   MarketActivityRedFlagRow,
   MarketActivityRow,
 } from "@/lib/api/types";
-import { formatDateIst } from "@/lib/format";
+import { formatDateSafe } from "@/lib/format";
 import { modeLabel, personCategory, sideLabel } from "@/lib/insider-display";
 import { stockPath } from "@/lib/seo/stock-symbol";
 
@@ -44,7 +44,7 @@ export function ConcallsTable({ rows }: { rows: MarketActivityConcallRow[] }) {
               <span className="rounded-full bg-neutral-bg px-2 py-0.5 font-semibold uppercase tracking-wide text-foreground-muted">
                 {c.subject === "EARNINGS_CALL_TRANSCRIPT" ? "Concall transcript" : "Investor presentation"}
               </span>
-              <span className="text-foreground-faint">{formatDateIst(c.filing_date)}</span>
+              <span className="text-foreground-faint">{formatDateSafe(c.filing_date)}</span>
             </div>
             <a
               href={c.source_pdf_url}
@@ -85,7 +85,7 @@ export function RedFlagTable({ rows }: { rows: MarketActivityRedFlagRow[] }) {
               </span>
               <span className="text-foreground-faint">
                 {r.source_type_label}
-                {r.fiscal_year ? ` · ${r.fiscal_year}` : r.filing_date ? ` · ${formatDateIst(r.filing_date)}` : ""}
+                {r.fiscal_year ? ` · ${r.fiscal_year}` : r.filing_date ? ` · ${formatDateSafe(r.filing_date)}` : ""}
               </span>
             </div>
             {r.source_pdf_url && (
@@ -125,7 +125,7 @@ export function InsiderTable({ rows }: { rows: MarketActivityInsiderRow[] }) {
         <tbody>
           {rows.map((t) => (
             <tr key={t.filing_id} className="border-t border-border">
-              <td className="py-1.5 pr-3">{t.trade_date ? formatDateIst(t.trade_date) : "n/a"}</td>
+              <td className="py-1.5 pr-3">{t.trade_date ? formatDateSafe(t.trade_date) : "n/a"}</td>
               <td className="py-1.5 pr-3">
                 <SymbolLink symbol={t.symbol} companyName={t.company_name} />
               </td>
@@ -204,7 +204,7 @@ export function CorporateEventsTable({
         <tbody>
           {visibleRows.map((r, i) => (
             <tr key={`${r.symbol}-${r.date}-${i}`} className="border-t border-border">
-              <td className="whitespace-nowrap py-1.5 pr-3 align-top">{formatDateIst(r.date)}</td>
+              <td className="whitespace-nowrap py-1.5 pr-3 align-top">{formatDateSafe(r.date)}</td>
               <td className="break-words py-1.5 pr-3 align-top">
                 <SymbolLink symbol={r.symbol} companyName={r.company_name} />
               </td>
@@ -249,7 +249,7 @@ export function BulkBlockTable({ rows }: { rows: MarketActivityBulkBlockRow[] })
         <tbody>
           {rows.map((r, i) => (
             <tr key={`${r.symbol}-${i}`} className="border-t border-border">
-              <td className="py-1.5 pr-3">{formatDateIst(r.date)}</td>
+              <td className="py-1.5 pr-3">{formatDateSafe(r.date)}</td>
               <td className="py-1.5 pr-3">
                 <SymbolLink symbol={r.symbol} companyName={r.company_name} />
               </td>
@@ -304,7 +304,7 @@ export function AllActivityTable({ rows }: { rows: MarketActivityRow[] }) {
         {rows.map((row, i) => (
           <li key={`m-${row.type}-${row.symbol}-${i}`} className="py-2">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-              <span className="whitespace-nowrap tabular-nums text-foreground-muted">{formatDateIst(row.date)}</span>
+              <span className="whitespace-nowrap tabular-nums text-foreground-muted">{formatDateSafe(row.date)}</span>
               <SymbolLink symbol={row.symbol} companyName={row.company_name} />
               <span className="rounded-full bg-neutral-bg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-foreground-muted">
                 {TYPE_LABEL[row.type]}
@@ -327,7 +327,7 @@ export function AllActivityTable({ rows }: { rows: MarketActivityRow[] }) {
         <tbody>
           {rows.map((row, i) => (
             <tr key={`${row.type}-${row.symbol}-${i}`} className="border-t border-border">
-              <td className="py-1.5 pr-3">{formatDateIst(row.date)}</td>
+              <td className="py-1.5 pr-3">{formatDateSafe(row.date)}</td>
               <td className="py-1.5 pr-3">
                 <SymbolLink symbol={row.symbol} companyName={row.company_name} />
               </td>

@@ -7,7 +7,7 @@ import { getResearch } from "@/lib/api/endpoints";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { DataTable, Section } from "@/components/seo/DataTable";
 import { TrialCta } from "@/components/app/TrialCta";
-import { formatDateIst } from "@/lib/format";
+import { formatDateSafe } from "@/lib/format";
 import { stockPath, stockSymbolFromParam } from "@/lib/seo/stock-symbol";
 import {
   REWIND_CONDITIONS,
@@ -26,7 +26,7 @@ export const revalidate = 86400; // 24 h: the readings change once a day (cut Ve
 // Returning [] builds nothing up front and turns on cached on-demand pages (ISR).
 export function generateStaticParams() { return []; }
 
-const dateOf = (ymd: string) => formatDateIst(`${ymd.slice(0, 10)}T00:00:00Z`);
+const dateOf = (ymd: string) => formatDateSafe(`${ymd.slice(0, 10)}T00:00:00Z`);
 const signed = (n: number | null) => (n === null ? "n/a" : `${n > 0 ? "+" : ""}${n.toFixed(2)}%`);
 
 interface RewindData {

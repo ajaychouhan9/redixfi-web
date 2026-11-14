@@ -11,6 +11,7 @@
     "check:auth-fetch": "node scripts/check-auth-fetch.mjs",
     "check:no-change-stock": "node scripts/check-no-change-stock-button.mjs",
     "test:sitemap": "node scripts/test-sitemap.mjs && node scripts/test-sitemap-url-rules.mjs",
+    "test:safe-date": "node --experimental-strip-types scripts/test-safe-date.ts",
     "test:prompt3": "node --experimental-strip-types --import ./scripts/ts-alias.mjs scripts/test-prompt3.ts",
     "test:stock-clarity": "node scripts/test-stock-clarity.mjs",
     "test:signals-grouping": "node scripts/test-signals-grouping.mjs",
