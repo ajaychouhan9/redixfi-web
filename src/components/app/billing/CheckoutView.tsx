@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
-import { PLAN_LABEL, PlanCard } from "@/components/app/billing/PlanCard";
+import { PlanCard } from "@/components/app/billing/PlanCard";
+import { PLAN_LABEL, cardButtonLabel, cardNotice, runningPlan } from "@/lib/billing-state";
 import { TopupCard } from "@/components/app/billing/TopupCard";
 import { SubscriptionStatusCard } from "@/components/app/account/SubscriptionStatusCard";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -73,6 +74,8 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
   const isOnFounding = currentTier === "founding" && !!activeSub;
   const isOnAnnualPeriod = isAnnualPlanId(activeSub?.plan);
   const hasPendingUpgrade = !!profile?.pending_plan_change;
+  // One paid plan at a time: while a paid plan runs, the cards show where the user stands instead of Subscribe/Pay (Renew only in its last 7 days).
+  const running = runningPlan(profile);
 
   // Part A precedent (no downgrade path): once on an annual-period plan
   // (any tier, or founding), Monthly is no longer offered as a view —
@@ -91,6 +94,7 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
 
   function modeFor(plan: BillingPlan | undefined): "current" | "upgrade" | "new" {
     if (!plan || !activeSub) return "new";
+    if (running) return "new"; // the notice or the Renew button decides what the card shows
     if (activeSub.plan === plan.plan) return "current";
     // Mirrors the backend's own condition exactly (routers/billing.py::
     // _finalize_subscription_purchase's `is_scheduled_upgrade`): ANY
@@ -214,6 +218,8 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
             disabledReason={isOnFounding ? foundingDisabledReason : modeFor(basicPlan) === "upgrade" && hasPendingUpgrade ? "An annual upgrade is already scheduled." : undefined}
             promoCode={promoResults[basicPlan.plan]?.valid ? promoInput.trim() : undefined}
             promoPreview={promoPreviewFor(basicPlan)}
+            notice={cardNotice(running, basicPlan.plan)}
+            buttonLabel={cardButtonLabel(running, basicPlan.plan)}
             onPurchased={reload}
           />
         )}
@@ -229,6 +235,8 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
             disabledReason={isOnFounding ? foundingDisabledReason : modeFor(proPlan) === "upgrade" && hasPendingUpgrade ? "An annual upgrade is already scheduled." : undefined}
             promoCode={promoResults[proPlan.plan]?.valid ? promoInput.trim() : undefined}
             promoPreview={promoPreviewFor(proPlan)}
+            notice={cardNotice(running, proPlan.plan)}
+            buttonLabel={cardButtonLabel(running, proPlan.plan)}
             onPurchased={reload}
           />
         )}

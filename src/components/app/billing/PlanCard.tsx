@@ -13,25 +13,12 @@ import Link from "next/link";
 import { LegalLinks } from "@/components/layout/LegalLinks";
 import { useTrialDays } from "@/lib/trial";
 import { track } from "@/lib/analytics";
+import { PLAN_LABEL, orderRefusalMessage } from "@/lib/billing-state";
 
 const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
-// Multi-tier restructure (2026-08-08) — Basic/Pro replace the single
-// paid tier; Founding Annual is retired (no longer purchasable, never
-// returned by GET /billing/plans, so PlanCard itself never renders these
-// three anymore). Kept here anyway, not deleted, in case a future
-// receipt/order-history view needs to label an old order — costs
-// nothing to keep, same "retired, not deleted" reasoning as
-// app_models.PLANS itself.
-export const PLAN_LABEL: Record<string, string> = {
-  basic_249: "Basic",
-  pro_399: "Pro",
-  basic_annual_2399: "Basic Annual",
-  pro_annual_3999: "Pro Annual",
-  monthly_249: "Pro",
-  annual_2499: "Annual",
-  founding_1799: "Founding Annual",
-};
+// The plan labels live in @/lib/billing-state (retired plan ids are kept there so an old subscription still gets a readable label).
+export { PLAN_LABEL };
 
 /**
  * Task 20 — extended for Checkout's state-dependent plan cards: a plan can
@@ -52,6 +39,8 @@ export function PlanCard({
   disabledReason,
   promoCode,
   promoPreview,
+  notice,
+  buttonLabel,
   onPurchased,
 }: {
   plan: BillingPlan;
@@ -75,6 +64,10 @@ export function PlanCard({
    * notice instead of a number the user won't actually be charged.
    */
   promoPreview?: { applicable: true; discountLabel: string; finalAmountRupees: number } | { applicable: false; message: string } | null;
+  /** Shown INSTEAD of the Subscribe/Pay button while a paid plan is running (see lib/billing-state.ts). */
+  notice?: string | null;
+  /** Replaces "Subscribe", for example "Renew" in the last days of the running plan. */
+  buttonLabel?: string;
   onPurchased?: () => void;
 }) {
   const { user, getToken } = useAuth();
@@ -147,6 +140,10 @@ export function PlanCard({
         setError("Checkout isn't live in this environment yet (payment gateway not configured). This will work once it is.");
       } else if (e instanceof ApiError && e.status === 501) {
         setError(e.message);
+      } else if (orderRefusalMessage(e)) {
+        // The API refused a new order (a plan is already running, or the same plan was just paid for): show its own wording and refresh the page state.
+        setError(orderRefusalMessage(e));
+        onPurchased?.();
       } else {
         setError(e instanceof Error ? e.message : "Could not start checkout.");
       }
@@ -220,6 +217,10 @@ export function PlanCard({
 
       {scheduledFor ? (
         <p className="mt-5 rounded-lg bg-up-bg px-3 py-2 text-sm text-up">Scheduled — annual starts {formatShortDate(scheduledFor)} ✓</p>
+      ) : notice ? (
+        <p className="mt-5 rounded-lg border border-border bg-hover px-3 py-2.5 text-sm text-foreground-muted" data-testid="plan-notice">
+          {notice}
+        </p>
       ) : isCurrent ? (
         <button disabled className="mt-5 w-full cursor-default rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground-muted">
           Current plan
@@ -240,7 +241,7 @@ export function PlanCard({
           className="mt-5 w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-accent-foreground disabled:opacity-60"
           style={{ background: highlighted ? "linear-gradient(135deg, var(--accent), var(--accent-dim))" : "var(--accent)" }}
         >
-          {busy ? "Starting checkout…" : isUpgrade ? "Upgrade to annual" : "Subscribe"}
+          {busy ? "Starting checkout…" : (buttonLabel ?? (isUpgrade ? "Upgrade to annual" : "Subscribe"))}
         </button>
       )}
       <p className="mt-2 text-center text-[11px] text-foreground-faint">
