@@ -7,6 +7,13 @@ const nextConfig: NextConfig = {
     return [
       // The service worker file must always be re-checked so a new deploy's worker (and its cache version) replaces the old.
       { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }, { key: "Service-Worker-Allowed", value: "/" }] },
+      // Signed-in / user-specific areas: never cached by a CDN or a browser (shells are anonymous, but the rule is "never public").
+      { source: "/account/:path*", headers: [{ key: "Cache-Control", value: "private, no-store, max-age=0" }] },
+      { source: "/admin/:path*", headers: [{ key: "Cache-Control", value: "private, no-store, max-age=0" }] },
+      { source: "/login", headers: [{ key: "Cache-Control", value: "private, no-store, max-age=0" }] },
+      { source: "/watchlist", headers: [{ key: "Cache-Control", value: "private, no-store, max-age=0" }] },
+      // Share-card images depend only on the query string, so a CDN may keep them.
+      { source: "/api/og", headers: [{ key: "Cache-Control", value: "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400" }] },
       { source: "/manifest.webmanifest", headers: [{ key: "Cache-Control", value: "public, max-age=3600" }] },
     ];
   },

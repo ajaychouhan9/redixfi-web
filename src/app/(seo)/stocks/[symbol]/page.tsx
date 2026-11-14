@@ -25,7 +25,7 @@ import { coverageLine } from "@/lib/seo/data-coverage";
 
 // ONE public page per stock (12 Nov 2026). /research/<symbol> and /signals/<symbol> stay for signed-in work and point here with a
 // canonical tag and noindex. Public, anonymous, ISR: the page shows a subset that is the same for every visitor.
-export const revalidate = 300;
+export const revalidate = 21600; // 6 h: stock data changes once a day (cut CPU, 14 Nov 2026)
 
 const loadCompany = cache(async (symbol: string) => {
   try {

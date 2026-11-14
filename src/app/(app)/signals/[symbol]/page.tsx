@@ -13,7 +13,7 @@ import { stockPath, stockSymbolFromParam } from "@/lib/seo/stock-symbol";
 // 31 Oct 2026: the page is rendered once a minute and then served from the cache (like /research/[symbol]), so a crawler or a burst of
 // visitors does not hit the API for every request and a brief API outage serves the last good page instead of a 500. Every fetch below
 // is anonymous and carries `revalidate`, which is what keeps the route cacheable.
-export const revalidate = 60;
+export const revalidate = 21600; // 6 h; noindex page, kept out of crawlers (14 Nov 2026)
 
 export async function generateMetadata({ params }: { params: Promise<{ symbol: string }> }): Promise<Metadata> {
   const { symbol: raw } = await params;

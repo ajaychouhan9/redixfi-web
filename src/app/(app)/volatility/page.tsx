@@ -8,7 +8,7 @@ import type { VolatilityBoard as Board } from "@/lib/api/types";
 
 // Rendered on request: the page depends on a live upstream, and a failed request during a build must never
 // fail the deploy (same approach as the Track Record page). The data changes once per trading day.
-export const dynamic = "force-dynamic";
+export const revalidate = 900; // cached 15 min; fetches below already revalidate 900 (14 Nov 2026)
 
 const TITLE = "Volatility ranking — past price movement of NSE stocks";
 const DESCRIPTION =

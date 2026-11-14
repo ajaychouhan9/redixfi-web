@@ -27,25 +27,28 @@ export const metadata: Metadata = { alternates: { canonical: "/" } };
 // corrected client-side with their own token (see that component's own
 // docstring) — this fetch never sees a paid user's data, so it can't leak
 // the mistake this pattern originally guarded against.
+// Public, anonymous server render: cached 5 min (14 Nov 2026). Signed-in data is fetched in the browser by the cards.
+export const revalidate = 300;
+
 export default async function HomePage() {
   const [overviewR, briefR, sessionR, anomaliesR, newsR, plansR, marketActivityR, marketStateR, priceMoversR] = await Promise.allSettled([
-    getMarketOverview(),
-    getLatestBrief(),
-    getIntradaySession(),
-    getAnomalies({ size: 200 }),
+    getMarketOverview({ revalidate: 300 }),
+    getLatestBrief({ revalidate: 300 }),
+    getIntradaySession({ revalidate: 300 }),
+    getAnomalies({ size: 200 }, { revalidate: 300 }),
     // @auth-ok: SSR, always anonymous — see the module docstring above.
     // Corrected client-side by EventRiskCard once a real token resolves.
-    getNews({ size: 30 }),
+    getNews({ size: 30 }, { revalidate: 300 }),
     // @auth-ok: public — billing/plans has no auth dependency at all
     // (same fetch /pricing's own page.tsx already makes server-side).
-    getBillingPlans(),
+    getBillingPlans({ revalidate: 300 }),
     // @auth-ok: public — market_activity_summary()'s rollup counts are
     // identical for every tier (no B8 masking on these 4 data types).
-    getMarketActivitySummary(),
+    getMarketActivitySummary({ revalidate: 300 }),
     // @auth-ok: public — the market state is the same for every caller.
-    getMarketState(),
+    getMarketState({ revalidate: 300 }),
     // @auth-ok: SSR, anonymous (Stock Condition locked outside the free sample); PriceMoversCard asks again with the token of a signed-in visitor.
-    getPriceMovers(),
+    getPriceMovers({ revalidate: 300 }),
   ]);
 
   const overview = overviewR.status === "fulfilled" ? overviewR.value.data : null;

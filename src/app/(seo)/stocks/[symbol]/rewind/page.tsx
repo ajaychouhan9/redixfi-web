@@ -21,7 +21,7 @@ import {
 } from "@/lib/seo/stock-rewind";
 
 // History only. Rebuilt hourly: the stored history changes once a day.
-export const revalidate = 3600;
+export const revalidate = 86400; // 24 h: the readings change once a day (cut Vercel/VM CPU, 14 Nov 2026)
 
 const dateOf = (ymd: string) => formatDateIst(`${ymd.slice(0, 10)}T00:00:00Z`);
 const signed = (n: number | null) => (n === null ? "n/a" : `${n > 0 ? "+" : ""}${n.toFixed(2)}%`);

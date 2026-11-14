@@ -22,7 +22,7 @@ import { stockPath, stockSymbolFromParam } from "@/lib/seo/stock-symbol";
 // minutes (one page could show a live price while Signals showed the last
 // close). The heavy research body is still cached server-side for 900s; only
 // the page response is re-read once a minute so the price label is honest.
-export const revalidate = 60;
+export const revalidate = 21600; // 6 h; noindex page, kept out of crawlers (14 Nov 2026)
 
 // PERF_ANALYSIS_2026-10-05 fix (2026-10-07): generateMetadata and the page
 // body both invoke loadResearch(sym) for the same request — React's cache()

@@ -10,8 +10,6 @@ import { AiLabel } from "@/components/ui/AiLabel";
 // build. Render on request instead — data freshness is unchanged (the fetch
 // below still requests revalidate: 300, and /market-brief/[date] is already
 // dynamic).
-export const dynamic = "force-dynamic";
-
 export const revalidate = 300;
 
 export const metadata: Metadata = {
