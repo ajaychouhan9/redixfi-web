@@ -22,7 +22,7 @@ export default async function UnusualActivityPage() {
   // Same allSettled-style resilience as the Home page's own fetch of this
   // endpoint — a transient API failure shows AnomalyCard's existing "not
   // available yet" state instead of crashing the whole page.
-  const result = await getAnomalies({ size: 200 }).catch(() => null);
+  const result = await getAnomalies({ size: 200 }, { revalidate: 300 }).catch(() => null);
   // Sep 2026 fix: same real scan date AnomalyCard itself now shows in its
   // title — this page's own heading must match it, not imply "today"
   // when the scan may be from a prior completed session.

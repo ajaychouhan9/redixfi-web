@@ -39,7 +39,7 @@ function day(ymd: string | null): string {
 export default async function DataSourcesPage() {
   let fresh: boolean | null = null;
   try {
-    const env = await getMarketOverview();
+    const env = await getMarketOverview({ revalidate: 600 });
     fresh = env.meta.data_fresh;
   } catch {
     fresh = null;

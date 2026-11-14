@@ -32,7 +32,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     // dynamic rendering, while still refreshing this data at least once a
     // minute — this data was never meant to be request-fresh anyway (the
     // client poll below already re-fetches on the same cadence).
-    const env = await getMarketOverview({ revalidate: 60 });
+    const env = await getMarketOverview({ revalidate: 300 }) /* 5 min (was 60 s): the shared layout's fetch sets every page's refresh window, 14 Nov 2026 */;
     initialOverview = env.data;
     initialFresh = env.meta.data_fresh;
     initialSignalsAsOf = env.meta.signals_as_of ?? null;

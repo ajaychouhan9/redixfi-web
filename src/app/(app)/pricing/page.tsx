@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CheckoutPage() {
-  const { data: plans } = await getBillingPlans();
+  const { data: plans } = await getBillingPlans({ revalidate: 600 });
   return (
     <>
       <CheckoutView initialPlans={plans} />
