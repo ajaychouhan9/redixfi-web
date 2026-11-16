@@ -96,8 +96,8 @@ export default async function HomePage() {
         sampleReport={
           <p className="text-center text-sm text-foreground-muted" data-testid="home-sample-report">
             New: company report PDFs with price, growth, peers, ownership, filings and sources.{" "}
-            <Link href="/sample-report" className="font-medium text-accent hover:underline">
-              See the free sample report
+            <Link href="/sample-report" className="font-medium text-accent hover:underline" data-testid="home-sample-report-link">
+              See a sample report
             </Link>
           </p>
         }

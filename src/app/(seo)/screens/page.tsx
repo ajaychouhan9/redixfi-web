@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CANNED_SCREENS } from "@/data/canned-screens";
-import { FUNDAMENTAL_SCREENS, FILTERS_NOTE } from "@/data/fundamental-screens";
+import { FUNDAMENTAL_SCREENS, STARTER_SCREENS, FILTERS_NOTE } from "@/data/fundamental-screens";
 import { getSignals } from "@/lib/api/endpoints";
 
 export const revalidate = 600;
@@ -25,6 +25,19 @@ export default async function ScreensIndexPage() {
       </p>
       {presetsLive && (
         <>
+          {/* Starter screens (17 Nov 2026): one plain rule each, results A to Z. */}
+          <h2 className="mb-1 text-base font-semibold">Starter screens</h2>
+          <p className="mb-2 text-xs text-foreground-muted">One rule each, in plain words. Results are listed A to Z. {FILTERS_NOTE}</p>
+          <ul className="mb-6 divide-y divide-border rounded-xl border border-border" data-testid="starter-screens">
+            {STARTER_SCREENS.map((s) => (
+              <li key={s.slug}>
+                <Link href={`/screens/${s.slug}`} className="block px-4 py-3 hover:bg-neutral-bg">
+                  <p className="text-sm font-medium">{s.heading}</p>
+                  <p className="text-xs text-foreground-muted">Rule: {s.conditions.join("; ")}. Results A to Z.</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
           <h2 className="mb-1 text-base font-semibold">Screens on reported data</h2>
           <p className="mb-2 text-xs text-foreground-muted">{FILTERS_NOTE}</p>
           <ul className="mb-6 divide-y divide-border rounded-xl border border-border">

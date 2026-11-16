@@ -1,4 +1,6 @@
 import { StockSignupOffer } from "@/components/app/StockSignupOffer";
+import { StockViewSwitch } from "@/components/app/stock/StockViewSwitch";
+import { SimpleChecklist } from "@/components/app/stock/SimpleChecklist";
 import type { Metadata } from "next";
 import { cache } from "react";
 import Link from "next/link";
@@ -187,6 +189,17 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
         {coverageLine(f)} <Link href="/more/data-sources" className="underline">What &ldquo;not available&rdquo; means</Link>
       </p>
 
+      {/* Simple view | Detailed view (17 Nov 2026). Both are in this cached HTML; the switch is client-side and remembered in the browser.
+          The simple view is a checklist built only from `data` (already loaded above); the detailed view is the page as before. */}
+      <StockViewSwitch
+        simple={
+          <>
+            <SimpleChecklist data={data} today={istToday()} priceLabel={priceLabel} />
+            <StockSignupOffer companyName={data.company_name} className="mt-4" />
+          </>
+        }
+        detailed={
+          <>
       <Section id="range" title="52-week range" note={closeDate ? `As of ${dateOf(closeDate)} close` : undefined}>
         {r52 ? (
           <Week52Range
@@ -389,6 +402,9 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
           </div>
         )}
       </Section>
+          </>
+        }
+      />
 
       <FeedbackBox page="stock" className="mt-6" />
     </div>

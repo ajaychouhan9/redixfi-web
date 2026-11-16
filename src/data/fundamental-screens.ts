@@ -84,6 +84,46 @@ export const FUNDAMENTAL_SCREENS: FundamentalScreen[] = [
   },
 ];
 
+/**
+ * Starter screens (17 Nov 2026): one rule each, in plain words, for a visitor who is new to stocks. Built only on filters the API has
+ * today, so "profitable for 5 years", "sales growing for 3 years" and "promoters increased their stake" are NOT offered (no multi-year
+ * or promoter-change filter exists yet). They run through the same /screens/<slug> page as the presets above; they are not in the sitemap.
+ */
+export const STARTER_SCREENS: FundamentalScreen[] = [
+  {
+    slug: "starter-profit-latest-quarter",
+    title: "Profit in the latest quarter: NSE stocks whose latest reported quarter had earnings per share above zero | RedixFi",
+    heading: "Profit in the latest quarter",
+    description: "NSE stocks whose latest reported quarter shows earnings per share above zero, listed A to Z with the quarter-end date of the figure.",
+    conditions: ["Earnings per share above zero in the latest reported quarter (the profit for each share, as reported)"],
+    params: { eps_positive: true, sort: "name", order: "asc" },
+  },
+  {
+    slug: "starter-low-debt",
+    title: "Low debt: NSE stocks with debt at most half of their own capital | RedixFi",
+    heading: "Low debt",
+    description: "NSE stocks whose reported debt is at most half of their own capital (debt-to-equity 0.5 or less), listed A to Z.",
+    conditions: ["Debt-to-equity of 0.5 or less: borrowed money is at most half of the shareholders' money in the business"],
+    params: { de_max: 0.5, sort: "name", order: "asc" },
+  },
+  {
+    slug: "starter-no-promoter-pledge",
+    title: "No promoter pledge: NSE stocks whose promoters have pledged none of their shares | RedixFi",
+    heading: "No promoter pledge",
+    description: "NSE stocks whose promoters have 0% of their shares pledged as loan security in the latest disclosure, listed A to Z.",
+    conditions: ["Promoter pledge of 0%: none of the promoters' shares are given as security for a loan, in the latest disclosure"],
+    params: { pledge_max: 0, sort: "name", order: "asc" },
+  },
+  {
+    slug: "starter-sales-up-latest-quarter",
+    title: "Sales up in the latest quarter: NSE stocks with revenue at least 1% above a year earlier | RedixFi",
+    heading: "Sales up in the latest quarter",
+    description: "NSE stocks whose latest-quarter revenue is at least 1% above the same quarter a year earlier, listed A to Z with the quarter-end date.",
+    conditions: ["Latest-quarter revenue at least 1% above the same quarter a year earlier"],
+    params: { sales_growth_min: 1, sort: "name", order: "asc" },
+  },
+];
+
 export function getFundamentalScreen(slug: string): FundamentalScreen | undefined {
-  return FUNDAMENTAL_SCREENS.find((s) => s.slug === slug);
+  return FUNDAMENTAL_SCREENS.find((s) => s.slug === slug) ?? STARTER_SCREENS.find((s) => s.slug === slug);
 }

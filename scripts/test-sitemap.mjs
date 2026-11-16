@@ -24,7 +24,7 @@ const WEEKS = ["2026-11-06", "2026-11-05", "2026-10-30"];
 const getSevenDayReview = async () => ({ data: { weeks: WEEKS.map((as_of) => ({ as_of, sessions: 5, label: "x" })) } });
 const SCREENS = screensMod.exports.CANNED_SCREENS.length;
 assert.equal(SCREENS, 25);      // 38 before 11 Nov 2026; the 13 screens built on the removed Stock Condition change redirect to /screens
-const CORE_ONLY = 20 + SCREENS; // fixed pages (the weekly archive joined on 12 Nov 2026) and the canned screens
+const CORE_ONLY = 21 + SCREENS; // fixed pages (the weekly archive joined on 12 Nov 2026, /start on 17 Nov 2026) and the canned screens
 const CORE = CORE_ONLY + WEEKS.length;   // plus one page per stored week once the stock list is complete
 const symbols = Array.from({ length: 2302 }, (_, i) => `S${String(i + 1).padStart(4, "0")}`);
 symbols.push("M&M");

@@ -21,6 +21,7 @@ const BODY = `# RedixFi
 - 7-Day Review: https://www.redixfi.com/signals/7-day-review
 - Research pages: https://www.redixfi.com/research
 - Intraday: https://www.redixfi.com/intraday
+- Start here (plain-words guide and three-question screen for people new to stocks): https://www.redixfi.com/start
 - How it works: https://www.redixfi.com/how-it-works
 - Data sources: https://www.redixfi.com/more/data-sources
 - Disclaimer: https://www.redixfi.com/more/disclaimer

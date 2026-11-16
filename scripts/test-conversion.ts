@@ -56,16 +56,46 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\
   assert.ok(act.includes("total_findings.toLocaleString") && act.includes("distinct_filings.toLocaleString") && act.includes("count.toLocaleString"), "activity counts carry separators");
 }
 
-// ---- 3. hero
+// ---- 3. hero (17 Nov 2026: phrase "points to watch", search box, two doors; "Start free" in the trial line and top bar)
 {
   const hero = strip(read("components/app/VisitorIntroStrip.tsx"));
-  assert.ok(hero.includes("Check any NSE stock in minutes: delivery, insider trades, governance disclosures and concall summaries."), "headline");
+  assert.ok(hero.includes("Check any NSE stock in minutes: delivery, insider trades, points to watch and concall summaries."), "headline");
   assert.ok(hero.includes("Plain-language data for 2,000+ NSE stocks, updated daily. No buy or sell advice."), "sub-line");
-  assert.ok(hero.includes("Start free") && hero.includes("See a sample report") && hero.includes('href="/sample-report"'), "buttons");
-  assert.ok(hero.includes("-day free Pro trial. No payment details needed."), "trial line kept");
+  assert.ok(hero.includes("<HeroStockSearch />"), "search box in the hero");
+  assert.ok(hero.includes("New to stocks? Start here") && hero.includes('href="/start"'), "start-here button");
+  assert.ok(hero.includes("I know markets") && hero.includes('href="/signals"'), "know-markets button");
+  assert.ok(!hero.includes("See a sample report"), "sample-report button moved to the banner");
+  assert.ok(hero.includes("-day free Pro trial. No payment details needed.") && hero.includes('href="/login?mode=signup"'), "trial line keeps Start free");
   assert.ok(!hero.includes("not an advisor") && !hero.includes("Screener-style"), "disclaimer box replaced by the sub-line");
-  assert.ok(!/red flags?/i.test(hero), "no 'red flags' in the hero");
+  assert.ok(!/red flags?|governance disclosures/i.test(hero), "hero uses the new phrase only");
   assert.ok(hero.includes("if (user) return null"), "hero is logged-out only");
+  const search = strip(read("components/app/HeroStockSearch.tsx"));
+  assert.ok(search.includes('placeholder="Type a company name"') && search.includes('stockPath("/stocks", row.canonicalSymbol)'), "search opens /stocks/<symbol>");
+  const page = read("app/(app)/page.tsx");
+  assert.ok(page.includes("See a sample report") && page.includes('href="/sample-report"'), "sample-report banner carries the link");
+  const topbar = strip(read("components/layout/UserMenu.tsx"));
+  assert.ok(topbar.includes('href="/login?mode=signup"') && topbar.includes("Start free") && topbar.includes("useAuth()"), "top bar Start free for logged-out visitors");
+}
+
+// ---- 3b. menu and signals link (17 Nov 2026)
+{
+  const side = strip(read("components/layout/Sidebar.tsx"));
+  const startBlock = side.slice(side.indexOf("{!user && ("), side.indexOf("Start here") + 20);
+  assert.ok(startBlock.includes('href="/start"') && startBlock.includes("Start here"), "sidebar Start here is inside the logged-out branch");
+  assert.ok(!side.includes('{ href: "/start"'), "Start here is not in the shared nav lists (logged-in menu and bottom bar unchanged)");
+  const menu = strip(read("components/layout/UserMenu.tsx"));
+  const menuBlock = menu.slice(menu.indexOf('<nav className="p-1.5">'), menu.indexOf("{groups.map"));
+  assert.ok(menuBlock.includes("{!user && (") && menuBlock.includes('href="/start"'), "header menu Start here only when logged out");
+  assert.ok(!read("lib/more-links.ts").includes("/start"), "MENU_GROUPS (shared logged in/out) unchanged");
+  const signals = strip(read("app/(app)/signals/page.tsx"));
+  assert.ok(signals.includes("<GuestOnly>") && signals.includes("New here? Try the simple view") && signals.includes('href="/start"'), "signals link for logged-out visitors");
+  assert.ok(signals.includes("screenerParamsFromQuery(query)") && signals.includes("START_RESULTS_NOTE"), "signals reads Start-here filters from the address");
+  const start = strip(read("app/(app)/start/page.tsx"));
+  assert.ok(!/(cookies|headers)\(\)|searchParams|fetch\(|await /.test(start), "/start is static with no server fetch");
+  assert.ok(start.includes("<StartHere />") && (start.match(/start-guide-card/g) ?? []).length === 1 && start.includes("GUIDES.map"), "/start has the questions and the guide cards");
+  assert.ok(read("app/sitemap.xml/route.ts").includes('"/start"'), "/start in the sitemap");
+  const screens = strip(read("app/(seo)/screens/page.tsx"));
+  assert.ok(screens.indexOf("Starter screens") < screens.indexOf("Screens on reported data") && screens.includes("STARTER_SCREENS.map"), "starter screens group at the top");
 }
 
 // ---- 4. home order
@@ -90,7 +120,8 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\
   assert.ok(offer.includes("/login?mode=signup&next="), "returns to the same page");
   for (const f of ["app/(seo)/stocks/[symbol]/page.tsx", "app/(seo)/stocks/[symbol]/concall-summary/page.tsx", "app/(seo)/stocks/[symbol]/rewind/page.tsx"]) {
     const t = strip(read(f));
-    assert.equal((t.match(/<StockSignupOffer /g) ?? []).length, 2, `${f}: offer after the first data block and near the end`);
+    // the stock page has a third offer inside the Simple view (17 Nov 2026); the other two pages keep two
+    assert.equal((t.match(/<StockSignupOffer /g) ?? []).length, f.endsWith("[symbol]/page.tsx") ? 3 : 2, `${f}: offer after the first data block and near the end`);
     assert.ok(!t.includes("<TrialCta") && !t.includes("Sign up free"), `${f}: the old sign-up blocks are replaced`);
     assert.ok(/export const revalidate = \d+/.test(t) && t.includes("generateStaticParams"), `${f}: still ISR`);
     assert.ok(!/\b(cookies|headers)\(\)|searchParams/.test(t), `${f}: no request-bound API`);
@@ -137,6 +168,7 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\
     "Live (15 min delayed) At 13 Nov close Readings at 13 Nov close Before the open Morning session After the close Feed delayed",
     "NSE sector indices higher and lower than their previous close change against the previous close",
     "read for this session; none listed here yet. Free plans see headlines after a 24-hour delay. Log in to see this. Everything a free account has, and:",
+    "New to stocks? Start here I know markets Type a company name Start here Starter screens One rule each, in plain words. Results are listed A to Z. All stocks matching your filters, A to Z. New here? Try the simple view",
   ].join("\n");
   const hits = added.match(/\b(buy|sell|target|likely|expected|bullish|bearish|recommend\w*|predict\w*|picks?|tips?|outlook|red flags?)\b/gi) ?? [];
   assert.deepEqual(hits, [], "no recommendation language in the new strings");

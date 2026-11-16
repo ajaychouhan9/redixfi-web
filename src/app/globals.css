@@ -269,3 +269,9 @@ body {
   --hx-up: var(--up);
   --hx-down: var(--down);
 }
+
+/* Public stock page: Simple view | Detailed view (17 Nov 2026). Both views are in the cached HTML; a data attribute on <html>,
+   set from the browser's remembered choice before paint (see StockViewSwitch), decides which one is displayed. Simple is the default. */
+.stock-view-detailed { display: none; }
+html[data-stock-view="detailed"] .stock-view-simple { display: none; }
+html[data-stock-view="detailed"] .stock-view-detailed { display: block; }

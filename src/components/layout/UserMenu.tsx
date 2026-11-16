@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, User as UserIcon, Bookmark, CreditCard, MoreHorizontal } from "lucide-react";
+import { LogOut, User as UserIcon, Bookmark, CreditCard, MoreHorizontal, Compass } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { NAV_MOBILE_LAYOUT } from "@/lib/nav-config";
 import { MENU_GROUPS } from "@/lib/more-links";
@@ -60,9 +60,15 @@ function MenuC() {
   return (
     <div ref={rootRef} className="relative flex items-center gap-1" data-testid="header-menu">
       {!user && (
-        <Link href="/login" className="flex min-h-[44px] items-center rounded-md bg-accent px-3 text-xs font-semibold text-accent-foreground md:min-h-0 md:py-1.5">
-          Log in
-        </Link>
+        <>
+          {/* 17 Nov 2026: "Start free" in the top bar for a logged-out visitor (the hero no longer carries the button). */}
+          <Link href="/login?mode=signup" data-testid="topbar-start-free" className="hidden min-h-[44px] items-center rounded-md border border-accent px-3 text-xs font-semibold text-accent sm:flex md:min-h-0 md:py-1.5">
+            Start free
+          </Link>
+          <Link href="/login" className="flex min-h-[44px] items-center rounded-md bg-accent px-3 text-xs font-semibold text-accent-foreground md:min-h-0 md:py-1.5">
+            Log in
+          </Link>
+        </>
       )}
       <button
         ref={buttonRef}
@@ -103,6 +109,14 @@ function MenuC() {
             </div>
           )}
           <nav className="p-1.5">
+            {!user && (
+              <div className="pb-1">
+                <Link href="/start" role="menuitem" onClick={() => setOpen(false)} className={row} data-testid="menu-start-here">
+                  <Compass size={16} className="shrink-0 text-accent" aria-hidden />
+                  <span className="min-w-0">Start here</span>
+                </Link>
+              </div>
+            )}
             {groups.map((g) => (
               <div key={g.title} className="pb-1">
                 <p className="px-3 pb-0.5 pt-2 text-[11px] font-semibold uppercase tracking-wide text-foreground-faint">{g.title}</p>

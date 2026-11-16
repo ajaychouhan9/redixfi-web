@@ -4,7 +4,7 @@ import { Fragment } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { Home, BarChart3, Zap, Search, MoreHorizontal, User, CreditCard, Bookmark, Bell, Sparkles, Rewind } from "lucide-react";
+import { Home, BarChart3, Zap, Search, MoreHorizontal, User, CreditCard, Bookmark, Bell, Sparkles, Rewind, Compass } from "lucide-react";
 import { useHistoryEnabled } from "@/lib/history-flag";
 import { NAV_MOBILE_LAYOUT } from "@/lib/nav-config";
 import { useRewindNewBadge } from "@/lib/rewind-new";
@@ -156,6 +156,20 @@ export function Sidebar({
     // drift out of alignment with however tall the header actually is.
     <aside className="hidden w-56 flex-col overflow-y-auto border-r border-border bg-surface md:fixed md:left-0 md:top-[var(--header-height)] md:flex md:h-[calc(100vh-var(--header-height))]">
       <nav className="flex flex-1 flex-col gap-1 p-3">
+        {/* 17 Nov 2026: one extra item for a logged-out visitor only; the logged-in list and the mobile bar are unchanged. */}
+        {!user && (
+          <Link
+            href="/start"
+            data-testid="sidebar-start-here"
+            className={clsx(
+              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+              isActive(pathname, "/start") ? "bg-accent/10 text-accent" : "text-foreground-muted hover:bg-hover hover:text-foreground"
+            )}
+          >
+            <Compass size={17} strokeWidth={2} />
+            Start here
+          </Link>
+        )}
         {(rewindOn ? [...SIDEBAR_LINK_ITEMS.slice(0, 4), REWIND_ITEM, ...SIDEBAR_LINK_ITEMS.slice(4)] : SIDEBAR_LINK_ITEMS).map((item) => {
           const active = isActiveSidebar(pathname, item.href);
           return (
