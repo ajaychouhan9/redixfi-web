@@ -1,4 +1,4 @@
-import { GuestOnly } from "@/components/app/GuestOnly";
+import { StockSignupOffer } from "@/components/app/StockSignupOffer";
 import type { Metadata } from "next";
 import { cache } from "react";
 import Link from "next/link";
@@ -124,6 +124,9 @@ export default async function ConcallSummaryPage({ params }: { params: Promise<{
         )}
       </div>
 
+      {/* Sign-up offer after the first data block and again near the end (16 Nov 2026); logged-out visitors only. */}
+      <StockSignupOffer companyName={data.company_name} className="mt-5" />
+
       {older.length > 0 && (
         <div className="mt-6">
           <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-faint">Earlier concalls</h2>
@@ -137,20 +140,7 @@ export default async function ConcallSummaryPage({ params }: { params: Promise<{
         </div>
       )}
 
-<GuestOnly>
-      <div className="mt-8 rounded-xl border border-accent/30 bg-accent/5 p-5 text-center">
-        <p className="text-sm font-medium">
-          See {data.symbol}&apos;s full Research Pro page — annual report summary, insider trades, promoter pledge
-          trend, options positioning and Ask-RedixFi AI.
-        </p>
-        <Link
-          href="/login"
-          className="mt-3 inline-block rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground"
-        >
-          Sign up free
-        </Link>
-      </div>
-      </GuestOnly>
+      <StockSignupOffer companyName={data.company_name} className="mt-8" />
 
       <p className="mt-6 text-center text-xs text-foreground-faint">
         <Link href={`/stocks/${encodeURIComponent(data.symbol)}`} className="underline">

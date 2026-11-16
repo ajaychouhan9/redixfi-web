@@ -10,6 +10,7 @@ import { NAV_MOBILE_LAYOUT } from "@/lib/nav-config";
 import { useRewindNewBadge } from "@/lib/rewind-new";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
+import { DELAYED_FEED_LABEL, LIVE_LABEL, readingsLabel } from "@/lib/market-labels";
 import type { MarketOverview } from "@/lib/api/types";
 
 // Real tier buckets returned by the backend (src/lib/api/types.ts's
@@ -250,7 +251,7 @@ export function Sidebar({
         <div className="rounded-lg border border-border bg-surface p-2.5 text-xs">
           <div className="flex items-center justify-between gap-2">
             <span className={initialFresh ? "font-medium text-up" : "font-medium text-amber"}>
-              {initialFresh ? "Market feed live" : "Market feed delayed"}
+              {initialFresh ? LIVE_LABEL : DELAYED_FEED_LABEL}
             </span>
             {initialOverview && (
               <span className="text-foreground-faint">
@@ -258,7 +259,7 @@ export function Sidebar({
               </span>
             )}
           </div>
-          {initialSignalsAsOf && <p className="mt-0.5 text-foreground-faint">{initialSignalsAsOf}</p>}
+          {initialSignalsAsOf && <p className="mt-0.5 text-foreground-faint">{readingsLabel(initialSignalsAsOf)}</p>}
         </div>
       </div>
     </aside>

@@ -5,6 +5,7 @@ import { Sparkles } from "lucide-react";
 import type { DailyBrief } from "@/lib/api/types";
 import { splitDailyBriefBullets } from "@/lib/dailyBriefSplit";
 import { formatShortDate, formatTimeIst } from "@/lib/format";
+import { briefSessionLabel } from "@/lib/market-labels";
 import { ShareCardPopover } from "@/components/app/marketing/ShareCardPopover";
 
 /**
@@ -17,6 +18,8 @@ export function AiDailyBriefCard({ brief }: { brief: DailyBrief | null }) {
   const { visible, rest } = brief ? splitDailyBriefBullets(brief.body) : { visible: [], rest: [] };
   const [expanded, setExpanded] = useState(false);
   const bullets = expanded ? [...visible, ...rest] : visible;
+  // The label follows the time the brief was written, not the stored period name (a brief written at 08:10 IST is "Before the open").
+  const sessionLabel = brief ? briefSessionLabel(brief.period, brief.created_at) : "";
 
   return (
     <div
@@ -36,8 +39,8 @@ export function AiDailyBriefCard({ brief }: { brief: DailyBrief | null }) {
             <div>
               <div className="font-mono text-[11px] uppercase tracking-widest text-accent">AI Daily Brief</div>
               {brief && (
-                <div className="font-mono text-[12px] text-foreground-faint">
-                  {brief.period === "close" ? "Close session" : "Morning session"}
+                <div className="font-mono text-[12px] text-foreground-faint" data-testid="brief-session-label">
+                  {sessionLabel}
                   {brief.created_at && (
                     <> · {formatShortDate(brief.created_at)}, {formatTimeIst(brief.created_at)}</>
                   )}
@@ -51,7 +54,7 @@ export function AiDailyBriefCard({ brief }: { brief: DailyBrief | null }) {
                 card={{
                   type: "brief",
                   title: "Daily Market Pulse",
-                  subtitle: brief.period === "close" ? "Close session" : "Morning session",
+                  subtitle: sessionLabel,
                   statLabel: brief.created_at ? `${formatShortDate(brief.created_at)}, ${formatTimeIst(brief.created_at)}` : undefined,
                 }}
               />

@@ -1,4 +1,4 @@
-import { TrialCta } from "@/components/app/TrialCta";
+import { StockSignupOffer } from "@/components/app/StockSignupOffer";
 import type { Metadata } from "next";
 import { cache } from "react";
 import Link from "next/link";
@@ -187,8 +187,6 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
         {coverageLine(f)} <Link href="/more/data-sources" className="underline">What &ldquo;not available&rdquo; means</Link>
       </p>
 
-      <TrialCta className="mt-4" />
-
       <Section id="range" title="52-week range" note={closeDate ? `As of ${dateOf(closeDate)} close` : undefined}>
         {r52 ? (
           <Week52Range
@@ -200,6 +198,9 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
           <p className="text-sm text-foreground-muted">The 52-week range is not shown because a corporate action makes the price history not comparable.</p>
         )}
       </Section>
+
+      {/* Sign-up offer after the first data block and again near the end (16 Nov 2026); logged-out visitors only. */}
+      <StockSignupOffer companyName={data.company_name} className="mt-4" />
 
       <Section id="delivery" title="Delivery and volume" note={readingsDate ? `As of ${dateOf(readingsDate)} close` : undefined}>
         <div className="grid grid-cols-2 gap-2">
@@ -357,6 +358,8 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
           <p className="text-sm text-foreground-muted">No related news.</p>
         )}
       </Section>
+
+      <StockSignupOffer companyName={data.company_name} className="mt-6" />
 
       <Section id="related" title={`More on ${data.symbol}`}>
         <ul className="space-y-1 text-sm">

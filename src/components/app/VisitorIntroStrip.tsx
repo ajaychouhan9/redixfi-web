@@ -41,12 +41,14 @@ export function VisitorIntroStrip() {
     <div className="overflow-hidden rounded-2xl border border-border bg-surface-raised">
       <div className="px-5 py-8 sm:px-8 sm:py-10">
         <div className="font-mono text-[11px] uppercase tracking-widest text-accent">RedixFi — Market. Simplified.</div>
-        <h1 className="mt-2 max-w-2xl text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
-          Understand Indian stocks through measured data, not predictions.
+        {/* Conversion copy (16 Nov 2026). "governance disclosures" is the product's term; the wording guard bans the old
+            "red flags" label in displayed text. The one sub-line replaces the former disclaimer box; the full disclaimer
+            stays in the footer and on /more/disclaimer. */}
+        <h1 className="mt-2 max-w-2xl text-2xl font-semibold leading-tight text-foreground sm:text-3xl" data-testid="hero-headline">
+          Check any NSE stock in minutes: delivery, insider trades, governance disclosures and concall summaries.
         </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-foreground-muted sm:text-[15px]">
-          Delivery, volume and price data for 2,000+ NSE stocks, concall and annual-report summaries with their sources, disclosed
-          governance items, and Market Rewind: what happened around past big moves. Updated daily.
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-foreground-muted sm:text-[15px]" data-testid="hero-subline">
+          Plain-language data for 2,000+ NSE stocks, updated daily. No buy or sell advice.
         </p>
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -56,22 +58,13 @@ export function VisitorIntroStrip() {
           >
             Start free
           </Link>
-          <Link href="/pricing" className="text-sm font-medium text-foreground-muted hover:text-foreground">
-            See pricing
+          <Link href="/sample-report" className="whitespace-nowrap rounded-lg border border-border bg-surface px-5 py-2.5 text-sm font-semibold text-foreground hover:border-accent">
+            See a sample report
           </Link>
         </div>
         <p className="mt-2 text-xs font-medium text-accent">
           {trialDays}-day free Pro trial. No payment details needed.
         </p>
-
-        <div className="mt-5 inline-flex max-w-2xl items-start gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs leading-relaxed text-foreground-muted">
-          <span aria-hidden className="mt-0.5 text-accent-dim">ⓘ</span>
-          <span>
-            RedixFi is a data and analytics product, not an advisor — the same category Screener-style platforms
-            occupy. We report measured, historical and current data. This is not a recommendation, not a forecast,
-            and not a price target.
-          </span>
-        </div>
 
         <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="flex items-start gap-2.5 rounded-lg border border-border bg-surface px-3 py-2.5">

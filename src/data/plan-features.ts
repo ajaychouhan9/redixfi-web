@@ -28,7 +28,8 @@ export const PLAN_MATRIX: PlanRow[] = [
 
 // The cards list what each plan adds to the one below it (the full table is on /pricing).
 export const FREE_FEATURES = PLAN_MATRIX.map((r) => `${r.feature}: ${r.free}`);
-export const BASIC_FEATURES = ["Everything in Free, and:", ...PLAN_MATRIX.filter((r) => r.basic !== r.free).map((r) => `${r.feature}: ${r.basic}`)];
+// The first Basic line names the free account, not a "Free plan" card (there is none on the cards; the free column is only in the /pricing table).
+export const BASIC_FEATURES = ["Everything a free account has, and:", ...PLAN_MATRIX.filter((r) => r.basic !== r.free).map((r) => `${r.feature}: ${r.basic}`)];
 export const PRO_FEATURES = ["Everything in Basic, and:", ...PLAN_MATRIX.filter((r) => r.pro !== r.basic).map((r) => `${r.feature}: ${r.pro}`)];
 
 // 4-tier addon structure (2026-09-11, locked with founder), replacing the

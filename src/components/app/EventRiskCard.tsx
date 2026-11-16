@@ -51,13 +51,22 @@ export function EventRiskCard({
     groups.set(key, [...(groups.get(key) ?? []), n]);
   }
   const read = newsToday?.items_read;
+  // One consistent state (16 Nov 2026): the "N headlines read" count goes in the title only while headlines are listed. When the
+  // list is empty (a free plan sees headlines 24 hours later), the title is plain and the body says how many were read and why
+  // none are listed, instead of "3 headlines read" next to "No headlines to list".
+  const listed = items !== null && shown.length > 0;
+  const readCount = typeof read === "number" ? `${read.toLocaleString("en-IN")} headline${read === 1 ? "" : "s"}` : null;
   return (
-    <Card title={typeof read === "number" ? `Today’s news: ${read} headline${read === 1 ? "" : "s"} read` : "Today’s news"}>
+    <Card title={listed && readCount ? `Today’s news: ${readCount} read` : "Today’s news"}>
       {since && <p className="mb-2 text-xs text-foreground-muted">Session of {formatShortDate(since)}.</p>}
       {items === null ? (
         <p className="text-sm text-foreground-faint">Loading…</p>
       ) : shown.length === 0 ? (
-        <p className="text-sm text-foreground-faint">No headlines to list for this session yet (free plans see news after a delay).</p>
+        <p className="text-sm text-foreground-faint" data-testid="news-empty-state">
+          {readCount && typeof read === "number" && read > 0
+            ? `${readCount} read for this session; none listed here yet. Free plans see headlines after a 24-hour delay.`
+            : "No headlines to list for this session yet."}
+        </p>
       ) : (
         <div className="space-y-3">
           {[...groups.entries()].slice(0, 4).map(([category, rows]) => (

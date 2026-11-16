@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
+import Script from "next/script";
 import { AuthProvider } from "@/lib/auth/AuthContext";
 import { ConsentGate } from "@/components/app/ConsentGate";
-import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/lib/theme/ThemeContext";
 import { AskPanelProvider } from "@/lib/ask-panel/AskPanelContext";
 import { PwaProvider } from "@/components/app/pwa/PwaProvider";
@@ -70,6 +70,12 @@ export const viewport: Viewport = {
   ],
 };
 
+// Visitor analytics (16 Nov 2026): Cloudflare Web Analytics, a cookieless page-view beacon. It is loaded only when the owner
+// has put the site token in NEXT_PUBLIC_CF_BEACON_TOKEN; with no token nothing is loaded and nothing else changes. The Vercel
+// Analytics component that used to be here was removed the same day: since the move to the VM its script URL
+// (/_vercel/insights/script.js) answered 404 on every page view.
+const CF_BEACON_TOKEN = process.env.NEXT_PUBLIC_CF_BEACON_TOKEN?.trim() ?? "";
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${plexSans.variable} ${plexMono.variable} h-full antialiased`} suppressHydrationWarning>
@@ -85,7 +91,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </AskPanelProvider>
           </AuthProvider>
         </ThemeProvider>
-        <Analytics />
+        {CF_BEACON_TOKEN && (
+          // lazyOnload: fetched after the page is interactive (browser idle), so it never competes with the page's own scripts.
+          <Script src="https://static.cloudflareinsights.com/beacon.min.js" strategy="lazyOnload" data-cf-beacon={JSON.stringify({ token: CF_BEACON_TOKEN })} />
+        )}
       </body>
     </html>
   );

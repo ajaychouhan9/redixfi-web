@@ -1176,7 +1176,9 @@ export function AskRedixFi() {
 
             {historyDrawerTab === "history" ? (
               <div className="flex-1 overflow-y-auto px-3 py-3 md:px-4">
-                {historyList === null ? (
+                {!user ? (
+                  <p className="px-1 text-xs text-foreground-faint">Log in to see this.</p>
+                ) : historyList === null ? (
                   <p className="px-1 text-xs text-foreground-faint">Loading…</p>
                 ) : historyList.length === 0 ? (
                   <p className="px-1 text-xs text-foreground-faint">No past conversations within your plan&apos;s history window yet.</p>
@@ -1207,7 +1209,7 @@ export function AskRedixFi() {
               // Usage tab — same server values (GET /me/usage) as the strip
               // above, just roomier.
               <div className="flex-1 overflow-y-auto px-3 py-3 md:px-4">
-                <AskQuota usage={usage} detailed />
+                {user ? <AskQuota usage={usage} detailed /> : <p className="text-[12px] text-foreground-faint">Log in to see this.</p>}
               </div>
             )}
           </div>

@@ -17,6 +17,7 @@ import { HomePricingSection } from "@/components/app/HomePricingSection";
 import { GovernanceRadarCard } from "@/components/app/marketing/GovernanceRadarCard";
 import { AskAiTeaserCard } from "@/components/app/marketing/AskAiTeaserCard";
 import { SmallCapPositioningStrip } from "@/components/app/marketing/SmallCapPositioningStrip";
+import { HomeSections } from "@/components/app/HomeSections";
 
 export const metadata: Metadata = { alternates: { canonical: "/" } };
 
@@ -69,43 +70,43 @@ export default async function HomePage() {
     // width up to the sidebar's edge on one side and the viewport edge on
     // the other, instead of floating centered with dead space either side.
     <div className="w-full max-w-[1800px] space-y-5">
-      {/* Order (2 Nov 2026): market status and breadth, today's price movers, your stocks, the latest brief, Market Pulse, unusual activity, the news scan, Market Activity, the report promo. The visitor intro (anonymous only) stays on top; the
-          marketing cards that only anonymous visitors see are below the report promo. */}
-      <VisitorIntroStrip />
-      <MarketStatusStrip overview={overview} session={session} marketState={marketState} />
-      <PriceMoversCard initial={priceMovers} />
-
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        <WatchlistAlertsCard />
-        <ContinueResearchCard />
-      </div>
-
-      <AiDailyBriefCard brief={brief} />
-
-      <MarketPulseCard overview={overview} />
-
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        <EventRiskCard newsToday={overview?.news_today ?? null} initialItems={newsItems} />
-        <IntradayNowCard session={session} />
-      </div>
-
-      <MarketActivityCard summary={marketActivity} />
-
-      <p className="text-center text-sm text-foreground-muted" data-testid="home-sample-report">
-        New: company report PDFs with price, growth, peers, ownership, filings and sources.{" "}
-        <Link href="/sample-report" className="font-medium text-accent hover:underline">
-          See the free sample report
-        </Link>
-      </p>
-
-      <HomeShortcutCard />
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <GovernanceRadarCard />
-        <AskAiTeaserCard />
-      </div>
-      <SmallCapPositioningStrip />
-
-      <HomePricingSection plans={plans} />
+      {/* Order (16 Nov 2026, see HomeSections): a logged-out visitor gets hero, price movers, the Ask RedixFi sample answer, the sample-report
+          banner and pricing first, then the rest in the 2 Nov 2026 order (market status and breadth, your stocks, the latest brief, Market Pulse,
+          the news scan, Market Activity, shortcuts, governance radar, small caps). A logged-in user keeps the 2 Nov 2026 order unchanged.
+          Every section is rendered here once, on the server, exactly as before: no new fetch, and the cached HTML is the anonymous order. */}
+      <HomeSections
+        hero={<VisitorIntroStrip />}
+        marketStatus={<MarketStatusStrip overview={overview} session={session} marketState={marketState} />}
+        priceMovers={<PriceMoversCard initial={priceMovers} />}
+        yourStocks={
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <WatchlistAlertsCard />
+            <ContinueResearchCard />
+          </div>
+        }
+        brief={<AiDailyBriefCard brief={brief} />}
+        pulse={<MarketPulseCard overview={overview} />}
+        newsAndIntraday={
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <EventRiskCard newsToday={overview?.news_today ?? null} initialItems={newsItems} />
+            <IntradayNowCard session={session} />
+          </div>
+        }
+        marketActivity={<MarketActivityCard summary={marketActivity} />}
+        sampleReport={
+          <p className="text-center text-sm text-foreground-muted" data-testid="home-sample-report">
+            New: company report PDFs with price, growth, peers, ownership, filings and sources.{" "}
+            <Link href="/sample-report" className="font-medium text-accent hover:underline">
+              See the free sample report
+            </Link>
+          </p>
+        }
+        shortcuts={<HomeShortcutCard />}
+        governanceRadar={<GovernanceRadarCard />}
+        askSample={<AskAiTeaserCard />}
+        smallCap={<SmallCapPositioningStrip />}
+        pricing={<HomePricingSection plans={plans} />}
+      />
     </div>
   );
 }

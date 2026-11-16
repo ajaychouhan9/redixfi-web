@@ -30,7 +30,20 @@ export function MarketPulseCard({ overview }: { overview: MarketOverview | null 
   const today = overview.market_session?.calendar_date ?? null;
   const flowsDate = flows?.date ?? null;
   const flowsNote = flowsDate ? `${formatShortDate(flowsDate)}${today && flowsDate < today ? " (previous session)" : ""}` : null;
-  const vixNote = vix ? [clock(vix.as_of), vix.as_of_date ? `vs previous close, ${formatShortDate(vix.as_of_date)}` : "vs previous close"].filter(Boolean).join(" · ") : "Morning snapshot";
+  // The India VIX row carries its own time window (16 Nov 2026): the day of the reading, its clock time, and which close it is measured
+  // against. The AI Daily Brief quotes a different India VIX figure from its own earlier window (about 06:30 IST, stated in its text).
+  const prevClose = overview.market_session?.latest_completed_session ?? null;
+  const vixDay = vix?.as_of_date ? formatShortDate(vix.as_of_date) : null;
+  const vixClock = clock(vix?.as_of)?.replace(/^As of /, "") ?? null;
+  const vixNote = vix
+    ? [
+        vixDay ? `${vixDay}${vixClock ? `, as of ${vixClock}` : ""}` : vixClock ? `As of ${vixClock}` : null,
+        prevClose && vixDay && prevClose < (vix.as_of_date ?? "") ? `change against the ${formatShortDate(prevClose)} close` : "change against the previous close",
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "Morning snapshot";
+  const sectorsTotal = overview.sectors_up + overview.sectors_down;
 
   return (
     <Card title="Market Pulse" action={<span className="rounded bg-hover px-2 py-0.5 font-mono text-[11px] text-foreground-muted" title="From the India VIX change">{volState}</span>}>
@@ -45,10 +58,16 @@ export function MarketPulseCard({ overview }: { overview: MarketOverview | null 
         <Row label="India VIX" note={vixNote}>
           <DeltaValue value={vixPct} kind="pct" />
         </Row>
-        <div className="flex items-center justify-between border-t border-border pt-2">
-          <span className="text-xs text-foreground-muted">Sectors</span>
-          <span className="font-mono text-sm">
-            <span className="text-up">{overview.sectors_up}↑</span> <span className="text-down">{overview.sectors_down}↓</span>
+        <div className="flex items-start justify-between gap-2 border-t border-border pt-2">
+          <span className="min-w-0 text-xs text-foreground-muted" data-testid="pulse-sectors-label">
+            NSE sector indices
+            <span className="block text-[10px] text-foreground-faint">
+              {sectorsTotal > 0 ? `${sectorsTotal.toLocaleString("en-IN")} tracked today: ` : ""}higher ↑ and lower ↓ than their previous close
+            </span>
+          </span>
+          <span className="shrink-0 font-mono text-sm">
+            <span className="text-up">{overview.sectors_up.toLocaleString("en-IN")}↑</span>{" "}
+            <span className="text-down">{overview.sectors_down.toLocaleString("en-IN")}↓</span>
           </span>
         </div>
       </div>

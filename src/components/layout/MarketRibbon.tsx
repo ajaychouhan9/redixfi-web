@@ -15,6 +15,7 @@ import { UserMenu } from "@/components/layout/UserMenu";
 import { RedixFiLogo } from "@/components/brand/RedixFiLogo";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { formatShortDate, istToday } from "@/lib/format";
+import { readingsLabel } from "@/lib/market-labels";
 
 const POLL_MS = 60_000;
 
@@ -269,7 +270,7 @@ export function MarketRibbon({
               "today" vs "yesterday" is no longer obvious from the clock alone.
               Font-size audit (2026-08-11): already text-xs = 12px, exactly
               the task's stated floor ("12px minimum") — no change needed. */}
-          {signalsAsOf && <span className="hidden font-mono md:inline">{signalsAsOf}</span>}
+          {signalsAsOf && <span className="hidden font-mono md:inline">{readingsLabel(signalsAsOf)}</span>}
           {overview && <FreshnessDot fresh={fresh} />}
 
           <AskRedixFiTrigger />

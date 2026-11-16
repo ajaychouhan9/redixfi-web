@@ -6,7 +6,7 @@ import { apiMutate, ApiError } from "@/lib/api/client";
 import { getResearch } from "@/lib/api/endpoints";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { DataTable, Section } from "@/components/seo/DataTable";
-import { TrialCta } from "@/components/app/TrialCta";
+import { StockSignupOffer } from "@/components/app/StockSignupOffer";
 import { formatDateSafe } from "@/lib/format";
 import { stockPath, stockSymbolFromParam } from "@/lib/seo/stock-symbol";
 import {
@@ -171,6 +171,8 @@ export default async function StockRewindPage({ params }: { params: Promise<{ sy
               {d.stock.partial_period ? " The stock has been listed for less than the full period shown." : ""}
             </p>
           </Section>
+          {/* Sign-up offer after the first data block and again near the end (16 Nov 2026); logged-out visitors only. */}
+          <StockSignupOffer companyName={d.company} className="mt-4" />
           <Section id="more" title="More">
             <ul className="space-y-1 text-sm">
               <li>
@@ -188,7 +190,7 @@ export default async function StockRewindPage({ params }: { params: Promise<{ sy
           ← Back to the {d.company} ({symbol}) stock page
         </Link>
       </p>
-      <TrialCta className="mt-4" />
+      <StockSignupOffer companyName={d.company} className="mt-4" />
     </div>
   );
 }
