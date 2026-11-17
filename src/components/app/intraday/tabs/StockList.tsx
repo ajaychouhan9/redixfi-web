@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 
 import { DeltaValue } from "@/components/ui/DeltaValue";
-import { Spark } from "@/components/app/review/Spark";
 import { displayName } from "@/lib/company-name";
 import { formatNumber } from "@/lib/format";
 import { stockPath } from "@/lib/seo/stock-symbol";
@@ -26,39 +25,20 @@ export function Pct({ v }: { v: number | null | undefined }) {
   return <DeltaValue value={v} kind="pct" />;
 }
 
-function Links({ symbol, rewind }: { symbol: string; rewind: boolean }) {
-  const cls = "inline-flex min-h-[44px] items-center text-xs font-medium text-foreground underline decoration-accent underline-offset-2 hover:decoration-2";
-  return (
-    <span className="flex flex-wrap gap-x-4">
-      {rewind && (
-        <Link href={`/rewind?symbol=${encodeURIComponent(symbol)}`} className={cls}>
-          Open in Market Rewind
-        </Link>
-      )}
-      <Link href={stockPath("/research", symbol)} className={cls}>
-        Research page
-      </Link>
-    </span>
-  );
-}
-
 /**
- * One list of stocks, as compact cards on a phone and a table from the md breakpoint. `spark` (optional) is a small intraday line.
+ * One list of stocks, as compact cards on a phone and a table from the md breakpoint. A row is the company, the change, the price and the
+ * volume; tapping it opens the stock page (corrected 18 Nov 2026: no per-row links and no chart column).
  * Rows are shown in the order given; this component never sorts, counts or scores them.
  */
 export function StockList<T extends { symbol: string; name: string | null }>({
   rows,
   cols,
-  rewind = false,
-  spark,
   testid,
   empty,
   rankOf,
 }: {
   rows: T[];
   cols: Col<T>[];
-  rewind?: boolean;
-  spark?: (r: T) => { values: number[]; tone: "up" | "down" | "neutral" };
   testid: string;
   empty: string;
   /** The number shown beside the name; default is the position in `rows`. A filtered list passes the row's position in the full list. */
@@ -78,32 +58,27 @@ export function StockList<T extends { symbol: string; name: string | null }>({
     <div data-testid={testid}>
       <ul className="divide-y divide-border md:hidden" data-testid={`${testid}-cards`}>
         {rows.map((r, i) => (
-          <li key={r.symbol} className="py-3" data-testid="intraday-row">
-            <div className="flex items-start justify-between gap-3">
-              <Link href={stockPath("/signals", r.symbol)} className="flex min-h-[44px] min-w-0 flex-col justify-center">
-                <span className="truncate text-sm font-semibold">
-                  <span className="mr-1.5 text-xs font-normal text-foreground-muted">{rankOf ? rankOf(r, i) : i + 1}</span>
-                  {displayName(r.name) || r.symbol}
+          <li key={r.symbol} data-testid="intraday-row">
+            <Link href={stockPath("/stocks", r.symbol)} className="block py-3 hover:bg-hover">
+              <span className="flex items-start justify-between gap-3">
+                <span className="flex min-h-[44px] min-w-0 flex-col justify-center">
+                  <span className="truncate text-sm font-semibold">
+                    <span className="mr-1.5 text-xs font-normal text-foreground-muted">{rankOf ? rankOf(r, i) : i + 1}</span>
+                    {displayName(r.name) || r.symbol}
+                  </span>
+                  <span className="text-xs text-foreground-muted">{r.symbol}</span>
                 </span>
-                <span className="text-xs text-foreground-muted">{r.symbol}</span>
-              </Link>
-              {main && <span className="shrink-0 pt-1 text-base">{main.cell(r)}</span>}
-            </div>
-            <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-              {pairs.map((c) => (
-                <div key={c.id} className="flex justify-between gap-2">
-                  <dt className="text-foreground-muted">{c.mobileLabel ?? c.header}</dt>
-                  <dd className="text-right tabular-nums">{c.cell(r)}</dd>
-                </div>
-              ))}
-            </dl>
-            <div className="flex items-center justify-between gap-3">
-              <Links symbol={r.symbol} rewind={rewind} />
-              {spark && (() => {
-                const s = spark(r);
-                return <Spark values={s.values} label={`${r.symbol} price, 15-minute closes today`} tone={s.tone} />;
-              })()}
-            </div>
+                {main && <span className="shrink-0 pt-1 text-base">{main.cell(r)}</span>}
+              </span>
+              <dl className="mt-1 grid grid-cols-1 gap-y-1 text-xs min-[420px]:grid-cols-2 min-[420px]:gap-x-4">
+                {pairs.map((c) => (
+                  <div key={c.id} className="flex justify-between gap-2">
+                    <dt className="shrink-0 text-foreground-muted">{c.mobileLabel ?? c.header}</dt>
+                    <dd className="text-right tabular-nums">{c.cell(r)}</dd>
+                  </div>
+                ))}
+              </dl>
+            </Link>
           </li>
         ))}
       </ul>
@@ -117,15 +92,13 @@ export function StockList<T extends { symbol: string; name: string | null }>({
                   {c.header}
                 </th>
               ))}
-              {spark && <th className={th}>Today</th>}
-              <th className={th}>Links</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
               <tr key={r.symbol} className="border-b border-border last:border-0" data-testid="intraday-row">
                 <td className="px-2 py-1.5">
-                  <Link href={stockPath("/signals", r.symbol)} className="flex min-h-[44px] flex-col justify-center hover:text-foreground">
+                  <Link href={stockPath("/stocks", r.symbol)} className="flex min-h-[44px] flex-col justify-center hover:text-foreground">
                     <span className="font-medium">
                       <span className="mr-1.5 text-xs font-normal text-foreground-muted">{rankOf ? rankOf(r, i) : i + 1}</span>
                       {displayName(r.name) || r.symbol}
@@ -138,17 +111,6 @@ export function StockList<T extends { symbol: string; name: string | null }>({
                     {c.cell(r)}
                   </td>
                 ))}
-                {spark && (
-                  <td className="px-2 py-1.5">
-                    {(() => {
-                      const s = spark(r);
-                      return <Spark values={s.values} label={`${r.symbol} price, 15-minute closes today`} tone={s.tone} />;
-                    })()}
-                  </td>
-                )}
-                <td className="px-2 py-1.5">
-                  <Links symbol={r.symbol} rewind={rewind} />
-                </td>
               </tr>
             ))}
           </tbody>

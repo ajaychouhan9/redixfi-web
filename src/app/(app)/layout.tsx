@@ -8,7 +8,7 @@ import { InstallBanner } from "@/components/app/pwa/InstallBanner";
 
 // 17 Nov 2026: this layout no longer fetches anything. It used to seed the header ribbon and the sidebar with the market overview on the server,
 // and in Next.js a shared layout's fetch window is the floor for every page under it (the 14 Nov CPU finding). The header is now logo, search,
-// Ask AI and the profile, and the market figures live on Home and Market today, which load them in the browser.
+// Ask AI and the profile, and the market figures live on Home and Market Overview, which load them in the browser.
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">

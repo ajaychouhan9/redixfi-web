@@ -12,7 +12,6 @@ import { MarketBlock } from "@/components/app/review/MarketBlock";
 import { MineProvider } from "@/components/app/review/MineProvider";
 import { ReviewDataProvider } from "@/components/app/review/ReviewData";
 import { ReviewLists } from "@/components/app/review/ReviewLists";
-import { ReviewTabs } from "@/components/app/review/ReviewTabs";
 import { WeekPicker } from "@/components/app/review/WeekPicker";
 import { YourStocks } from "@/components/app/review/YourStocks";
 import { WeeklyEmailOptIn } from "@/components/app/review/WeeklyEmailOptIn";
@@ -105,7 +104,7 @@ function Footnotes({ r }: { r: SevenDayReview }) {
         </Link>{" "}
         and{" "}
         <Link href="/market" className="font-medium text-foreground underline decoration-accent underline-offset-2 hover:decoration-2">
-          Market today
+          Market Overview
         </Link>
         .
       </p>
@@ -144,7 +143,6 @@ export default async function SevenDayReviewPage({ searchParams }: { searchParam
     <div className="mx-auto w-full max-w-5xl space-y-4">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div>
-        <ReviewTabs active="review" />
         <nav aria-label="Breadcrumb" className="mb-2 text-xs text-foreground-muted">
           <ol className="flex flex-wrap gap-1.5">
             <li>

@@ -77,8 +77,8 @@ const ALSO_SHOWN = [
     text: "Answers questions from the measured data RedixFi stores, and says where a figure is missing. It declines questions that ask for advice or for what a stock will do next.",
   },
   {
-    name: "Market today",
-    text: "Movers (the largest price changes among liquid stocks, before the open, during the session or after the close), the market pulse and the latest insider trades, bulk and block deals, concalls and corporate events, each with its date.",
+    name: "Market Overview",
+    text: "Four pages: Intraday (the largest price changes among liquid stocks, before the open, during the session or after the close), Market Pulse, Market Activity (the latest insider trades, bulk and block deals, concalls and corporate events) and Top Gainers & Losers, each with its date.",
     href: "/market",
   },
   {

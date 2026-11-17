@@ -14,7 +14,7 @@ export const metadata: Metadata = { alternates: { canonical: "/" } };
 /**
  * Home (17 Nov 2026), the same page for everyone: search box, AI brief, five boxes, a movers preview and a small trial line.
  * It makes NO request on the server: the brief and the movers load in the browser after the page opens, so the page is a static,
- * cached file. (It used to make nine server requests and show many cards; those moved to Market today and Me.)
+ * cached file. (It used to make nine server requests and show many cards; those moved to Market Overview and the account menu.)
  */
 export default function HomePage() {
   return (

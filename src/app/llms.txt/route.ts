@@ -11,12 +11,12 @@ const BODY = `# RedixFi
 - **Past occurrences**: the base-rate comparison inside the full Rewind options. It compares how often each reading was present before the chosen big moves with how often it was present on all days. A reading is marked "Stood out" only when the difference passes strict tests that allow for ordinary day-to-day variation. "Stood out" means different from all days. It does not mean the reading comes before a move, and many readings rise together when a stock is volatile.
 - **Readings**: the individual measured readings on each stock page (trend, delivery share, volume against its usual level, momentum, sector rank, options positioning, promoter pledge, FII flow). RedixFi does not combine them into a score. The full Rewind options also list extra readings such as insider trade disclosed, bulk or block deal, near 52-week high and gap at open.
 - **7-Day Review** (https://www.redixfi.com/signals/7-day-review): the biggest price gains and falls of the last trading sessions (usually 5), the market for the week and a count of what was announced. The lists rank by price change over the window only. It is a past record of measured data, not a forecast or a recommendation.
-- **Market today** (https://www.redixfi.com/market): three tabs. Movers lists the largest price changes among liquid NSE stocks (the gaps before the open, the moves during the session, or the last session after the close); Pulse shows the Nifty, Bank Nifty and market pulse with their dates; Activity lists the latest concalls, insider trades, corporate events and bulk or block deals. Prices are delayed or as of the last update. A past record of measured data, not a forecast or a recommendation.
+- **Market Overview** (https://www.redixfi.com/market): four pages. Intraday (https://www.redixfi.com/intraday) lists the largest price changes among liquid NSE stocks before the open, during the session and after the close; Market Pulse (https://www.redixfi.com/pulse) shows the Nifty, Bank Nifty and how many stocks rose and fell; Market Activity (https://www.redixfi.com/market-activity) lists the latest concalls, insider trades, corporate events and bulk or block deals; Top Gainers & Losers (https://www.redixfi.com/gainers-losers) lists the five largest price rises and falls. Prices are delayed or as of the last update. A past record of measured data, not a forecast or a recommendation.
 
 ## Main pages
 
 - Home: https://www.redixfi.com/
-- Market today: https://www.redixfi.com/market
+- Market Overview: https://www.redixfi.com/market
 - Stock Screener (delivery, volume, 52-week range and volatility by stock): https://www.redixfi.com/signals
 - 7-Day Review: https://www.redixfi.com/signals/7-day-review
 - Start here (plain-words guide and three-question screen for people new to stocks): https://www.redixfi.com/start

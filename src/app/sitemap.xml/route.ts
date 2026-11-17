@@ -24,6 +24,10 @@ const PUBLIC_CORE_ROUTES = [
   "/weekly",
   "/screens",
   "/market",
+  "/intraday",
+  "/pulse",
+  "/market-activity",
+  "/gainers-losers",
   "/more/about-us",
   "/more/disclaimer",
   "/more/terms",
@@ -40,7 +44,7 @@ const PUBLIC_CORE_ROUTES = [
 
 // Pages whose content is rebuilt from the latest completed session: their lastmod is that session's date. Static pages carry no lastmod
 // (a date we did not measure would be made up).
-const SESSION_ROUTES = new Set<string>(["/signals", "/signals/7-day-review", "/weekly", "/market", "/volatility", "/screens"]);
+const SESSION_ROUTES = new Set<string>(["/signals", "/signals/7-day-review", "/weekly", "/market", "/intraday", "/pulse", "/gainers-losers", "/volatility", "/screens"]);
 
 function escapeXml(value: string): string {
   return value

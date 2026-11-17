@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SignalsPageBody } from "@/components/app/signals/SignalsPageBody";
-import { ReviewTabs } from "@/components/app/review/ReviewTabs";
 import { GuestOnly } from "@/components/app/GuestOnly";
 import { getSignals, getSharedScreen } from "@/lib/api/endpoints";
 import { START_RESULTS_NOTE, screenerParamsFromQuery } from "@/lib/start-here";
@@ -41,7 +40,6 @@ export default async function SignalsPage({ searchParams }: { searchParams: Prom
 
   return (
     <div>
-      <ReviewTabs active="signals" />
       <div className="mb-5">
         <h1 className="text-lg font-semibold">Stock Screener</h1>
         <p className="mt-1 text-sm text-foreground-muted">

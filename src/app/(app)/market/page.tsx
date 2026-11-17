@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 
-import { MarketToday } from "@/components/app/market/MarketToday";
+import { MarketOverviewCards } from "@/components/app/market/MarketOverviewCards";
 
-const TITLE = "Market today: movers, market pulse and recorded activity for NSE stocks | RedixFi";
+const TITLE = "Market Overview: intraday movers, market pulse, market activity and top gainers and losers | RedixFi";
 const DESCRIPTION =
-  "The NSE market in one place: the largest price moves among liquid stocks (before the open, during the session or after the close), the market pulse with its date, and the latest concalls, insider trades, corporate events and bulk or block deals. Prices are delayed or as of the last update. Not a forecast or a recommendation.";
+  "Four pages on the NSE market: the largest price moves (Intraday), the index levels and breadth (Market Pulse), the latest concalls, insider trades, corporate events and bulk or block deals (Market Activity), and the top gainers and losers. Each says when its figures are from. Not a forecast or a recommendation.";
 
 // The page makes no request of its own; a refresh window keeps the cached copy from outliving a deploy (a fully static page is sent with a one-year cache lifetime).
 export const revalidate = 300;
@@ -16,13 +16,14 @@ export const metadata: Metadata = {
   openGraph: { title: TITLE, description: DESCRIPTION, type: "website", url: "https://www.redixfi.com/market" },
 };
 
-/** Static shell: every number on this page is fetched in the browser, so the page is cached and costs the server nothing per visit. */
-export default function MarketPage() {
+/** Static shell: the four cards are fixed text; only the small date tags are read in the browser. */
+export default function MarketOverviewPage() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-3">
-      <h1 className="text-xl font-semibold">Market today</h1>
-      <p className="text-sm text-foreground-muted">Movers, the market pulse and the latest filings. Each tab shows the date of its figures.</p>
-      <MarketToday />
+      <h1 className="text-xl font-semibold">Market Overview</h1>
+      <p className="text-sm text-foreground-muted">Choose a page. Each one says when its figures are from.</p>
+      <MarketOverviewCards />
+      <p className="text-xs text-foreground-muted">Live prices are delayed by about 15 minutes. Past record of measured data. Not a forecast or a recommendation.</p>
     </div>
   );
 }

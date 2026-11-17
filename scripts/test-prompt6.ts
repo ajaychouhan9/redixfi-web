@@ -97,7 +97,7 @@ const STANDARD = "RedixFi shows market data for information only. It gives no bu
   const how = read("app/(app)/how-it-works/page.tsx");
   assert.ok(how.includes('title="What else RedixFi shows"'));
   assert.ok(how.indexOf('title="The readings"') < how.indexOf('title="What else RedixFi shows"') && how.indexOf('title="What else RedixFi shows"') < how.indexOf('title="Where the data comes from"'), "new section sits below the eight readings");
-  for (const need of ["Screener", "Saved screens", "Ask AI", "Market today", "Rewind", "7-Day Review and weekly pages", "Company report PDF", "A filter is a filter on reported data, not a recommendation."]) assert.ok(how.includes(need), need);
+  for (const need of ["Screener", "Saved screens", "Ask AI", "Market Overview", "Rewind", "7-Day Review and weekly pages", "Company report PDF", "A filter is a filter on reported data, not a recommendation."]) assert.ok(how.includes(need), need);
   assert.equal((how.match(/title="Common questions"/g) ?? []).length, 0, "the second Common questions card is merged into the section");
   assert.equal((how.match(/>Common questions</g) ?? []).length, 1, "one Common questions heading");
   for (const q of ["Is a reading a buy or sell recommendation?", "Which session's delivery do the readings use?", "Why can a reading change from one day to the next?", "Why is a reading sometimes missing?", "How often are the readings updated?", "Is volatility one of the readings?"]) assert.ok(how.includes(q), `kept: ${q}`);

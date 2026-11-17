@@ -1,5 +1,6 @@
 /**
- * Permanent redirects for the 17 Nov 2026 restructure (one stock page with tabs, one Market today page, Home as the one landing page).
+ * Permanent redirects for the 17 Nov 2026 restructure (one stock page with tabs, Home as the one landing page), corrected 18 Nov 2026:
+ * Intraday, Market Pulse and Market Activity are separate pages again, so they are NOT redirected; the Me page redirects to Home.
  * Every old address that moves keeps working in ONE hop. `#tab` names the stock-page tab that now holds the old page's content.
  * Order matters: the more specific rule is listed before the general one. /signals/7-day-review is NOT a stock and stays where it is.
  */
@@ -29,9 +30,7 @@ export function restructureRedirects(): Redirect[] {
     r("/rewind", "/"),
     r("/history", "/"),
     r("/history/:path*", "/"),
-    // Intraday, Market pulse and Market activity are the three tabs of Market today
-    r("/intraday", "/market"),
-    r("/pulse", "/market?tab=pulse"),
-    r("/market-activity", "/market?tab=activity"),
+    // The Me page was removed (18 Nov 2026): the account menu holds its rows
+    r("/me", "/"),
   ];
 }

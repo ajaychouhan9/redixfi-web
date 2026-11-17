@@ -2571,6 +2571,9 @@ export interface ScanMoveRow extends IntradayRowBase {
   price: number;
   pct: number;
   vr: number | null;
+  /** Shares traded so far today and the usual volume for this time of day (the 20-day average scaled to the time elapsed; vr = vt / vu). Absent on rows stored before 18 Nov 2026. */
+  vt?: number | null;
+  vu?: number | null;
   spark: number[];
 }
 export interface RecapRow extends IntradayRowBase {

@@ -99,11 +99,17 @@ function stripComments(s) {
     .replace(/(^|\s)\/\/.*$/gm, "$1");
 }
 
+// 18 Nov 2026: the owner asked for a "Top Gainers & Losers" page and card by that name (the Market Overview card and its page). The phrase is allowed
+// in exactly those files and nowhere else: every other page keeps "largest price rises / falls".
+const GAINERS_OK = ["app/(app)/gainers-losers/page.tsx", "components/app/market/MarketOverviewCards.tsx", "components/app/market/TopMovers.tsx", "app/(app)/how-it-works/page.tsx", "app/llms.txt/route.ts"];
+const GAINERS_PHRASES = new Set(["Gainers", "Top gainers", "Top losers"]);
 const hits = [];
 for (const file of files(ROOT)) {
+  const rel = file.slice(ROOT.length).replaceAll("\\", "/");
   // identifiers of the API fields that no longer carry data (composite_score and the like) are not displayed text
   const text = stripComments(readFileSync(file, "utf8")).replace(/\w*composite_score\w*/g, "");
   for (const phrase of OLD) {
+    if (GAINERS_PHRASES.has(phrase) && GAINERS_OK.includes(rel)) continue;
     if (text.includes(phrase)) hits.push(`${file}: ${phrase}`);
   }
 }
@@ -114,7 +120,11 @@ if (hits.length) {
 // The Signals/Home price labels must never use a bare "Live" (the market
 // tab is still "Live scan", and "Today's session" is allowed).
 const BARE_LIVE = /(?:>|["'`])Live(?:<|["'`])/;
+// 18 Nov 2026: the owner asked for the tag "Live" on the Market Overview Intraday card and the Home movers preview (market hours only, with the
+// 15-minute delay stated next to it); those two helper files are the only places the bare word may be a label.
+const LIVE_OK = ["lib/market-overview.ts", "lib/home-movers.ts"];
 for (const file of files(ROOT)) {
+  if (LIVE_OK.includes(file.slice(ROOT.length).replaceAll("\\", "/"))) continue;
   if (BARE_LIVE.test(stripComments(readFileSync(file, "utf8")))) {
     console.error(`Bare Live label is not allowed: ${file}`);
     process.exit(1);
@@ -215,7 +225,6 @@ for (const f of walkSrc(join(ROOT))) {
 // question ("Do not give a forecast or a recommendation") are allowed as written.
 const REVIEW_FILES = [
   "lib/review-copy.ts",
-  "components/app/review/ReviewTabs.tsx",
   "components/app/review/ReviewLists.tsx",
   "components/app/review/YourStocks.tsx",
   "components/app/review/MarketBlock.tsx",
@@ -244,22 +253,18 @@ for (const need of ["Biggest gains", "Biggest falls", "Open in Rewind", "Stock p
 // 17 Nov 2026 menu: Home | Screener | Market today | 7-Day Review | Ask AI | Me, for the sidebar and the phone bar (lib/nav-items.ts). Research, Pro, Rewind and
 // Intraday are not menu items. Every More row is still in the header menu, and the personal rows (Watchlist, Alerts, Account, Checkout) are under Me.
 const navItems = readFileSync(join(ROOT, "lib/nav-items.ts"), "utf8");
-const navHrefs = [...navItems.matchAll(/href: ("[^"]+"|null)/g)].map((m) => m[1]).join(",");
-if (navHrefs !== '"/","/signals","/market","/signals/7-day-review",null,"/me"') reviewHits.push(`nav-items.ts: the menu must be Home, Screener, Market today, 7-Day Review, Ask AI, Me (found ${navHrefs})`);
+const hrefsOf = (from, to) => [...navItems.slice(navItems.indexOf(from), navItems.indexOf(to)).matchAll(/href: ("[^"]+"|null)/g)].map((m) => m[1]).join(",");
+const navHrefs = hrefsOf("export const NAV_ITEMS", "export const BOTTOM_ITEMS");
+if (hrefsOf("export const BOTTOM_ITEMS", "export const ACCOUNT_ITEMS") !== '"/","/signals","/market",null,null') reviewHits.push("nav-items.ts: the phone bar must be Home, Screener, Markets, Ask AI, Account");
+if (hrefsOf("export const ACCOUNT_ITEMS", "const REVIEW") !== '"/account","/watchlist","/account/alerts","/pricing"') reviewHits.push("nav-items.ts: the account menu must be Profile and plan, Watchlist, Alerts, Billing (then Log out)");
+if (navHrefs !== '"/","/signals","/signals/7-day-review","/market",null,"/pricing"') reviewHits.push(`nav-items.ts: the side menu must be Home, Screener, 7-Day Review, Market Overview, Ask AI, Pricing (found ${navHrefs})`);
 if (/Research|Rewind|Intraday|"Pro"/.test(navItems.replace(/\/\*[\s\S]*?\*\//g, ""))) reviewHits.push("nav-items.ts: Research, Pro, Rewind and Intraday are not menu items");
 const side = readFileSync(join(ROOT, "components/layout/Sidebar.tsx"), "utf8");
-if (!side.includes("NAV_ITEMS.map") || !side.includes("export function BottomNav")) reviewHits.push("Sidebar.tsx: the sidebar and the phone bar must read NAV_ITEMS");
-const more = readFileSync(join(ROOT, "lib/more-links.ts"), "utf8");
-const moreHrefs = [...more.slice(more.indexOf("export const MORE_LINKS"), more.indexOf("export const MENU_GROUPS")).matchAll(/href: "([^"]+)"/g)].map((m) => m[1]);
-const menuHrefs = new Set([...more.slice(more.indexOf("export const MENU_GROUPS")).matchAll(/href: "([^"]+)"/g)].map((m) => m[1]));
-for (const h of moreHrefs) if (!menuHrefs.has(h)) reviewHits.push(`lib/more-links.ts: ${h} is on the More page but not in the header menu`);
-for (const need of ["/watchlist", "/account/alerts", "/account", "/pricing", "/more/about-us", "/how-it-works", "/more/disclaimer"]) {
-  if (!menuHrefs.has(need)) reviewHits.push(`lib/more-links.ts: header menu lacks ${need}`);
-}
+if (!side.includes("NAV_ITEMS.map") || !side.includes("export function BottomNav") || !side.includes("BOTTOM_ITEMS.map")) reviewHits.push("Sidebar.tsx: the sidebar must read NAV_ITEMS and the phone bar BOTTOM_ITEMS");
 const sm = readFileSync(join(ROOT, "app/sitemap.xml/route.ts"), "utf8");
 if (!sm.includes('"/signals/7-day-review"')) reviewHits.push("sitemap.xml/route.ts: /signals/7-day-review missing");
 if (!readFileSync(join(ROOT, "app/llms.txt/route.ts"), "utf8").includes("/signals/7-day-review")) reviewHits.push("llms.txt/route.ts: 7-Day Review missing");
-if (!readFileSync(join(ROOT, "app/(app)/signals/page.tsx"), "utf8").includes("ReviewTabs")) reviewHits.push("signals/page.tsx: Signals | 7-Day Review tabs missing");
+if (readFileSync(join(ROOT, "app/(app)/signals/page.tsx"), "utf8").includes("ReviewTabs")) reviewHits.push("signals/page.tsx: the Screener | 7-Day Review tabs were removed (18 Nov 2026) and must not come back");
 // 2026-11-01: AI prompt pills and the Stock Condition history line on stock pages. Neutral wording, neutral colour, nothing sent without a tap on Send,
 // and the line is never on Market Rewind.
 const uxHits = [];
@@ -337,8 +342,6 @@ const INTRADAY_FILES = [
   "components/app/intraday/tabs/TabBodies.tsx",
   "components/app/intraday/tabs/StockList.tsx",
   "components/app/intraday/tabs/LegacyTools.tsx",
-  "lib/market-today.ts",
-  "components/app/market/MoversTab.tsx",
 ];
 const INTRADAY_FORBIDDEN = /\b(breakouts?|set-?ups?|signals?|targets?|stop-?loss|buy|sell|bullish|bearish|momentum play|stocks? to watch|top picks?|picks?|likely|expected|intraday tips?|tips?|predict\w*|recommend\w*|outlook|hit rates?|success rates?|accura\w*|track records?|win rates?|top gainers|top losers|gainers|losers|strongest|weakest|best)\b/i;
 const intradayHits = [];

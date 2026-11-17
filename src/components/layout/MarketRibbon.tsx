@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { AskRedixFiTrigger } from "@/components/app/ask/AskRedixFi";
 import { HeaderSearch } from "@/components/layout/HeaderSearch";
-import { UserMenu } from "@/components/layout/UserMenu";
+import { UserMenu } from "@/components/layout/AccountMenu";
 import { RedixFiLogo } from "@/components/brand/RedixFiLogo";
 
 /**

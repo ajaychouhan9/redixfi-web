@@ -6,7 +6,7 @@ import Link from "next/link";
 import { DeltaValue } from "@/components/ui/DeltaValue";
 import { formatNumber } from "@/lib/format";
 import { stockPath } from "@/lib/seo/stock-symbol";
-import { VOLUME_STEPS, filterByVolume, volumeCountText, volumePillLabel, volumeStepLabel } from "@/lib/intraday-volume-filter";
+import { VOLUME_STEPS, filterByVolume, volumeCountText, volumeLine, volumePillLabel, volumeStepLabel } from "@/lib/intraday-volume-filter";
 import { displayName } from "@/lib/company-name";
 import {
   EMPTY,
@@ -112,7 +112,7 @@ export function MorningBody({ d }: { d: IntradayTabData }) {
         ) : (
           <>
             <SideToggle side={side} onChange={setSide} upLabel="Gap up" downLabel="Gap down" id="morning-side" />
-            <StockList rows={rows} cols={gapCols} rewind testid="morning-list" empty={side === "up" ? "No liquid stock in the pre-open scan has an upward gap." : "No liquid stock in the pre-open scan has a downward gap."} />
+            <StockList rows={rows} cols={gapCols} testid="morning-list" empty={side === "up" ? "No liquid stock in the pre-open scan has an upward gap." : "No liquid stock in the pre-open scan has a downward gap."} />
           </>
         )}
         {d.coverage && (
@@ -162,7 +162,7 @@ export function MorningBody({ d }: { d: IntradayTabData }) {
 const scanCols: Col<ScanMoveRow>[] = [
   { id: "pct", header: "Change vs previous close", mobileLabel: "Change", mobile: "main", cell: (r) => <Pct v={r.pct} /> },
   { id: "price", header: "Price", mobileLabel: "Price", mobile: "pair", cell: (r) => <Price v={r.price} /> },
-  { id: "vr", header: "Volume vs usual so far", mobileLabel: "Volume vs usual", mobile: "pair", cell: (r) => <span className="tabular-nums">{r.vr === null ? "-" : `${r.vr.toFixed(1)}x`}</span> },
+  { id: "vr", header: "Volume", mobileLabel: "Volume", mobile: "pair", cell: (r) => <span data-testid="scan-volume-text">{volumeLine(r)}</span> },
 ];
 
 /** Scan only: 1-tap steps for volume against the stock's own usual level. Tapping the active step clears it. Changes which rows are shown, never their order. */
@@ -207,10 +207,8 @@ export function ScanBody({ d }: { d: IntradayTabData }) {
         <StockList
           rows={rows}
           cols={scanCols}
-          rewind
           testid="scan-list"
           empty={minVol !== null ? `No listed row has ${volumeStepLabel(minVol).toLowerCase()}.` : side === "up" ? "No stock in this group is above its previous close." : "No stock in this group is below its previous close."}
-          spark={(r) => ({ values: r.spark, tone: r.pct > 0 ? "up" : "down" })}
           rankOf={(r) => listed.indexOf(r) + 1}
         />
         <p className="text-xs text-foreground-muted">{SCAN_NOTE}</p>
@@ -283,12 +281,12 @@ export function RecapBody({ d }: { d: IntradayTabData }) {
       <MarketDay d={d} />
       <Section id="recap-morning" title="How the Pre-open lists ended the day" subtitle="The largest pre-open gaps, each stock with its own day">
         <SideToggle side={mSide} onChange={setMSide} upLabel="Gap up" downLabel="Gap down" id="recap-morning-side" />
-        <StockList rows={mRows} cols={recapCols("Pre-open gap", gapListed)} rewind testid="recap-morning-list" empty="No stocks were listed on this side in Morning." />
+        <StockList rows={mRows} cols={recapCols("Pre-open gap", gapListed)} testid="recap-morning-list" empty="No stocks were listed on this side in Morning." />
       </Section>
       <Section id="recap-scan" title="How the Live scan lists ended the day" subtitle={`The largest moves, as listed${at ? ` at the ${at} IST update` : ""}, each stock with its own day`}>
         <UniverseChips value={universe} onChange={setUniverse} id="recap-universe" />
         <SideToggle side={sSide} onChange={setSSide} upLabel="Up" downLabel="Down" id="recap-scan-side" />
-        <StockList rows={sRows} cols={recapCols("Change when listed", gapListed)} rewind testid="recap-scan-list" empty="No stocks were listed on this side in Scan." />
+        <StockList rows={sRows} cols={recapCols("Change when listed", gapListed)} testid="recap-scan-list" empty="No stocks were listed on this side in Scan." />
       </Section>
       <p className="text-xs text-foreground-muted">{RECAP_NOTE}</p>
       <p className="text-xs text-foreground-muted">{LIQUID_NOTE}</p>

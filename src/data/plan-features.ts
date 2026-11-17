@@ -13,7 +13,6 @@ export interface PlanRow {
 export const PLAN_MATRIX: PlanRow[] = [
   { feature: "Stock screener: sort, filter and search the table", free: "Yes", basic: "Yes", pro: "Yes" },
   { feature: "Delivery, volume, 52-week range and volatility data for 2,000+ NSE stocks", free: "Yes", basic: "Yes", pro: "Yes" },
-  { feature: "Research page lookups", free: "3 per day", basic: "Unlimited", pro: "Unlimited" },
   { feature: "News", free: "Delayed 24 hours", basic: "Same day", pro: "Same day" },
   { feature: "Compare stocks side by side", free: "Up to 5", basic: "Up to 5", pro: "Up to 10" },
   { feature: "Watchlist", free: "10 stocks", basic: "50 stocks", pro: "50 stocks" },
