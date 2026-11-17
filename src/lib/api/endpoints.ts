@@ -1,5 +1,5 @@
 import { apiGet, apiGetPaged, apiGetOptional, type FetchOpts } from "./client";
-import type {
+import type { HomeBrief,
   MarketOverview,
   SignalRow,
   SignalsMovers,
@@ -301,6 +301,9 @@ export const getChart = (
 
 // @auth public — brief.py has no auth dependency on this route at all.
 export const getLatestBrief = (opts?: FetchOpts) => apiGetOptional<DailyBrief>("/brief/latest", opts);
+
+// @auth public — the Home brief is the same for everyone and a visitor never triggers its generation (17 Nov 2026). Resolves to null when none is built yet (404).
+export const getHomeBrief = (opts?: FetchOpts) => apiGetOptional<HomeBrief>("/brief/home", opts);
 
 // ---------- billing (public) ----------
 

@@ -5,46 +5,14 @@ import { FooterDisclaimer } from "@/components/layout/FooterDisclaimer";
 import { TrialStatusBar } from "@/components/layout/TrialStatusBar";
 import { ChannelDiscoveryBanner } from "@/components/app/ChannelDiscoveryBanner";
 import { InstallBanner } from "@/components/app/pwa/InstallBanner";
-import { getMarketOverview } from "@/lib/api/endpoints";
 
-// CLS fix (2026-08-08) — see MarketRibbon.tsx's own docstring for the
-// full root-cause writeup (Lighthouse: 0.249 CLS, attributed to <main>
-// shifting down as this ribbon grew from a client-fetch-only skeleton to
-// its real content). @auth public — /market/overview never varies by
-// tier (confirmed in an earlier session's audit), so a single anonymous
-// server-side fetch is correct to seed every visitor's first paint with,
-// logged-in or not; MarketRibbon's own client poll still refreshes with
-// a real token's context for anything downstream that needs it (none of
-// this ribbon's own content does).
-export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  let initialOverview = null;
-  let initialFresh = true;
-  let initialSignalsAsOf: string | null = null;
-  try {
-    // revalidate: 60 (matches MarketRibbon's own 60s client poll interval)
-    // — NOT the default no-store. A no-store fetch anywhere inside a
-    // shared layout forces EVERY route under it into fully dynamic
-    // per-request rendering; confirmed by running the build both ways —
-    // ~13 previously-static pages (/account/*, /news, /watchlist,
-    // /more/*, /login, /track-record, /admin/promo-codes) flipped from ○
-    // to ƒ with a bare no-store call here. A revalidating fetch keeps
-    // ISR/static optimization intact for pages that don't otherwise need
-    // dynamic rendering, while still refreshing this data at least once a
-    // minute — this data was never meant to be request-fresh anyway (the
-    // client poll below already re-fetches on the same cadence).
-    const env = await getMarketOverview({ revalidate: 300 }) /* 5 min (was 60 s): the shared layout's fetch sets every page's refresh window, 14 Nov 2026 */;
-    initialOverview = env.data;
-    initialFresh = env.meta.data_fresh;
-    initialSignalsAsOf = env.meta.signals_as_of ?? null;
-  } catch {
-    // Backend hiccup at request time — MarketRibbon's own client-side
-    // poll (unchanged) refreshes the data a moment later; same graceful-
-    // degradation posture the component already had before this fix.
-  }
-
+// 17 Nov 2026: this layout no longer fetches anything. It used to seed the header ribbon and the sidebar with the market overview on the server,
+// and in Next.js a shared layout's fetch window is the floor for every page under it (the 14 Nov CPU finding). The header is now logo, search,
+// Ask AI and the profile, and the market figures live on Home and Market today, which load them in the browser.
+export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
-      <Sidebar initialOverview={initialOverview} initialFresh={initialFresh} initialSignalsAsOf={initialSignalsAsOf} />
+      <Sidebar />
       {/* md:ml-56 reserves the width Sidebar no longer occupies in-flow now
           that it's `md:fixed` (see Sidebar.tsx) — matches its `w-56`
           exactly so content starts right at the sidebar's edge, not under
@@ -78,7 +46,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           panel is docked so desktop content reflows instead of being
           covered, and mounts the single responsive panel instance. */}
       <AiDockShell>
-        <MarketRibbon initialOverview={initialOverview} initialFresh={initialFresh} initialSignalsAsOf={initialSignalsAsOf} />
+        <MarketRibbon />
         <TrialStatusBar />
         {/* Daily PUBLIC CHANNEL DISCOVERY notification — at most once/day,
             server-decided; renders nothing unless the API says it should

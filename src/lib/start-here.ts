@@ -1,5 +1,7 @@
 import { SIGNAL_SECTORS } from "@/data/sectors";
-import type { SharedScreenParams } from "@/lib/api/types";
+import type { SharedScreenParams, SignalRow } from "@/lib/api/types";
+import type { SignalsListParams } from "@/lib/api/endpoints";
+import { growthText } from "@/lib/seo/stock-facts";
 
 /**
  * "Start here" (17 Nov 2026): the beginner's three questions, mapped to filters the Screener really has. Each option names the exact
@@ -72,3 +74,42 @@ export function screenerParamsFromQuery(query: Record<string, string | string[] 
 }
 
 export const START_RESULTS_NOTE = "All stocks matching your filters, A to Z. Not a recommendation.";
+
+
+// ---- results as cards (17 Nov 2026) -------------------------------------------------------------------------------------------------------
+export const START_PAGE_SIZE = 12;
+
+/** The Screener request for the ticked boxes: the stocks matching ALL of them, sorted A to Z by name. Nothing is ranked. */
+export function startListParams(chosen: string[], sector: string, page = 1): SignalsListParams {
+  const p: SignalsListParams = { sort: "name", order: "asc", page, size: START_PAGE_SIZE };
+  if (chosen.includes("profit")) p.eps_positive = true;
+  if (chosen.includes("sales")) p.sales_growth_min = 1;
+  if (chosen.includes("dividend")) p.dividend_yield_min = 0.01;
+  if (sector) p.sector = sector;
+  return p;
+}
+
+/** "Yes" / "No" / "Not available": was the latest reported quarter's earnings per share above zero. */
+export function profitFlag(row: Pick<SignalRow, "eps">): string {
+  const e = row.eps;
+  return typeof e !== "number" || !Number.isFinite(e) ? "Not available" : e > 0 ? "Yes" : "No";
+}
+
+export function salesText(row: Pick<SignalRow, "sales_growth_pct">): string {
+  const g = growthText(row.sales_growth_pct, "sales");
+  return g === "n/a" ? "Not available" : g;
+}
+
+export function yieldText(row: Pick<SignalRow, "dividend_yield_pct">): string {
+  const y = row.dividend_yield_pct;
+  if (typeof y !== "number" || !Number.isFinite(y)) return "Not available";
+  return y <= 0 ? "None" : `${y.toFixed(2)}%`;
+}
+
+/** The four plain lines of Step 1: what each figure on a result card means, with a plain example and no company named. */
+export const HOW_TO_READ: { term: string; line: string }[] = [
+  { term: "Profit", line: "The money a company has left after paying all its costs. Example: it sold goods worth 100, its costs were 90, so its profit is 10. The cards say Yes when the latest reported quarter had a profit." },
+  { term: "Sales growth", line: "How much more or less the company sold than in the same quarter a year earlier. Example: +10% means it sold a tenth more than a year before." },
+  { term: "Dividend yield", line: "A dividend is a part of the profit paid out to the owners of the shares. The yield is the year's dividend as a share of the price. Example: 2% means 2 rupees a year for every 100 rupees of price." },
+  { term: "Points to watch", line: "Statements in a company's own reports that are worth reading yourself, such as an auditor's remark or a pending case. Each one links to its source. It is something to look into, not a verdict." },
+];

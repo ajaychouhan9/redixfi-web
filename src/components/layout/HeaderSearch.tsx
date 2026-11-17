@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { SymbolTypeahead } from "@/components/ui/SymbolTypeahead";
 import { FeedbackBox } from "@/components/app/FeedbackBox";
-import { searchTargetBase, stockPath } from "@/lib/seo/stock-symbol";
+import { stockPath } from "@/lib/seo/stock-symbol";
 
 /**
  * Header global search — reuses the same `searchResearch()` typeahead the
@@ -25,40 +25,23 @@ import { searchTargetBase, stockPath } from "@/lib/seo/stock-symbol";
  */
 export function HeaderSearch() {
   const router = useRouter();
-  const pathname = usePathname();
   const [q, setQ] = useState("");
 
   return (
-    // Mobile/tablet-header-overlap fix (2026-08-16): this box's own
-    // max-width used to jump straight to max-w-xs (320px) the instant it
-    // appears at md (768px) — exactly where MarketRibbon has the LEAST
-    // spare room (the w-56 logo section reappears at the same breakpoint,
-    // and the icon cluster on the right doesn't shrink), so the search
-    // box's un-shrinkable width was a real contributor to the row not
-    // fitting and wrapping onto a second line that then overlapped <main>
-    // (see MarketRibbon.tsx's own fixed h-16 vs. flex-wrap comment for why
-    // a wrapped row overlaps rather than pushing content down). Narrower
-    // at md, full max-w-xs only from lg (1024px) up where there's
-    // genuinely enough room.
-    <div className="hidden w-full min-w-0 max-w-[160px] md:block lg:max-w-xs">
+    // 17 Nov 2026: one search box in the header on every screen size (it used to be hidden on phones), and one place to go: the stock page.
+    <div className="w-full min-w-0" data-testid="header-search">
       <SymbolTypeahead
         value={q}
         onChange={setQ}
         onSelect={(row) => {
           setQ("");
-          // stays in context: Research stock page -> Research, anywhere else -> Signals
-          router.push(stockPath(searchTargetBase(pathname), row.canonicalSymbol));
+          router.push(stockPath("/stocks", row.canonicalSymbol));
         }}
-        links={(row) => [
-          { label: "Data", href: stockPath("/signals", row.canonicalSymbol) },
-          { label: "Research", href: stockPath("/research", row.canonicalSymbol) },
-        ]}
         emptyFooter={<FeedbackBox page="no_result" idSuffix="header-search" className="!border-0 !bg-transparent !p-0" />}
-        placeholder="Search stocks, sectors, news..."
-        ariaLabel="Search stocks, sectors, news"
+        placeholder="Search"
+        ariaLabel="Search a company"
         wrapperClassName="relative w-full"
-        // Font-size fix (2026-08-11): was text-xs (12px), task wants 14px.
-        inputClassName="w-full rounded-lg border border-border bg-hover py-1.5 pl-8 pr-3 text-sm outline-none focus:border-accent"
+        inputClassName="h-10 w-full rounded-lg border border-border bg-hover py-1.5 pl-8 pr-3 text-sm outline-none focus:border-accent"
       />
     </div>
   );

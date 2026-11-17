@@ -3,6 +3,9 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { COMMON_QUESTION_GROUPS, COMMON_QUESTION_NOTE } from "@/lib/common-questions";
 
+// The page makes no request of its own; a refresh window keeps the cached copy from outliving a deploy (a fully static page is sent with a one-year cache lifetime).
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: "How RedixFi measures its readings",
   description:
@@ -74,14 +77,14 @@ const ALSO_SHOWN = [
     text: "Answers questions from the measured data RedixFi stores, and says where a figure is missing. It declines questions that ask for advice or for what a stock will do next.",
   },
   {
-    name: "Market Activity",
-    text: "Insider trades, bulk and block deals and concall summaries, shown as disclosed by the exchange and the companies.",
-    href: "/market-activity",
+    name: "Market today",
+    text: "Movers (the largest price changes among liquid stocks, before the open, during the session or after the close), the market pulse and the latest insider trades, bulk and block deals, concalls and corporate events, each with its date.",
+    href: "/market",
   },
   {
-    name: "Market Rewind",
-    text: "Shows how often a measured condition occurred in the past, as counts and dates only.",
-    href: "/rewind",
+    name: "Rewind",
+    text: "A tab on every stock page: the days the stock moved by a size you choose, with the numbers of the two days before, as counts and dates only. Not a forecast.",
+    href: "/stocks/RELIANCE#rewind",
   },
   {
     name: "7-Day Review and weekly pages",

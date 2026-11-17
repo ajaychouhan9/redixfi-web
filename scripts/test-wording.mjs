@@ -161,7 +161,8 @@ const HISTORY_FILES = [
   "lib/history-common-copy.ts",
   "components/app/history/StockwiseHistory.tsx",
   "components/app/history/HistoryLinks.tsx",
-  "app/(app)/rewind/page.tsx",
+  "components/app/stock/RewindTab.tsx",
+  "lib/rewind-simple.ts",
 ];
 const HISTORY_FORBIDDEN = /\b(chance|chances|probabilit(?:y|ies)|odds|likelihood|likely|predict\w*|buy|sell|(?<!\.)targets?(?!=)|best|top picks?|breakout|setup|bullish|opportunit(?:y|ies)|momentum|red flags?)\b|strong stock|weak stock|matches today|same as today/i;
 const HISTORY_ALLOWED = ["Not a forecast or a recommendation."];
@@ -237,18 +238,17 @@ for (const need of ["Price change over the window.", "Log in to see your watchli
   if (!reviewCopy.includes(need)) reviewHits.push(`lib/review-copy.ts: required text missing: ${need}`);
 }
 const listsSrc = readFileSync(join(ROOT, "components/app/review/ReviewLists.tsx"), "utf8");
-for (const need of ["Biggest gains", "Biggest falls", "Open in Market Rewind", "Research page"]) {
+for (const need of ["Biggest gains", "Biggest falls", "Open in Rewind", "Stock page"]) {
   if (!listsSrc.includes(need)) reviewHits.push(`ReviewLists.tsx: required text missing: ${need}`);
 }
-// Mobile navigation layout C: the bar is Home | Signals | Intraday | Research | Rewind, C is the default, and every More row is in the header menu.
-const navCfg = readFileSync(join(ROOT, "lib/nav-config.ts"), "utf8");
-if (!/NAV_MOBILE_LAYOUT === "A" \? "A" : process\.env\.NAV_MOBILE_LAYOUT === "B" \? "B" : "C"/.test(navCfg)) reviewHits.push("lib/nav-config.ts: layout C must be the default");
+// 17 Nov 2026 menu: Home | Screener | Market today | 7-Day Review | Ask AI | Me, for the sidebar and the phone bar (lib/nav-items.ts). Research, Pro, Rewind and
+// Intraday are not menu items. Every More row is still in the header menu, and the personal rows (Watchlist, Alerts, Account, Checkout) are under Me.
+const navItems = readFileSync(join(ROOT, "lib/nav-items.ts"), "utf8");
+const navHrefs = [...navItems.matchAll(/href: ("[^"]+"|null)/g)].map((m) => m[1]).join(",");
+if (navHrefs !== '"/","/signals","/market","/signals/7-day-review",null,"/me"') reviewHits.push(`nav-items.ts: the menu must be Home, Screener, Market today, 7-Day Review, Ask AI, Me (found ${navHrefs})`);
+if (/Research|Rewind|Intraday|"Pro"/.test(navItems.replace(/\/\*[\s\S]*?\*\//g, ""))) reviewHits.push("nav-items.ts: Research, Pro, Rewind and Intraday are not menu items");
 const side = readFileSync(join(ROOT, "components/layout/Sidebar.tsx"), "utf8");
-const cStart = side.indexOf("  C: [");
-const cBlock = side.slice(cStart, side.indexOf("],", cStart));
-const cHrefs = [...cBlock.matchAll(/href: "([^"]+)"/g)].map((m) => m[1]).join(",");
-if (cHrefs !== "/,/signals,/intraday,/research" || !cBlock.includes("REWIND_ITEM")) reviewHits.push(`Sidebar.tsx: layout C bar must be Home, Signals, Intraday, Research, Rewind (found ${cHrefs} + ${cBlock.includes("REWIND_ITEM") ? "Rewind" : "no Rewind"})`);
-if (!side.includes("sidebar-7day-review")) reviewHits.push("Sidebar.tsx: 7-Day Review sub-item under Signals is missing");
+if (!side.includes("NAV_ITEMS.map") || !side.includes("export function BottomNav")) reviewHits.push("Sidebar.tsx: the sidebar and the phone bar must read NAV_ITEMS");
 const more = readFileSync(join(ROOT, "lib/more-links.ts"), "utf8");
 const moreHrefs = [...more.slice(more.indexOf("export const MORE_LINKS"), more.indexOf("export const MENU_GROUPS")).matchAll(/href: "([^"]+)"/g)].map((m) => m[1]);
 const menuHrefs = new Set([...more.slice(more.indexOf("export const MENU_GROUPS")).matchAll(/href: "([^"]+)"/g)].map((m) => m[1]));
@@ -271,7 +271,7 @@ for (const rel of ["components/app/signals/AskPills.tsx"]) {
 }
 const pillsSrc = stripComments(readFileSync(join(ROOT, "components/app/signals/AskPills.tsx"), "utf8"));
 if (!pillsSrc.includes("openWithQuestion") || /\b(sendMessage|submit|handleSend|requestSubmit)\b/.test(pillsSrc)) uxHits.push("AskPills.tsx: a pill must only fill the question in (openWithQuestion), never send it");
-for (const [rel, need] of [["components/app/signals/SignalDetailView.tsx", "<AskPills"], ["components/app/research/ResearchDetail.tsx", "<AskPills"]]) {
+for (const [rel, need] of [["components/app/stock/AskAiTab.tsx", "<AskPills"]]) {
   if (!readFileSync(join(ROOT, rel), "utf8").includes(need)) uxHits.push(`${rel}: ${need} missing`);
 }
 function rewindFiles(dir) {
@@ -283,7 +283,7 @@ function rewindFiles(dir) {
   }
   return out;
 }
-for (const f of [...rewindFiles(join(ROOT, "components/app/history")), ...rewindFiles(join(ROOT, "app/(app)/rewind"))]) {
+for (const f of [...rewindFiles(join(ROOT, "components/app/history")), join(ROOT, "components/app/stock/RewindTab.tsx")]) {
   if (/ConditionLine|AskPills/.test(readFileSync(f, "utf8"))) uxHits.push(`${f.replace(ROOT, "")}: the history line and the pills are not used on Market Rewind`);
 }
 if (uxHits.length) {
@@ -315,7 +315,7 @@ if (oldNameHits.length) {
 // 2026-11-02: no sign-up call to action may render for a logged-in user. A file that prints one must gate it (GuestOnly) or check the user itself.
 const ctaHits = [];
 const CTA_TEXT = ["Sign up free", "Create a free account", "mode=signup"];
-const CTA_ALLOWED = new Set(["app/(app)/login/page.tsx", "components/app/VisitorIntroStrip.tsx"]);
+const CTA_ALLOWED = new Set(["app/(app)/login/page.tsx", "components/app/VisitorIntroStrip.tsx", "lib/nav-items.ts"]);   // nav-items only builds the address; the callers check who is logged in
 for (const file of files(ROOT)) {
   const rel = file.slice(ROOT.length).replace(/\\/g, "/");
   if (CTA_ALLOWED.has(rel)) continue;
@@ -337,7 +337,8 @@ const INTRADAY_FILES = [
   "components/app/intraday/tabs/TabBodies.tsx",
   "components/app/intraday/tabs/StockList.tsx",
   "components/app/intraday/tabs/LegacyTools.tsx",
-  "app/(app)/intraday/page.tsx",
+  "lib/market-today.ts",
+  "components/app/market/MoversTab.tsx",
 ];
 const INTRADAY_FORBIDDEN = /\b(breakouts?|set-?ups?|signals?|targets?|stop-?loss|buy|sell|bullish|bearish|momentum play|stocks? to watch|top picks?|picks?|likely|expected|intraday tips?|tips?|predict\w*|recommend\w*|outlook|hit rates?|success rates?|accura\w*|track records?|win rates?|top gainers|top losers|gainers|losers|strongest|weakest|best)\b/i;
 const intradayHits = [];
@@ -368,7 +369,6 @@ const recapSrc = bodies.slice(bodies.indexOf("export function RecapBody"));
 for (const bad of [/\.length\}/, /rows\.length/, /\bhit\b/i, /success/i, /went (?:up|down)/i, /how many/i, /% of (?:the )?(?:listed|stocks)/i]) {
   if (bad.test(recapSrc)) intradayHits.push(`TabBodies.tsx: the Recap must not count or summarise the listed stocks (${bad})`);
 }
-if (!readFileSync(join(ROOT, "app/(app)/intraday/page.tsx"), "utf8").includes('robots: withQuery ? { index: false')) intradayHits.push("intraday/page.tsx: ?tab= pages must be noindex");
 if (intradayHits.length) {
   console.error("Intraday tabs wording problem:" + String.fromCharCode(10) + intradayHits.join(String.fromCharCode(10)));
   process.exit(1);

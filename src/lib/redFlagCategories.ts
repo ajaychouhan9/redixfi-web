@@ -5,7 +5,7 @@
  * (red_flag_ask.py CATEGORY_LABELS); descriptions are short and factual.
  */
 /** The card heading, used by the landing card and Research Pro. */
-export const RED_FLAG_RADAR_TITLE = "Governance disclosures";
+export const RED_FLAG_RADAR_TITLE = "Points to watch";
 
 /** Neutral summary of the disclosed items by category: names and counts only, no verdict. */
 export const SUMMARY_HEADING = "Disclosed items by category";

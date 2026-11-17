@@ -9,14 +9,19 @@ export function stockSymbolFromParam(param: string): string | null {
   }
 }
 
-/** Where the header search sends the user: a Research stock page stays in Research, a Signals stock page and every
- *  other page (Home, Alerts, Watchlist, Intraday, More, the Research landing page ...) go to Signals. */
-export function searchTargetBase(pathname: string | null | undefined): "/signals" | "/research" {
-  return /^\/research\/[^/]+/.test(pathname ?? "") ? "/research" : "/signals";
+/** One public page per stock (17 Nov 2026): the signed-in /signals/<symbol> and /research/<symbol> pages were merged into /stocks/<symbol>
+ *  (their addresses redirect there permanently). The header search therefore always opens /stocks. */
+export function searchTargetBase(_pathname?: string | null): "/stocks" {
+  return "/stocks";
 }
 
-// Path for a stock-keyed page. Symbols such as M&M must be percent-encoded so
-// every link, canonical and sitemap entry names the same URL.
-export function stockPath(base: "/stocks" | "/signals" | "/research", symbol: string): string {
-  return `${base}/${encodeURIComponent(symbol.trim().toUpperCase())}`;
+// Path for a stock-keyed page. Symbols such as M&M must be percent-encoded so every link, canonical and sitemap entry names the same URL.
+// `base` is kept so older call sites still compile; every base now gives the one stock page.
+export function stockPath(_base: "/stocks" | "/signals" | "/research", symbol: string): string {
+  return `/stocks/${encodeURIComponent(symbol.trim().toUpperCase())}`;
+}
+
+/** Stock page address with a tab opened: /stocks/INFY#rewind. Tabs: overview, annual-report, concall, points-to-watch, news, insiders, rewind, ask-ai. */
+export function stockTabPath(symbol: string, tab: string): string {
+  return `${stockPath("/stocks", symbol)}#${tab}`;
 }

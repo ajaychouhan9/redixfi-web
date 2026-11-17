@@ -117,7 +117,7 @@ assert.equal(broken.length, 7);
 const printed = [
   ...lines.map((l) => `${l.question} ${l.answer} ${l.why}`),
   readFileSync(new URL("../src/components/app/stock/SimpleChecklist.tsx", import.meta.url), "utf8"),
-  readFileSync(new URL("../src/components/app/stock/StockViewSwitch.tsx", import.meta.url), "utf8"),
+  readFileSync(new URL("../src/components/app/stock/StockTabs.tsx", import.meta.url), "utf8"),
   readFileSync(new URL("../src/app/(app)/start/page.tsx", import.meta.url), "utf8").replace(/no buy or sell advice/gi, ""),
   readFileSync(new URL("../src/components/app/start/StartHere.tsx", import.meta.url), "utf8"),
   readFileSync(new URL("../src/lib/start-here.ts", import.meta.url), "utf8"),
@@ -126,7 +126,7 @@ const printed = [
   // code, not display text: comments, event targets and link targets
   .replace(/\/\*[\s\S]*?\*\//g, "")
   .replace(/(^|\s)\/\/.*$/gm, "$1")
-  .replace(/e\.target|target="_blank"/g, "");
+  .replace(/e\.target|target="_blank"|Pick</g, "");
 const hits = printed.match(/\b(best|top|picks?|buy|sell|targets?|recommended|safe|good|bad|cheap|expensive|clean|likely|expected|bullish|bearish|predict\w*)\b/gi) ?? [];
 assert.deepEqual(hits.filter((h) => !/^(buy|sell)$/i.test(h)), [], `judgement words: ${hits.join(", ")}`);
 // "buying or selling" appears only in the insider question and the share-trade explanation, which name the disclosed action, not advice

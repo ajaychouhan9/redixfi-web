@@ -24,7 +24,7 @@ const WEEKS = ["2026-11-06", "2026-11-05", "2026-10-30"];
 const getSevenDayReview = async () => ({ data: { weeks: WEEKS.map((as_of) => ({ as_of, sessions: 5, label: "x" })) } });
 const SCREENS = screensMod.exports.CANNED_SCREENS.length;
 assert.equal(SCREENS, 25);      // 38 before 11 Nov 2026; the 13 screens built on the removed Stock Condition change redirect to /screens
-const CORE_ONLY = 21 + SCREENS; // fixed pages (the weekly archive joined on 12 Nov 2026, /start on 17 Nov 2026) and the canned screens
+const CORE_ONLY = 18 + SCREENS; // fixed pages (the weekly archive joined on 12 Nov 2026, /start on 17 Nov 2026; on 17 Nov /intraday, /research, /market-activity and /rewind left and /market joined) and the canned screens
 const CORE = CORE_ONLY + WEEKS.length;   // plus one page per stored week once the stock list is complete
 const symbols = Array.from({ length: 2302 }, (_, i) => `S${String(i + 1).padStart(4, "0")}`);
 symbols.push("M&M");
@@ -177,10 +177,10 @@ for (const supportsFilters of [false, true]) {
   assert.equal(warnings.length, 0);
   assert.equal(urls.length, entries.length);
   assert.equal(urls.filter((u) => /\/stocks\/[^/]+$/.test(u)).length, 400);
-  assert.equal(urls.filter((u) => /\/stocks\/[^/]+\/rewind$/.test(u)).length, 300, "Rewind pages only for stocks with a 52-week figure");
+  assert.equal(urls.filter((u) => /\/stocks\/[^/]+\/(rewind|concall-summary)$/.test(u)).length, 0, "17 Nov 2026: Rewind and concall are tabs of the one stock page; their old addresses redirect and are not listed");
   assert.equal(by(`/stocks/${symbols[0]}`).lastmod, "2026-11-10");
   assert.equal(by(`/stocks/${symbols[1]}`).lastmod, "2026-11-11");
-  assert.equal(by("/stocks/" + symbols[350] + "/rewind"), undefined, "no Rewind page for a stock without enough history");
+  assert.ok(by("/market") && !by("/intraday") && !by("/rewind") && !by("/research") && !by("/market-activity"), "Market today is listed; the merged pages are not");
   assert.ok(by("/weekly") && WEEKS.every((d) => by(`/weekly/${d}`)?.lastmod === d), "archive and one page per stored week, lastmod is the week-end date");
   assert.equal(by("/signals").lastmod, "2026-11-11", "session pages carry the latest session date");
   assert.equal(by("/more/terms").lastmod, undefined, "static pages carry no invented date");

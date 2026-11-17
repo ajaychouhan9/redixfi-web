@@ -1,6 +1,15 @@
 import { StockSignupOffer } from "@/components/app/StockSignupOffer";
-import { StockViewSwitch } from "@/components/app/stock/StockViewSwitch";
+import { StockTabs } from "@/components/app/stock/StockTabs";
+import { StockActions } from "@/components/app/stock/StockActions";
+import { RewindTab } from "@/components/app/stock/RewindTab";
+import { AskAiTab } from "@/components/app/stock/AskAiTab";
+import { LazyPriceChart } from "@/components/app/stock/LazyPriceChart";
 import { SimpleChecklist } from "@/components/app/stock/SimpleChecklist";
+import { AnnualReportSummaryCard } from "@/components/app/research/AnnualReportSummaryCard";
+import { RedFlagSection } from "@/components/app/research/RedFlagSection";
+import { CurrentSymbolSync } from "@/components/app/CurrentSymbolSync";
+import { RecordView } from "@/components/app/RecordView";
+import { isTradeForTrade } from "@/lib/stock-clarity";
 import type { Metadata } from "next";
 import { cache } from "react";
 import Link from "next/link";
@@ -25,8 +34,9 @@ import { safeNumber, safeRupees } from "@/lib/safe-format";
 import { sourceName } from "@/lib/news-source";
 import { coverageLine } from "@/lib/seo/data-coverage";
 
-// ONE public page per stock (12 Nov 2026). /research/<symbol> and /signals/<symbol> stay for signed-in work and point here with a
-// canonical tag and noindex. Public, anonymous, ISR: the page shows a subset that is the same for every visitor.
+// ONE page per stock for everyone (17 Nov 2026): the public page and the signed-in /signals/<symbol> and /research/<symbol> pages are merged here
+// (those addresses, and /stocks/<symbol>/rewind and /concall-summary, redirect permanently). Public, anonymous, ISR: the page is the same
+// HTML for every visitor. Who is looking is decided in the browser (the personal buttons, the sign-up offers); the tabs mount lazily.
 export const revalidate = 21600; // 6 h: stock data changes once a day (cut CPU, 14 Nov 2026)
 // Without generateStaticParams a dynamic route is rendered on EVERY request and `revalidate` is ignored (found 14 Nov 2026: no-store, no ISR).
 // Returning [] builds nothing up front and turns on cached on-demand pages (ISR).
@@ -119,7 +129,7 @@ function Fact({ label, children, note }: { label: string; children: React.ReactN
 
 const dateOf = (ymd: string) => formatDateSafe(`${ymd.slice(0, 10)}T00:00:00Z`);
 
-export default async function StockSnapshotPage({ params }: { params: Promise<{ symbol: string }> }) {
+export default async function StockPage({ params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = await params;
   const normalizedSymbol = stockSymbolFromParam(symbol);
   if (!normalizedSymbol) notFound();
@@ -128,8 +138,8 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
 
   // The extra readings are anonymous reads of public data. A locked or failed read leaves that block out; nothing is guessed.
   const [detailR, volR] = await Promise.allSettled([
-    getSignalDetail(data.symbol, 0, { revalidate: 21600 }), // @auth-ok: public SEO page, anonymous
-    getVolatility(data.symbol, { revalidate: 21600 }), // @auth-ok: public SEO page, anonymous
+    getSignalDetail(data.symbol, 0, { revalidate: 21600 }), // @auth-ok: public page, anonymous
+    getVolatility(data.symbol, { revalidate: 21600 }), // @auth-ok: public page, anonymous
   ]);
   const detail: SignalDetail | null =
     detailR.status === "fulfilled" && !detailR.value.data.locked && detailR.value.data.has_score !== false && detailR.value.data.signals ? detailR.value.data : null;
@@ -146,12 +156,16 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
   const sh = f?.shareholding;
   const insider = (data.insider_trades ?? []).slice(0, 10);
   const deals = (data.bulk_block_deals ?? []).slice(0, 8);
-  const concalls = (data.concall_transcripts ?? []).map((c) => ({ ...c, summary: neutralSentences(c.summary) })).filter((c) => c.summary).slice(0, 3);
-  const news = (data.news ?? []).filter((n) => isNeutralText(n.headline)).slice(0, 5);
+  const concalls = (data.concall_transcripts ?? []).map((c) => ({ ...c, summary: neutralSentences(c.summary) })).filter((c) => c.summary).slice(0, 4);
+  const news = (data.news ?? []).filter((n) => isNeutralText(n.headline)).slice(0, 8);
   const priceLabel = formatPriceAsOf(data.price.data_as_of ?? null);
   const closeDate = data.price.data_as_of?.data_as_of?.slice(0, 10) ?? null;
   const readingsDate = detail?.date ?? (sortedDelivery.length ? sortedDelivery[sortedDelivery.length - 1].date : null);
   const resultsNote = q?.latest_quarter_end ? `Results to ${quarterDate(q.latest_quarter_end)}` : undefined;
+  // "Partial reading" only when an input of the delivery and volume reading is really missing (the API says so), never as a habit.
+  const partial = !!detail?.partial && !detail.limited_data && !isTradeForTrade(detail.signals?.delivery_series);
+  const sym = data.symbol;
+  const week52 = { week52_high: data.price.week52_high, week52_low: data.price.week52_low, last_close: data.price.last_price, as_of: closeDate } as never;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -162,58 +176,22 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
     url: `https://www.redixfi.com${stockPath("/stocks", data.symbol)}`,
   };
 
-  return (
-    <div className="mx-auto max-w-2xl">
-      {/* eslint-disable-next-line react/no-danger */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <Breadcrumbs crumbs={[{ name: "Home", href: "/" }, { name: "Screener", href: "/signals" }, { name: `${data.company_name} (${data.symbol})`, href: stockPath("/stocks", data.symbol) }]} />
+  // ---- Overview: the seven plain questions, then the price and trading readings they point to
+  const overview = (
+    <>
+      <SimpleChecklist data={data} today={istToday()} priceLabel={priceLabel} />
+      <StockSignupOffer companyName={data.company_name} className="mt-4" />
 
-      <p className="text-sm text-foreground-muted">
-        {data.symbol} · {data.sector}
-      </p>
-      <h1 className="text-2xl font-semibold">{pageH1(data.company_name, data.symbol)}</h1>
-      <div className="mt-2 flex flex-wrap items-baseline gap-3">
-        <span className="text-3xl font-semibold">₹{data.price.last_price.toLocaleString("en-IN")}</span>
-        <DeltaValue value={data.price.day_change_pct} kind="pct" />
-      </div>
-      <p className="mt-1 text-xs text-foreground-faint">{priceLabel}</p>
-      <CorporateActionNote info={data.price.corporate_action ?? data.corporate_action} className="mt-1 text-xs text-foreground-muted" />
-
-      <p className="mt-4 text-sm leading-relaxed text-foreground-muted">
-        {data.company_name} ({data.symbol}) is listed on the NSE{data.sector ? ` and grouped under ${data.sector}` : ""}.
-        {r52 ? ` Over the past 52 weeks it traded between ₹${inr(r52.low)} and ₹${inr(r52.high)}.` : ""}
-        {q?.latest_quarter_end ? ` Its latest reported quarter ended ${quarterDate(q.latest_quarter_end)}.` : ""}
-      </p>
-
-      <p className="mt-2 text-xs text-foreground-faint" data-testid="data-coverage">
-        {coverageLine(f)} <Link href="/more/data-sources" className="underline">What &ldquo;not available&rdquo; means</Link>
-      </p>
-
-      {/* Simple view | Detailed view (17 Nov 2026). Both are in this cached HTML; the switch is client-side and remembered in the browser.
-          The simple view is a checklist built only from `data` (already loaded above); the detailed view is the page as before. */}
-      <StockViewSwitch
-        simple={
-          <>
-            <SimpleChecklist data={data} today={istToday()} priceLabel={priceLabel} />
-            <StockSignupOffer companyName={data.company_name} className="mt-4" />
-          </>
-        }
-        detailed={
-          <>
       <Section id="range" title="52-week range" note={closeDate ? `As of ${dateOf(closeDate)} close` : undefined}>
         {r52 ? (
-          <Week52Range
-            className="max-w-xs"
-            week52={{ week52_high: data.price.week52_high, week52_low: data.price.week52_low, last_close: data.price.last_price, as_of: closeDate } as never}
-            lastPrice={data.price.last_price}
-          />
+          <Week52Range className="max-w-xs" week52={week52} lastPrice={data.price.last_price} />
         ) : (
           <p className="text-sm text-foreground-muted">The 52-week range is not shown because a corporate action makes the price history not comparable.</p>
         )}
+        <div className="mt-3">
+          <LazyPriceChart symbol={sym} high52={r52?.high ?? null} low52={r52?.low ?? null} />
+        </div>
       </Section>
-
-      {/* Sign-up offer after the first data block and again near the end (16 Nov 2026); logged-out visitors only. */}
-      <StockSignupOffer companyName={data.company_name} className="mt-4" />
 
       <Section id="delivery" title="Delivery and volume" note={readingsDate ? `As of ${dateOf(readingsDate)} close` : undefined}>
         <div className="grid grid-cols-2 gap-2">
@@ -248,6 +226,61 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
         </Section>
       )}
 
+      {data.industry_comparison && data.industry_comparison.rows.some((r) => r.value !== null) && (
+        <Section
+          id="industry-median"
+          title="Against the industry median"
+          note={`Industry: ${data.industry_comparison.industry ?? "not on record"}${data.industry_comparison.n_stocks ? ` (${data.industry_comparison.n_stocks} stocks)` : ""}. Medians use each company's latest reported quarter${data.industry_comparison.as_of ? `, up to the quarter ended ${quarterDate(data.industry_comparison.as_of)}` : ""}. This is a comparison of reported figures, not a rating.`}
+        >
+          <ul className="space-y-2 text-sm" data-testid="industry-median">
+            {data.industry_comparison.rows.filter((r) => r.value !== null).map((r) => (
+              <li key={r.key}>{r.text}</li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-foreground-faint">
+            &ldquo;Above&rdquo; and &ldquo;below&rdquo; only say where the figure sits against the median of the stocks that have it. An industry needs at least {data.industry_comparison.min_stocks} stocks with the figure to show a median.
+          </p>
+        </Section>
+      )}
+
+      <Section id="related" title={`More on ${sym}`}>
+        <ul className="space-y-1 text-sm">
+          <li>
+            <Link href="/weekly" className="text-accent hover:underline">
+              Weekly market reviews
+            </Link>
+          </li>
+        </ul>
+        {peers.length > 0 && (
+          <div className="mt-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-foreground-faint">Other {data.sector} stocks</p>
+            <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+              {peers.map((p) => (
+                <li key={p.symbol}>
+                  <Link href={stockPath("/stocks", p.symbol)} className="text-accent hover:underline" title={p.company_name}>
+                    {p.symbol}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </Section>
+    </>
+  );
+
+  // ---- Annual report: the filed summary, then the reported results
+  const annualReport = (
+    <>
+      {data.annual_report_summary ? (
+        <div className="mt-5">
+          <AnnualReportSummaryCard data={data.annual_report_summary} />
+        </div>
+      ) : (
+        <Section id="annual-report-summary" title="Annual report summary">
+          <p className="text-sm text-foreground-muted">No annual report summary is stored for this stock yet.</p>
+        </Section>
+      )}
       <Section id="results" title="Quarterly results" note={q?.latest_quarter_end ? `Latest quarter ended ${quarterDate(q.latest_quarter_end)}. Figures in ₹ crore as reported.` : undefined}>
         {series.length > 0 ? (
           <DataTable
@@ -271,30 +304,87 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
             Where the main data source had no value, {f.fallback_source.fields.length} {f.fallback_source.fields.length === 1 ? "figure comes" : "figures come"} from {f.fallback_source.source}.
           </p>
         )}
-        {sh?.latest_date && (
-          <p className="mt-3 text-sm text-foreground-muted">
-            Shareholding on {quarterDate(sh.latest_date)}: promoters {pct(sh.promoter_pct)}, foreign institutions {pct(sh.fii_pct)}, mutual funds {pct(sh.mf_pct)}.
-          </p>
-        )}
         {f?.events?.next_results_date && f.events.next_results_date.slice(0, 10) >= istToday() && <p className="mt-1 text-xs text-foreground-faint">Next results date announced: {quarterDate(f.events.next_results_date)}.</p>}
+        <p className="mt-2 text-xs text-foreground-faint" data-testid="data-coverage">
+          {coverageLine(f)} <Link href="/more/data-sources" className="underline">What &ldquo;not available&rdquo; means</Link>
+        </p>
       </Section>
+    </>
+  );
 
-      {data.industry_comparison && data.industry_comparison.rows.some((r) => r.value !== null) && (
-        <Section
-          id="industry-median"
-          title="Against the industry median"
-          note={`Industry: ${data.industry_comparison.industry ?? "not on record"}${data.industry_comparison.n_stocks ? ` (${data.industry_comparison.n_stocks} stocks)` : ""}. Medians use each company's latest reported quarter${data.industry_comparison.as_of ? `, up to the quarter ended ${quarterDate(data.industry_comparison.as_of)}` : ""}. This is a comparison of reported figures, not a rating.`}
-        >
-          <ul className="space-y-2 text-sm" data-testid="industry-median">
-            {data.industry_comparison.rows.filter((r) => r.value !== null).map((r) => (
-              <li key={r.key}>{r.text}</li>
-            ))}
-          </ul>
-          <p className="mt-2 text-xs text-foreground-faint">
-            &ldquo;Above&rdquo; and &ldquo;below&rdquo; only say where the figure sits against the median of the stocks that have it. An industry needs at least {data.industry_comparison.min_stocks} stocks with the figure to show a median.
-          </p>
-        </Section>
+  const concallPanel = (
+    <Section id="concall-summaries" title="Concall summaries" note="Summaries of the earnings transcripts the company has filed, with the source filing.">
+      {concalls.length > 0 ? (
+        <ul className="space-y-3">
+          {concalls.map((c) => (
+            <li key={c.filing_date + c.source_pdf_url} className="text-sm">
+              <p className="text-xs text-foreground-faint">
+                Filed {dateOf(c.filing_date)} ·{" "}
+                <a href={c.source_pdf_url} target="_blank" rel="noopener noreferrer" className="underline">
+                  source filing
+                </a>
+              </p>
+              <p className="mt-0.5 text-foreground-muted">{c.summary}</p>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-foreground-muted">No concall summary is stored for this stock.</p>
       )}
+    </Section>
+  );
+
+  const pointsPanel = (
+    <div className="mt-5">
+      <RedFlagSection data={data.red_flags} />
+    </div>
+  );
+
+  const newsPanel = (
+    <Section id="latest-news" title="Latest news">
+      {news.length > 0 ? (
+        <ul className="space-y-3">
+          {news.map((n) => (
+            <li key={n.uuid} className="text-sm">
+              <p className="text-xs text-foreground-faint">
+                {sourceName(n.source)} · {dateOf(n.published_at)}
+              </p>
+              <a href={n.url} target="_blank" rel="noopener noreferrer" className="font-medium hover:text-accent">
+                {n.headline}
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-foreground-muted">No related news.</p>
+      )}
+    </Section>
+  );
+
+  const pledges = (data.pledge_history ?? []).slice(0, 4);
+  const insidersPanel = (
+    <>
+      <Section id="promoters" title="Promoters" note={sh?.latest_date ? `Shareholding on ${quarterDate(sh.latest_date)}` : undefined}>
+        {sh?.latest_date ? (
+          <p className="text-sm text-foreground-muted">
+            Promoters {pct(sh.promoter_pct)}, foreign institutions {pct(sh.fii_pct)}, mutual funds {pct(sh.mf_pct)}.
+          </p>
+        ) : (
+          <p className="text-sm text-foreground-muted">No shareholding is stored for this stock.</p>
+        )}
+        {pledges.length > 0 ? (
+          <div className="mt-2 max-w-sm">
+            <DataTable
+              caption="Promoter pledge by quarter"
+              head={["Quarter", "Pledged %", "As of"]}
+              rows={pledges.map((p) => [p.quarter, typeof p.pledged_pct === "number" ? `${p.pledged_pct}%` : "n/a", p.as_of_date ? dateOf(p.as_of_date) : "n/a"])}
+            />
+            <p className="mt-1 text-xs text-foreground-faint">Pledged shares are promoter shares given as security for a loan.</p>
+          </div>
+        ) : (
+          <p className="mt-1 text-sm text-foreground-muted">No promoter pledge is recorded for this stock.</p>
+        )}
+      </Section>
 
       <Section id="insider" title="Insider trade disclosures" note="Filed disclosures, shown by trade date. Category of the person and mode as filed; names are not shown.">
         {insider.length > 0 ? (
@@ -325,87 +415,52 @@ export default async function StockSnapshotPage({ params }: { params: Promise<{ 
           <p className="text-sm text-foreground-muted">No bulk or block deals are stored for this stock.</p>
         )}
       </Section>
+    </>
+  );
 
-      <Section id="concall" title="Concall summaries" note="Summaries of the earnings transcripts the company has filed, with the source filing.">
-        {concalls.length > 0 ? (
-          <ul className="space-y-3">
-            {concalls.map((c) => (
-              <li key={c.filing_date + c.source_pdf_url} className="text-sm">
-                <p className="text-xs text-foreground-faint">
-                  Filed {dateOf(c.filing_date)} ·{" "}
-                  <a href={c.source_pdf_url} target="_blank" rel="noopener noreferrer" className="underline">
-                    source filing
-                  </a>
-                </p>
-                <p className="mt-0.5 text-foreground-muted">{c.summary}</p>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-foreground-muted">No concall summary is stored for this stock.</p>
-        )}
-        {concalls.length > 0 && (
-          <p className="mt-2 text-sm">
-            <Link href={`${stockPath("/stocks", data.symbol)}/concall-summary`} className="font-medium text-accent hover:underline">
-              Read the latest concall summary →
-            </Link>
-          </p>
-        )}
-      </Section>
+  return (
+    <div className="mx-auto max-w-4xl">
+      {/* eslint-disable-next-line react/no-danger */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <CurrentSymbolSync symbol={sym} />
+      <RecordView symbol={sym} companyName={data.company_name} />
+      <Breadcrumbs crumbs={[{ name: "Home", href: "/" }, { name: "Screener", href: "/signals" }, { name: `${data.company_name} (${data.symbol})`, href: stockPath("/stocks", data.symbol) }]} />
 
-      <Section id="news" title="Latest news">
-        {news.length > 0 ? (
-          <ul className="space-y-3">
-            {news.map((n) => (
-              <li key={n.uuid} className="text-sm">
-                <p className="text-xs text-foreground-faint">
-                  {sourceName(n.source)} · {dateOf(n.published_at)}
-                </p>
-                <a href={n.url} target="_blank" rel="noopener noreferrer" className="font-medium hover:text-accent">
-                  {n.headline}
-                </a>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-foreground-muted">No related news.</p>
-        )}
-      </Section>
+      {partial && (
+        <div className="mb-3 rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground-muted" data-testid="partial-reading">
+          <span className="font-medium text-foreground">Partial reading.</span> Some inputs were not available for this session; the reading is built from what was measured.
+        </div>
+      )}
 
-      <StockSignupOffer companyName={data.company_name} className="mt-6" />
+      <p className="text-sm text-foreground-muted">
+        {data.symbol} · {data.sector}
+      </p>
+      <h1 className="text-2xl font-semibold">{pageH1(data.company_name, data.symbol)}</h1>
+      <div className="mt-2 flex flex-wrap items-baseline gap-3">
+        <span className="text-3xl font-semibold">₹{data.price.last_price.toLocaleString("en-IN")}</span>
+        <DeltaValue value={data.price.day_change_pct} kind="pct" />
+      </div>
+      <p className="mt-1 text-xs text-foreground-faint">{priceLabel}</p>
+      <CorporateActionNote info={data.price.corporate_action ?? data.corporate_action} className="mt-1 text-xs text-foreground-muted" />
+      {r52 && <Week52Range className="mt-2 max-w-xs" week52={week52} lastPrice={data.price.last_price} />}
+      <div className="mt-3">
+        <StockActions symbol={sym} companyName={data.company_name} />
+      </div>
 
-      <Section id="related" title={`More on ${data.symbol}`}>
-        <ul className="space-y-1 text-sm">
-          <li>
-            <Link href={`${stockPath("/stocks", data.symbol)}/rewind`} className="font-medium text-accent hover:underline">
-              Market Rewind for {data.symbol}: past large moves and what followed
-            </Link>
-          </li>
-          <li>
-            <Link href="/weekly" className="text-accent hover:underline">
-              Weekly market reviews
-            </Link>
-          </li>
-        </ul>
-        {peers.length > 0 && (
-          <div className="mt-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-foreground-faint">Other {data.sector} stocks</p>
-            <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-              {peers.map((p) => (
-                <li key={p.symbol}>
-                  <Link href={stockPath("/stocks", p.symbol)} className="text-accent hover:underline" title={p.company_name}>
-                    {p.symbol}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </Section>
-          </>
-        }
+      <StockTabs
+        panels={{
+          overview,
+          "annual-report": annualReport,
+          concall: concallPanel,
+          "points-to-watch": pointsPanel,
+          news: newsPanel,
+          insiders: insidersPanel,
+          rewind: <RewindTab symbol={sym} />,
+          "ask-ai": <AskAiTab symbol={sym} company={data.company_name} />,
+        }}
       />
 
+      <StockSignupOffer companyName={data.company_name} className="mt-6" />
       <FeedbackBox page="stock" className="mt-6" />
     </div>
   );

@@ -150,8 +150,7 @@ const noForbidden = (t: string, where: string) => {
 {
   const root = new URL("../src/", import.meta.url);
   const pages = [
-    "app/(seo)/stocks/[symbol]/page.tsx",
-    "app/(seo)/stocks/[symbol]/rewind/page.tsx",
+    "app/(app)/stocks/[symbol]/page.tsx",
     "app/(seo)/weekly/page.tsx",
     "app/(seo)/weekly/[date]/page.tsx",
     "app/(seo)/screens/[slug]/page.tsx",
@@ -176,21 +175,13 @@ const noForbidden = (t: string, where: string) => {
   }
 }
 
-// ---- one public page per stock: the signed-in views point to /stocks/<symbol> and stay out of the index
+// ---- one page per stock (17 Nov 2026): the signed-in /signals/<symbol> and /research/<symbol> pages and the Rewind and concall pages are tabs of /stocks/<symbol>
 {
   const root = new URL("../src/", import.meta.url);
-  for (const rel of ["app/(app)/research/[symbol]/page.tsx", "app/(app)/signals/[symbol]/page.tsx"]) {
-    const src = readFileSync(new URL(rel, root), "utf8");
-    assert.ok(/canonical: stockPath\("\/stocks",/.test(src), rel + ": canonical is the /stocks page");
-    assert.ok(/robots: \{ index: false, follow: true \}/.test(src), rel + ": noindex");
-    assert.ok(src.includes('stockPath("/stocks"'), rel + ": links back to the public page");
-  }
-  const stock = readFileSync(new URL("app/(seo)/stocks/[symbol]/page.tsx", root), "utf8");
-  for (const need of ["Breadcrumbs", "/rewind", "sectorPeers", "quarterDate", "formatPriceAsOf", "concall", "insider", "deals"]) assert.ok(stock.includes(need), "stock page has " + need);
+  const stock = readFileSync(new URL("app/(app)/stocks/[symbol]/page.tsx", root), "utf8");
+  for (const need of ["Breadcrumbs", "sectorPeers", "quarterDate", "formatPriceAsOf", "concall", "insider", "deals", "<RewindTab"]) assert.ok(stock.includes(need), "stock page has " + need);
+  assert.ok(stock.includes("alternates: { canonical: stockPath(\"/stocks\", data.symbol) }"), "canonical is the one stock page");
   assert.ok(!/tone_label|tone_note|composite_score|severity|net_direction|deal_strength/.test(stock), "stock page prints no tone, score, severity or deal verdict");
-  const rewind = readFileSync(new URL("app/(seo)/stocks/[symbol]/rewind/page.tsx", root), "utf8");
-  assert.ok(rewind.includes("robots: enough") && rewind.includes("index: false"), "a stock without enough history is noindex");
-  assert.ok(rewind.includes("href={stockUrl}") && rewind.includes("Back to the"), "the Rewind page links back to the stock page");
   const weekly = readFileSync(new URL("app/(seo)/weekly/[date]/page.tsx", root), "utf8");
   assert.ok(weekly.includes('stockPath("/stocks"'), "weekly pages link to stock pages");
 }

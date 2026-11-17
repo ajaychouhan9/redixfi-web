@@ -104,8 +104,8 @@ function Footnotes({ r }: { r: SevenDayReview }) {
           how RedixFi measures its readings
         </Link>{" "}
         and{" "}
-        <Link href="/rewind" className="font-medium text-foreground underline decoration-accent underline-offset-2 hover:decoration-2">
-          Market Rewind
+        <Link href="/market" className="font-medium text-foreground underline decoration-accent underline-offset-2 hover:decoration-2">
+          Market today
         </Link>
         .
       </p>

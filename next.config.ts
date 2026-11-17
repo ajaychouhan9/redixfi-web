@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { renamedSymbolRedirects } from "./src/lib/seo/renamed-symbols";
+import { restructureRedirects } from "./src/lib/seo/restructure-redirects";
 
 const nextConfig: NextConfig = {
   env: { NAV_MOBILE_LAYOUT: process.env.NAV_MOBILE_LAYOUT ?? "C" },
@@ -20,9 +21,8 @@ const nextConfig: NextConfig = {
       // The sitemap was a chunked index before 21 Sep 2026; search engines still request the old files.
       { source: "/sitemap-index.xml", destination: "/sitemap.xml", statusCode: 301 },
       { source: "/sitemap/:file(\\d+\\.xml)", destination: "/sitemap.xml", statusCode: 301 },
-      // History Explorer became Market Rewind (31 Oct 2026): the old address and every variant go to the new one, permanently, in one hop.
-      { source: "/history", destination: "/rewind", statusCode: 301 },
-      { source: "/history/:path*", destination: "/rewind", statusCode: 301 },
+      // 17 Nov 2026 restructure: stock pages, Rewind, Intraday, Market activity and Research move (see restructure-redirects.ts; /history is in it too).
+      ...restructureRedirects(),
       // "/about" is a guessable address; the page is About & Contact.
       { source: "/about", destination: "/more/about-us", statusCode: 301 },
       // 11 Nov 2026: the Stock Condition and everything built on it were removed. The pages go to their nearest remaining page, permanently.

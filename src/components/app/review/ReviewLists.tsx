@@ -8,7 +8,7 @@ import { Spark } from "@/components/app/review/Spark";
 import { useReviewData } from "@/components/app/review/ReviewData";
 import { displayName } from "@/lib/company-name";
 import { formatNumber } from "@/lib/format";
-import { stockPath } from "@/lib/seo/stock-symbol";
+import { stockPath, stockTabPath } from "@/lib/seo/stock-symbol";
 import { UNIVERSE_LABEL, UNIVERSE_ORDER, REVIEW_LIST_NOTE, REVIEW_INDEPENDENCE_NOTE } from "@/lib/review-copy";
 import type { ReviewRow, ReviewUniverse, SevenDayReview } from "@/lib/api/types";
 
@@ -18,11 +18,11 @@ function Links({ symbol }: { symbol: string }) {
   const cls = "inline-flex min-h-[44px] items-center text-xs font-medium text-foreground underline decoration-accent underline-offset-2 hover:decoration-2";
   return (
     <span className="flex flex-wrap gap-x-4">
-      <Link href={`/rewind?symbol=${encodeURIComponent(symbol)}`} className={cls}>
-        Open in Market Rewind
+      <Link href={stockTabPath(symbol, "rewind")} className={cls}>
+        Open in Rewind
       </Link>
-      <Link href={stockPath("/research", symbol)} className={cls}>
-        Research page
+      <Link href={stockPath("/stocks", symbol)} className={cls}>
+        Stock page
       </Link>
     </span>
   );

@@ -1,112 +1,37 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { getMarketOverview, getLatestBrief, getIntradaySession, getAnomalies, getMarketState, getPriceMovers, getNews, getBillingPlans, getMarketActivitySummary } from "@/lib/api/endpoints";
-import { MarketPulseCard } from "@/components/app/MarketPulseCard";
-import { MarketStatusStrip } from "@/components/app/MarketStatusStrip";
-import { PriceMoversCard } from "@/components/app/PriceMoversCard";
-import { AiDailyBriefCard } from "@/components/app/AiDailyBriefCard";
-import { EventRiskCard } from "@/components/app/EventRiskCard";
-import { IntradayNowCard } from "@/components/app/IntradayNowCard";
-import { ContinueResearchCard } from "@/components/app/ContinueResearchCard";
-import { AnomalyCard } from "@/components/app/AnomalyCard";
-import { WatchlistAlertsCard } from "@/components/app/WatchlistAlertsCard";
-import { MarketActivityCard } from "@/components/app/MarketActivityCard";
-import { VisitorIntroStrip } from "@/components/app/VisitorIntroStrip";
-import { HomeShortcutCard } from "@/components/app/HomeShortcutCard";
-import { HomePricingSection } from "@/components/app/HomePricingSection";
-import { GovernanceRadarCard } from "@/components/app/marketing/GovernanceRadarCard";
-import { AskAiTeaserCard } from "@/components/app/marketing/AskAiTeaserCard";
-import { SmallCapPositioningStrip } from "@/components/app/marketing/SmallCapPositioningStrip";
-import { HomeSections } from "@/components/app/HomeSections";
+
+import { HeroStockSearch } from "@/components/app/HeroStockSearch";
+import { HomeBoxes } from "@/components/app/home/HomeBoxes";
+import { HomeBrief } from "@/components/app/home/HomeBrief";
+import { HomeMovers } from "@/components/app/home/HomeMovers";
+import { HomeTrialLine } from "@/components/app/home/HomeTrialLine";
+
+// The page makes no request of its own; a refresh window keeps the cached copy from outliving a deploy (a fully static page is sent with a one-year cache lifetime).
+export const revalidate = 300;
 
 export const metadata: Metadata = { alternates: { canonical: "/" } };
 
-// News IS fetched here now, but only ever with NO token — this is exactly
-// the anonymous/free-tier feed (24h-delayed per B8) any logged-out visitor
-// or crawler is entitled to see, so it's safe as SSR content. It's passed
-// to EventRiskCard as `initialItems`; a real logged-in caller still gets
-// corrected client-side with their own token (see that component's own
-// docstring) — this fetch never sees a paid user's data, so it can't leak
-// the mistake this pattern originally guarded against.
-// Public, anonymous server render: cached 5 min (14 Nov 2026). Signed-in data is fetched in the browser by the cards.
-export const revalidate = 300;
-
-export default async function HomePage() {
-  const [overviewR, briefR, sessionR, anomaliesR, newsR, plansR, marketActivityR, marketStateR, priceMoversR] = await Promise.allSettled([
-    getMarketOverview({ revalidate: 300 }),
-    getLatestBrief({ revalidate: 300 }),
-    getIntradaySession({ revalidate: 300 }),
-    getAnomalies({ size: 200 }, { revalidate: 300 }),
-    // @auth-ok: SSR, always anonymous — see the module docstring above.
-    // Corrected client-side by EventRiskCard once a real token resolves.
-    getNews({ size: 30 }, { revalidate: 300 }),
-    // @auth-ok: public — billing/plans has no auth dependency at all
-    // (same fetch /pricing's own page.tsx already makes server-side).
-    getBillingPlans({ revalidate: 300 }),
-    // @auth-ok: public — market_activity_summary()'s rollup counts are
-    // identical for every tier (no B8 masking on these 4 data types).
-    getMarketActivitySummary({ revalidate: 300 }),
-    // @auth-ok: public — the market state is the same for every caller.
-    getMarketState({ revalidate: 300 }),
-    // @auth-ok: SSR, anonymous (Stock Condition locked outside the free sample); PriceMoversCard asks again with the token of a signed-in visitor.
-    getPriceMovers({ revalidate: 300 }),
-  ]);
-
-  const overview = overviewR.status === "fulfilled" ? overviewR.value.data : null;
-  const brief = briefR.status === "fulfilled" ? briefR.value : null;
-  const session = sessionR.status === "fulfilled" ? sessionR.value.data : null;
-  const anomalies = anomaliesR.status === "fulfilled" ? anomaliesR.value : null;
-  const newsItems = newsR.status === "fulfilled" ? newsR.value.data : null;
-  const plans = plansR.status === "fulfilled" ? plansR.value.data : [];
-  const marketActivity = marketActivityR.status === "fulfilled" ? marketActivityR.value.data : null;
-  const marketState = marketStateR.status === "fulfilled" ? marketStateR.value.data : null;
-  const priceMovers = priceMoversR.status === "fulfilled" ? priceMoversR.value.data : null;
-
+/**
+ * Home (17 Nov 2026), the same page for everyone: search box, AI brief, five boxes, a movers preview and a small trial line.
+ * It makes NO request on the server: the brief and the movers load in the browser after the page opens, so the page is a static,
+ * cached file. (It used to make nine server requests and show many cards; those moved to Market today and Me.)
+ */
+export default function HomePage() {
   return (
-    // Widened from `mx-auto max-w-6xl` (2026-08-11): that cap centered a
-    // 1152px column inside the flex-1 area next to the sidebar, leaving a
-    // large unused gap on wide desktop viewports. The 3-column grid rows
-    // below are unchanged — this only lets them use the real available
-    // width up to the sidebar's edge on one side and the viewport edge on
-    // the other, instead of floating centered with dead space either side.
-    <div className="w-full max-w-[1800px] space-y-5">
-      {/* Order (16 Nov 2026, see HomeSections): a logged-out visitor gets hero, price movers, the Ask RedixFi sample answer, the sample-report
-          banner and pricing first, then the rest in the 2 Nov 2026 order (market status and breadth, your stocks, the latest brief, Market Pulse,
-          the news scan, Market Activity, shortcuts, governance radar, small caps). A logged-in user keeps the 2 Nov 2026 order unchanged.
-          Every section is rendered here once, on the server, exactly as before: no new fetch, and the cached HTML is the anonymous order. */}
-      <HomeSections
-        hero={<VisitorIntroStrip />}
-        marketStatus={<MarketStatusStrip overview={overview} session={session} marketState={marketState} />}
-        priceMovers={<PriceMoversCard initial={priceMovers} />}
-        yourStocks={
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <WatchlistAlertsCard />
-            <ContinueResearchCard />
-          </div>
-        }
-        brief={<AiDailyBriefCard brief={brief} />}
-        pulse={<MarketPulseCard overview={overview} />}
-        newsAndIntraday={
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <EventRiskCard newsToday={overview?.news_today ?? null} initialItems={newsItems} />
-            <IntradayNowCard session={session} />
-          </div>
-        }
-        marketActivity={<MarketActivityCard summary={marketActivity} />}
-        sampleReport={
-          <p className="text-center text-sm text-foreground-muted" data-testid="home-sample-report">
-            New: company report PDFs with price, growth, peers, ownership, filings and sources.{" "}
-            <Link href="/sample-report" className="font-medium text-accent hover:underline" data-testid="home-sample-report-link">
-              See a sample report
-            </Link>
-          </p>
-        }
-        shortcuts={<HomeShortcutCard />}
-        governanceRadar={<GovernanceRadarCard />}
-        askSample={<AskAiTeaserCard />}
-        smallCap={<SmallCapPositioningStrip />}
-        pricing={<HomePricingSection plans={plans} />}
-      />
+    <div className="mx-auto w-full max-w-4xl space-y-5">
+      <section aria-labelledby="home-title" data-testid="home-search">
+        <h1 id="home-title" className="max-w-2xl text-2xl font-semibold leading-tight sm:text-3xl" data-testid="hero-headline">
+          Check any NSE stock in minutes: delivery, insider trades, points to watch and concall summaries.
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground-muted sm:text-[15px]" data-testid="hero-subline">
+          Plain-language data for 2,000+ NSE stocks, updated daily. No buy or sell advice.
+        </p>
+        <HeroStockSearch />
+      </section>
+      <HomeBrief />
+      <HomeBoxes />
+      <HomeMovers />
+      <HomeTrialLine />
     </div>
   );
 }

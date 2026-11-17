@@ -12,6 +12,9 @@ import { formatObservationDate } from "@/lib/format";
  * scan is already a disclosed-criteria subset of the day's universe, not
  * an unbounded feed.
  */
+// The page makes no request of its own; a refresh window keeps the cached copy from outliving a deploy (a fully static page is sent with a one-year cache lifetime).
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "Unusual Activity",
   alternates: { canonical: "/unusual-activity" },

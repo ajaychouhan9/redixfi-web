@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, User as UserIcon, Bookmark, CreditCard, MoreHorizontal, Compass } from "lucide-react";
+import { LogOut, User as UserIcon, MoreHorizontal, Compass } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { NAV_MOBILE_LAYOUT } from "@/lib/nav-config";
+import { signupHref } from "@/lib/nav-items";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { MENU_GROUPS } from "@/lib/more-links";
 import { InstallRow } from "@/components/app/pwa/InstallRow";
 
@@ -30,6 +31,9 @@ function initialsFor(name: string | null, email: string | null): string {
 
 /** Layout C: the header menu that replaces the More tab. Logged in it is the avatar; logged out it is a More button next to Log in, so the
  *  About, Methodology and Disclaimer pages stay reachable without an account. Every row is at least 44px tall. */
+// Personal pages: a logged-out visitor who taps one goes to the sign-up form and comes back to the page afterwards.
+const PERSONAL_ROWS = new Set(["/watchlist", "/account/alerts", "/account/inbox", "/account"]);
+
 function MenuC() {
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -121,7 +125,7 @@ function MenuC() {
               <div key={g.title} className="pb-1">
                 <p className="px-3 pb-0.5 pt-2 text-[11px] font-semibold uppercase tracking-wide text-foreground-faint">{g.title}</p>
                 {g.links.map((l) => (
-                  <Link key={l.href} href={l.href} role="menuitem" onClick={() => setOpen(false)} className={row}>
+                  <Link key={l.href} href={!user && PERSONAL_ROWS.has(l.href) ? signupHref(l.href) : l.href} role="menuitem" onClick={() => setOpen(false)} className={row}>
                     <l.icon size={16} className="shrink-0 text-accent" aria-hidden />
                     <span className="min-w-0">{l.label}</span>
                   </Link>
@@ -131,6 +135,10 @@ function MenuC() {
             <ul className="px-3">
               <InstallRow />
             </ul>
+            <div className="flex items-center justify-between px-3 py-1.5 text-sm text-foreground-muted">
+              <span>Light or dark</span>
+              <ThemeToggle />
+            </div>
             <div className="border-t border-border pt-1">
               {user ? (
                 <button
@@ -158,73 +166,5 @@ function MenuC() {
 }
 
 export function UserMenu() {
-  return NAV_MOBILE_LAYOUT === "C" ? <MenuC /> : <MenuAB />;
-}
-
-function MenuAB() {
-  const { user, logout } = useAuth();
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
-
-  if (!user) {
-    return (
-      <Link href="/login" className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground">
-        Log in
-      </Link>
-    );
-  }
-
-  return (
-    <div ref={rootRef} className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        aria-label="Account menu"
-        className="flex h-7 w-7 items-center justify-center rounded-full font-mono text-[11px] font-semibold"
-        style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dim))", color: "var(--accent-foreground)" }}
-      >
-        {initialsFor(user.name, user.email)}
-      </button>
-
-      {open && (
-        <div className="absolute right-0 top-full z-30 mt-1.5 w-52 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-lg">
-          <div className="border-b border-border px-3 py-2.5">
-            <p className="truncate text-sm font-medium">{user.name || user.email || user.phone || "Your account"}</p>
-            <p className="mt-0.5 text-xs text-foreground-faint">
-              {user.is_pro_trial ? "Pro Trial" : `${TIER_LABEL[user.tier] ?? user.tier} plan`}
-            </p>
-          </div>
-          <nav className="p-1.5 text-sm">
-            <Link href="/account" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-md px-2.5 py-2 text-foreground-muted hover:bg-hover hover:text-foreground">
-              <UserIcon size={14} /> Account
-            </Link>
-            <Link href="/watchlist" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-md px-2.5 py-2 text-foreground-muted hover:bg-hover hover:text-foreground">
-              <Bookmark size={14} /> Watchlist
-            </Link>
-            <Link href="/pricing" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-md px-2.5 py-2 text-foreground-muted hover:bg-hover hover:text-foreground">
-              <CreditCard size={14} /> {user.is_pro_trial ? "Upgrade" : user.tier === "pro" || user.tier === "founding" ? "Manage plan" : "Upgrade plan"}
-            </Link>
-            <button
-              onClick={() => {
-                setOpen(false);
-                logout();
-                router.push("/");
-              }}
-              className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-foreground-muted hover:bg-hover hover:text-foreground"
-            >
-              <LogOut size={14} /> Log out
-            </button>
-          </nav>
-        </div>
-      )}
-    </div>
-  );
+  return <MenuC />;
 }

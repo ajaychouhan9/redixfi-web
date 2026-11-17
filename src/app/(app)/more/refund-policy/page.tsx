@@ -3,6 +3,9 @@ import Link from "next/link";
 import { LegalPage } from "@/components/app/LegalPage";
 import { LEGAL } from "@/lib/legal";
 
+// The page makes no request of its own; a refresh window keeps the cached copy from outliving a deploy (a fully static page is sent with a one-year cache lifetime).
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: "Refund and Cancellation Policy",
   description: "Money paid for a plan period is not refunded once the plan is active. Cancelling does not refund. Refunds are made only if you were charged twice or paid and the plan was not activated.",

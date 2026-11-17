@@ -75,7 +75,7 @@ function RedFlagsRow({ redFlags }: { redFlags: MarketActivityRedFlagSummary | un
   const hasActivity = !!redFlags && redFlags.total_findings > 0 && !isUpdating;
   return (
     <div className="flex items-center justify-between gap-3 py-1.5">
-      <span className="text-sm text-foreground">Governance disclosures</span>
+      <span className="text-sm text-foreground">Points to watch</span>
       {isUpdating ? (
         <span className="text-right text-xs text-foreground-faint">Updating…</span>
       ) : hasActivity ? (
@@ -91,7 +91,7 @@ function RedFlagsRow({ redFlags }: { redFlags: MarketActivityRedFlagSummary | un
   );
 }
 
-export function MarketActivityCard({ summary }: { summary: MarketActivitySummary | null }) {
+export function MarketActivityCard({ summary, hideLink = false }: { summary: MarketActivitySummary | null; hideLink?: boolean }) {
   const allEmpty =
     !summary ||
     (summary.insider_trades.count === 0 &&
@@ -112,7 +112,7 @@ export function MarketActivityCard({ summary }: { summary: MarketActivitySummary
       {!summary ? (
         <p className="text-sm text-foreground-muted">Not available right now.</p>
       ) : allEmpty ? (
-        <p className="text-sm text-foreground-muted">No insider trades, bulk/block deals, concalls, corporate events, or governance disclosures recorded yet.</p>
+        <p className="text-sm text-foreground-muted">No insider trades, bulk/block deals, concalls, corporate events, or points to watch recorded yet.</p>
       ) : (
         <div className="divide-y divide-border">
           {CATEGORIES.map(({ key, label, unit }) => (
@@ -121,9 +121,11 @@ export function MarketActivityCard({ summary }: { summary: MarketActivitySummary
           <RedFlagsRow redFlags={summary.red_flags} />
         </div>
       )}
-      <Link href="/market-activity" className="mt-3 flex items-center gap-0.5 text-xs font-medium text-accent">
-        View all <ArrowRight size={12} />
-      </Link>
+      {!hideLink && (
+        <Link href="/market?tab=activity" className="mt-3 flex items-center gap-0.5 text-xs font-medium text-accent">
+          View all <ArrowRight size={12} />
+        </Link>
+      )}
     </Card>
   );
 }

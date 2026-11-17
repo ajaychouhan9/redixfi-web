@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { ContactForm } from "@/components/app/ContactForm";
 import { LEGAL } from "@/lib/legal";
 
+// The page makes no request of its own; a refresh window keeps the cached copy from outliving a deploy (a fully static page is sent with a one-year cache lifetime).
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: "About & Contact",
   description: "Who builds RedixFi, what it measures across 2,000+ NSE stocks, and how to reach the team. Analytics, not advice.",

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getWatchlist, addToWatchlist, removeFromWatchlist } from "@/lib/api/mutations";
+import { signupHref } from "@/lib/nav-items";
 
 /**
  * Copy fix (2026-08-08 threshold-alerts audit): this button's label used
@@ -34,7 +35,8 @@ export function WatchlistButton({ symbol }: { symbol: string }) {
 
   async function toggle() {
     if (!user) {
-      router.push("/login");
+      // 17 Nov 2026: a logged-out visitor is sent to sign-up and returns to this page afterwards.
+      router.push(signupHref(window.location.pathname));
       return;
     }
     setBusy(true);

@@ -121,7 +121,7 @@ export function RedFlagSection({ data }: { data: ResearchRedFlags | undefined })
     >
       {data.categories.length === 0 ? (
         <p className="text-sm text-foreground-muted">
-          No governance disclosures identified in {data.symbol}&apos;s filed documents{coverage === null ? " yet" : ""}.
+          No points to watch identified in {data.symbol}&apos;s filed documents{coverage === null ? " yet" : ""}.
         </p>
       ) : (
         <div className="space-y-4">

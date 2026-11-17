@@ -7,6 +7,9 @@ import { HistoryMoreRow } from "@/components/app/history/HistoryLinks";
 import { MOVED_TO_MORE, NAV_MOBILE_LAYOUT } from "@/lib/nav-config";
 import { MORE_LINKS } from "@/lib/more-links";
 
+// The page makes no request of its own; a refresh window keeps the cached copy from outliving a deploy (a fully static page is sent with a one-year cache lifetime).
+export const revalidate = 3600;
+
 export const metadata: Metadata = { title: "More", alternates: { canonical: "/more" } };
 
 const LINKS = [

@@ -22,10 +22,8 @@ const PUBLIC_CORE_ROUTES = [
   "/signals",
   "/signals/7-day-review",
   "/weekly",
-  "/intraday",
-  "/research",
   "/screens",
-  "/market-activity",
+  "/market",
   "/more/about-us",
   "/more/disclaimer",
   "/more/terms",
@@ -37,13 +35,12 @@ const PUBLIC_CORE_ROUTES = [
   "/how-it-works",
   "/sample-report",
   "/start",
-  "/rewind",
   "/volatility",
 ] as const;
 
 // Pages whose content is rebuilt from the latest completed session: their lastmod is that session's date. Static pages carry no lastmod
 // (a date we did not measure would be made up).
-const SESSION_ROUTES = new Set<string>(["/signals", "/signals/7-day-review", "/weekly", "/intraday", "/rewind", "/volatility", "/screens"]);
+const SESSION_ROUTES = new Set<string>(["/signals", "/signals/7-day-review", "/weekly", "/market", "/volatility", "/screens"]);
 
 function escapeXml(value: string): string {
   return value
@@ -169,7 +166,7 @@ export async function GET() {
     // The reported-figure screens exist only when the API can run their filters.
     ...(data.presets ? FUNDAMENTAL_SCREENS.map((screen) => loc(`${SITE_URL}/screens/${encodeURIComponent(screen.slug)}`, data.session)) : []),
     ...data.stocks.map((s) => loc(`${SITE_URL}/stocks/${encodeURIComponent(s.symbol)}`, s.lastmod)),
-    ...data.stocks.filter((s) => s.rewind).map((s) => loc(`${SITE_URL}/stocks/${encodeURIComponent(s.symbol)}/rewind`, s.lastmod)),
+    // 17 Nov 2026: one URL per stock. The Rewind and concall pages are tabs of it now (their old addresses redirect), so they are not listed.
     // A stored week does not change after it is built: its lastmod is its own week-end date.
     ...data.weeks.map((d) => loc(`${SITE_URL}/weekly/${d}`, d)),
   ];

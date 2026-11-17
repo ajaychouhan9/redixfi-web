@@ -127,7 +127,7 @@ export function AskRedixFiTrigger() {
       className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold transition-transform hover:scale-105"
       style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dim))", color: "var(--accent-foreground)" }}
     >
-      <Sparkles size={12} /> <span>RedixFi AI</span>
+      <Sparkles size={12} /> <span>Ask AI</span>
     </button>
   );
 }

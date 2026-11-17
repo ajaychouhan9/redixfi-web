@@ -1375,6 +1375,17 @@ export interface DailyBrief {
   [key: string]: unknown;
 }
 
+/** The Home AI brief (GET /brief/home, 17 Nov 2026): five short bullets built from real numbers, updated four times a day. */
+export interface HomeBrief {
+  bullets: string[];
+  updated_at: string | null;
+  /** "12:30 IST" */
+  updated_label: string | null;
+  slot: string | null;
+  date: string | null;
+  source: "template" | "polished" | string;
+}
+
 // ---------- billing ----------
 
 export interface BillingPlan {

@@ -18,7 +18,7 @@ export interface ChecklistLine {
   /** Null when the data the template needs is not in the payload. */
   answer: string | null;
   why: string;
-  /** Anchor of the matching block in the detailed view. */
+  /** The tab (or the Overview anchor) that holds the matching detail: "annual-report", "insiders", "points-to-watch" or "range". */
   detailsId: string;
   sources?: ChecklistSource[];
 }
@@ -200,12 +200,12 @@ export function buildChecklist(input: ChecklistInput, opts: { today: string; pri
   };
   const watch = safe(() => watchLine(input), { answer: null, sources: [] });
   return [
-    { key: "profit", question: "Is the company making a profit?", answer: safe(() => profitLine(input), null), why: "Profit is what is left after all costs; it is the money a business can keep or reinvest.", detailsId: "results" },
-    { key: "growth", question: "Are sales and profit growing?", answer: safe(() => growthLine(input), null), why: "The change over several years shows whether the business is getting bigger or smaller.", detailsId: "results" },
-    { key: "debt", question: "How much debt does it have?", answer: safe(() => debtLine(input), null), why: "Borrowed money has to be repaid with interest whatever the business earns in a given year.", detailsId: "results" },
-    { key: "promoters", question: "What are the promoters doing?", answer: safe(() => promotersLine(input), null), why: "Promoters are the people who control the company; their holding and any pledged shares are disclosed every quarter.", detailsId: "results" },
-    { key: "insiders", question: "Are insiders buying or selling?", answer: safe(() => insidersLine(input, opts.today), null), why: "Directors, promoters and senior staff must disclose their own share trades; the category is shown, never a name.", detailsId: "insider" },
-    { key: "watch", question: "Points to watch in its reports?", answer: watch.answer, why: "These are statements found in the company's own filings, listed with their source so you can read them yourself.", detailsId: "concall", sources: watch.sources },
+    { key: "profit", question: "Is the company making a profit?", answer: safe(() => profitLine(input), null), why: "Profit is what is left after all costs; it is the money a business can keep or reinvest.", detailsId: "annual-report" },
+    { key: "growth", question: "Are sales and profit growing?", answer: safe(() => growthLine(input), null), why: "The change over several years shows whether the business is getting bigger or smaller.", detailsId: "annual-report" },
+    { key: "debt", question: "How much debt does it have?", answer: safe(() => debtLine(input), null), why: "Borrowed money has to be repaid with interest whatever the business earns in a given year.", detailsId: "annual-report" },
+    { key: "promoters", question: "What are the promoters doing?", answer: safe(() => promotersLine(input), null), why: "Promoters are the people who control the company; their holding and any pledged shares are disclosed every quarter.", detailsId: "insiders" },
+    { key: "insiders", question: "Are insiders buying or selling?", answer: safe(() => insidersLine(input, opts.today), null), why: "Directors, promoters and senior staff must disclose their own share trades; the category is shown, never a name.", detailsId: "insiders" },
+    { key: "watch", question: "Points to watch in its reports?", answer: watch.answer, why: "These are statements found in the company's own filings, listed with their source so you can read them yourself.", detailsId: "points-to-watch", sources: watch.sources },
     { key: "price", question: "Where is the price?", answer: safe(() => priceLine(input, opts.priceLabel), null), why: "The 52-week high and low are the highest and lowest closes of the past year; this is where today's price sits between them.", detailsId: "range" },
   ];
 }

@@ -76,7 +76,7 @@ const stripStandard = (t: string) => t.split(STANDARD).join("");
   assert.equal(coverageLine(part), "Fundamentals: 30 Sep 2026 quarter, fetched 11 Nov; 6 of 8 figures available (not available: P/E, price to book).");
   assert.equal(fundamentalsCoverage(null).available, 0);
   assert.equal(coverageLine(null), "Fundamentals: no reported figures are stored for this stock.");
-  const page = read("app/(seo)/stocks/[symbol]/page.tsx");
+  const page = read("app/(app)/stocks/[symbol]/page.tsx");
   assert.ok(page.includes("coverageLine(f)") && page.includes('data-testid="data-coverage"'));
   assert.ok(page.includes('id="industry-median"') && page.includes("Against the industry median"));
   assert.ok(page.includes("An industry needs at least"), "the median section explains the five-stock minimum");

@@ -29,10 +29,11 @@ export const MORE_LINKS: MoreLink[] = [
  *  forms the menu uses ("Methodology", "Checkout"). */
 export const MENU_GROUPS: { title: string; links: MoreLink[] }[] = [
   {
-    title: "Your account",
+    title: "Me",
     links: [
       { href: "/watchlist", label: "Watchlist", icon: Bookmark },
       { href: "/account/alerts", label: "Alerts", icon: Bell },
+      { href: "/account/inbox", label: "Inbox", icon: Bell },
       { href: "/account", label: "Account", icon: UserCircle },
       { href: "/pricing", label: "Checkout", icon: CreditCard },
     ],
