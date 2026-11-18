@@ -4,8 +4,10 @@
  */
 import { formatShortDate } from "@/lib/format";
 
-export type OverviewCardId = "intraday" | "pulse" | "activity" | "movers";
+export type OverviewCardId = "intraday" | "pulse" | "activity" | "movers" | "news" | "volatility";
 export const LIVE_TAG = "Live · 15 min delayed";
+/** News is not a price figure: its tag states the plan delay (Free: 24 hours; Basic and Pro: same day, see the plan table). */
+export const NEWS_TAG = "Delayed 24 h on Free";
 
 export function closeTag(asOfDate: string | null | undefined): string | null {
   if (!asOfDate) return null;
@@ -20,5 +22,7 @@ export function cardTags(marketState: string | null | undefined, asOfDate: strin
     pulse: close,
     activity: close,
     movers: close,
+    news: NEWS_TAG,
+    volatility: close,
   };
 }

@@ -26,7 +26,11 @@ for (const t of ["light", "dark", "premium"]) {
   assert.ok(css.includes(`[data-preview="${t}"]`), `${t} preview scope`);
 }
 assert.ok(layout.includes('t!=="premium"'), "the first-paint script accepts premium");
-assert.ok(layout.includes("matchMedia"), "default still follows the device setting");
+assert.ok(!layout.includes("matchMedia") && !ctx.includes("matchMedia"), "the device setting no longer decides the default");
+assert.ok(layout.includes('t="premium"'), "nothing saved: the pre-paint script chooses Premium");
+assert.ok(/<html[^>]*data-theme="premium"/.test(layout), "the server HTML already carries Premium, so there is no flash and no light fallback");
+assert.ok(ctx.includes('DEFAULT_THEME: Theme = "premium"') && ctx.includes("useState<Theme>(DEFAULT_THEME)"), "the picker shows Premium selected by default");
+assert.ok(ctx.includes("localStorage.getItem(STORAGE_KEY)") && ctx.includes(": DEFAULT_THEME"), "a saved choice still wins");
 assert.ok(ctx.includes('"premium"') && ctx.includes("redixfi:theme"), "stored choice includes premium");
 
 // 2. text pairs of the premium theme (and the two fixed light values) are at least 4.5:1

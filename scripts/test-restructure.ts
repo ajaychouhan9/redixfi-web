@@ -8,7 +8,7 @@ import { restructureRedirects } from "../src/lib/seo/restructure-redirects.ts";
 import { NAV_ITEMS, BOTTOM_ITEMS, ACCOUNT_ITEMS, activeNavId, signupHref } from "../src/lib/nav-items.ts";
 import { STOCK_TABS, DEFAULT_STOCK_TAB, neighbourTab, tabFromHash, tabFromSearch } from "../src/lib/stock-tabs.ts";
 import { stockPath, stockTabPath } from "../src/lib/seo/stock-symbol.ts";
-import { cardTags, closeTag, LIVE_TAG } from "../src/lib/market-overview.ts";
+import { cardTags, closeTag, LIVE_TAG, NEWS_TAG } from "../src/lib/market-overview.ts";
 import { previewLabel, previewRows } from "../src/lib/home-movers.ts";
 import { formatShares, volumeLine } from "../src/lib/intraday-volume-filter.ts";
 import { REWIND_FOOTER, REWIND_INTRO, REWIND_MOVES, REWIND_PERIODS, rewindRow, rewindSummary, sessionNumbers } from "../src/lib/rewind-simple.ts";
@@ -129,13 +129,13 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\
 
 // ---- 4. Market Overview and its four pages
 {
-  assert.deepEqual(cardTags("OPEN", "2026-11-17"), { intraday: LIVE_TAG, pulse: "As of 17 Nov close", activity: "As of 17 Nov close", movers: "As of 17 Nov close" }, '"Live" only on Intraday, only while open');
-  assert.deepEqual(cardTags("CLOSED", "2026-11-17"), { intraday: "As of 17 Nov close", pulse: "As of 17 Nov close", activity: "As of 17 Nov close", movers: "As of 17 Nov close" });
+  assert.deepEqual(cardTags("OPEN", "2026-11-17"), { intraday: LIVE_TAG, pulse: "As of 17 Nov close", activity: "As of 17 Nov close", movers: "As of 17 Nov close", news: NEWS_TAG, volatility: "As of 17 Nov close" }, '"Live" only on Intraday, only while open');
+  assert.deepEqual(cardTags("CLOSED", "2026-11-17"), { intraday: "As of 17 Nov close", pulse: "As of 17 Nov close", activity: "As of 17 Nov close", movers: "As of 17 Nov close", news: NEWS_TAG, volatility: "As of 17 Nov close" });
   assert.equal(cardTags("OPEN", null).pulse, null, "no date, no tag");
   assert.equal(closeTag("2026-11-14"), "As of 14 Nov close");
   const cards = strip(read("components/app/market/MarketOverviewCards.tsx"));
-  for (const t of ["Intraday", "Market Pulse", "Market Activity", "Top Gainers & Losers"]) assert.ok(cards.includes(`title: "${t}"`), `card ${t}`);
-  for (const h of ["/intraday", "/pulse", "/market-activity", "/gainers-losers"]) assert.ok(cards.includes(`href: "${h}"`), `card opens ${h}`);
+  for (const t of ["Intraday", "Market Pulse", "Market Activity", "Top Gainers & Losers", "News", "Volatility"]) assert.ok(cards.includes(`title: "${t}"`), `card ${t}`);
+  for (const h of ["/intraday", "/pulse", "/market-activity", "/gainers-losers", "/news", "/volatility"]) assert.ok(cards.includes(`href: "${h}"`), `card opens ${h}`);
   const mp = strip(read("app/(app)/market/page.tsx"));
   assert.ok(/export const revalidate = \d+/.test(mp) && mp.includes("Market Overview"), "/market has a refresh window and the new name");
   assert.ok(!/\b(cookies|headers)\(\)|searchParams|await |fetch\(/.test(mp), "/market is static");

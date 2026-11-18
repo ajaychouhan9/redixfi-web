@@ -121,6 +121,8 @@ const printed = [
   readFileSync(new URL("../src/app/(app)/start/page.tsx", import.meta.url), "utf8").replace(/no buy or sell advice/gi, ""),
   readFileSync(new URL("../src/components/app/start/StartHere.tsx", import.meta.url), "utf8"),
   readFileSync(new URL("../src/lib/start-here.ts", import.meta.url), "utf8"),
+  readFileSync(new URL("../src/lib/read-company.ts", import.meta.url), "utf8"),
+  readFileSync(new URL("../src/components/app/start/ReadCompany.tsx", import.meta.url), "utf8"),
 ]
   .join("\n")
   // code, not display text: comments, event targets and link targets

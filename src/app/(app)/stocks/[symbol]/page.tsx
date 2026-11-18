@@ -14,6 +14,7 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AskPrefill } from "@/components/app/stock/AskPrefill";
 import { getResearch, getSignalDetail, getSignals, getVolatility } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { DeltaValue } from "@/components/ui/DeltaValue";
@@ -179,6 +180,11 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
   // ---- Overview: the seven plain questions, then the price and trading readings they point to
   const overview = (
     <>
+      <p className="mb-3 text-sm" data-testid="read-company-link">
+        <Link href="/start" className="font-medium text-accent hover:underline">
+          New to this? Read a company in 15 minutes
+        </Link>
+      </p>
       <SimpleChecklist data={data} today={istToday()} priceLabel={priceLabel} />
       <StockSignupOffer companyName={data.company_name} className="mt-4" />
 
@@ -423,6 +429,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
       {/* eslint-disable-next-line react/no-danger */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <CurrentSymbolSync symbol={sym} />
+      <AskPrefill />
       <RecordView symbol={sym} companyName={data.company_name} />
       <Breadcrumbs crumbs={[{ name: "Home", href: "/" }, { name: "Screener", href: "/signals" }, { name: `${data.company_name} (${data.symbol})`, href: stockPath("/stocks", data.symbol) }]} />
 

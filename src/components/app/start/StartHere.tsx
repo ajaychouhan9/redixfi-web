@@ -13,7 +13,7 @@ import { HOW_TO_READ, START_PAGE_SIZE, START_RESULTS_NOTE, START_SECTORS, START_
 import { stockPath } from "@/lib/seo/stock-symbol";
 
 /**
- * "Start here" (17 Nov 2026): Step 1 four plain lines on reading a company, Step 2 tick what matters and choose a sector, Step 3 result cards listed
+ * Part 2 of "Read a company in 15 minutes" (was "Start here", 17 Nov 2026): the words on the cards, four plain lines on reading a company, then the rules to tick and a sector, then result cards listed
  * A to Z (no ranking). The cards use only fields the Screener already returns; the list is fetched when "Show matching stocks" is tapped, in the
  * browser, so the page itself is static. The company-size question is left out while it has only "Any".
  */
@@ -59,7 +59,7 @@ export function StartHere() {
   return (
     <div className="space-y-6" data-testid="start-here">
       <section aria-labelledby="start-step1" data-testid="start-step-1">
-        <h2 id="start-step1" className="text-base font-semibold">Step 1. How to read a company</h2>
+        <h2 id="start-step1" className="text-base font-semibold">Words on the cards</h2>
         <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           {HOW_TO_READ.map((h) => (
             <div key={h.term} className="rounded-xl border border-border bg-surface px-4 py-3" data-testid="start-guide-line">
@@ -71,7 +71,7 @@ export function StartHere() {
       </section>
 
       <section aria-labelledby="start-step2" className="rounded-2xl border border-border bg-surface-raised p-5" data-testid="start-step-2">
-        <h2 id="start-step2" className="text-base font-semibold">Step 2. What matters to you?</h2>
+        <h2 id="start-step2" className="text-base font-semibold">Choose your rules</h2>
         <fieldset className="mt-3">
           <legend className="sr-only">Choose one or more</legend>
           <div className="space-y-2">
@@ -109,7 +109,7 @@ export function StartHere() {
       </section>
 
       <section aria-labelledby="start-step3" data-testid="start-step-3">
-        <h2 id="start-step3" className="text-base font-semibold">Step 3. The matching stocks</h2>
+        <h2 id="start-step3" className="text-base font-semibold">Companies that match</h2>
         {state === "idle" && <p className="mt-2 text-sm text-foreground-muted">Tick what matters to you, then tap &ldquo;Show matching stocks&rdquo;. With nothing ticked, every stock is listed.</p>}
         {state === "error" && <p className="mt-2 text-sm text-foreground-muted">The list could not be loaded right now. Please try again in a moment.</p>}
         {(state === "ok" || (busy && rows.length > 0)) && (

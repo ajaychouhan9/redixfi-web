@@ -22,11 +22,9 @@ const plexMono = IBM_Plex_Mono({
   weight: ["400", "500", "600", "700"],
 });
 
-// Applied before hydration so a stored/system "light" preference doesn't
-// flash the CSS default (dark) first — same no-flash technique the
-// dark/light toggle requires whenever the choice isn't derivable from
-// prefers-color-scheme alone (it's user-overridable here, so it can't be).
-const NO_FLASH_THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("redixfi:theme");if(t!=="dark"&&t!=="light"&&t!=="premium"){t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){}})();`;
+// Applied before hydration so the stored choice (or, with nothing saved, Premium) is on <html> before the first paint. The html tag also carries
+// data-theme="premium" from the server, so even without JavaScript the default is Premium and never the plain CSS fallback.
+const NO_FLASH_THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("redixfi:theme");if(t!=="dark"&&t!=="light"&&t!=="premium"){t="premium";}document.documentElement.dataset.theme=t;}catch(e){}})();`;
 
 // Production serves the www host; the apex permanently redirects to it.
 // Keep metadata on the same host as robots.txt and sitemap.xml.
@@ -64,10 +62,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   interactiveWidget: "resizes-content",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f7f8fb" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b0f1a" },
-  ],
+  themeColor: "#faf6ec",
 };
 
 // Visitor analytics (16 Nov 2026): Cloudflare Web Analytics, a cookieless page-view beacon. It is loaded only when the owner
@@ -78,7 +73,7 @@ const CF_BEACON_TOKEN = process.env.NEXT_PUBLIC_CF_BEACON_TOKEN?.trim() ?? "";
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${plexSans.variable} ${plexMono.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="en" className={`${plexSans.variable} ${plexMono.variable} h-full antialiased`} data-theme="premium" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: NO_FLASH_THEME_SCRIPT }} />
       </head>

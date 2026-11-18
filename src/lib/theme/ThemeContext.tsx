@@ -9,6 +9,9 @@ export const THEMES: { id: Theme; label: string }[] = [
   { id: "premium", label: "Premium" },
 ];
 
+/** Nothing saved: Premium (18 Nov 2026, was the device setting). A saved choice always wins. */
+export const DEFAULT_THEME: Theme = "premium";
+
 const STORAGE_KEY = "redixfi:theme";
 
 interface ThemeContextValue {
@@ -18,25 +21,18 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-function systemTheme(): Theme {
-  if (typeof window === "undefined") return "dark";
-  return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-}
-
 function applyTheme(theme: Theme) {
   document.documentElement.dataset.theme = theme;
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  // Server and first client render both use "dark" (globals.css's default
-  // :root values) so hydration matches; the real stored/system preference
-  // is applied in the effect below, same pattern as AuthContext reading
-  // localStorage only after mount.
-  const [theme, setThemeState] = useState<Theme>("dark");
+  // Server and first client render both use the default (Premium), the same value the html tag carries, so hydration matches; a saved
+  // choice is applied in the effect below, the same pattern as AuthContext reading localStorage only after mount.
+  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY) as Theme | null;
-    const initial = stored === "dark" || stored === "light" || stored === "premium" ? stored : systemTheme();
+    const initial = stored === "dark" || stored === "light" || stored === "premium" ? stored : DEFAULT_THEME;
     setThemeState(initial); // eslint-disable-line react-hooks/set-state-in-effect
     applyTheme(initial);
   }, []);

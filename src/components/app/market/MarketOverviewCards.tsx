@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Activity, BarChart3, FileText, TrendingUp, type LucideIcon } from "lucide-react";
+import { Activity, BarChart3, FileText, Newspaper, TrendingUp, Waves, type LucideIcon } from "lucide-react";
 
 import { getMarketOverview } from "@/lib/api/endpoints";
 import { LIVE_TAG, cardTags, type OverviewCardId } from "@/lib/market-overview";
@@ -12,10 +12,12 @@ const CARDS: { id: OverviewCardId; href: string; title: string; text: string; ic
   { id: "pulse", href: "/pulse", title: "Market Pulse", text: "The index levels and how many stocks rose and fell.", icon: BarChart3 },
   { id: "activity", href: "/market-activity", title: "Market Activity", text: "Concalls, insider trades, corporate events and bulk or block deals.", icon: FileText },
   { id: "movers", href: "/gainers-losers", title: "Top Gainers & Losers", text: "The five largest price rises and the five largest falls of the session.", icon: TrendingUp },
+  { id: "news", href: "/news", title: "News", text: "Headlines about NSE companies from the news sources RedixFi reads, with the source and time.", icon: Newspaper },
+  { id: "volatility", href: "/volatility", title: "Volatility", text: "How much each stock's price has moved day to day lately, past movement only.", icon: Waves },
 ];
 
 /**
- * Market Overview (18 Nov 2026): four cards, each a one-line description, a tag and a link to its own page. The page itself is static; the one
+ * Market Overview (18 Nov 2026): six cards, each a one-line description, a tag and a link to its own page. The page itself is static; the one
  * small read that dates the tags (the market status and its date) happens in the browser. "Live" is only ever shown on Intraday, only while the
  * market is open; every other tag is "As of <date> close".
  */
