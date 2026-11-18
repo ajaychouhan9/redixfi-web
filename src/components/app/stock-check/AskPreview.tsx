@@ -34,9 +34,20 @@ export function AskPreview({ compact = false }: { compact?: boolean }) {
                 ))}
               </ul>
             )}
-            {"table" in a && a.table && (
+            {"table" in a && a.table && a.id === "points" && (
+              <ul className="mt-2 space-y-3" data-testid={`ask-sample-table-${a.id}`}>
+                {a.table.rows.map((r) => (
+                  <li key={r[0]} className="rounded-lg border border-border/60 px-3 py-2 text-sm">
+                    <p className="font-medium">{r[0]}</p>
+                    <p className="mt-1 leading-relaxed text-foreground-muted">{r[1]}</p>
+                    <p className="mt-1 text-xs text-foreground-faint">{r[2]}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {"table" in a && a.table && a.id !== "points" && (
               <div className="mt-2 overflow-x-auto" data-testid={`ask-sample-table-${a.id}`}>
-                <table className="w-full min-w-[20rem] border-collapse text-left text-sm">
+                <table className="w-full min-w-[17rem] border-collapse text-left text-sm">
                   <thead>
                     <tr className="border-b border-border text-xs text-foreground-muted">
                       {a.table.columns.map((c, i) => (

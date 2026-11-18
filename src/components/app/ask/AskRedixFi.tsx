@@ -797,9 +797,11 @@ export function AskRedixFi() {
               >
                 Log in
               </Link>
-              <div className="max-h-[55vh] overflow-y-auto border-t border-border pt-3 text-left" data-testid="panel-preview">
-                <AskPreview compact />
-              </div>
+              {open && (
+                <div className="max-h-[55vh] overflow-y-auto border-t border-border pt-3 text-left" data-testid="panel-preview">
+                  <AskPreview compact />
+                </div>
+              )}
             </div>
           ) : (
             <>
@@ -883,7 +885,7 @@ export function AskRedixFi() {
                         ))}
                       </div>
                     </div>
-                    {user.tier === "free" && !user.is_pro_trial && (
+                    {open && user.tier === "free" && !user.is_pro_trial && (
                       <div className="mt-4 border-t border-border pt-3" data-testid="panel-preview-free">
                         <AskPreview compact />
                       </div>

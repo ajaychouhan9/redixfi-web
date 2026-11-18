@@ -136,7 +136,7 @@ assert.ok(preview.includes("disabled") && preview.includes("ASK_PREVIEW.csvLocke
 assert.ok(!/fetch\(|getSignals|sendAsk|apiMutate|openWithQuestion/.test(preview), "no model call and no request from the preview");
 assert.ok(strip(read("components/app/stock-check/LoggedOutPreview.tsx")).includes("if (user) return null"), "logged-out only on the page");
 const panel = read("components/app/ask/AskRedixFi.tsx");
-assert.ok(panel.includes("panel-preview") && panel.includes('user.tier === "free"'), "in the Ask AI panel: logged-out and Free");
+assert.ok(panel.includes("panel-preview") && panel.includes("user.tier === \"free\"") && panel.includes("{open &&"), "in the Ask AI panel: logged-out and Free, only while it is open");
 const stored = JSON.stringify(samples);
 // a few numbers checked against the database and the filings on 19 Nov 2026 (see the report): sales, profit and debt for three years
 for (const n of ["64,468", "61,328", "61,896", "15,040", "10,649", "10,277", "1,478", "1,648", "1,484", "0.54%", "22-24%"]) assert.ok(stored.includes(n), `stored figure ${n}`);
