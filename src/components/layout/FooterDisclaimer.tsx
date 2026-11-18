@@ -2,7 +2,7 @@ import Link from "next/link";
 import { STANDARD_LINE } from "@/lib/compliance/standard-line";
 import { LEGAL } from "@/lib/legal";
 
-/** The footer of every layout (app and public pages). Exactly four lines and nothing else (14 Nov 2026):
+/** The footer of every layout (app and public pages). Four lines (14 Nov 2026; News, Volatility and Sample report added to the links on 18 Nov 2026):
  *  copyright, the one sentence, data source and delay, links. No name, no address, no paragraph. */
 export const FOOTER_COPYRIGHT = "© 2026 RedixFi";
 export const FOOTER_DATA_LINE = "Data: NSE and company filings. NSE prices are delayed by 15 minutes.";
@@ -14,6 +14,18 @@ export function FooterDisclaimer() {
       <p data-testid="footer-sentence">{STANDARD_LINE}</p>
       <p>{FOOTER_DATA_LINE}</p>
       <p data-testid="footer-links">
+        <Link href="/news" className="underline">
+          News
+        </Link>{" "}
+        ·{" "}
+        <Link href="/volatility" className="underline">
+          Volatility
+        </Link>{" "}
+        ·{" "}
+        <Link href="/sample-report" className="underline">
+          Sample report
+        </Link>{" "}
+        ·{" "}
         <Link href="/more/about-us" className="underline">
           About
         </Link>{" "}

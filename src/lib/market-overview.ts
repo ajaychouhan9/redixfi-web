@@ -5,7 +5,7 @@
 import { formatShortDate } from "@/lib/format";
 
 export type OverviewCardId = "intraday" | "pulse" | "activity" | "movers";
-export const LIVE_TAG = "Live";
+export const LIVE_TAG = "Live · 15 min delayed";
 
 export function closeTag(asOfDate: string | null | undefined): string | null {
   if (!asOfDate) return null;

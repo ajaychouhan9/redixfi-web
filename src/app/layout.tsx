@@ -26,7 +26,7 @@ const plexMono = IBM_Plex_Mono({
 // flash the CSS default (dark) first — same no-flash technique the
 // dark/light toggle requires whenever the choice isn't derivable from
 // prefers-color-scheme alone (it's user-overridable here, so it can't be).
-const NO_FLASH_THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("redixfi:theme");if(t!=="dark"&&t!=="light"){t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){}})();`;
+const NO_FLASH_THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("redixfi:theme");if(t!=="dark"&&t!=="light"&&t!=="premium"){t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){}})();`;
 
 // Production serves the www host; the apex permanently redirects to it.
 // Keep metadata on the same host as robots.txt and sitemap.xml.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { CheckCircle2, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -202,6 +203,38 @@ export function TopupCard() {
       </button>
       {purchasedCount !== null && <p className="mt-2 text-sm text-up">Added — {purchasedCount} questions remaining ✓</p>}
       {error && <p className="mt-2 text-xs text-down">{error}</p>}
+    </Card>
+  );
+}
+
+/**
+ * The same four packs as information, for everyone who cannot purchase one (18 Nov 2026): a visitor who is logged out sees a log-in link, a Free or
+ * Pro Trial account sees "Available on Basic and Pro" (the server accepts a top-up order from Basic and Pro only; this card changes no rule).
+ */
+export function TopupInfo() {
+  const { user, loading } = useAuth();
+  const loggedIn = !!user;
+  return (
+    <Card title="Ask AI question packs" action={<Sparkles size={14} className="text-accent" />}>
+      <p className="text-sm text-foreground-muted">More Ask AI questions when the daily or monthly allowance is used. Packs never expire and stay usable even if a plan later lapses.</p>
+      <ul className="mt-3 grid grid-cols-2 gap-2" data-testid="topup-info-list">
+        {ASK_TOPUP_TIERS.map((t) => (
+          <li key={t.id} className="rounded-lg border border-border bg-surface px-3 py-2.5">
+            <div className="text-sm font-semibold">{t.questions.toLocaleString("en-IN")} questions</div>
+            <div className="mt-0.5 text-xs text-foreground-muted">₹{t.priceRupees}</div>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 text-sm text-foreground-muted" data-testid="topup-info-note">
+        {loading ? "Available on Basic and Pro." : loggedIn ? "Available on Basic and Pro." : (
+          <>
+            <Link href="/login" className="font-medium text-accent underline">
+              {/* compliance-ignore */}Log in to buy
+            </Link>
+            . Packs are available on Basic and Pro.
+          </>
+        )}
+      </p>
     </Card>
   );
 }

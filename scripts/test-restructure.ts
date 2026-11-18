@@ -183,7 +183,7 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\
   const scanRow = (symbol: string, pct: number) => ({ symbol, name: symbol + " Ltd", pct, price: 10, vr: 1, sector: null, spark: [] });
   const live = { tab: "scan", available: true, is_today: true, data_date_label: "17 Nov", session: { phase: "live", latest_completed_session: "2026-11-14" }, lists: { nifty500: { up: [scanRow("A", 4), scanRow("B", 3.5), scanRow("C", 1)], down: [scanRow("D", -5), scanRow("E", -2), scanRow("F", -0.5)] }, liquid: { up: [], down: [] }, nifty50: { up: [], down: [] }, nifty100: { up: [], down: [] } } } as never;
   assert.deepEqual(previewRows(live).map((r) => r.symbol), ["D", "A", "B", "E", "C"], "five rows, the largest moves by size whichever way they went");
-  assert.equal(previewLabel(live), "Live");
+  assert.equal(previewLabel(live), "Live · 15 min delayed");
   assert.equal(previewLabel({ ...(live as object), session: { phase: "post_market", latest_completed_session: "2026-11-17" }, data_date_label: "17 Nov" } as never), "As of 17 Nov close");
   assert.equal(previewLabel({ ...(live as object), session: { phase: "weekend", latest_completed_session: "2026-11-14" }, data_date_label: "14 Nov", is_today: false } as never), "As of 14 Nov close");
   assert.deepEqual(previewRows(null), []);

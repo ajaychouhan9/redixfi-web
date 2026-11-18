@@ -20,7 +20,7 @@ export const PLAN_MATRIX: PlanRow[] = [
   { feature: "Ask AI chat history kept", free: "6 hours", basic: "7 days", pro: "30 days" },
   { feature: "Alerts", free: "None", basic: "5 active, price, in-app and email", pro: "Unlimited: price, delivery, volume; in-app, email, push, Telegram" },
   { feature: "Company report PDF", free: "Free sample only", basic: "3 different stocks a month", pro: "15 different stocks a month" },
-  { feature: "Market Rewind", free: "Example filters, 5 rows", basic: "Custom filters for one stock or a sector, 50 rows", pro: "All stocks, similar volatility, saved filters, 200 rows, CSV" },
+  { feature: "Market Rewind", free: "Any one stock: choose the move size (2%, 3%, 5%) and the period", basic: "Custom filters for one stock or a sector, 50 rows", pro: "All stocks, similar volatility, saved filters, 200 rows, CSV" },
   { feature: "Market Activity (deals, insider trades, events)", free: "5 rows", basic: "20 rows", pro: "Full history with filters" },
   { feature: "CSV and Excel export", free: "No", basic: "No", pro: "Yes" },
 ];

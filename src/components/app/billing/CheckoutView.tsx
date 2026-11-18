@@ -5,7 +5,7 @@ import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import { PlanCard } from "@/components/app/billing/PlanCard";
 import { PLAN_LABEL, cardButtonLabel, cardNotice, runningPlan } from "@/lib/billing-state";
-import { TopupCard } from "@/components/app/billing/TopupCard";
+import { TopupCard, TopupInfo } from "@/components/app/billing/TopupCard";
 import { SubscriptionStatusCard } from "@/components/app/account/SubscriptionStatusCard";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getMe, validatePromoCode } from "@/lib/api/mutations";
@@ -242,8 +242,26 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
         )}
       </div>
 
-      <div className="mt-8 overflow-x-auto rounded-xl border border-border bg-surface-raised" data-testid="plan-matrix">
-        <table className="w-full min-w-[640px] text-left text-sm">
+      <div className="mt-8 overflow-x-auto rounded-xl border border-border bg-surface-raised md:overflow-visible" data-testid="plan-matrix">
+        <div className="md:hidden" data-testid="plan-matrix-cards">
+          <h3 className="px-3 pt-3 text-sm font-semibold">What each plan includes</h3>
+          <ul className="divide-y divide-border">
+            {PLAN_MATRIX.map((r) => (
+              <li key={r.feature} className="px-3 py-3" data-testid="plan-matrix-card">
+                <p className="text-sm font-medium">{r.feature}</p>
+                <dl className="mt-1.5 space-y-1 text-sm">
+                  {([["Free", r.free], ["Basic", r.basic], ["Pro", r.pro]] as const).map(([name, v]) => (
+                    <div key={name} className="grid grid-cols-[3.5rem_1fr] gap-2">
+                      <dt className="text-foreground-faint">{name}</dt>
+                      <dd className="text-foreground-muted">{v}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <table className="hidden w-full text-left text-sm md:table" data-testid="plan-matrix-table">
           <caption className="px-3 pt-3 text-left text-sm font-semibold">What each plan includes</caption>
           <thead>
             <tr className="border-b border-border text-xs uppercase tracking-wide text-foreground-faint">
@@ -267,11 +285,9 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
         <p className="px-3 py-2 text-xs text-foreground-faint">Every higher plan includes everything the plan below it has. A 5-day Pro trial is free once per account, with no payment details.</p>
       </div>
 
-      {profile && profile.tier !== "free" && !profile.is_pro_trial && (
-        <div className="mt-6">
-          <TopupCard />
-        </div>
-      )}
+      <div className="mt-6" id="ask-topup" data-testid="pricing-topup">
+        {profile && profile.tier !== "free" && !profile.is_pro_trial ? <TopupCard /> : <TopupInfo />}
+      </div>
 
       <p className="mt-6 text-sm text-foreground-muted" data-testid="pricing-sample-report">
         Company report PDFs are included in Basic and Pro (see the allowance on each plan; a Pro trial includes a small allowance too).{" "}

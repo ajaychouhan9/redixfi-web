@@ -7,6 +7,7 @@ import { Bell, Bookmark, CreditCard, LogOut, UserCircle, type LucideIcon } from 
 
 import { useAuth } from "@/lib/auth/AuthContext";
 import { ACCOUNT_ITEMS, signupHref } from "@/lib/nav-items";
+import { ThemeChoice, ThemeToggle } from "@/components/ui/ThemeToggle";
 
 const ICON: Record<string, LucideIcon> = { profile: UserCircle, watchlist: Bookmark, alerts: Bell, billing: CreditCard };
 const TIER_LABEL: Record<string, string> = { free: "Free", basic: "Basic", pro: "Pro", paid: "Paid", founding: "Founding" };
@@ -47,7 +48,11 @@ export function AccountPanel({ onClose, className }: { onClose: () => void; clas
                 </Link>
               );
             })}
-            <div className="mt-1 border-t border-border pt-1">
+            <div className="mt-1 border-t border-border pt-2">
+              <p className="px-3 pb-1 text-xs text-foreground-faint">Theme</p>
+              <ThemeChoice />
+            </div>
+            <div className="border-t border-border pt-1">
               <button
                 type="button"
                 role="menuitem"
@@ -76,6 +81,10 @@ export function AccountPanel({ onClose, className }: { onClose: () => void; clas
           <Link href="/pricing" role="menuitem" onClick={onClose} className={row}>
             <CreditCard size={16} className="shrink-0 text-accent" aria-hidden /> Billing and plans
           </Link>
+          <div className="mt-1 border-t border-border pt-2">
+            <p className="px-3 pb-1 text-xs text-foreground-faint">Theme</p>
+            <ThemeChoice />
+          </div>
         </nav>
       )}
     </div>
@@ -110,9 +119,12 @@ export function UserMenu() {
   const ref = useDismiss(open, () => setOpen(false));
   if (!user) {
     return (
-      <Link href="/login" data-testid="header-login" className="flex min-h-[44px] items-center rounded-md bg-accent px-3 text-xs font-semibold text-accent-foreground md:min-h-0 md:py-1.5">
-        Log in
-      </Link>
+      <div className="flex items-center gap-1">
+        <ThemeToggle />
+        <Link href="/login" data-testid="header-login" className="flex min-h-[44px] items-center rounded-md bg-accent px-3 text-xs font-semibold text-accent-foreground md:min-h-0 md:py-1.5">
+          Log in
+        </Link>
+      </div>
     );
   }
   return (

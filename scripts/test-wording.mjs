@@ -120,9 +120,8 @@ if (hits.length) {
 // The Signals/Home price labels must never use a bare "Live" (the market
 // tab is still "Live scan", and "Today's session" is allowed).
 const BARE_LIVE = /(?:>|["'`])Live(?:<|["'`])/;
-// 18 Nov 2026: the owner asked for the tag "Live" on the Market Overview Intraday card and the Home movers preview (market hours only, with the
-// 15-minute delay stated next to it); those two helper files are the only places the bare word may be a label.
-const LIVE_OK = ["lib/market-overview.ts", "lib/home-movers.ts"];
+// 18 Nov 2026 (phase 1c): the market-hours tag is now "Live · 15 min delayed", so no file needs an exemption any more; a bare "Live" label is banned everywhere.
+const LIVE_OK = [];
 for (const file of files(ROOT)) {
   if (LIVE_OK.includes(file.slice(ROOT.length).replaceAll("\\", "/"))) continue;
   if (BARE_LIVE.test(stripComments(readFileSync(file, "utf8")))) {

@@ -2,13 +2,18 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
-export type Theme = "dark" | "light";
+export type Theme = "dark" | "light" | "premium";
+export const THEMES: { id: Theme; label: string }[] = [
+  { id: "light", label: "Light" },
+  { id: "dark", label: "Dark" },
+  { id: "premium", label: "Premium" },
+];
 
 const STORAGE_KEY = "redixfi:theme";
 
 interface ThemeContextValue {
   theme: Theme;
-  toggleTheme: () => void;
+  setTheme: (t: Theme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -27,25 +32,26 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // :root values) so hydration matches; the real stored/system preference
   // is applied in the effect below, same pattern as AuthContext reading
   // localStorage only after mount.
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setThemeState] = useState<Theme>("dark");
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY) as Theme | null;
-    const initial = stored === "dark" || stored === "light" ? stored : systemTheme();
-    setTheme(initial);
+    const initial = stored === "dark" || stored === "light" || stored === "premium" ? stored : systemTheme();
+    setThemeState(initial); // eslint-disable-line react-hooks/set-state-in-effect
     applyTheme(initial);
   }, []);
 
-  const toggleTheme = useCallback(() => {
-    setTheme((prev) => {
-      const next: Theme = prev === "dark" ? "light" : "dark";
-      applyTheme(next);
+  const setTheme = useCallback((next: Theme) => {
+    setThemeState(next);
+    applyTheme(next);
+    try {
       window.localStorage.setItem(STORAGE_KEY, next);
-      return next;
-    });
+    } catch {
+      /* private mode: the choice just is not remembered */
+    }
   }, []);
 
-  const value = useMemo(() => ({ theme, toggleTheme }), [theme, toggleTheme]);
+  const value = useMemo(() => ({ theme, setTheme }), [theme, setTheme]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

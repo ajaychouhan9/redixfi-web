@@ -1085,7 +1085,10 @@ export function AskRedixFi() {
                   {limit.message}{" "}
                   <UpgradeLink className="font-semibold underline">
                     {limit.cta === "subscribe" ? "View plans" : limit.cta === "upgrade" ? "Upgrade" : isProEntitled(user) ? "Add more questions" : "Manage plan"}
-                  </UpgradeLink>
+                  </UpgradeLink>{" "}
+                  <Link href="/pricing#ask-topup" className="underline" data-testid="ask-topup-link">
+                    Question pack prices
+                  </Link>
                 </div>
               )}
 

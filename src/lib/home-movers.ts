@@ -24,7 +24,7 @@ export function previewRows(d: IntradayTabData | null | undefined): PreviewRow[]
 /** "Live" while the market is open and the list is today's; otherwise "As of <date> close". No date, no label. */
 export function previewLabel(d: IntradayTabData | null | undefined): string | null {
   if (!d || !d.available) return null;
-  if (d.session.phase === "live" && d.is_today !== false) return "Live";
+  if (d.session.phase === "live" && d.is_today !== false) return "Live · 15 min delayed";
   const day = d.data_date_label ?? d.session.latest_completed_session ?? null;
   return day ? `As of ${day} close` : null;
 }

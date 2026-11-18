@@ -9,7 +9,8 @@
    the first-paint default before JS picks a stored/system preference. */
 
 :root,
-:root[data-theme="light"] {
+:root[data-theme="light"],
+[data-preview="light"] {
   /* BUG 5 fix (2026-08-16): native form controls (the Market Activity
      hub's <input type="date"> calendar icon, checkboxes, etc.) render
      using the browser's OS-default light palette unless told otherwise
@@ -32,7 +33,7 @@
      4.51:1 against #ffffff (WCAG-contrast-checker formula) while staying
      visibly lighter than --foreground-muted (5.75:1) so the two still read
      as a clear hierarchy step apart, not identical. */
-  --foreground-faint: #6e7690;
+  --foreground-faint: #626b87; /* 18 Nov 2026: was #6e7690, 4.25:1 on the page background */
   --hover: rgba(0, 0, 0, 0.03);
 
   --accent: #b8873a;
@@ -43,7 +44,7 @@
   /* was #1c9a63 (3.59:1 on white); #157a50 measures 5.34:1 and stays clearly green */
   --up: #157a50;
   --up-bg: rgba(28, 154, 99, 0.08);
-  --down: #d63e30;
+  --down: #c93629; /* 18 Nov 2026: was #d63e30, 4.31:1 on the page background */
   --down-bg: rgba(214, 62, 48, 0.1);
   --neutral: #5c6584;
   --neutral-bg: rgba(136, 145, 168, 0.1);
@@ -111,7 +112,8 @@
   }
 }
 
-:root[data-theme="dark"] {
+:root[data-theme="dark"],
+[data-preview="dark"] {
   color-scheme: dark;
   --background: #0b0f1a;
   --surface: #0d1220;
@@ -146,6 +148,61 @@
   --series-3: #199e70;
   --series-4: #c98500;
   --series-5: #d55181;
+}
+
+
+/* Premium theme (18 Nov 2026): warm ivory, deep ink, dark-gold accent, serif headings, soft shadows. Every text pair here is at least 4.5:1
+   (checked with a script, see api/docs/WEB_THEMES_PHASE1C_20261118.md). Chosen with the same variables as the other two, so no component changed. */
+:root[data-theme="premium"],
+[data-preview="premium"] {
+  color-scheme: light;
+  --background: #faf6ec;
+  --surface: #fffdf7;
+  --surface-raised: #fffdf7;
+  --border: #e3d8bd;
+  --foreground: #241c12;
+  --foreground-muted: #54493a;
+  --foreground-faint: #6f6352;
+  --hover: rgba(80, 55, 10, 0.05);
+
+  --accent: #8a6317;
+  --accent-dim: #6f4f10;
+  --accent-foreground: #fffdf7;
+
+  --up: #13663f;
+  --up-bg: rgba(19, 102, 63, 0.09);
+  --down: #a9271a;
+  --down-bg: rgba(169, 39, 26, 0.09);
+  --neutral: #54493a;
+  --neutral-bg: rgba(84, 73, 58, 0.1);
+
+  --amber: #8a4f00;
+  --amber-bg: rgba(138, 79, 0, 0.1);
+
+  --focus-ring: #8a6317;
+
+  --series-1: #1f5fb0;
+  --series-2: #b8481b;
+  --series-3: #12805a;
+  --series-4: #a86f00;
+  --series-5: #b03a6a;
+
+  --hx-up: #13663f;
+  --hx-down: #a9271a;
+}
+:root[data-theme="premium"] h1,
+:root[data-theme="premium"] h2,
+:root[data-theme="premium"] h3,
+[data-preview="premium"] h1,
+[data-preview="premium"] h2,
+[data-preview="premium"] h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: 0.005em;
+}
+:root[data-theme="premium"] [class*="bg-surface-raised"],
+:root[data-theme="premium"] [class*="bg-surface "],
+[data-preview="premium"] [class*="bg-surface-raised"] {
+  box-shadow: 0 1px 2px rgba(60, 40, 10, 0.06), 0 6px 18px rgba(60, 40, 10, 0.06);
 }
 
 /* Typography readability pass (2026-08-18): the task-wide floor was
@@ -268,4 +325,13 @@ body {
 :root[data-theme="dark"] {
   --hx-up: var(--up);
   --hx-down: var(--down);
+}
+
+[data-preview="light"] { --hx-up: #12744a; --hx-down: #b9291c; }
+[data-preview="dark"] { --hx-up: var(--up); --hx-down: var(--down); }
+
+/* Light theme link and label text (18 Nov 2026): the brand gold is 3.0:1 against the light page, under the 4.5:1 floor for small text. Text only;
+   buttons and fills keep the brand gold (dark text on it is 5.8:1). The hover state keeps its own colour. */
+:root[data-theme="light"] .text-accent {
+  color: #8a6317;
 }
