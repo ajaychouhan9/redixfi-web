@@ -22,6 +22,7 @@ import {
 import { getWatchlist } from "@/lib/api/mutations";
 import type { SmartFilterPatch } from "./smartFilterPatch";
 import { EMPTY_FUND, FundamentalFilters, fundActive, fundChips, fundParams, type FundFilterState } from "./FundamentalFilters";
+import { roceFilterNote } from "@/lib/roce";
 import type { FundamentalsCoverage } from "@/lib/api/types";
 import { track } from "@/lib/analytics";
 import { FeedbackBox } from "@/components/app/FeedbackBox";
@@ -34,7 +35,7 @@ const FROM52_DEFAULT_MIGRATION_KEY = "redixfi:signals-columns:from52-default:v1"
 function fundFromParams(p: SharedScreenParams): FundFilterState {
   const str = (v: number | null | undefined) => (v != null ? String(v) : "");
   return {
-    peMax: str(p.pe_max), roeMin: str(p.roe_min), epsPositive: !!p.eps_positive, profitGrowthMin: str(p.profit_growth_min),
+    peMax: str(p.pe_max), roeMin: str(p.roe_min), roceMin: str(p.roce_min), epsPositive: !!p.eps_positive, profitGrowthMin: str(p.profit_growth_min),
     salesGrowthMin: str(p.sales_growth_min), ema200: p.ema200_state ?? "", deMax: str(p.de_max), promoterMin: str(p.promoter_min),
     dividendYieldMin: str(p.dividend_yield_min), pledgeMax: str(p.pledge_max), deliveryMin: str(p.delivery_pct_min),
     insider: p.insider_30d ?? "", deal30d: !!p.deal_30d,
@@ -121,6 +122,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   // reported-figure filters (P/E, ROE, EPS, growth, price vs 200-day EMA); shown only when the API reports their coverage
   const [fund, setFund] = useState<FundFilterState>(() => (initialParams ? fundFromParams(initialParams) : EMPTY_FUND));
   const [fundCoverage, setFundCoverage] = useState<FundamentalsCoverage | null>(null);
+  const [roceNote, setRoceNote] = useState<string | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
 
   const [sort, setSort] = useState<string>(initialParams?.sort ?? "symbol");
@@ -289,10 +291,10 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
   }));
 
   const caps: ApiCaps = useMemo(() => ({
-    fundamentals: !!fundCoverage, filters13: fundCoverage?.promoter !== undefined, columns: supportsColumns,
+    fundamentals: !!fundCoverage, filters13: fundCoverage?.promoter !== undefined, columns: supportsColumns, roce: fundCoverage?.roce !== undefined,
   }), [fundCoverage, supportsColumns]);
   const forcedIds = useMemo(() => filterColumns({
-    peMax: fund.peMax, roeMin: fund.roeMin, epsPositive: fund.epsPositive, profitGrowthMin: fund.profitGrowthMin, salesGrowthMin: fund.salesGrowthMin,
+    peMax: fund.peMax, roeMin: fund.roeMin, roceMin: fund.roceMin, epsPositive: fund.epsPositive, profitGrowthMin: fund.profitGrowthMin, salesGrowthMin: fund.salesGrowthMin,
     ema200: fund.ema200, deMax: fund.deMax, promoterMin: fund.promoterMin, dividendYieldMin: fund.dividendYieldMin, pledgeMax: fund.pledgeMax,
     deliveryMin: fund.deliveryMin, insider: fund.insider, deal30d: fund.deal30d,
     from52: from52Max !== undefined || asNumber(from52Min) !== undefined, volatility: !!volatilityBand, volumeMin: asNumber(volumeMin) !== undefined,
@@ -426,6 +428,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
           setExcludedInMasterCount(info.excluded_in_master_count ?? null);
           setExtrasAsOf(info.extras_as_of ?? null);
           setFundCoverage(info.fundamentals_coverage ?? null);
+          setRoceNote(roceFilterNote(info.roce_no_figure_count, info.roce_not_applicable_count));
           setSupportsColumns(!!info.supports_columns);
           setPledgeAsOf(info.pledge_as_of ?? null);
         })
@@ -646,6 +649,9 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
           </div>
         )}
 
+        {roceNote && fund.roceMin.trim() !== "" && (
+          <p className="mt-2 text-[11px] text-foreground-muted" data-testid="roce-filter-note">{roceNote}</p>
+        )}
         <p className="mt-3 text-[11px] text-foreground-faint">{DISCLAIMER}</p>
         {notMatchedCount !== null && notMatchedCount > 0 && (
           <p className="mt-1 text-[11px] text-foreground-faint">

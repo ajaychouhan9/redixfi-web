@@ -34,6 +34,7 @@ import { modeLabel, personCategory, sideLabel } from "@/lib/insider-display";
 import { safeNumber, safeRupees } from "@/lib/safe-format";
 import { sourceName } from "@/lib/news-source";
 import { coverageLine } from "@/lib/seo/data-coverage";
+import { RoceView } from "@/components/app/research/RoceView";
 
 // ONE page per stock for everyone (17 Nov 2026): the public page and the signed-in /signals/<symbol> and /research/<symbol> pages are merged here
 // (those addresses, and /stocks/<symbol>/rewind and /concall-summary, redirect permanently). Public, anonymous, ISR: the page is the same
@@ -305,6 +306,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
             <Fact label="Debt to equity" note={resultsNote}>{val.debt_to_equity == null ? "n/a" : inr(val.debt_to_equity)}</Fact>
           </div>
         )}
+        <RoceView roce={f?.roce} />
         {f?.fallback_source && f.fallback_source.fields.length > 0 && (
           <p className="mt-2 text-xs text-foreground-faint">
             Where the main data source had no value, {f.fallback_source.fields.length} {f.fallback_source.fields.length === 1 ? "figure comes" : "figures come"} from {f.fallback_source.source}.

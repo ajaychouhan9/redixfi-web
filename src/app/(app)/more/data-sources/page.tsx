@@ -3,6 +3,7 @@ import { getDataStatus, getMarketOverview } from "@/lib/api/endpoints";
 import { FreshnessDot } from "@/components/ui/FreshnessDot";
 import { Card } from "@/components/ui/Card";
 import { quarterDate } from "@/lib/seo/stock-facts";
+import { ROCE_DATA_NOTE } from "@/lib/roce";
 import type { DataStatus } from "@/lib/api/types";
 
 export const metadata: Metadata = {
@@ -115,6 +116,7 @@ export default async function DataSourcesPage() {
           {status?.not_available_text ??
             "Not available means the source did not give RedixFi a value for that stock and date. It is shown as “Not available” instead of a zero or an estimate."}
         </p>
+        <p className="mt-2 text-sm text-foreground-muted" data-testid="roce-data-note">{ROCE_DATA_NOTE}</p>
       </Card>
     </div>
   );

@@ -26,6 +26,12 @@ export function FundamentalFilters({ value, onChange, coverage }: { value: FundF
           ROE at least (%){count(coverage.roe)}
           <input type="number" value={value.roeMin} onChange={(e) => onChange({ roeMin: e.target.value })} placeholder="e.g. 20" className={control} />
         </label>
+        {coverage.roce !== undefined && (
+          <label className={label}>
+            ROCE % above (annual, calculated){count(coverage.roce)}
+            <input type="number" value={value.roceMin} onChange={(e) => onChange({ roceMin: e.target.value })} placeholder="Enter a number" className={control} data-testid="roce-min" />
+          </label>
+        )}
         <label className={label}>
           Profit growth at least (%){count(coverage.profit_growth)}
           <input type="number" value={value.profitGrowthMin} onChange={(e) => onChange({ profitGrowthMin: e.target.value })} placeholder="e.g. 20" className={control} />
@@ -82,7 +88,7 @@ export function FundamentalFilters({ value, onChange, coverage }: { value: FundF
         </label>
       </div>
       <p className="mt-2 text-[11px] text-foreground-faint">
-        Dates of the figures: promoter holding is from the shareholding pattern of {coverage.shareholding_date_latest ? quarterDate(coverage.shareholding_date_latest) : "the latest filing"}; delivery, pledge and insider figures are as of {coverage.measured_as_of ?? "the latest session"}; deals are those disclosed up to {coverage.deal_latest ?? "the latest session"}. Insider filters use the net value of insider trades disclosed in the last 30 days, by trade date. ROCE is not stored, so it cannot be filtered.
+        Dates of the figures: promoter holding is from the shareholding pattern of {coverage.shareholding_date_latest ? quarterDate(coverage.shareholding_date_latest) : "the latest filing"}; delivery, pledge and insider figures are as of {coverage.measured_as_of ?? "the latest session"}; deals are those disclosed up to {coverage.deal_latest ?? "the latest session"}. Insider filters use the net value of insider trades disclosed in the last 30 days, by trade date. ROCE is calculated by RedixFi from annual statements and is not available for banks, insurers and finance companies.
       </p>
       </>)}
       <p className="mt-2 text-[11px] text-foreground-faint">

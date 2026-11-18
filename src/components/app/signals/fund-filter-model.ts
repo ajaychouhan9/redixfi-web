@@ -5,6 +5,7 @@ import type { SignalsListParams } from "@/lib/api/endpoints";
 export interface FundFilterState {
   peMax: string;
   roeMin: string;
+  roceMin: string;
   epsPositive: boolean;
   profitGrowthMin: string;
   salesGrowthMin: string;
@@ -18,7 +19,7 @@ export interface FundFilterState {
   deal30d: boolean;
 }
 
-export const EMPTY_FUND: FundFilterState = { peMax: "", roeMin: "", epsPositive: false, profitGrowthMin: "", salesGrowthMin: "", ema200: "",
+export const EMPTY_FUND: FundFilterState = { peMax: "", roeMin: "", roceMin: "", epsPositive: false, profitGrowthMin: "", salesGrowthMin: "", ema200: "",
   deMax: "", promoterMin: "", dividendYieldMin: "", pledgeMax: "", deliveryMin: "", insider: "", deal30d: false };
 
 const num = (v: string): number | undefined => {
@@ -31,6 +32,7 @@ export function fundParams(f: FundFilterState): Partial<SignalsListParams> {
   return {
     pe_max: num(f.peMax),
     roe_min: num(f.roeMin),
+    roce_min: num(f.roceMin),
     eps_positive: f.epsPositive ? true : undefined,
     profit_growth_min: num(f.profitGrowthMin),
     sales_growth_min: num(f.salesGrowthMin),
@@ -49,6 +51,7 @@ export function fundChips(f: FundFilterState, set: (patch: Partial<FundFilterSta
   const out: { key: string; text: string; clear: () => void }[] = [];
   if (num(f.peMax) !== undefined) out.push({ key: "pe", text: `P/E ≤ ${f.peMax}`, clear: () => set({ peMax: "" }) });
   if (num(f.roeMin) !== undefined) out.push({ key: "roe", text: `ROE ≥ ${f.roeMin}%`, clear: () => set({ roeMin: "" }) });
+  if (num(f.roceMin) !== undefined) out.push({ key: "roce", text: `ROCE above ${f.roceMin}%`, clear: () => set({ roceMin: "" }) });
   if (f.epsPositive) out.push({ key: "eps", text: "EPS above zero", clear: () => set({ epsPositive: false }) });
   if (num(f.profitGrowthMin) !== undefined) out.push({ key: "pg", text: `Profit growth ≥ ${f.profitGrowthMin}%`, clear: () => set({ profitGrowthMin: "" }) });
   if (num(f.salesGrowthMin) !== undefined) out.push({ key: "sg", text: `Sales growth ≥ ${f.salesGrowthMin}%`, clear: () => set({ salesGrowthMin: "" }) });

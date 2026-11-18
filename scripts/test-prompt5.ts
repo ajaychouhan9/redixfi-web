@@ -30,7 +30,7 @@ const stripStandard = (t: string) => t.split(STANDARD).join("");
 // ---- screener filters
 {
   assert.deepEqual(fundParams(EMPTY_FUND), {
-    pe_max: undefined, roe_min: undefined, eps_positive: undefined, profit_growth_min: undefined, sales_growth_min: undefined,
+    pe_max: undefined, roe_min: undefined, roce_min: undefined, eps_positive: undefined, profit_growth_min: undefined, sales_growth_min: undefined,
     ema200_state: undefined, de_max: undefined, promoter_min: undefined, dividend_yield_min: undefined, pledge_max: undefined,
     delivery_pct_min: undefined, insider_30d: undefined, deal_30d: undefined,
   });
@@ -49,7 +49,7 @@ const stripStandard = (t: string) => t.split(STANDARD).join("");
   }
   assert.ok(!FORBIDDEN.test(chips), "chips use no forbidden word");
   const src = read("components/app/signals/FundamentalFilters.tsx");
-  assert.ok(src.includes("ROCE is not stored"), "the filters panel says ROCE cannot be filtered");
+  assert.ok(!src.includes("ROCE is not stored"), "the filters panel no longer says ROCE cannot be filtered");
   assert.ok(src.includes("is not matched by it"), "the panel says a stock missing the figure is not matched");
 }
 

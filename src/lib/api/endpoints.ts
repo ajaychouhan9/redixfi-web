@@ -95,6 +95,7 @@ export interface SignalsListParams {
   pe_min?: number;
   pe_max?: number;
   roe_min?: number;
+  roce_min?: number;
   eps_positive?: boolean;
   profit_growth_min?: number;
   sales_growth_min?: number;

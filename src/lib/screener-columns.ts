@@ -3,6 +3,7 @@
 import type { SignalRow } from "@/lib/api/types";
 import { from52Display } from "@/lib/from52-display";
 import { STANDARD_LINE } from "@/lib/compliance/standard-line";
+import { fy, roceCell } from "@/lib/roce";
 
 export type ColumnGroup = "Price" | "Technical" | "Fundamentals" | "Activity";
 export const COLUMN_GROUPS: ColumnGroup[] = ["Price", "Technical", "Fundamentals", "Activity"];
@@ -10,7 +11,7 @@ export const COLUMN_GROUPS: ColumnGroup[] = ["Price", "Technical", "Fundamentals
 export type ColumnId =
   | "sector" | "week52" | "from52"
   | "ema200" | "volume" | "volatility" | "chips"
-  | "pe" | "roe" | "eps" | "profit_growth" | "sales_growth" | "de" | "promoter" | "pledge" | "dividend_yield"
+  | "pe" | "roe" | "roce" | "eps" | "profit_growth" | "sales_growth" | "de" | "promoter" | "pledge" | "dividend_yield"
   | "delivery" | "insider" | "deals" | "news";
 
 /** Facts the cells need that are not on the row itself (dates the API reports for the whole result). */
@@ -101,6 +102,9 @@ export const COLUMNS: ColumnDef[] = [
     cell: (r) => numCell(r.pe, fq(r)), asOf: (r) => fq(r), csv: (r) => csvNum(r.pe) },
   { id: "roe", group: "Fundamentals", label: "ROE", unit: "%", sort: "roe",
     cell: (r) => pctCell(r.roe, fq(r)), asOf: (r) => fq(r), csv: (r) => csvNum(r.roe) },
+  { id: "roce", group: "Fundamentals", label: "ROCE", unit: "% (annual, calculated)", sort: "roce",
+    cell: (r) => roceCell(r), asOf: (r) => (r && fy(r.roce_year) ? `${fy(r.roce_year)} annual statements` : null),
+    csv: (r) => (r.roce_applicable === false ? "not applicable" : csvNum(r.roce)) },
   { id: "eps", group: "Fundamentals", label: "EPS", unit: "₹", sort: "eps",
     cell: (r) => (isNum(r.eps) ? { primary: inr(r.eps), ...(fq(r) ? { sub: fq(r) as string } : {}) } : null), asOf: (r) => fq(r), csv: (r) => csvNum(r.eps) },
   { id: "profit_growth", group: "Fundamentals", label: "Profit growth", unit: "% vs year-earlier quarter", sort: "profit_growth",
@@ -141,12 +145,12 @@ export const COLUMNS: ColumnDef[] = [
 
 export const COLUMN_BY_ID: Record<string, ColumnDef> = Object.fromEntries(COLUMNS.map((c) => [c.id, c]));
 /** Table order: the long-standing seven keep their places, new columns follow. */
-const ORDER: ColumnId[] = ["sector", "delivery", "volume", "from52", "week52", "volatility", "chips", "ema200", "pe", "roe", "eps", "profit_growth", "sales_growth",
+const ORDER: ColumnId[] = ["sector", "delivery", "volume", "from52", "week52", "volatility", "chips", "ema200", "pe", "roe", "roce", "eps", "profit_growth", "sales_growth",
   "de", "promoter", "pledge", "dividend_yield", "insider", "deals", "news"];
 
 const PRESET_DEFS: { id: string; label: string; ids: ColumnId[] }[] = [
   { id: "basic", label: "Basic", ids: ["sector", "delivery", "volume", "from52", "volatility", "chips", "news"] },
-  { id: "fundamentals", label: "Fundamentals", ids: ["sector", "pe", "roe", "profit_growth", "sales_growth", "de", "promoter", "dividend_yield"] },
+  { id: "fundamentals", label: "Fundamentals", ids: ["sector", "pe", "roe", "roce", "profit_growth", "sales_growth", "de", "promoter", "dividend_yield"] },
   { id: "technical", label: "Technical", ids: ["from52", "ema200", "volume", "volatility", "chips"] },
   { id: "activity", label: "Activity", ids: ["delivery", "insider", "deals", "volume", "news"] },
 ];
@@ -171,7 +175,7 @@ export function fromLegacyColumns(old: Record<string, unknown> | null | undefine
 
 /** What the current filters read, as the state of the Screener controls. */
 export interface ActiveFilterState {
-  peMax?: string; roeMin?: string; epsPositive?: boolean; profitGrowthMin?: string; salesGrowthMin?: string; ema200?: string;
+  peMax?: string; roeMin?: string; roceMin?: string; epsPositive?: boolean; profitGrowthMin?: string; salesGrowthMin?: string; ema200?: string;
   deMax?: string; promoterMin?: string; promoterMax?: string; dividendYieldMin?: string; pledgeMax?: string; pledgeMin?: string; deliveryMin?: string;
   insider?: string; deal30d?: boolean;
   from52?: boolean; volatility?: boolean; volumeMin?: boolean; deliveryState?: boolean; news?: boolean; sector?: boolean;
@@ -183,6 +187,7 @@ export function filterColumns(f: ActiveFilterState): ColumnId[] {
   const out: ColumnId[] = [];
   if (has(f.peMax)) out.push("pe");
   if (has(f.roeMin)) out.push("roe");
+  if (has(f.roceMin)) out.push("roce");
   if (f.epsPositive) out.push("eps");
   if (has(f.profitGrowthMin)) out.push("profit_growth");
   if (has(f.salesGrowthMin)) out.push("sales_growth");
@@ -208,7 +213,7 @@ export function resolveColumns(chosen: ColumnId[], forced: ColumnId[]): { ids: C
 }
 
 /** What the API behind the page can do. Older deployments lack some columns' data, so those columns are not offered (no empty "n/a" columns). */
-export interface ApiCaps { fundamentals: boolean; filters13: boolean; columns: boolean }
+export interface ApiCaps { fundamentals: boolean; filters13: boolean; columns: boolean; roce?: boolean }
 export const NO_CAPS: ApiCaps = { fundamentals: false, filters13: false, columns: false };
 const NEEDS_FUNDAMENTALS: ColumnId[] = ["ema200", "pe", "roe", "eps", "profit_growth", "sales_growth"];
 const NEEDS_FILTERS13: ColumnId[] = ["de", "promoter", "dividend_yield", "deals"];
@@ -217,6 +222,7 @@ export function columnAvailable(id: ColumnId, caps: ApiCaps): boolean {
   if (NEEDS_FUNDAMENTALS.includes(id)) return caps.fundamentals;
   if (NEEDS_FILTERS13.includes(id)) return caps.filters13;
   if (NEEDS_COLUMNS.includes(id)) return caps.columns;
+  if (id === "roce") return !!caps.roce;       // an API without the ROCE figures would only show an empty column
   return true;
 }
 /** Sorts every API deployment accepts; the others need `columns`. */

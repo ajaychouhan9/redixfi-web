@@ -42,6 +42,9 @@ export interface SignalsPageInfo extends PageInfo {
   incomplete_history_count?: number;
   excluded_in_master_count?: number;
   extras_as_of?: string | null;
+  /** Only when the ROCE filter is on: stocks left out for having no ROCE figure, and how many of those are banks, insurers or finance companies. */
+  roce_no_figure_count?: number;
+  roce_not_applicable_count?: number;
   /** 14 Nov 2026: the API accepts ?fields=, ?export= and the column sorts; pledge disclosure date (only when pledge was asked for); export row cap. */
   supports_columns?: boolean;
   pledge_as_of?: string | null;
@@ -57,6 +60,8 @@ export interface FundamentalsCoverage {
   profit_growth: number;
   sales_growth: number;
   ema200: number;
+  /** 19 Nov 2026: how many stocks have an annual ROCE figure (absent on an older API). */
+  roce?: number;
   /** 13 Nov 2026: counts and dates for the holding, dividend, delivery, pledge, insider and deal filters (absent on an older API). */
   de?: number;
   promoter?: number;
@@ -145,6 +150,10 @@ export interface SignalRow {
   /** Reported figures (null when the stock has none) and the quarter they belong to; ema200 position from adjusted daily closes. */
   pe?: number | null;
   roe?: number | null;
+  /** Annual ROCE %, calculated by RedixFi from annual statements (19 Nov 2026); roce_year is the fiscal year; roce_applicable is false for banks, insurers and finance companies. */
+  roce?: number | null;
+  roce_year?: string | null;
+  roce_applicable?: boolean | null;
   eps?: number | null;
   profit_growth_pct?: number | null;
   sales_growth_pct?: number | null;
@@ -1141,6 +1150,8 @@ export interface FundamentalsBlock {
   identity: FundamentalsIdentity;
   quarterly: FundamentalsQuarterly;
   annual: FundamentalsAnnual;
+  /** Annual ROCE block (19 Nov 2026); absent on records built before that. */
+  roce?: import("@/lib/roce").RoceBlock | null;
   balance: FundamentalsBalance;
   cashflow: FundamentalsCashflow;
   valuation: FundamentalsValuation;
@@ -2363,6 +2374,7 @@ export interface SharedScreenParams {
   pe_min?: number | null;
   pe_max?: number | null;
   roe_min?: number | null;
+  roce_min?: number | null;
   eps_positive?: boolean | null;
   profit_growth_min?: number | null;
   sales_growth_min?: number | null;

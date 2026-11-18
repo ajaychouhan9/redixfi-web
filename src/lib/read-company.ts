@@ -64,13 +64,13 @@ export const READ_STEPS: ReadStep[] = [
     minutes: "about 4 min",
     title: "Is the business growing?",
     look:
-      "On the Overview tab, find Quarterly results. It shows the last eight quarters: revenue, net profit and margin %. Below it are return on equity (profit as a share of the money the owners have put in) and debt to equity (what the company owes compared with that money). The page shows eight quarters; five-year figures are not on the page yet.",
+      "On the Annual report tab, find Quarterly results. It shows the last eight quarters: revenue, net profit and margin %. Below it are return on equity (profit as a share of the money the owners have put in), debt to equity (what the company owes compared with that money) and return on capital employed (ROCE). RedixFi calculates ROCE from the annual statements for companies other than banks, insurers and finance companies, and a small table beneath it shows the last five years. Other five-year figures are not on the page yet.",
     means:
-      "Revenue and profit that are higher than in the same quarters a year before mean the company sold and earned more than it did then. Margin is the share of each rupee of sales left as operating profit. Debt works differently for banks and lenders, whose business is borrowing and lending, so compare a company with others of its own kind.",
-    tabs: [{ label: "Open Overview", tab: "overview" }],
+      "Revenue and profit that are higher than in the same quarters a year before mean the company sold and earned more than it did then. Margin is the share of each rupee of sales left as operating profit. ROCE is operating profit before exceptional items divided by the capital the business uses (total assets minus current liabilities), so it shows how much operating profit the company made for each rupee of capital. It is not shown for banks, insurers and finance companies, whose business is lending or insuring. Debt works differently for banks and lenders, whose business is borrowing and lending, so compare a company with others of its own kind.",
+    tabs: [{ label: "Open Annual report", tab: "annual-report" }],
     askKey: "financials",
     rules:
-      "Common rules, shown as information only. Many people look for: a profit above zero in the latest quarter; sales higher than in the same quarter a year earlier; a return on equity of 15% or more; a debt to equity below 1 for companies that are not lenders. These are common rules, not tests a company must pass, and people use different numbers.",
+      "Common rules, shown as information only. Many people look for: a profit above zero in the latest quarter; sales higher than in the same quarter a year earlier; a return on equity of 15% or more; a return on capital employed that is similar in recent years to earlier years; a debt to equity below 1 for companies that are not lenders. These are common rules, not tests a company must pass, and people use different numbers.",
   },
   {
     n: 3,
