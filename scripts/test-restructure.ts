@@ -49,7 +49,7 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\
   // the removed pages are really gone, and stock paths point at the one page
   for (const gone of ["app/(app)/rewind/page.tsx", "app/(app)/me/page.tsx", "app/(app)/research/page.tsx", "app/(app)/research/[symbol]/page.tsx", "app/(app)/signals/[symbol]/page.tsx", "app/(seo)/stocks/[symbol]/page.tsx", "app/(seo)/stocks/[symbol]/rewind/page.tsx", "app/(seo)/stocks/[symbol]/concall-summary/page.tsx"])
     assert.ok(!exists(gone), `${gone} is removed`);
-  for (const here of ["stocks/[symbol]", "market", "intraday", "pulse", "market-activity", "gainers-losers", "pricing", "start"]) assert.ok(exists(`app/(app)/${here}/page.tsx`), `${here} is a page`);
+  for (const here of ["stocks/[symbol]", "market", "intraday", "pulse", "market-activity", "gainers-losers", "pricing", "stock-check"]) assert.ok(exists(`app/(app)/${here}/page.tsx`), `${here} is a page`);
   assert.equal(stockPath("/signals", "tcs"), "/stocks/TCS");
   assert.equal(stockPath("/research", "M&M"), "/stocks/M%26M");
   assert.equal(stockTabPath("INFY", "rewind"), "/stocks/INFY#rewind");
@@ -174,7 +174,7 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\
   assert.ok(order.every((i, n) => i >= 0 && (n === 0 || i > order[n - 1])), `order: search, brief, boxes, movers, trial line (${order.join(",")})`);
   assert.ok(home.includes("Check any NSE stock in minutes: delivery, insider trades, points to watch and concall summaries.") && home.includes("No buy or sell advice."), "headline and sub-line");
   const boxes = strip(read("components/app/home/HomeBoxes.tsx"));
-  for (const t of ["New to stocks? Start here", "Screener", "Market Overview", "7-Day Review", "Ask AI"]) assert.ok(boxes.includes(`title="${t}"`), `box ${t}`);
+  for (const t of ["New to stocks? Start the 15-minute check", "Screener", "Market Overview", "7-Day Review", "Ask AI"]) assert.ok(boxes.includes(`title="${t}"`), `box ${t}`);
   assert.ok(!/Rewind/.test(boxes), "no Rewind box");
   assert.equal((boxes.match(/<Box /g) ?? []).length, 5, "five boxes");
   const mv = strip(read("components/app/home/HomeMovers.tsx"));
@@ -251,13 +251,9 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\
   assert.equal(yieldText({ dividend_yield_pct: 0 }), "None");
   assert.equal(yieldText({ dividend_yield_pct: null }), "Not available");
   assert.deepEqual(START_WHAT_MATTERS.map((o) => o.label), ["Steady profits", "Growing sales", "Pays dividends"]);
-  const sh = strip(read("components/app/start/StartHere.tsx"));
-  assert.ok(!/Company size|Large|Mid\b|Small/.test(sh), "the company-size question is hidden while it only has Any");
-  assert.ok(sh.includes("Read this company") && sh.includes("profitFlag(r)") && sh.includes("salesText(r)") && sh.includes("yieldText(r)") && sh.includes("START_RESULTS_NOTE"), "cards: profit, sales growth, dividend yield, button; A to Z note");
-  assert.ok(!/rank|score|best|top/i.test(sh.replace(/data-testid="[^"]*"/g, "")), "no ranking wording");
-  const page = strip(read("app/(app)/start/page.tsx"));
-  assert.ok(!/\b(cookies|headers)\(\)|searchParams|await |fetch\(/.test(page), "/start is static");
-  assert.ok(read("app/sitemap.xml/route.ts").includes('"/start"') && read("app/sitemap.xml/route.ts").includes('"/market"'), "sitemap lists /start and /market");
+  const page = strip(read("app/(app)/stock-check/page.tsx"));
+  assert.ok(!/\b(cookies|headers)\(\)|searchParams|await |fetch\(/.test(page), "/stock-check is static");
+  assert.ok(read("app/sitemap.xml/route.ts").includes('"/stock-check"') && read("app/sitemap.xml/route.ts").includes('"/market"'), "sitemap lists /stock-check and /market");
   // Pricing: its own page and menu item; the research-lookups row is gone with the feature; no price changed
   const plans = read("data/plan-features.ts");
   assert.ok(!/Research page lookups/.test(plans), "the 3 research lookups a day line is removed");

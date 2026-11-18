@@ -1,0 +1,61 @@
+{
+  "symbol": "HINDUNILVR",
+  "name": "Hindustan Unilever",
+  "stored_on": "2026-11-19",
+  "answers": [
+    {
+      "id": "points",
+      "question": "List the points to watch for this company, with sources",
+      "lead": "Points to watch from Hindustan Unilever's filed documents. Three of the stored items are shown in this sample.",
+      "table": {
+        "columns": ["Point to watch", "What the filing says", "Date"],
+        "rows": [
+          ["Promoter share pledge", "Promoters have pledged 0.54% of their holding (0.50% in the earlier disclosure).", "As of 18 Jul 2026"],
+          ["Contingent liabilities", "The auditor's report names provisions and contingent liabilities relating to taxation, litigation and claims as a key audit matter (Notes 2, 9, 21 and 24 to the standalone financial statements).", "Annual report FY2025-26, filed 2 Jun 2026"],
+          ["Statutory dues in dispute", "The auditor's report lists statutory dues that are disputed and pending before appellate authorities, tribunals or courts: income tax, sales tax, excise duty, customs duty and service tax, for periods from 1979-80 to 2025-26.", "Annual report FY2025-26, filed 2 Jun 2026"]
+        ]
+      },
+      "sources": [
+        { "label": "NSE promoter pledge disclosure", "date": "18 Jul 2026" },
+        { "label": "Annual report FY2025-26", "date": "Filed 2 Jun 2026", "url": "https://nsearchives.nseindia.com/annual_reports/AR_29330_HINDUNILVR_2025_2026_A_21643813_02062026215058.pdf" }
+      ]
+    },
+    {
+      "id": "management",
+      "question": "What did management say in the latest concall and annual report? List guidance, capex plans and risks",
+      "lead": "The latest filings on file for this company are results and investor presentations, not call transcripts, so this answer is from those and the annual report.",
+      "bullets": [
+        { "label": "Guidance", "text": "Consolidated EBITDA margin to be within the current guided range of 22-24%. Focus on volume-led profit growth under the company's own strategy (results presentation, 28 Oct 2026)." },
+        { "label": "Capex plans", "text": "Growth-led capex investment to step up from 2% to 3% of turnover, with capital to be deployed on bolt-on acquisitions (investor presentation, 9 Sep 2026)." },
+        { "label": "Risks named", "text": "Commodity inflation is expected to continue in the short term (28 Oct 2026). The auditor's report names the estimates behind provisions and contingent liabilities for tax, litigation and claims as a key audit matter, because the judgement involved is high (annual report FY2025-26)." }
+      ],
+      "sources": [
+        { "label": "Results presentation", "date": "Filed 28 Oct 2026", "url": "https://nsearchives.nseindia.com/corporate/HINDUNILVR_28102026094216_SEintimationIPSigned.pdf" },
+        { "label": "Investor presentation", "date": "Filed 9 Sep 2026", "url": "https://nsearchives.nseindia.com/corporate/HINDUNILVR_09092026181504_SEIntimationInvestorPresentation09092026Signed.pdf" },
+        { "label": "Annual report FY2025-26", "date": "Filed 2 Jun 2026", "url": "https://nsearchives.nseindia.com/annual_reports/AR_29330_HINDUNILVR_2025_2026_A_21643813_02062026215058.pdf" }
+      ]
+    },
+    {
+      "id": "numbers",
+      "question": "Show sales, profit, margin and debt for the last 3 years",
+      "lead": "Consolidated figures for the years ended 31 March, in Rs crore.",
+      "table": {
+        "columns": ["", "FY2026", "FY2025", "FY2024"],
+        "rows": [
+          ["Sales (revenue from operations)", "64,468", "61,328", "61,896"],
+          ["Profit after tax (owners of the company)", "15,040", "10,649", "10,277"],
+          ["Profit margin (profit after tax ÷ sales)", "23.3%", "17.4%", "16.6%"],
+          ["Debt (borrowings plus lease liabilities, 31 March)", "1,478", "1,648", "1,484"]
+        ]
+      },
+      "notes": [
+        "FY2026 and FY2025 are as shown in the annual report for FY2025-26; FY2024 is as shown in the annual report for FY2024-25. That report showed FY2025 sales of Rs 63,121 crore, which differs from the Rs 61,328 crore in the later report.",
+        "At 31 March 2026 the debt figure is lease liabilities of Rs 1,478 crore and no borrowings. The profit margin is calculated by RedixFi from the two rows above it. Reported figures, not adjusted."
+      ],
+      "sources": [
+        { "label": "Annual report FY2025-26", "date": "Filed 2 Jun 2026", "url": "https://nsearchives.nseindia.com/annual_reports/AR_29330_HINDUNILVR_2025_2026_A_21643813_02062026215058.pdf" },
+        { "label": "Annual report FY2024-25", "date": "Filed 29 May 2025", "url": "https://nsearchives.nseindia.com/annual_reports/AR_26462_HINDUNILVR_2024_2025_A_29052025214241.pdf" }
+      ]
+    }
+  ]
+}

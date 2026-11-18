@@ -1,4 +1,4 @@
-import { apiGet, apiGetPaged, apiGetOptional, type FetchOpts } from "./client";
+import { apiGet, apiGetPaged, apiGetOptional, BASE_URL, type FetchOpts } from "./client";
 import type { HomeBrief,
   MarketOverview,
   SignalRow,
@@ -96,6 +96,11 @@ export interface SignalsListParams {
   pe_max?: number;
   roe_min?: number;
   roce_min?: number;
+  /** 19 Nov 2026 (Stock Check ladder). A stock missing the figure is not matched. */
+  market_cap_min?: number;
+  profit_years_min?: number;
+  sales_cagr_3y_min?: number;
+  profit_cagr_3y_min?: number;
   eps_positive?: boolean;
   profit_growth_min?: number;
   sales_growth_min?: number;
@@ -404,3 +409,10 @@ export const getMarketActivitySummary = (opts?: FetchOpts) =>
 // actually run the query — that's where B8 masking applies.
 export const getSharedScreen = (slug: string, opts?: FetchOpts) =>
   apiGetOptional<SharedScreen>(`/shared-screens/${encodeURIComponent(slug)}`, opts);
+
+/** The anonymous figures file for the shortlist ladder (19 Nov 2026): numbers only, no symbol or name. Plain JSON, not the usual envelope. */
+export async function getLadderData(): Promise<unknown> {
+  const res = await fetch(`${BASE_URL}/ladder-data`, { headers: { Accept: "application/json" } });
+  if (!res.ok) throw new Error(`ladder data ${res.status}`);
+  return res.json();
+}

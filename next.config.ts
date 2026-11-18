@@ -23,6 +23,8 @@ const nextConfig: NextConfig = {
       { source: "/sitemap/:file(\\d+\\.xml)", destination: "/sitemap.xml", statusCode: 301 },
       // 17 Nov 2026 restructure: stock pages, Rewind, Intraday, Market activity and Research move (see restructure-redirects.ts; /history is in it too).
       ...restructureRedirects(),
+      // 19 Nov 2026: "Read a company in 15 minutes" (/start) became "The 15-Minute Stock Check". One permanent redirect, no chain.
+      { source: "/start", destination: "/stock-check", statusCode: 301 },
       // "/about" is a guessable address; the page is About & Contact.
       { source: "/about", destination: "/more/about-us", statusCode: 301 },
       // 11 Nov 2026: the Stock Condition and everything built on it were removed. The pages go to their nearest remaining page, permanently.

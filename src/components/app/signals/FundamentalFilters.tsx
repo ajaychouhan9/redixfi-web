@@ -1,6 +1,7 @@
 "use client";
 
 import type { FundamentalsCoverage } from "@/lib/api/types";
+import { BankNote } from "@/components/app/stock-check/ShortlistLadder";
 import { FILTERS_NOTE } from "@/data/fundamental-screens";
 import { quarterDate } from "@/lib/seo/stock-facts";
 
@@ -31,6 +32,11 @@ export function FundamentalFilters({ value, onChange, coverage }: { value: FundF
             ROCE % above (annual, calculated){count(coverage.roce)}
             <input type="number" value={value.roceMin} onChange={(e) => onChange({ roceMin: e.target.value })} placeholder="Enter a number" className={control} data-testid="roce-min" />
           </label>
+        )}
+        {coverage.roce !== undefined && (
+          <div className="col-span-full">
+            <BankNote testId="bank-note-screener" />
+          </div>
         )}
         <label className={label}>
           Profit growth at least (%){count(coverage.profit_growth)}

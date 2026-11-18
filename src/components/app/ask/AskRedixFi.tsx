@@ -23,6 +23,7 @@ import { CompareResultCard } from "@/components/app/signals/CompareResultCard";
 import { MarkdownAnswer } from "@/components/app/ask/MarkdownAnswer";
 import { SourcesSection } from "@/components/app/ask/SourcesSection";
 import { ScopeTag } from "@/components/app/ask/ScopeTag";
+import { AskPreview } from "@/components/app/stock-check/AskPreview";
 import { SignalTableRow, type VisibleColumns } from "@/components/app/signals/SignalTableRow";
 import { filterChips } from "@/components/app/signals/SmartScreenerBox";
 import { Chip } from "@/components/ui/Chip";
@@ -796,6 +797,9 @@ export function AskRedixFi() {
               >
                 Log in
               </Link>
+              <div className="max-h-[55vh] overflow-y-auto border-t border-border pt-3 text-left" data-testid="panel-preview">
+                <AskPreview compact />
+              </div>
             </div>
           ) : (
             <>
@@ -879,6 +883,11 @@ export function AskRedixFi() {
                         ))}
                       </div>
                     </div>
+                    {user.tier === "free" && !user.is_pro_trial && (
+                      <div className="mt-4 border-t border-border pt-3" data-testid="panel-preview-free">
+                        <AskPreview compact />
+                      </div>
+                    )}
                   </div>
                 )}
                 {messages.map((m, i) => (

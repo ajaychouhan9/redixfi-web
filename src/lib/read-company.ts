@@ -14,7 +14,7 @@ export const CHIP_LOGIN = "Ask AI needs a log-in. The question is typed in for y
 
 /** The only questions the address parameter ?ask= can put into Ask AI. Anything else is ignored. */
 export const ASK_QUESTIONS: Record<string, string> = {
-  points: "List the points to watch for this company, with sources.",
+  points: "List the points to watch for this company.",
   financials: "Show this company's sales, profit, margin and debt trend for the last 3 years.",
   holders: "Show recent promoter, insider and bulk or block deal activity.",
   management: "List the guidance, capex plans and risks mentioned in the latest concall and annual report.",
@@ -135,5 +135,5 @@ export const QUIZ: { q: string; a: string }[] = [
   },
 ];
 
-export const PART2_TITLE = "Part 2. Find companies using your own rules";
-export const PART2_INTRO = "Tick the rules that matter to you. The companies that match are listed A to Z, with no ranking. The cards show only what the Screener already returns.";
+export const PART2_TITLE = "Build Your Shortlist";
+export const PART2_INTRO = "Part 2. Choose the rules that matter to you. The stocks that meet them are listed A to Z unless you choose a column to sort by. We do not rank them.";

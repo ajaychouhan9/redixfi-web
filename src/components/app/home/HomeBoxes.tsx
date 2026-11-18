@@ -27,8 +27,8 @@ export function HomeBoxes() {
   const { openPanel } = useAskPanel();
   return (
     <nav aria-label="Where to go next" className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 lg:grid-cols-5" data-testid="home-boxes">
-      <Link href="/start" className={BOX} data-testid="home-box-start">
-        <Box icon={Compass} title="New to stocks? Start here" text="Four plain lines, then choose what matters to you." />
+      <Link href="/stock-check" className={BOX} data-testid="home-box-start">
+        <Box icon={Compass} title="New to stocks? Start the 15-minute check" text="Five steps to read a company, then build a shortlist with your own rules." />
       </Link>
       <Link href="/signals" className={BOX} data-testid="home-box-screener">
         <Box icon={BarChart3} title="Screener" text="Filter 2,000+ NSE stocks by the figures you choose." />

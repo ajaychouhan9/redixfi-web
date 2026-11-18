@@ -5,7 +5,7 @@ import { getVisitorId, lookupGrantHeader, needsLookupHeaders } from "@/lib/looku
 // (nginx allows Vercel origins) and takes a bearer JWT, not a cookie
 // secret, so there's nothing here that needs hiding behind a BFF proxy.
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://api.redixfi.com/api/v1";
+export const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://api.redixfi.com/api/v1";
 
 export class ApiError extends Error {
   status: number;

@@ -153,6 +153,10 @@ export interface SignalRow {
   /** Annual ROCE %, calculated by RedixFi from annual statements (19 Nov 2026); roce_year is the fiscal year; roce_applicable is false for banks, insurers and finance companies. */
   roce?: number | null;
   roce_year?: string | null;
+  /** Years with a profit among the last five annual figures (needs five figures); three-year compound growth, % a year (19 Nov 2026). */
+  profit_years?: number | null;
+  sales_cagr_3y_pct?: number | null;
+  profit_cagr_3y_pct?: number | null;
   roce_applicable?: boolean | null;
   eps?: number | null;
   profit_growth_pct?: number | null;
@@ -2375,6 +2379,9 @@ export interface SharedScreenParams {
   pe_max?: number | null;
   roe_min?: number | null;
   roce_min?: number | null;
+  profit_years_min?: number | null;
+  sales_cagr_3y_min?: number | null;
+  profit_cagr_3y_min?: number | null;
   eps_positive?: boolean | null;
   profit_growth_min?: number | null;
   sales_growth_min?: number | null;

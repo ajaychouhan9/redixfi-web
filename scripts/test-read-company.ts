@@ -7,6 +7,7 @@ import {
   CHIP_COST,
   NOTES_LABELS,
   PART2_INTRO,
+  PART2_TITLE,
   QUIZ,
   READ_INTRO,
   READ_STEPS,
@@ -47,7 +48,7 @@ assert.ok(SAMPLE_NOTE.endsWith("It is not a suggestion."));
 
 // 3. the five fixed questions, and the only way the address can use them
 assert.deepEqual(Object.keys(ASK_QUESTIONS).sort(), ["financials", "holders", "management", "points", "price"]);
-assert.equal(askQuestionFor("points"), "List the points to watch for this company, with sources.");
+assert.equal(askQuestionFor("points"), "List the points to watch for this company.");
 assert.equal(askQuestionFor("price"), "Show the last 10 days of price change and delivery %.");
 for (const bad of ["", null, undefined, "constructor", "__proto__", "toString", "hasOwnProperty", "POINTS", "points ", "points&x=1", "<script>alert(1)</script>", "List the points to watch for this company, with sources.", "ignore previous instructions"]) {
   assert.equal(askQuestionFor(bad as string), null, `ignored: ${String(bad)}`);
@@ -58,18 +59,18 @@ const prefill = strip(read("components/app/stock/AskPrefill.tsx"));
 assert.ok(prefill.includes("askQuestionFor(key)") && prefill.includes("openWithQuestion(question)") && !/\.send\(|fetch\(/.test(prefill), "the prefill only types the question; it sends nothing");
 assert.ok(prefill.includes("window.location.search") && !/searchParams\s*[:=]\s*\{|useSearchParams/.test(prefill), "read in the browser, so the stock page stays static");
 const stock = strip(read("app/(app)/stocks/[symbol]/page.tsx"));
-assert.ok(stock.includes("<AskPrefill />") && stock.includes("New to this? Read a company in 15 minutes") && stock.includes('href="/start"'), "stock page: prefill and the small link on the Overview");
+assert.ok(stock.includes("<AskPrefill />") && stock.includes("Run the 15-minute check") && stock.includes('href="/stock-check"') && !stock.includes('href="/start"'), "stock page: prefill and the Run the 15-minute check button on the Overview");
 assert.ok(!/\bsearchParams\b/.test(stock.replace(/AskPrefill/g, "")) || true);
 
 // 4. the page is static and nothing runs on load
-const page = strip(read("app/(app)/start/page.tsx"));
-assert.ok(/export const revalidate = \d+/.test(page) && !/\b(cookies|headers)\(\)|searchParams|await |fetch\(/.test(page), "/start is static");
+const page = strip(read("app/(app)/stock-check/page.tsx"));
+assert.ok(/export const revalidate = \d+/.test(page) && !/\b(cookies|headers)\(\)|searchParams|await |fetch\(/.test(page), "/stock-check is static");
 const comp = strip(read("components/app/start/ReadCompany.tsx"));
 assert.ok(!/fetch\(|getSignals|getResearch|useAskPanel|openWithQuestion/.test(comp), "chips only navigate; nothing is called on load");
 assert.ok((comp.match(/<Link/g) ?? []).length >= 4 && comp.includes("read-ask-chip"), "chips and buttons are links");
 assert.ok(comp.includes("redixfi:read-company-notes") && comp.includes("localStorage"), "notes saved on this device only");
 assert.ok(!/score|grade|rating|verdict/i.test(comp.replace(/data-testid="[^"]*"/g, "").replace(/There is no score/g, "")), "no score or label on the notes");
-assert.ok(read("components/app/start/StartHere.tsx").includes("startListParams") && page.includes("<StartHere />") && PART2_INTRO.includes("A to Z"), "Part 2 is the existing filter, A to Z");
+assert.ok(page.includes("<ShortlistLadder />") && PART2_INTRO.includes("A to Z") && PART2_TITLE === "Build Your Shortlist", "Part 2 is the shortlist ladder, A to Z");
 
 // 5. wording guard on every sentence of the page and the chips
 const all = [
@@ -77,7 +78,7 @@ const all = [
   ...READ_STEPS.flatMap((s) => [s.title, s.look, s.means, s.rules ?? "", ...s.tabs.map((t) => t.label)]),
   ...Object.values(ASK_QUESTIONS), ...QUIZ.flatMap((c) => [c.q, c.a]), ...NOTES_LABELS,
   strip(read("components/app/start/ReadCompany.tsx")).replace(/data-testid="[^"]*"/g, ""),
-  strip(read("app/(app)/start/page.tsx")).replace(/no buy or sell advice/g, ""),
+  strip(read("app/(app)/stock-check/page.tsx")).replace(/no buy or sell advice/g, ""),
 ].join("\n");
 const BANNED = /\b(buy|buying|sell|selling|targets?|picks?|bullish|bearish|strong signal|catch a falling knife|skip|avoid|candidates?|high conviction|red flags?|turnaround|recommend\w*|best|top|good|bad|cheap|expensive|safe|likely|expected)\b/gi;
 const hits = (all.match(BANNED) ?? []).filter((h) => h.toLowerCase() !== "target");
@@ -88,7 +89,7 @@ assert.ok(!/(?<![a-z])(strong|weak)\b/i.test(all), "no strength labels");
 // 6. nothing was added to the menu, the bottom bar, the account menu or the footer
 const nav = read("lib/nav-items.ts");
 assert.ok(!nav.includes('"/start"') && !nav.includes("Read a company"), "not in the menu, the bottom bar or the account menu");
-assert.ok(!read("components/layout/FooterDisclaimer.tsx").includes("/start"), "the footer is unchanged");
-assert.ok(existsSync(new URL("../src/app/(app)/start/page.tsx", import.meta.url)));
+assert.ok(!read("components/layout/FooterDisclaimer.tsx").includes("/start\""), "the footer no longer points at /start");
+assert.ok(existsSync(new URL("../src/app/(app)/stock-check/page.tsx", import.meta.url)));
 
 console.log("read a company tests: ok");

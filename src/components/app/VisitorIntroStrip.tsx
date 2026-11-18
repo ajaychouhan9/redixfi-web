@@ -56,11 +56,11 @@ export function VisitorIntroStrip() {
         <HeroStockSearch />
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <Link
-            href="/start"
+            href="/stock-check"
             data-testid="hero-start-here"
             className="whitespace-nowrap rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground"
           >
-            New to stocks? Start here
+            New to stocks? Start the 15-minute check
           </Link>
           <Link
             href="/signals"
