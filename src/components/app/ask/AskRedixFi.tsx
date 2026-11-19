@@ -16,6 +16,7 @@ import { restoreAskMessages, type AskRenderableMessage } from "@/lib/ask-panel/h
 import { ASK_PANEL_WIDTHS, type AskPanelMode } from "@/lib/ask-panel/panelMode";
 import { getStarterQuestions } from "@/lib/ask-panel/starterQuestions";
 import { COMMON_QUESTION_CHIPS } from "@/lib/common-questions";
+import { AddToShortlistButton } from "@/components/app/ask/AddToShortlistButton";
 import { CHIP_COST_LINE, HOW_TO_ASK_LINE, daysAvailableNote, howToAskGroups } from "@/lib/ask-panel/howToAsk";
 import { displayName } from "@/lib/company-name";
 import { useMobileViewport } from "@/lib/ask-panel/useMobileViewport";
@@ -32,7 +33,7 @@ import { Chip } from "@/components/ui/Chip";
 import { ExportButton } from "@/components/ui/ExportButton";
 import { downloadCsv } from "@/lib/csv";
 import { downloadXlsx } from "@/lib/xlsx";
-import { isProEntitled } from "@/lib/entitlements";
+import { isPaidEntitled, isProEntitled } from "@/lib/entitlements";
 import { UpgradeLink } from "@/components/ui/UpgradeLink";
 import { track } from "@/lib/analytics";
 import { STANDARD_LINE } from "@/lib/compliance/standard-line";
@@ -1021,7 +1022,8 @@ export function AskRedixFi() {
                       <div className="mt-2">
                         <div className="mb-1.5 flex justify-end">
                           <ExportButton
-                            canExport={isProEntitled(user)}
+                            canExport={isPaidEntitled(user)}
+                            disabledTitle="CSV and Excel downloads are on Basic and Pro"
                             onExport={() => {
                               const rows = tableExportRows(m.table!);
                               downloadCsv("redixfi-ask-table.csv", rows);
@@ -1053,6 +1055,7 @@ export function AskRedixFi() {
                                     {col.label}
                                   </th>
                                 ))}
+                                {m.table.columns[0]?.key === "symbol" && <th className="whitespace-nowrap px-3 py-2">Shortlist</th>}
                               </tr>
                             </thead>
                             <tbody>
@@ -1076,6 +1079,11 @@ export function AskRedixFi() {
                                           {row[col.key] ?? "N/A"}
                                         </td>
                                       ))}
+                                      {m.table!.columns[0]?.key === "symbol" && (
+                                        <td className="whitespace-nowrap px-3 py-2">
+                                          {typeof row.symbol === "string" && row.symbol ? <AddToShortlistButton symbol={row.symbol} getToken={getToken} /> : null}
+                                        </td>
+                                      )}
                                     </tr>
                                   </Fragment>
                                 );
@@ -1167,6 +1175,7 @@ export function AskRedixFi() {
                   visible; the input row below stays uncrowded. */}
               <div className="border-t border-border pb-[env(safe-area-inset-bottom)]">
                 <p className="px-3 pt-2 text-center text-[11px] text-foreground-faint">{COMPLIANCE_LINE}</p>
+                <p className="px-3 text-center text-[11px] text-foreground-faint" data-testid="ask-cost-line">Each answer uses 1 question, including number lists and lookups. Nothing is used if we cannot answer.</p>
                 <div className="flex items-center gap-2 p-3">
                   {!effectiveSymbol && (
                     <Search size={14} className="shrink-0 text-foreground-faint" aria-hidden />

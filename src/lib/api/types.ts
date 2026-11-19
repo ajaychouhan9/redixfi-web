@@ -1882,6 +1882,8 @@ export interface AskTableResult {
   rows: Record<string, string | number | null>[];
   row_count: number;
   total_count?: number;
+  // Multi-day tables: how many days the question asked for (calendar days), so the panel can say "5 days asked, 3 available".
+  requested_days?: number | null;
   // Red-flag tables: rows carry a Recent/Earlier/Older group in this key,
   // already ordered newest first.
   group_key?: string;
