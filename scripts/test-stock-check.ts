@@ -127,6 +127,8 @@ assert.deepEqual(samples.answers.map((a) => a.question), [
 for (const a of samples.answers) {
   assert.ok(a.sources.length >= 1 && a.sources.every((s) => s.label && /\d{4}/.test(s.date)), `${a.id}: a source filing with a date`);
 }
+assert.ok(/Showing 3 of 11 items\. See all on the Points to watch tab\./.test(String(samples.answers[0].lead)) && samples.answers[0].table!.rows.length === 3, "points answer states the total");
+assert.ok(JSON.stringify(samples.answers[2].notes).includes("discontinued operations") && samples.answers[2].table!.rows[2][0] === "Margin, all profit", "numbers answer names the discontinued items and labels the margin row");
 assert.ok(samples.answers[2].table && samples.answers[2].table.columns.length === 4 && samples.answers[2].table.rows.length === 4, "the 3-year table");
 assert.equal(ASK_PREVIEW.csvLocked, "Log in to download CSV");
 assert.equal(ASK_PREVIEW.login, "Log in to ask your own question");

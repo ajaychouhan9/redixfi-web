@@ -6,7 +6,7 @@
     {
       "id": "points",
       "question": "List the points to watch for this company, with sources",
-      "lead": "Points to watch from Hindustan Unilever's filed documents. Three of the stored items are shown in this sample.",
+      "lead": "Points to watch from Hindustan Unilever's filed documents. Showing 3 of 11 items. See all on the Points to watch tab.",
       "table": {
         "columns": [
           "Point to watch",
@@ -104,7 +104,7 @@
             "10,277"
           ],
           [
-            "Profit margin",
+            "Margin, all profit",
             "23.3%",
             "17.4%",
             "16.6%"
@@ -118,7 +118,8 @@
         ]
       },
       "notes": [
-        "Sales are revenue from operations. Profit after tax is the share of the owners of the company. Profit margin is profit after tax ÷ sales, calculated by RedixFi. Debt is borrowings plus lease liabilities. Reported figures, not adjusted.",
+        "FY2026 profit includes Rs 4,407 crore from the ice cream business, which was demerged and is reported as discontinued operations. Without it, FY2026 profit after tax would be Rs 10,633 crore. FY2025 includes a loss of Rs 9 crore from the same business (Rs 10,658 crore without it). Exceptional items are included in both years, as reported. The margin row uses all profit.",
+        "Sales are revenue from operations. Profit after tax is the share of the owners of the company. Margin is profit after tax ÷ sales, calculated by RedixFi. Debt is borrowings plus lease liabilities. Reported figures, not adjusted.",
         "FY2026 and FY2025 are as shown in the annual report for FY2025-26; FY2024 is as shown in the annual report for FY2024-25. That report showed FY2025 sales of Rs 63,121 crore, which differs from the Rs 61,328 crore in the later report.",
         "At 31 March 2026 the debt figure is lease liabilities of Rs 1,478 crore and no borrowings."
       ],
