@@ -230,4 +230,6 @@ assert.equal(countAfter(data, { ...EMPTY_RULES, profitYears: "10", de: "-5", roe
 assert.ok(ladder.includes("ruleProblem(d, rules[d.key] as string)") && ladder.includes('data-testid="problem-volNum"'), "the problem line is shown");
 
 assert.ok(/data-testid="ladder-left"[\s\S]*ladder-counts-note[\s\S]*ladder-bar-show/.test(ladder), "the counts note sits under the stocks-left count, inside the bar");
+assert.ok(ladder.includes('set({ vol: v, volNum: v === "" ? "" : v === "calmer" ? "25" : "75" })') && !ladder.includes("rules.volNum ||"), "switching between Calmer and More active resets the cut-off to that option's default (25 / 75)");
+assert.ok(ctx.includes('matchMedia("(min-width: 1024px)")') && ctx.includes("if (!e.matches) setOpen(false)"), "the panel closes when the window goes from wide (docked) to narrow (drawer)");
 console.log("stock check tests: ok");

@@ -106,7 +106,7 @@ function StepBody({ step, rules, set, data }: { step: number; rules: Rules; set:
                   type="radio"
                   name="vol"
                   checked={rules.vol === v}
-                  onChange={() => set({ vol: v, volNum: v === "" ? "" : rules.volNum || (v === "calmer" ? "25" : "75") })}
+                  onChange={() => set({ vol: v, volNum: v === "" ? "" : v === "calmer" ? "25" : "75" })}
                   className="h-4 w-4"
                 />
                 {label}

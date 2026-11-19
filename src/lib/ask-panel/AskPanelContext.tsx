@@ -49,6 +49,17 @@ export function AskPanelProvider({ children }: { children: ReactNode }) {
     });
     return () => window.cancelAnimationFrame(frame);
   }, []);
+  // Wide to narrow: the panel is docked beside the page from 1024 px and is a drawer over the page below that. If the window is made narrower
+  // while it is open, close it so a drawer never lands on top of the page the person did not ask to cover. They can open it again.
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const onChange = (e: MediaQueryListEvent) => {
+      if (!e.matches) setOpen(false);
+    };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
   const setMode = (nextMode: AskPanelMode) => {
     setModeState(nextMode);
     window.localStorage.setItem(ASK_PANEL_MODE_STORAGE_KEY, nextMode);
