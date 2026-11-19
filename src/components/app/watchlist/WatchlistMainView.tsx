@@ -162,6 +162,9 @@ export function WatchlistMainView() {
     <div className="mx-auto max-w-3xl space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold">Your Watchlist</h1>
+        <Link href="/full-check" className="rounded-lg border border-accent px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-hover" data-testid="watchlist-full-check-link">
+          Run full check on my shortlist
+        </Link>
         {symbols !== null && (
           <span className="font-mono text-xs text-foreground-faint">
             {symbols.length}/{limit}

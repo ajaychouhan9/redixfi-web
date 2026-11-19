@@ -17,6 +17,7 @@ import { ASK_PANEL_WIDTHS, type AskPanelMode } from "@/lib/ask-panel/panelMode";
 import { getStarterQuestions } from "@/lib/ask-panel/starterQuestions";
 import { COMMON_QUESTION_CHIPS } from "@/lib/common-questions";
 import { AddToShortlistButton } from "@/components/app/ask/AddToShortlistButton";
+import { FULL_CHECK_BUTTON } from "@/lib/fullcheck-copy";
 import { CHIP_COST_LINE, HOW_TO_ASK_LINE, daysAvailableNote, howToAskGroups } from "@/lib/ask-panel/howToAsk";
 import { displayName } from "@/lib/company-name";
 import { useMobileViewport } from "@/lib/ask-panel/useMobileViewport";
@@ -879,6 +880,9 @@ export function AskRedixFi() {
                     <div className="mb-4" data-testid="how-to-ask">
                       <p className="text-[13px] font-medium text-foreground">How to ask: {HOW_TO_ASK_LINE}</p>
                       <p className="mt-0.5 text-[11.5px] text-foreground-faint">{CHIP_COST_LINE}</p>
+                      <Link href="/full-check" className="mt-2 inline-block rounded-lg border border-accent px-3 py-1.5 text-[12.5px] font-semibold text-foreground hover:bg-hover" data-testid="ask-full-check-link">
+                        {FULL_CHECK_BUTTON}
+                      </Link>
                       <div className="mt-3 grid gap-3 sm:grid-cols-2">
                         {howToAskGroups(effectiveSymbol).map((g) => (
                           <div key={g.id} data-testid={`how-to-ask-${g.id}`}>
