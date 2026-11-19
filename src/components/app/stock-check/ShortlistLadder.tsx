@@ -13,7 +13,7 @@ import { formatNumber } from "@/lib/format";
 import { signupHref } from "@/lib/nav-items";
 import { stockPath } from "@/lib/seo/stock-symbol";
 import {
-  BANK_NOTE, BANK_WHY, BANK_WHY_LABEL, CLEAR_ALL, DEBT_NOTE, DEBT_WHY, EXAMPLES, exampleLine, ruleProblem, COMMON_LABEL, COMMON_RULES, COMPARE_NOTE, EMPTY_RULES, LADDER_INTRO, LIST_PAGE_SIZE, NO_ROCE_LINE,
+  BANK_NOTE, BANK_WHY, BANK_WHY_LABEL, CLEAR_ALL, DEBT_NOTE, DEBT_WHY, EXAMPLES, exampleLine, ruleProblem, COUNTS_NOTE, COMMON_LABEL, COMMON_RULES, COMPARE_NOTE, EMPTY_RULES, LADDER_INTRO, LIST_PAGE_SIZE, NO_ROCE_LINE,
   NUMBERS_AS_OF, PAST_LINE, RESULTS_LEAD, RESULTS_TITLE, RULES, SHOW_BUTTON, SORT_CHOICES, START_COMMON, STEP6_TITLE, STEP6_WHY, STEPS,
   cardValues, countsByStep, fromParams, hasAnyRule, needsPledge, num, roceGap, toParams, validLadderData, volOn,
   type LadderData, type RuleDef, type Rules,
@@ -293,6 +293,7 @@ export function ShortlistLadder() {
         <p className="text-base font-semibold" data-testid="ladder-left">
           {left === null ? (dataError ? "Counts are not available right now" : "Loading the counts…") : `${left.toLocaleString("en-IN")} ${left === 1 ? "stock" : "stocks"} left`}
         </p>
+        <p className="text-xs text-foreground-muted" data-testid="ladder-counts-note">{COUNTS_NOTE}</p>
         {left !== null && (
           <button
             type="button"

@@ -21,6 +21,7 @@ export const RESULTS_LEAD = "Stocks that meet the rules you chose, listed A to Z
 export const SHOW_BUTTON = "Show stocks that meet my rules";
 export const PRICE_NOTE = "A good company can still be priced high.";
 export const COMPARE_NOTE = "Compare a company with others of its own kind.";
+export const COUNTS_NOTE = "Counts come from last night's figures. The final list may differ by a few stocks.";
 export const NUMBERS_AS_OF = (date: string) => `Numbers as of ${date}`;
 
 export const BANK_NOTE =
@@ -101,13 +102,13 @@ export const EMPTY_RULES: Rules = {
   mcMin: "", profitQ: false, profitYears: "", sales3: "", profit3: "", salesQ: "", profitQg: "",
   roe: "", roce: "", de: "", pledge: "", vol: "", volNum: "", volRatio: "", delivery: "", pe: "",
 };
-/** Common starting values (editable): the same example values shown under each input. The calmer / more active choice is left unset. */
+/** Common starting values (editable): the example values shown under each input for Steps 0, 1, 2, 3 and 5. Step 4 (price behaviour: volume vs usual, delivery, calmer / more active) is left on No rule: it depends on one day of trading. */
 export const COMMON_RULES: Rules = {
   ...EMPTY_RULES,
   profitQ: true,
   mcMin: EXAMPLES.mcMin.value, profitYears: EXAMPLES.profitYears.value, sales3: EXAMPLES.sales3.value, profit3: EXAMPLES.profit3.value,
   salesQ: EXAMPLES.salesQ.value, profitQg: EXAMPLES.profitQg.value, roe: EXAMPLES.roe.value, roce: EXAMPLES.roce.value, de: EXAMPLES.de.value,
-  pledge: EXAMPLES.pledge.value, volRatio: EXAMPLES.volRatio.value, delivery: EXAMPLES.delivery.value, pe: EXAMPLES.pe.value,
+  pledge: EXAMPLES.pledge.value, pe: EXAMPLES.pe.value,
 };
 
 export interface RuleDef {

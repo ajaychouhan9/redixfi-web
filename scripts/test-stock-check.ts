@@ -6,7 +6,7 @@ import samples from "../src/data/ask-samples.json" with { type: "json" };
 import { ASK_PREVIEW, sampleIdFor } from "../src/lib/ask-samples.ts";
 import { ASK_QUESTIONS } from "../src/lib/read-company.ts";
 import {
-  BANK_NOTE, BANK_WHY, COMMON_LABEL, COMMON_RULES, DEBT_NOTE, DEBT_WHY, EXAMPLES, exampleLine, ruleProblem, validValue, EMPTY_RULES, HOME_BUTTON, LADDER_TITLE, MENU_LABEL, NO_ROCE_LINE, PAGE_SUBTITLE, PAGE_TITLE, PAST_LINE,
+  BANK_NOTE, BANK_WHY, COMMON_LABEL, COMMON_RULES, DEBT_NOTE, DEBT_WHY, EXAMPLES, exampleLine, ruleProblem, validValue, COUNTS_NOTE, EMPTY_RULES, HOME_BUTTON, LADDER_TITLE, MENU_LABEL, NO_ROCE_LINE, PAGE_SUBTITLE, PAGE_TITLE, PAST_LINE,
   PRICE_NOTE, RULES, SEO_TITLE, STEPS, STOCK_BUTTON, activeTests, countAfter, countsByStep, fromParams, hasAnyRule, roceGap, toParams, validLadderData,
   type LadderData, type Rules,
 } from "../src/lib/stock-check.ts";
@@ -83,7 +83,7 @@ assert.equal(NO_ROCE_LINE(2), "2 stocks have no ROCE figure and are left out of 
 assert.equal(NO_ROCE_LINE(1), "1 stock has no ROCE figure and is left out of this filter");
 assert.equal(NO_ROCE_LINE(1281), "1,281 stocks have no ROCE figure and are left out of this filter");
 // the counts and the shortlist use the same rules: the same parameters the server filters on
-assert.deepEqual(toParams(common), { market_cap_min: 500, eps_positive: true, profit_years_min: 5, sales_cagr_3y_min: 10, profit_cagr_3y_min: 10, sales_growth_min: 10, profit_growth_min: 10, roe_min: 15, roce_min: 15, de_max: 1, pledge_max: 10, volume_ratio_min: 1.5, delivery_pct_min: 50, pe_max: 25 });
+assert.deepEqual(toParams(common), { market_cap_min: 500, eps_positive: true, profit_years_min: 5, sales_cagr_3y_min: 10, profit_cagr_3y_min: 10, sales_growth_min: 10, profit_growth_min: 10, roe_min: 15, roce_min: 15, de_max: 1, pledge_max: 10, pe_max: 25 });
 assert.deepEqual(toParams({ ...EMPTY_RULES, vol: "calmer", volNum: "25" }), { volatility_max: 25 });
 assert.deepEqual(toParams({ ...EMPTY_RULES, vol: "active", volNum: "75" }), { volatility_min: 75 });
 assert.deepEqual(toParams(EMPTY_RULES), {});
@@ -95,11 +95,17 @@ assert.equal(activeTests(common, 0).length, 1, "step 0 carries one rule");
 assert.ok(RULES.every((r) => r.param && r.col), "every rule has a server filter and a column");
 assert.ok(COMMON_RULES.vol === "" && COMMON_RULES.volNum === "", "calmer / more active is a choice and is not pre-set");
 assert.deepEqual(
-  { mc: COMMON_RULES.mcMin, py: COMMON_RULES.profitYears, s3: COMMON_RULES.sales3, p3: COMMON_RULES.profit3, sq: COMMON_RULES.salesQ, pq: COMMON_RULES.profitQg, roe: COMMON_RULES.roe, roce: COMMON_RULES.roce, de: COMMON_RULES.de, pl: COMMON_RULES.pledge, vr: COMMON_RULES.volRatio, dl: COMMON_RULES.delivery, pe: COMMON_RULES.pe },
-  { mc: "500", py: "5", s3: "10", p3: "10", sq: "10", pq: "10", roe: "15", roce: "15", de: "1", pl: "10", vr: "1.5", dl: "50", pe: "25" },
+  { mc: COMMON_RULES.mcMin, py: COMMON_RULES.profitYears, s3: COMMON_RULES.sales3, p3: COMMON_RULES.profit3, sq: COMMON_RULES.salesQ, pq: COMMON_RULES.profitQg, roe: COMMON_RULES.roe, roce: COMMON_RULES.roce, de: COMMON_RULES.de, pl: COMMON_RULES.pledge, pe: COMMON_RULES.pe },
+  { mc: "500", py: "5", s3: "10", p3: "10", sq: "10", pq: "10", roe: "15", roce: "15", de: "1", pl: "10", pe: "25" },
   "Start with common rules fills the example values",
 );
-for (const d of RULES.filter((r) => r.op !== "gt0")) assert.ok(EXAMPLES[d.key] && EXAMPLES[d.key].value === (COMMON_RULES[d.key] as string), `${d.key} has an example equal to the common value`);
+for (const d of RULES.filter((r) => r.op !== "gt0")) {
+  assert.ok(EXAMPLES[d.key], `${d.key} has an example`);
+  if (d.step === 4) assert.equal(COMMON_RULES[d.key], "", `${d.key}: Start with common rules leaves Step 4 on No rule (the example stays as the placeholder)`);
+  else assert.equal(COMMON_RULES[d.key], EXAMPLES[d.key].value, `${d.key} common value equals its example`);
+}
+assert.ok(COMMON_RULES.vol === "" && COMMON_RULES.volNum === "" && COMMON_RULES.volRatio === "" && COMMON_RULES.delivery === "", "Step 4 is not prefilled");
+assert.equal(COUNTS_NOTE, "Counts come from last night's figures. The final list may differ by a few stocks.");
 assert.equal(exampleLine(EXAMPLES.roce.text), "Example: many people use 15 (%). Set your own.");
 assert.equal(EXAMPLES.mcMin.text, "500 (₹ crore)");
 
@@ -223,4 +229,5 @@ assert.deepEqual(toParams({ ...EMPTY_RULES, profitYears: "10", de: "-5", roe: "a
 assert.equal(countAfter(data, { ...EMPTY_RULES, profitYears: "10", de: "-5", roe: "abc" }, 5), 5, "an unusable value does not filter the count");
 assert.ok(ladder.includes("ruleProblem(d, rules[d.key] as string)") && ladder.includes('data-testid="problem-volNum"'), "the problem line is shown");
 
+assert.ok(/data-testid="ladder-left"[\s\S]*ladder-counts-note[\s\S]*ladder-bar-show/.test(ladder), "the counts note sits under the stocks-left count, inside the bar");
 console.log("stock check tests: ok");
