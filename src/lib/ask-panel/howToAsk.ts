@@ -5,6 +5,10 @@
 
 export const HOW_TO_ASK_LINE = "Name the companies, the numbers and the days.";
 
+// Most stocks one number lookup ("ROE and ROCE for TCS, INFY, WIPRO") can name. Backend: ASK_LOOKUP_MAX_STOCKS = 8 (api/app/core/config.py).
+export const LOOKUP_MAX_STOCKS = 8;
+export const LOOKUP_LIMIT_NOTE = `Name up to ${LOOKUP_MAX_STOCKS} stocks in one question.`;
+
 export const CHIP_COST_LINE = "Each answer uses 1 question. If we cannot answer, nothing is used.";
 
 export interface HowToAskGroup {

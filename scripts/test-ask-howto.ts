@@ -2,12 +2,14 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { CHIP_COST_LINE, HOW_TO_ASK_LINE, HOW_TO_ASK_SAMPLE_SYMBOL, daysAvailableNote, howToAskGroups } from "../src/lib/ask-panel/howToAsk.ts";
+import { CHIP_COST_LINE, HOW_TO_ASK_LINE, LOOKUP_LIMIT_NOTE, LOOKUP_MAX_STOCKS, HOW_TO_ASK_SAMPLE_SYMBOL, daysAvailableNote, howToAskGroups } from "../src/lib/ask-panel/howToAsk.ts";
 import { isSafeAskSuggestion } from "../src/lib/ask-panel/starterQuestions.ts";
 
 const BANNED = /\b(buy|sell|target|picks?|bullish|bearish|strong signal|falling knife|skip|avoid|candidates?|high conviction|red flag|turnaround|top stocks|best stocks|rating|verdict)\b/i;
 
 assert.equal(HOW_TO_ASK_LINE, "Name the companies, the numbers and the days.");
+assert.equal(LOOKUP_MAX_STOCKS, 8, "the lookup cap is 8 (backend ASK_LOOKUP_MAX_STOCKS)");
+assert.equal(LOOKUP_LIMIT_NOTE, "Name up to 8 stocks in one question.");
 assert.ok(CHIP_COST_LINE.includes("1 question") && !/1 to 3|2 or 3/.test(CHIP_COST_LINE), "cost copy matches the metering rule (one question)");
 
 for (const sym of [null, "TCS"]) {
