@@ -266,7 +266,7 @@ export function FullCheckPanel() {
       {shortlist !== null && shortlist.length === 0 && <p className="text-sm text-foreground-faint">{FULL_CHECK_EMPTY}</p>}
 
       {shortlist !== null && shortlist.length > 0 && !active && (
-        <section className="rounded-xl border border-border bg-surface-raised p-4" data-testid="fc-pick">
+        <section className="rounded-xl border border-border bg-surface-raised p-4" data-testid="fc-select">
           <p className="text-xs text-foreground-faint">{FULL_CHECK_MAX_NOTE(estimate?.max_companies ?? 10)}</p>
           <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
             {shortlist.map((s) => {

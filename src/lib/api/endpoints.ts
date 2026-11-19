@@ -410,7 +410,7 @@ export const getMarketActivitySummary = (opts?: FetchOpts) =>
 export const getSharedScreen = (slug: string, opts?: FetchOpts) =>
   apiGetOptional<SharedScreen>(`/shared-screens/${encodeURIComponent(slug)}`, opts);
 
-/** The anonymous figures file for the shortlist ladder (19 Nov 2026): numbers only, no symbol or name. Plain JSON, not the usual envelope. */
+/** The anonymous figures file for the shortlist ladder (19 Nov 2026): numbers only, no symbol or name. Plain JSON, not the usual envelope. @auth public */
 export async function getLadderData(): Promise<unknown> {
   const res = await fetch(`${BASE_URL}/ladder-data`, { headers: { Accept: "application/json" } });
   if (!res.ok) throw new Error(`ladder data ${res.status}`);
