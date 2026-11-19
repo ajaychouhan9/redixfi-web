@@ -44,6 +44,7 @@ export interface SignalsPageInfo extends PageInfo {
   extras_as_of?: string | null;
   /** Only when the ROCE filter is on: stocks left out for having no ROCE figure, and how many of those are banks, insurers or finance companies. */
   roce_no_figure_count?: number;
+  growth_up_no_figure_count?: number;
   roce_not_applicable_count?: number;
   /** 14 Nov 2026: the API accepts ?fields=, ?export= and the column sorts; pledge disclosure date (only when pledge was asked for); export row cap. */
   supports_columns?: boolean;
@@ -155,6 +156,8 @@ export interface SignalRow {
   roce_year?: string | null;
   /** Years with a profit among the last five annual figures (needs five figures); three-year compound growth, % a year (19 Nov 2026). */
   profit_years?: number | null;
+  /** Sales and profit both higher than the year before, 3 years in a row (true / false; null with fewer than 4 annual figures). */
+  both_up_3y?: boolean | null;
   sales_cagr_3y_pct?: number | null;
   profit_cagr_3y_pct?: number | null;
   roce_applicable?: boolean | null;
@@ -2384,6 +2387,7 @@ export interface SharedScreenParams {
   profit_years_min?: number | null;
   sales_cagr_3y_min?: number | null;
   profit_cagr_3y_min?: number | null;
+  growth_up_3y?: boolean | null;
   eps_positive?: boolean | null;
   profit_growth_min?: number | null;
   sales_growth_min?: number | null;

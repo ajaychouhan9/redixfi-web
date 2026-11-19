@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 import { ApiError } from "@/lib/api/client";
 import { searchResearch } from "@/lib/api/endpoints";
+import { ASK_GROUP_PANEL_NOTE, ASK_GROUP_TITLE, ALL_AT_ONCE, GROUP_KEYS, groupQuestion } from "@/lib/ask-group";
 import { askRedixfi, getAskConversations, getAskHistory, getAskSuggestions, getUsage, updateAskContext } from "@/lib/api/mutations";
 import { getCurrentSymbol, onCurrentSymbolChange } from "@/lib/current-symbol";
 import { shouldStartFreshOnReopen } from "@/lib/ask-panel/freshStartRule";
@@ -212,9 +213,43 @@ function AskQuota({ usage, detailed = false }: { usage: AskUsageInfo | null; det
   );
 }
 
+/** Stocks picked on /stock-check: tap a company, then a question; the question is typed into the input for the person to read and send. */
+function StockGroupBlock({ symbols, focus, onFocus, onQuestion, onRemove }: {
+  symbols: string[]; focus: string | null; onFocus: (s: string) => void; onQuestion: (q: string) => void; onRemove: (s: string) => void;
+}) {
+  return (
+    <div className="mb-4 rounded-xl border border-border bg-surface-raised p-3" data-testid="ask-stock-group">
+      <p className="text-sm font-semibold text-foreground">{ASK_GROUP_TITLE}</p>
+      <ul className="mt-2 flex flex-wrap gap-1.5" data-testid="ask-group-stocks">
+        {symbols.map((sy) => (
+          <li key={sy} className={`flex items-center overflow-hidden rounded-full border text-xs ${focus === sy ? "border-accent bg-hover" : "border-border"}`}>
+            <button type="button" onClick={() => onFocus(sy)} aria-pressed={focus === sy} className="min-h-[36px] px-3 font-medium" data-testid={`ask-group-stock-${sy}`}>{sy}</button>
+            <button type="button" onClick={() => onRemove(sy)} aria-label={`Remove ${sy}`} className="min-h-[36px] px-2 text-foreground-muted hover:text-foreground">×</button>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-[11.5px] text-foreground-faint">{ASK_GROUP_PANEL_NOTE}</p>
+      <ul className="mt-2 flex flex-col gap-1.5" data-testid="ask-group-questions">
+        {GROUP_KEYS.map((key) => {
+          const q = groupQuestion(key, symbols, focus);
+          if (!q) return null;
+          return (
+            <li key={key}>
+              <button type="button" onClick={() => onQuestion(q)} data-testid={`ask-group-q-${key}`} className="w-full rounded-lg border border-border bg-hover px-3 py-2 text-left text-[12.5px] font-medium leading-snug text-foreground-muted hover:border-accent hover:text-foreground">
+                {q}
+                <span className="mt-0.5 block text-[10.5px] font-normal text-foreground-faint">{ALL_AT_ONCE.has(key) && symbols.length > 1 ? "All selected stocks" : "One company"}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 export function AskRedixFi() {
   const { user, loading: authLoading, getToken } = useAuth();
-  const { open, setOpen, mode, setMode, pendingQuestion, pendingSymbol, clearPendingQuestion } = useAskPanel();
+  const { open, setOpen, mode, setMode, pendingQuestion, pendingSymbol, clearPendingQuestion, pendingStocks, clearPendingStocks } = useAskPanel();
   const pathname = usePathname();
   // UI polish batch, Item 4 — LOCKED DECISION. `closedAtPathRef` records
   // which route the panel was on the last time the user explicitly closed
@@ -224,6 +259,9 @@ export function AskRedixFi() {
   const closedAtPathRef = useRef<string | null>(null);
   const hasClosedRef = useRef(false);
   const [symbol, setSymbol] = useState<string | null>(null);
+  // Stocks picked from a Stock Check shortlist ("Ask AI about these stocks"): shown at the top of a new session with the five questions as suggestions.
+  const [stockGroup, setStockGroup] = useState<string[] | null>(null);
+  const [groupFocus, setGroupFocus] = useState<string | null>(null);
   const [pageSymbol, setPageSymbol] = useState<string | null>(null);
   const [chatContext, setChatContext] = useState<AskChatContext | null>(null);
   const [results, setResults] = useState<ResearchSearchRow[]>([]);
@@ -369,6 +407,8 @@ export function AskRedixFi() {
   }
 
   function pickSymbol(sym: string) {
+    setStockGroup(null);
+    setGroupFocus(null);
     setPageContextSuppressed(false);
     explicitlySelectedConversationRef.current = null;
     setSymbol(sym);
@@ -456,6 +496,8 @@ export function AskRedixFi() {
   // "New Chat" — starts fresh, re-deriving the symbol from PAGE context
   // only, dropping whatever the previous conversation may have drifted to.
   function startNewConversation() {
+    setStockGroup(null);
+    setGroupFocus(null);
     setMessages([]);
     setConversationId(null);
     setLimit(null);
@@ -610,6 +652,17 @@ export function AskRedixFi() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, pendingQuestion, pendingSymbol, user]);
+
+  // "Ask AI about these stocks" (Stock Check): always a NEW session, never the old chat. The stocks and the five questions are shown; nothing is sent.
+  useEffect(() => {
+    if (open && pendingStocks && user) {
+      startNewConversation();
+      setStockGroup(pendingStocks);
+      setGroupFocus(pendingStocks[0] ?? null);
+      clearPendingStocks();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, pendingStocks, user]);
 
   // Loads resumable history once per distinct symbol context whenever the
   // panel is open (skipNextLoadRef skips the one stale pass after a fresh
@@ -854,6 +907,19 @@ export function AskRedixFi() {
 
                 {messages.length === 0 && !historyLoaded && (
                   <p className="px-1 text-xs text-foreground-faint">Loading…</p>
+                )}
+                {messages.length === 0 && historyLoaded && stockGroup && stockGroup.length > 0 && (
+                  <StockGroupBlock
+                    symbols={stockGroup}
+                    focus={groupFocus}
+                    onFocus={setGroupFocus}
+                    onQuestion={(q) => setInput(q)}
+                    onRemove={(sym) => {
+                      const next = stockGroup.filter((x) => x !== sym);
+                      setStockGroup(next.length ? next : null);
+                      if (groupFocus === sym) setGroupFocus(next[0] ?? null);
+                    }}
+                  />
                 )}
                 {messages.length === 0 && historyLoaded && (
                   <div>

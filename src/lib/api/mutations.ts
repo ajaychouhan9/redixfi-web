@@ -498,6 +498,25 @@ export interface MyScreen {
   params: SharedScreenParams;
   created_at: string | null;
   last_viewed_at: string | null;
+  /** 20 Nov 2026 (Stock Check "My rules"): when the rule was last saved, how many stocks met it then, and the saved stock list (date and count only). */
+  updated_at?: string | null;
+  stock_count?: number | null;
+  counted_at?: string | null;
+  snapshot?: { at: string | null; as_of: string | null; count: number } | null;
+}
+
+export interface MyScreenSnapshot {
+  at: string | null;
+  as_of: string | null;
+  count: number;
+  stocks: { symbol: string; company_name: string | null }[];
+}
+
+/** What a save may carry beside the rules: the stock count shown beside the rule, and (optionally) the stock list as a dated snapshot. */
+export interface MyScreenSaveExtras {
+  stock_count?: number | null;
+  snapshot_symbols?: string[] | null;
+  snapshot_as_of?: string | null;
 }
 
 export interface MyScreensList {
@@ -519,9 +538,22 @@ export async function listMyScreens(token: string): Promise<MyScreensList> {
   return env.data;
 }
 
-export async function createMyScreen(token: string, name: string, params: SharedScreenParams): Promise<MyScreen> {
-  const env = await apiMutate<MyScreen>("/my-screens", "POST", { name, params }, { token });
+export async function createMyScreen(token: string, name: string, params: SharedScreenParams, extras?: MyScreenSaveExtras): Promise<MyScreen> {
+  const env = await apiMutate<MyScreen>("/my-screens", "POST", { name, params, ...(extras ?? {}) }, { token });
   return env.data;
+}
+
+/** "Replace the old rule": the saved rule keeps its place and takes the new rules (and a new name when one is sent). */
+export async function replaceMyScreen(
+  token: string, id: string, params: SharedScreenParams, extras?: MyScreenSaveExtras & { name?: string | null; keep_snapshot?: boolean },
+): Promise<MyScreen> {
+  const env = await apiMutate<MyScreen>(`/my-screens/${encodeURIComponent(id)}`, "PUT", { params, ...(extras ?? {}) }, { token });
+  return env.data;
+}
+
+export async function getMyScreenSnapshot(token: string, id: string): Promise<MyScreenSnapshot | null> {
+  const env = await apiGet<{ snapshot: MyScreenSnapshot | null }>(`/my-screens/${encodeURIComponent(id)}/snapshot`, { token });
+  return env.data.snapshot;
 }
 
 export async function renameMyScreen(token: string, id: string, name: string): Promise<void> {

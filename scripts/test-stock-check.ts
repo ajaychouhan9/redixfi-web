@@ -49,7 +49,7 @@ for (const f of ["app/(app)/signals/page.tsx", "components/app/home/HomeBoxes.ts
 }
 
 // ---- 3. live counts: pure, from anonymous rows
-const COLS = ["mc", "eps", "py", "sgq", "pgq", "sg3", "pg3", "roe", "roce", "rna", "de", "pl", "vol", "vr", "dl", "pe"];
+const COLS = ["mc", "eps", "py", "sgq", "pgq", "sg3", "pg3", "roe", "roce", "rna", "de", "pl", "vol", "vr", "dl", "pe", "gs"];
 const row = (o: Record<string, number | null>): (number | null)[] => COLS.map((c) => (c in o ? o[c] : null));
 const data: LadderData = {
   version: 1, as_of: "2026-11-19", fund_quarter_end: "2026-09-30", built_at: "2026-11-19T14:00:00Z", cols: COLS,
@@ -99,7 +99,7 @@ assert.deepEqual(
   { mc: "500", py: "5", s3: "10", p3: "10", sq: "10", pq: "10", roe: "15", roce: "15", de: "1", pl: "10", pe: "25" },
   "Start with common rules fills the example values",
 );
-for (const d of RULES.filter((r) => r.op !== "gt0")) {
+for (const d of RULES.filter((r) => r.op !== "gt0" && r.op !== "flag")) {
   assert.ok(EXAMPLES[d.key], `${d.key} has an example`);
   if (d.step === 4) assert.equal(COMMON_RULES[d.key], "", `${d.key}: Start with common rules leaves Step 4 on No rule (the example stays as the placeholder)`);
   else assert.equal(COMMON_RULES[d.key], EXAMPLES[d.key].value, `${d.key} common value equals its example`);
@@ -113,7 +113,8 @@ assert.equal(EXAMPLES.mcMin.text, "500 (₹ crore)");
 assert.equal(BANK_NOTE, "ROCE is not shown for banks, insurers and finance companies. Their business is borrowing and lending money, so the ROCE formula does not work for them.");
 assert.ok(BANK_WHY.startsWith("ROCE asks: for every Rs 100 put into the business, how much operating profit did it earn?") && BANK_WHY.endsWith("Return on equity is shown on this page. The others are not on the page yet."), "the Why text");
 assert.ok(BANK_WHY.includes("like steel for a car maker") && BANK_WHY.includes("the gap between what they earn on loans and pay on deposits"));
-const ladder = strip(read("components/app/stock-check/ShortlistLadder.tsx"));
+// the ladder is the page component plus the cards it is made of (My rules, Rules applied, Ask AI about these stocks)
+const ladder = ["ShortlistLadder", "MyRulesCard", "RulesApplied", "AskAboutStocks"].map((f) => strip(read(`components/app/stock-check/${f}.tsx`))).join("\n");
 assert.ok(ladder.includes("{note}") && ladder.includes("{BANK_WHY_LABEL}") && ladder.includes("{why}") && ladder.includes("note = BANK_NOTE") && ladder.includes("why = BANK_WHY"), "the note and a Why? that opens the text");
 assert.ok(/step === 2 &&[\s\S]*?<BankNote \/>/.test(ladder), "the ROCE note is shown on the ROCE step");
 // Step 3 (debt to equity): its own note, not the ROCE note
@@ -130,7 +131,7 @@ assert.ok(ladder.includes("NO_ROCE_LINE(gap.noFigure)") && ladder.includes("NO_R
 assert.deepEqual(STEPS.map((s) => s.title), ["Size and trading", "Is it earning?", "Is it using money well?", "Is it safe?", "How does the price behave?", "What you pay (optional)"]);
 assert.ok(STEPS.every((s) => s.why.split(/(?<=[.!?])\s+/).length <= 4), "each why-this-rule is two to four short sentences");
 assert.ok(ladder.includes("START_COMMON") && ladder.includes("CLEAR_ALL") && ladder.includes("COMMON_LABEL") && ladder.includes("ladder-bar") && ladder.includes("ladder-left") && /stocks?\"? : \"stocks\"|"stock" : "stocks"/.test(ladder));
-assert.ok(!/\bfetch\(/.test(ladder) && ladder.includes("getLadderData()") && (ladder.match(/getSignals\(/g) ?? []).length === 1, "one figures file, one list call (only when asked)");
+assert.ok(!/\bfetch\(/.test(ladder) && ladder.includes("getLadderData()") && (ladder.match(/getSignals\(/g) ?? []).length === 2, "one figures file; the list call, and the full-list call that runs only when a rule is saved with its stock list or run again");
 assert.ok(ladder.includes("Add to watchlist") && ladder.includes("Read this company") && ladder.includes("RESULTS_TITLE") && ladder.includes('value: "name"') === false);
 assert.ok(ladder.includes("NUMBERS_AS_OF(asOf)"), "numbers as of <date>");
 assert.equal(read("lib/stock-check.ts").includes("sort: \"composite"), false);
@@ -166,7 +167,7 @@ for (const n of ["64,468", "61,328", "61,896", "15,040", "10,649", "10,277", "1,
 // ---- 7. wording guard on all new copy (the owner's banned list), and no risk labels
 const copy = [
   strip(read("lib/stock-check.ts")), strip(read("lib/ask-samples.ts")), stored, strip(read("app/(app)/stock-check/page.tsx")).replace(/no buy or sell advice/g, ""),
-  strip(read("components/app/stock-check/ShortlistLadder.tsx")).replace(/target="_blank"|e\.target/g, ""),
+  ladder.replace(/target="_blank"|e\.target/g, ""), strip(read("lib/my-rules.ts")), strip(read("lib/ask-group.ts")),
   preview.replace(/target="_blank"/g, ""), strip(read("components/app/stock-check/LoggedOutPreview.tsx")),
 ].join("\n").replace(/className="[^"]*"/g, "").replace(/className=\{`[^`]*`\}/g, "").replace(/data-testid="[^"]*"/g, "");
 const BANNED = /\b(buy|buying|sell|selling|targets?|picks?|bullish|bearish|strong signal|catch a falling knife|skip|avoid|candidates?|high conviction|red flags?|turnaround|top stocks|best stocks|quality stocks)\b/gi;
@@ -178,7 +179,7 @@ assert.ok(copy.includes("points to watch") && !/red flag/i.test(copy), "points t
 assert.ok(copy.includes("stocks that meet the rules you chose") || copy.includes("Stocks that meet the rules you chose"), "results are called stocks that meet the rules you chose");
 
 // ---- 5. examples in every input, chips that open the panel, the sticky bar button, the stored answers inside the panel
-for (const d of RULES.filter((r) => r.op !== "gt0")) assert.ok(ladder.includes("EXAMPLES[d.key]") && ladder.includes("exampleLine(EXAMPLES[d.key].text)"), "every number input shows its example line");
+for (const d of RULES.filter((r) => r.op !== "gt0" && r.op !== "flag")) assert.ok(ladder.includes("EXAMPLES[d.key]") && ladder.includes("exampleLine(EXAMPLES[d.key].text)"), "every number input shows its example line");
 assert.ok(ladder.includes('placeholder={EXAMPLES[d.key]?.value ?? "Not set"}'), "the placeholder is the example value");
 assert.ok(!copy.match(/many people use[^.]*(best|top|buy|sell|pick|target)/i), "examples are not recommendations");
 const fundsSrc = read("components/app/signals/FundamentalFilters.tsx");
@@ -189,7 +190,7 @@ for (const [key, v] of [["peMax", "25"], ["roeMin", "15"], ["roceMin", "15"], ["
 }
 const explorer = read("components/app/signals/SignalsExplorer.tsx");
 assert.ok(explorer.includes('placeholder="1.5"') && explorer.includes('<Example text="1.5 (times)" />'), "Screener volume vs usual example");
-assert.ok(!/href=\{askHref/.test(ladder) && ladder.includes("openWithQuestion(q, SAMPLE_SYMBOL)"), "ladder chips open the panel with the sample company; they are not links");
+assert.ok(!/href=\{askHref/.test(ladder) && ladder.includes("openWithStocks(selected)") && !ladder.includes("ladder-step-6") && !ladder.includes("STEP6"), "Step 6 is gone; Ask AI opens a new session with the ticked stocks");
 const readCo = read("components/app/start/ReadCompany.tsx");
 assert.ok(!readCo.includes("askHref") && readCo.includes("openWithQuestion(ASK_QUESTIONS[s.askKey], SAMPLE_SYMBOL)"), "the chips on the reading steps open the panel too");
 assert.ok(ladder.includes('data-testid="ladder-bar-show"') && /ladder-bar[\s\S]*ladder-bar-show[\s\S]*ladder-asof/.test(ladder), "Show N stocks button inside the sticky bar");

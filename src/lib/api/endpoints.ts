@@ -101,6 +101,8 @@ export interface SignalsListParams {
   profit_years_min?: number;
   sales_cagr_3y_min?: number;
   profit_cagr_3y_min?: number;
+  /** 20 Nov 2026: sales and profit both higher than the year before, 3 years in a row (needs 4 annual figures). */
+  growth_up_3y?: boolean;
   eps_positive?: boolean;
   profit_growth_min?: number;
   sales_growth_min?: number;

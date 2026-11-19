@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 
 import { getLadderData, getSignals } from "@/lib/api/endpoints";
-import { addToWatchlist, createMyScreen, deleteMyScreen, listMyScreens, type MyScreen } from "@/lib/api/mutations";
+import { addToWatchlist, getMyScreenSnapshot, type MyScreen } from "@/lib/api/mutations";
 import type { SignalRow } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { displayName } from "@/lib/company-name";
@@ -13,21 +13,19 @@ import { formatNumber } from "@/lib/format";
 import { signupHref } from "@/lib/nav-items";
 import { stockPath } from "@/lib/seo/stock-symbol";
 import {
-  BANK_NOTE, BANK_WHY, BANK_WHY_LABEL, CLEAR_ALL, DEBT_NOTE, DEBT_WHY, EXAMPLES, exampleLine, ruleProblem, COUNTS_NOTE, COMMON_LABEL, COMMON_RULES, COMPARE_NOTE, EMPTY_RULES, LADDER_INTRO, LIST_PAGE_SIZE, NO_ROCE_LINE,
-  NUMBERS_AS_OF, PAST_LINE, RESULTS_LEAD, RESULTS_TITLE, RULES, SHOW_BUTTON, SORT_CHOICES, START_COMMON, STEP6_TITLE, STEP6_WHY, STEPS,
-  cardValues, countsByStep, fromParams, hasAnyRule, needsPledge, num, roceGap, toParams, validLadderData, volOn,
+  BANK_NOTE, BANK_WHY, BANK_WHY_LABEL, DEBT_NOTE, DEBT_WHY, EXAMPLES, exampleLine, ruleProblem, COUNTS_NOTE, COMPARE_NOTE, EMPTY_RULES, LADDER_INTRO, LIST_PAGE_SIZE, NO_GROWTH_LINE, NO_ROCE_LINE,
+  NUMBERS_AS_OF, PAST_LINE, RESULTS_LEAD, RESULTS_TITLE, RULES, SHOW_BUTTON, SORT_CHOICES, STEPS,
+  cardValues, countsByStep, fromParams, growthGap, needsPledge, num, roceGap, toParams, validLadderData, volOn,
   type LadderData, type RuleDef, type Rules,
 } from "@/lib/stock-check";
-import { ASK_QUESTIONS, SAMPLE_NAME, SAMPLE_SYMBOL } from "@/lib/read-company";
-import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
-import { AskPreview } from "@/components/app/stock-check/AskPreview";
+import { ASK_GROUP_MAX, toggleSelected } from "@/lib/ask-group";
+import { RUN_AGAIN_RESULT, SHOWING_RULE, diffLists, fmtDay, type ActiveRule } from "@/lib/my-rules";
+import { AskAboutStocks } from "@/components/app/stock-check/AskAboutStocks";
+import { MyRulesCard } from "@/components/app/stock-check/MyRulesCard";
+import { RulesApplied } from "@/components/app/stock-check/RulesApplied";
 
 const field = "h-10 w-28 rounded-lg border border-border bg-surface px-2 text-sm tabular-nums";
-const fmtDate = (iso: string | null | undefined): string | null => {
-  if (!iso || !/^\d{4}-\d{2}-\d{2}/.test(iso)) return null;
-  const d = new Date(`${iso.slice(0, 10)}T00:00:00Z`);
-  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-};
+const fmtDate = fmtDay;
 
 /** The note shown on the ROCE and debt steps and under the Screener ROCE filter, with a Why? that opens the fuller reason. */
 export function BankNote({ testId = "bank-note", note = BANK_NOTE, why = BANK_WHY, whyTestId = "bank-why" }: { testId?: string; note?: string; why?: string; whyTestId?: string }) {
@@ -81,12 +79,13 @@ function NumberRule({ d, rules, set }: { d: RuleDef; rules: Rules; set: (patch: 
 function StepBody({ step, rules, set, data }: { step: number; rules: Rules; set: (p: Partial<Rules>) => void; data: LadderData | null }) {
   const defs = RULES.filter((d) => d.step === step);
   const gap = useMemo(() => (data && step === 2 ? roceGap(data, rules) : null), [data, rules, step]);
+  const growthLeftOut = useMemo(() => (data && step === 1 && rules.growthUp ? growthGap(data, rules) : 0), [data, rules, step]);
   return (
     <div className="space-y-3">
       {defs.map((d) =>
-        d.op === "gt0" ? (
+        d.op === "gt0" || d.op === "flag" ? (
           <label key={d.key} className="flex items-start gap-2 text-sm" data-testid={`rule-${d.key}`}>
-            <input type="checkbox" checked={rules.profitQ} onChange={(e) => set({ profitQ: e.target.checked })} className="mt-1 h-4 w-4 shrink-0" />
+            <input type="checkbox" checked={rules[d.key] === true} onChange={(e) => set({ [d.key]: e.target.checked } as Partial<Rules>)} className="mt-1 h-4 w-4 shrink-0" />
             <span>
               <span className="font-medium">{d.label}</span>
               <span className="block text-xs text-foreground-muted">{d.hint}</span>
@@ -95,6 +94,9 @@ function StepBody({ step, rules, set, data }: { step: number; rules: Rules; set:
         ) : (
           <NumberRule key={d.key} d={d} rules={rules} set={set} />
         ),
+      )}
+      {step === 1 && rules.growthUp && growthLeftOut > 0 && (
+        <p className="text-sm text-foreground-muted" data-testid="growth-gap">{NO_GROWTH_LINE(growthLeftOut)}.</p>
       )}
       {step === 4 && (
         <fieldset className="space-y-2" data-testid="rule-vol">
@@ -144,29 +146,32 @@ function StepBody({ step, rules, set, data }: { step: number; rules: Rules; set:
   );
 }
 
-/** "Build Your Shortlist": the rule ladder, counts after each step (in the browser), the shortlist, and Save my rules. */
+/** "Build Your Shortlist": My rules, the rule ladder with counts after each step (in the browser), the shortlist with the rules applied, and Ask AI about the stocks. */
 export function ShortlistLadder() {
-  const { openWithQuestion } = useAskPanel();
   const { user, getToken } = useAuth();
   const [data, setData] = useState<LadderData | null>(null);
   const [dataError, setDataError] = useState(false);
   const [rules, setRules] = useState<Rules>(EMPTY_RULES);
-  const [open, setOpen] = useState<boolean[]>([true, false, false, false, false, false, false]);
+  const [open, setOpen] = useState<boolean[]>([true, false, false, false, false, false]);
   const [sort, setSort] = useState(SORT_CHOICES[0].value);
 
   const [rows, setRows] = useState<SignalRow[]>([]);
   const [total, setTotal] = useState<number | null>(null);
   const [roceCounts, setRoceCounts] = useState<{ no: number; na: number } | null>(null);
+  const [growthNoFigure, setGrowthNoFigure] = useState<number | null>(null);
   const [page, setPage] = useState(0);
   const [state, setState] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [limited, setLimited] = useState(false);
   const [shownRules, setShownRules] = useState<Rules>(EMPTY_RULES);
   const [added, setAdded] = useState<Record<string, "added" | "error">>({});
 
-  const [saved, setSaved] = useState<MyScreen[]>([]);
-  const [savedLimit, setSavedLimit] = useState<number | null>(null);
-  const [saveName, setSaveName] = useState("");
-  const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  // My rules: the rule that is open (if any), the one the shown list came from, and the stocks ticked for Ask AI
+  const [active, setActive] = useState<ActiveRule | null>(null);
+  const [shownFrom, setShownFrom] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [runAgainLine, setRunAgainLine] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [capNote, setCapNote] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -182,55 +187,79 @@ export function ShortlistLadder() {
     };
   }, []);
 
-  const loadSaved = useCallback(async () => {
-    if (!user) return;
-    try {
-      const token = await getToken();
-      if (!token) return;
-      const r = await listMyScreens(token);
-      setSaved(r.screens);
-      setSavedLimit(r.limit);
-    } catch {
-      /* the saved list is a convenience; the ladder works without it */
-    }
-  }, [user, getToken]);
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadSaved();
-  }, [loadSaved]);
-
   const counts = useMemo(() => (data ? countsByStep(data, rules) : null), [data, rules]);
   const left = counts ? counts[5] : null;
   const set = (patch: Partial<Rules>) => setRules((r) => ({ ...r, ...patch }));
   const toggle = (i: number) => setOpen((o) => o.map((v, k) => (k === i ? !v : v)));
-  const anyRule = hasAnyRule(rules);
+  const choice = SORT_CHOICES.find((s) => s.value === sort) ?? SORT_CHOICES[0];
 
-  async function load(nextPage: number) {
+  async function load(nextPage: number, useRules: Rules = rules, fromName: string | null = shownFrom) {
     setState("loading");
-    const choice = SORT_CHOICES.find((s) => s.value === sort) ?? SORT_CHOICES[0];
     try {
       const token = user ? await getToken() : null;
       const env = await getSignals(
-        { ...toParams(rules), sort: choice.value, order: choice.order, page: nextPage, size: LIST_PAGE_SIZE, ...(needsPledge(rules) ? { fields: "pledge_pct" } : {}) },
+        { ...toParams(useRules), sort: choice.value, order: choice.order, page: nextPage, size: LIST_PAGE_SIZE, ...(needsPledge(useRules) ? { fields: "pledge_pct" } : {}) },
         token ? { token } : undefined,
       );
       setRows((prev) => (nextPage === 1 ? env.data : [...prev, ...env.data]));
       setTotal(env.page_info.total);
-      const info = env.page_info as unknown as { roce_no_figure_count?: number; roce_not_applicable_count?: number };
+      const info = env.page_info as unknown as { roce_no_figure_count?: number; roce_not_applicable_count?: number; growth_up_no_figure_count?: number };
       setRoceCounts(typeof info.roce_no_figure_count === "number" ? { no: info.roce_no_figure_count, na: info.roce_not_applicable_count ?? 0 } : null);
+      setGrowthNoFigure(typeof info.growth_up_no_figure_count === "number" ? info.growth_up_no_figure_count : null);
       setPage(nextPage);
-      setShownRules(rules);
+      setShownRules(useRules);
+      setShownFrom(fromName);
       setState("ok");
     } catch {
       if (nextPage > 1) setLimited(true);
       setState(nextPage > 1 ? "ok" : "error");
     }
   }
-  function show() {
+  function show(useRules: Rules = rules, fromName: string | null = active ? active.name : null) {
     setRows([]);
     setTotal(null);
     setLimited(false);
-    void load(1);
+    setRunAgainLine(null);
+    setSelected([]);
+    void load(1, useRules, fromName);
+  }
+
+  /** Every symbol that meets the given rules, 200 at a time (only used when a rule is saved with its stock list, or run again). Null when it cannot be loaded. */
+  async function fetchSymbols(useRules: Rules = rules): Promise<string[] | null> {
+    try {
+      const token = user ? await getToken() : null;
+      const out: string[] = [];
+      for (let p = 1; p <= 20; p += 1) {
+        const env = await getSignals({ ...toParams(useRules), sort: "name", order: "asc", page: p, size: 200 }, token ? { token } : undefined);
+        out.push(...env.data.map((r) => r.symbol));
+        if (out.length >= env.page_info.total || env.data.length === 0) return out;
+      }
+      return out;
+    } catch {
+      return null;
+    }
+  }
+
+  function openRule(s: MyScreen) {
+    const r = fromParams(s.params);
+    setRules(r);
+    setActive({ id: s.id, name: s.name, base: r });
+    setNotice(`Opened "${s.name}". The list below shows its stocks.`);
+    show(r, s.name);
+    document.getElementById("ladder-results-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  async function runAgain(s: MyScreen) {
+    openRule(s);
+    try {
+      const token = await getToken();
+      if (!token) return;
+      const [snap, now] = await Promise.all([getMyScreenSnapshot(token, s.id), fetchSymbols(fromParams(s.params))]);
+      if (!snap || !now) return setRunAgainLine("The saved list could not be compared just now.");
+      const d = diffLists(snap.stocks.map((x) => x.symbol), now);
+      setRunAgainLine(RUN_AGAIN_RESULT(fmtDate(snap.as_of) ?? fmtDate(snap.at), { added: d.added.length, left: d.left.length }));
+    } catch {
+      setRunAgainLine("The saved list could not be compared just now.");
+    }
   }
 
   async function addWatch(symbol: string) {
@@ -243,33 +272,10 @@ export function ShortlistLadder() {
       setAdded((a) => ({ ...a, [symbol]: "error" }));
     }
   }
-
-  async function saveRules() {
-    setSaveMsg(null);
-    const name = saveName.trim();
-    if (!name) return setSaveMsg("Give your rules a name first.");
-    if (!anyRule) return setSaveMsg("Set at least one rule first.");
-    try {
-      const token = await getToken();
-      if (!token) throw new Error("Log in to save your rules.");
-      const choice = SORT_CHOICES.find((s) => s.value === sort) ?? SORT_CHOICES[0];
-      await createMyScreen(token, name, { ...toParams(rules), sort: choice.value, order: choice.order } as never);
-      setSaveName("");
-      setSaveMsg("Saved.");
-      await loadSaved();
-    } catch (e) {
-      setSaveMsg(e instanceof Error && e.message ? e.message : "The rules could not be saved right now.");
-    }
-  }
-  async function removeSaved(id: string) {
-    try {
-      const token = await getToken();
-      if (!token) return;
-      await deleteMyScreen(token, id);
-      await loadSaved();
-    } catch {
-      setSaveMsg("That saved set could not be removed right now.");
-    }
+  function tick(symbol: string) {
+    const r = toggleSelected(selected, symbol);
+    setSelected(r.list);
+    setCapNote(r.capped);
   }
 
   const asOf = fmtDate(data?.as_of);
@@ -278,15 +284,19 @@ export function ShortlistLadder() {
 
   return (
     <div className="space-y-4" data-testid="ladder">
-      <div className="flex flex-wrap items-center gap-2">
-        <button type="button" onClick={() => setRules(COMMON_RULES)} className="min-h-[44px] rounded-lg bg-accent px-4 text-sm font-semibold text-accent-foreground" data-testid="ladder-common">
-          {START_COMMON}
-        </button>
-        <button type="button" onClick={() => setRules(EMPTY_RULES)} className="min-h-[44px] rounded-lg border border-border px-4 text-sm font-medium text-foreground-muted hover:text-foreground" data-testid="ladder-clear">
-          {CLEAR_ALL}
-        </button>
-      </div>
-      <p className="text-xs text-foreground-muted" data-testid="ladder-common-label">{COMMON_LABEL}</p>
+      <MyRulesCard
+        rules={rules}
+        setRules={(r) => { setRules(r); setNotice(null); }}
+        sort={{ value: choice.value, order: choice.order }}
+        left={left}
+        asOf={data?.as_of ?? null}
+        active={active}
+        setActive={setActive}
+        fetchSymbols={() => fetchSymbols(rules)}
+        onOpen={openRule}
+        onRunAgain={(s) => void runAgain(s)}
+      />
+      {notice && <p className="text-sm text-foreground-muted" role="status" data-testid="ladder-notice">{notice}</p>}
       <p className="text-sm text-foreground-muted">{LADDER_INTRO}</p>
 
       <div className="sticky top-0 z-20 -mx-1 rounded-xl border border-border bg-surface-raised px-4 py-2 shadow-sm md:top-[var(--header-height,0px)]" data-testid="ladder-bar" aria-live="polite">
@@ -331,75 +341,13 @@ export function ShortlistLadder() {
                     <p className="text-sm font-semibold">Why this rule</p>
                     <p className="mt-1 text-sm leading-relaxed text-foreground-muted" data-testid="ladder-why">{s.why}</p>
                   </div>
-                  <StepBody step={s.n} rules={rules} set={set} data={data} />
+                  <StepBody step={s.n} rules={rules} set={(p) => { set(p); setNotice(null); }} data={data} />
                 </div>
               )}
             </section>
           </li>
         ))}
-        <li>
-          <section className="rounded-xl border border-border bg-surface" data-testid="ladder-step-6">
-            <button type="button" onClick={() => toggle(6)} aria-expanded={open[6]} className="flex min-h-[48px] w-full items-center justify-between gap-3 px-4 py-2 text-left">
-              <span className="text-sm font-semibold">Step 6. {STEP6_TITLE}</span>
-              <ChevronDown size={14} className={open[6] ? "rotate-180" : ""} aria-hidden />
-            </button>
-            {open[6] && (
-              <div className="space-y-3 border-t border-border px-4 pb-4 pt-3">
-                <p className="text-sm leading-relaxed text-foreground-muted">{STEP6_WHY}</p>
-                {user ? (
-                  <ul className="space-y-2" data-testid="ladder-chips">
-                    {Object.entries(ASK_QUESTIONS).map(([key, q]) => (
-                      <li key={key}>
-                        <button type="button" onClick={() => openWithQuestion(q, SAMPLE_SYMBOL)} data-testid={`ladder-chip-${key}`} className="inline-flex min-h-[44px] items-center rounded-full border border-border bg-hover px-4 py-2 text-sm hover:border-accent">
-                          {q}
-                        </button>
-                      </li>
-                    ))}
-                    <li className="text-xs text-foreground-muted">These open Ask AI on {SAMPLE_NAME}, a sample company. Open any company from your shortlist and ask the same questions there.</li>
-                  </ul>
-                ) : (
-                  <AskPreview />
-                )}
-              </div>
-            )}
-          </section>
-        </li>
       </ol>
-
-      <section aria-labelledby="save-rules" className="rounded-xl border border-border bg-surface p-4" data-testid="save-rules">
-        <h3 id="save-rules" className="text-sm font-semibold">Save my rules</h3>
-        {!user ? (
-          <p className="mt-1 text-sm text-foreground-muted">
-            Keep your rules under a name and open them again later.{" "}
-            <Link href={signupHref("/stock-check")} className="font-medium text-accent hover:underline">Sign up free</Link> or <Link href="/login" className="font-medium text-accent hover:underline">log in</Link>.
-          </p>
-        ) : (
-          <div className="mt-2 space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <label htmlFor="save-name" className="sr-only">Name for these rules</label>
-              <input id="save-name" value={saveName} onChange={(e) => setSaveName(e.target.value)} maxLength={60} placeholder="Name these rules" className="h-10 min-w-[12rem] flex-1 rounded-lg border border-border bg-surface px-3 text-sm" />
-              <button type="button" onClick={() => void saveRules()} className="min-h-[44px] rounded-lg border border-accent px-4 text-sm font-semibold text-accent hover:bg-accent/10" data-testid="save-rules-button">
-                Save my rules
-              </button>
-            </div>
-            {savedLimit !== null && <p className="text-xs text-foreground-muted">Your plan keeps {savedLimit} saved {savedLimit === 1 ? "set" : "sets"} of rules. You have {saved.length}.</p>}
-            {saveMsg && <p className="text-sm" role="status" data-testid="save-rules-msg">{saveMsg}</p>}
-            {saved.length > 0 && (
-              <ul className="space-y-2" data-testid="saved-list">
-                {saved.map((s) => (
-                  <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-sm">
-                    <span className="font-medium">{s.name}</span>
-                    <span className="flex gap-2">
-                      <button type="button" onClick={() => { setRules(fromParams(s.params)); setSaveMsg(`Opened "${s.name}". Change the rules and press the show button to run them again.`); }} className="min-h-[44px] rounded-lg border border-border px-3 text-sm hover:border-accent">Open</button>
-                      <button type="button" onClick={() => void removeSaved(s.id)} className="min-h-[44px] rounded-lg border border-border px-3 text-sm text-foreground-muted hover:text-foreground">Delete</button>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-      </section>
 
       <section id="ladder-results-section" aria-labelledby="ladder-results" className="space-y-3" data-testid="ladder-results">
         <h3 id="ladder-results" className="scroll-mt-40 text-lg font-semibold">{RESULTS_TITLE}</h3>
@@ -411,7 +359,7 @@ export function ShortlistLadder() {
               <option key={c.value} value={c.value}>{c.label}</option>
             ))}
           </select>
-          <button type="button" onClick={show} disabled={busy} className="min-h-[44px] rounded-lg bg-accent px-5 text-sm font-semibold text-accent-foreground disabled:opacity-60" data-testid="ladder-show">
+          <button type="button" onClick={() => show()} disabled={busy} className="min-h-[44px] rounded-lg bg-accent px-5 text-sm font-semibold text-accent-foreground disabled:opacity-60" data-testid="ladder-show">
             {busy && page === 0 ? "Loading…" : SHOW_BUTTON}
           </button>
         </div>
@@ -419,11 +367,15 @@ export function ShortlistLadder() {
         {state === "error" && <p className="text-sm text-foreground-muted">The list could not be loaded right now. Please try again in a moment.</p>}
         {(state === "ok" || (busy && rows.length > 0)) && (
           <>
+            {shownFrom && <p className="text-base font-semibold" data-testid="showing-rule">{SHOWING_RULE(shownFrom)}</p>}
+            <RulesApplied rules={shownRules} />
+            {runAgainLine && <p className="text-sm text-foreground-muted" role="status" data-testid="run-again-line">{runAgainLine}</p>}
             <p className="text-sm font-medium" data-testid="ladder-total">
               {total !== null ? `${total.toLocaleString("en-IN")} ${total === 1 ? "stock meets" : "stocks meet"} the rules you chose.` : ""}
               {sort !== "name" ? ` Sorted by ${SORT_CHOICES.find((c) => c.value === sort)?.label.toLowerCase()}, as you chose.` : ""}
             </p>
             {roceCounts && roceCounts.no > 0 && <p className="text-sm text-foreground-muted" data-testid="ladder-roce-no-figure">{NO_ROCE_LINE(roceCounts.no)}.</p>}
+            {growthNoFigure !== null && growthNoFigure > 0 && <p className="text-sm text-foreground-muted" data-testid="ladder-growth-no-figure">{NO_GROWTH_LINE(growthNoFigure)}.</p>}
             {rows.length === 0 && <p className="text-sm text-foreground-muted">No stock meets all of these rules on the stored data.</p>}
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2" data-testid="ladder-cards">
               {rows.map((r) => (
@@ -449,11 +401,17 @@ export function ShortlistLadder() {
                       </Link>
                     )}
                   </div>
+                  {user && (
+                    <label className="mt-3 flex min-h-[44px] items-center gap-2 text-sm" data-testid="ladder-select">
+                      <input type="checkbox" checked={selected.includes(r.symbol)} onChange={() => tick(r.symbol)} className="h-5 w-5 shrink-0" aria-label={`Select ${r.symbol} for Ask AI`} />
+                      <span>Select for Ask AI</span>
+                    </label>
+                  )}
                 </li>
               ))}
             </ul>
             {more && (
-              <button type="button" onClick={() => void load(page + 1)} disabled={busy} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground-muted hover:text-foreground">
+              <button type="button" onClick={() => void load(page + 1, shownRules)} disabled={busy} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground-muted hover:text-foreground">
                 {busy ? "Loading…" : `Show ${Math.min(LIST_PAGE_SIZE, (total ?? 0) - rows.length)} more`}
               </button>
             )}
@@ -464,7 +422,10 @@ export function ShortlistLadder() {
             )}
           </>
         )}
+        {capNote && <p className="text-sm text-foreground-muted" role="status" data-testid="ask-cap-note">You can select up to {ASK_GROUP_MAX} stocks at a time.</p>}
       </section>
+
+      <AskAboutStocks selected={selected} onRemove={(s) => { setSelected((l) => l.filter((x) => x !== s)); setCapNote(false); }} onClear={() => { setSelected([]); setCapNote(false); }} />
     </div>
   );
 }

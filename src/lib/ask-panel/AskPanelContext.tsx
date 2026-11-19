@@ -30,6 +30,10 @@ interface AskPanelContextValue {
   openPanel: () => void;
   /** Open the panel with a question already typed in the input (not sent; the person presses Send). */
   openWithQuestion: (question: string, symbol?: string) => void;
+  /** Open a NEW session about these stocks (up to the lookup cap): the stocks are shown in the panel and the five questions are offered as suggestions. Nothing is sent. */
+  openWithStocks: (symbols: string[]) => void;
+  pendingStocks: string[] | null;
+  clearPendingStocks: () => void;
   /** The company the question is about, when it was opened from a page that is not a stock page. */
   pendingSymbol: string | null;
   pendingQuestion: string | null;
@@ -43,6 +47,7 @@ export function AskPanelProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<AskPanelMode>(DEFAULT_ASK_PANEL_MODE);
   const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
   const [pendingSymbol, setPendingSymbol] = useState<string | null>(null);
+  const [pendingStocks, setPendingStocks] = useState<string[] | null>(null);
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
       setModeState(restoreAskPanelMode(window.localStorage.getItem(ASK_PANEL_MODE_STORAGE_KEY)));
@@ -74,10 +79,18 @@ export function AskPanelProvider({ children }: { children: ReactNode }) {
     setPendingQuestion(null);
     setPendingSymbol(null);
   };
+  const openWithStocks = (symbols: string[]) => {
+    const list = Array.from(new Set(symbols.map((s) => s.trim().toUpperCase()).filter(Boolean)));
+    if (!list.length) return;
+    setPendingStocks(list);
+    setPendingQuestion(null);
+    setPendingSymbol(null);
+    setOpen(true);
+  };
+  const clearPendingStocks = () => setPendingStocks(null);
   const value = useMemo(
-    () => ({ open, setOpen, openPanel, mode, setMode, openWithQuestion, pendingQuestion, pendingSymbol, clearPendingQuestion }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [open, mode, pendingQuestion, pendingSymbol],
+    () => ({ open, setOpen, openPanel, mode, setMode, openWithQuestion, pendingQuestion, pendingSymbol, clearPendingQuestion, openWithStocks, pendingStocks, clearPendingStocks }),
+    [open, mode, pendingQuestion, pendingSymbol, pendingStocks],
   );
   return <AskPanelContext.Provider value={value}>{children}</AskPanelContext.Provider>;
 }

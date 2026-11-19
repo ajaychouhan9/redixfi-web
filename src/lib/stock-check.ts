@@ -52,6 +52,11 @@ export const EXAMPLES: Record<string, { value: string; text: string }> = {
 };
 export const exampleLine = (text: string): string => `Example: many people use ${text}. Set your own.`;
 
+export const GROWTH_LABEL = "Sales and profit both higher than the year before, 3 years in a row.";
+export const GROWTH_HINT = "Compares rupee figures from annual results, not percentages. A move from a loss to a profit counts as higher. Needs 4 years of annual figures.";
+export const NO_GROWTH_LINE = (n: number): string =>
+  `${n.toLocaleString("en-IN")} ${n === 1 ? "stock has" : "stocks have"} fewer than 4 years of annual figures and ${n === 1 ? "is" : "are"} left out of this rule`;
+
 export const NO_ROCE_LINE = (n: number): string =>
   `${n.toLocaleString("en-IN")} ${n === 1 ? "stock has" : "stocks have"} no ROCE figure and ${n === 1 ? "is" : "are"} left out of this filter`;
 
@@ -88,6 +93,8 @@ export interface Rules {
   profit3: string;
   salesQ: string;
   profitQg: string;
+  /** Sales and profit both higher than the year before, 3 years in a row (rupee figures; four annual figures needed). */
+  growthUp: boolean;
   roe: string;
   roce: string;
   de: string;
@@ -99,7 +106,7 @@ export interface Rules {
   pe: string;
 }
 export const EMPTY_RULES: Rules = {
-  mcMin: "", profitQ: false, profitYears: "", sales3: "", profit3: "", salesQ: "", profitQg: "",
+  mcMin: "", profitQ: false, profitYears: "", sales3: "", profit3: "", salesQ: "", profitQg: "", growthUp: false,
   roe: "", roce: "", de: "", pledge: "", vol: "", volNum: "", volRatio: "", delivery: "", pe: "",
 };
 /** Common starting values (editable): the example values shown under each input for Steps 0, 1, 2, 3 and 5. Step 4 (price behaviour: volume vs usual, delivery, calmer / more active) is left on No rule: it depends on one day of trading. */
@@ -118,7 +125,7 @@ export interface RuleDef {
   unit: string;
   hint: string;
   col: string;
-  op: "min" | "max" | "gt0";
+  op: "min" | "max" | "gt0" | "flag";
   /** The GET /signals (and saved-screen) parameter this rule sends. */
   param: string;
   /** The range the server accepts for this filter (a value outside it is not a rule: it is not counted and not sent). */
@@ -134,6 +141,7 @@ export const RULES: RuleDef[] = [
   { key: "profit3", step: 1, label: "Profit growth over 3 years at least", unit: "% a year", hint: "compound, from annual figures", col: "pg3", op: "min", param: "profit_cagr_3y_min", lo: -100, hi: 100000 },
   { key: "salesQ", step: 1, label: "Sales growth, latest quarter, at least", unit: "%", hint: "against the same quarter a year earlier", col: "sgq", op: "min", param: "sales_growth_min", lo: -100, hi: 100000 },
   { key: "profitQg", step: 1, label: "Profit growth, latest quarter, at least", unit: "%", hint: "against the same quarter a year earlier", col: "pgq", op: "min", param: "profit_growth_min", lo: -100000, hi: 100000 },
+  { key: "growthUp", step: 1, label: GROWTH_LABEL, unit: "", hint: GROWTH_HINT, col: "gs", op: "flag", param: "growth_up_3y" },
   { key: "roe", step: 2, label: "Return on equity at least", unit: "%", hint: "profit for each ₹100 owners have in the company", col: "roe", op: "min", param: "roe_min", lo: -1000, hi: 1000 },
   { key: "roce", step: 2, label: "Return on capital employed (ROCE) at least", unit: "%", hint: "annual, calculated by RedixFi", col: "roce", op: "min", param: "roce_min", lo: -1000, hi: 1000 },
   { key: "de", step: 3, label: "Debt to equity at most", unit: "times", hint: "what it owes compared with what owners put in", col: "de", op: "max", param: "de_max", lo: 0, hi: 100000 },
@@ -166,7 +174,7 @@ export function ruleProblem(d: RuleDef, text: string): string | null {
   return `Enter ${range}. This is not used yet.`;
 }
 /** A rule that is switched on. Price behaviour (calmer / more active) is handled beside the table-driven rules. */
-export const isOn = (r: Rules, d: RuleDef): boolean => (d.op === "gt0" ? r[d.key] === true : validValue(d, r[d.key] as string));
+export const isOn = (r: Rules, d: RuleDef): boolean => (d.op === "gt0" || d.op === "flag" ? r[d.key] === true : validValue(d, r[d.key] as string));
 export const volOn = (r: Rules): boolean => r.vol !== "" && num(r.volNum) !== undefined && (num(r.volNum) as number) >= 0 && (num(r.volNum) as number) <= 100;
 
 type Test = { col: string; ok: (v: number) => boolean };
@@ -175,6 +183,7 @@ export function activeTests(r: Rules, upToStep: number): Test[] {
   for (const d of RULES) {
     if (d.step > upToStep || !isOn(r, d)) continue;
     if (d.op === "gt0") out.push({ col: d.col, ok: (v) => v > 0 });
+    else if (d.op === "flag") out.push({ col: d.col, ok: (v) => v === 1 });
     else {
       const n = num(r[d.key] as string) as number;
       out.push({ col: d.col, ok: d.op === "min" ? (v) => v >= n : (v) => v <= n });
@@ -238,12 +247,27 @@ export function roceGap(data: LadderData, r: Rules): { noFigure: number; notAppl
   return { noFigure, notApplicable };
 }
 
+/** Stocks with fewer than four annual figures (no answer for the growth rule) among those meeting every other rule that is on: the "left out of this rule" line. */
+export function growthGap(data: LadderData, r: Rules): number {
+  const idx = indexOf(data);
+  if (idx.gs === undefined) return 0;
+  const tests = activeTests(r, 5)
+    .filter((t) => t.col !== "gs")
+    .map((t) => ({ i: idx[t.col], ok: t.ok }));
+  let n = 0;
+  for (const row of data.rows) {
+    if (tests.some((t) => row[t.i] == null || !t.ok(row[t.i] as number))) continue;
+    if (row[idx.gs] == null) n += 1;
+  }
+  return n;
+}
+
 /** The GET /signals parameters for the rules (the same rules the counts use). */
 export function toParams(r: Rules): Partial<SignalsListParams> {
   const p: Record<string, number | boolean | undefined> = {};
   for (const d of RULES) {
     if (!isOn(r, d)) continue;
-    p[d.param] = d.op === "gt0" ? true : (num(r[d.key] as string) as number);
+    p[d.param] = d.op === "gt0" || d.op === "flag" ? true : (num(r[d.key] as string) as number);
   }
   if (volOn(r)) p[r.vol === "calmer" ? "volatility_max" : "volatility_min"] = num(r.volNum) as number;
   return p as Partial<SignalsListParams>;
@@ -256,7 +280,7 @@ export function fromParams(p: SharedScreenParams | Record<string, unknown>): Rul
   const s = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? String(v) : "");
   for (const d of RULES) {
     const v = q[d.param];
-    out[d.key] = d.op === "gt0" ? v === true : s(v);
+    out[d.key] = d.op === "gt0" || d.op === "flag" ? v === true : s(v);
   }
   if (typeof q.volatility_max === "number") {
     out.vol = "calmer";
@@ -269,6 +293,23 @@ export function fromParams(p: SharedScreenParams | Record<string, unknown>): Rul
 }
 
 export const hasAnyRule = (r: Rules): boolean => RULES.some((d) => isOn(r, d)) || volOn(r);
+
+/** Every rule that is switched on, as one plain line each (for the read-only "Rules applied" card and the saved-rule summary). Empty when no rule is on. */
+export function describeRules(r: Rules): string[] {
+  const out: string[] = [];
+  for (const d of RULES) {
+    if (!isOn(r, d)) continue;
+    if (d.op === "gt0" || d.op === "flag") out.push(d.label.replace(/\.$/, ""));
+    else out.push(`${d.label} ${num(r[d.key] as string)}${d.unit ? ` ${d.unit}` : ""}`);
+  }
+  if (volOn(r)) out.push(`Price movement: ${r.vol === "calmer" ? "calmer, more volatile than at most" : "more active, more volatile than at least"} ${num(r.volNum)}% of stocks`);
+  return out;
+}
+
+/** Whether two sets of rules switch on the same rules with the same values (a typed value that is not used yet does not count). */
+export function sameRules(a: Rules, b: Rules): boolean {
+  return JSON.stringify(toParams(a)) === JSON.stringify(toParams(b));
+}
 
 // ---- the steps (copy) -------------------------------------------------------------------------------------------------------------------
 export interface StepDef {
@@ -284,9 +325,6 @@ export const STEPS: StepDef[] = [
   { n: 4, title: "How does the price behave?", why: "Two neutral options: calmer means the price has moved less than most stocks lately, more active means it has moved more. Bigger swings can go either way. Volume vs usual and delivery % describe how much trading there was and how much of it ended in delivery." },
   { n: 5, title: "What you pay (optional)", why: "P/E is the price divided by the profit per share over the last 12 months. " + PRICE_NOTE + " A low P/E does not make a company a good one." },
 ];
-export const STEP6_TITLE = "Read the rest with Ask AI";
-export const STEP6_WHY = "Rules cannot read a company's filings. For each company on your shortlist, Ask AI can list the points to watch, what management said and the last three years of numbers, with sources.";
-
 // ---- the shortlist ------------------------------------------------------------------------------------------------------------------------
 export const SORT_CHOICES: { value: string; label: string; order: "asc" | "desc" }[] = [
   { value: "name", label: "Name, A to Z", order: "asc" },
@@ -309,6 +347,7 @@ export function cardValues(r: Rules, row: Record<string, unknown>): { label: str
   if (num(r.profitYears) !== undefined) add("Profit in the last 5 years", n("profit_years") === null ? "Not available" : `${n("profit_years")} of 5 years`);
   if (num(r.sales3) !== undefined) add("Sales growth, 3 years", f1(n("sales_cagr_3y_pct"), "% a year"));
   if (num(r.profit3) !== undefined) add("Profit growth, 3 years", f1(n("profit_cagr_3y_pct"), "% a year"));
+  if (r.growthUp) add("Sales and profit higher 3 years in a row", row["both_up_3y"] === true ? "Yes" : row["both_up_3y"] === false ? "No" : "Not available");
   if (num(r.salesQ) !== undefined) add("Sales growth, quarter", f1(n("sales_growth_pct"), "%"));
   if (num(r.profitQg) !== undefined) add("Profit growth, quarter", f1(n("profit_growth_pct"), "%"));
   if (num(r.roe) !== undefined) add("ROE", f1(n("roe"), "%"));
