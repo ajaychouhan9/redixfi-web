@@ -8,6 +8,8 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 import { ApiError } from "@/lib/api/client";
 import { searchResearch } from "@/lib/api/endpoints";
+import { AddToRuleButton } from "@/components/app/ask/AddToRuleButton";
+import { canSaveAnswer } from "@/lib/rule-answers";
 import { ASK_GROUP_PANEL_NOTE, ASK_GROUP_TITLE, ALL_AT_ONCE, GROUP_KEYS, groupQuestion } from "@/lib/ask-group";
 import { askRedixfi, getAskConversations, getAskHistory, getAskSuggestions, getUsage, updateAskContext } from "@/lib/api/mutations";
 import { getCurrentSymbol, onCurrentSymbolChange } from "@/lib/current-symbol";
@@ -606,7 +608,7 @@ export function AskRedixFi() {
       } else {
         setMessages((prev) => [
           ...prev,
-          { role: "ai", text: "Something went wrong reaching RedixFi AI — try again in a moment." },
+          { role: "ai", text: "Something went wrong reaching RedixFi AI — try again in a moment.", error: true },
         ]);
       }
     } finally {
@@ -1046,6 +1048,9 @@ export function AskRedixFi() {
                           <div className="mt-1 text-[11px] text-foreground-faint opacity-70">
                             Your question balance is unchanged for this response.
                           </div>
+                        )}
+                        {user && canSaveAnswer(m, conversationId) && (
+                          <AddToRuleButton conversationId={conversationId as string} text={m.text} symbol={m.resolvedSymbol ?? effectiveSymbol ?? null} getToken={getToken} />
                         )}
                       </div>
                     </div>

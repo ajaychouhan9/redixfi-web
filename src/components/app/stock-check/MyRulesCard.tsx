@@ -12,6 +12,7 @@ import {
   RUN_AGAIN_BUTTON, SAVE_AS_NEW_RULE, SAVE_BUTTON, SAVE_NEW_BUTTON, SNAPSHOT_HELP, SNAPSHOT_LABEL, copyName, saveAction, savedLine, snapshotLine,
   type ActiveRule,
 } from "@/lib/my-rules";
+import { RuleReport } from "@/components/app/stock-check/RuleReport";
 import { CLEAR_ALL, COMMON_LABEL, COMMON_RULES, EMPTY_RULES, START_COMMON, hasAnyRule, sameRules, toParams, type Rules } from "@/lib/stock-check";
 
 interface Props {
@@ -182,6 +183,7 @@ export function MyRulesCard({ rules, setRules, sort, left, asOf, active, setActi
                         <button type="button" onClick={() => setConfirmDelete(s.id)} className={`${btn} text-foreground-muted`} data-testid="saved-delete">{DELETE_BUTTON}</button>
                       )}
                     </div>
+                    <RuleReport rule={s} onChanged={() => void load()} />
                   </li>
                 );
               })}

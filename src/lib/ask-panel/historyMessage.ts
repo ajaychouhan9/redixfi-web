@@ -27,6 +27,8 @@ export interface AskRenderableMessage {
   quotaUnchanged?: boolean;
   choices?: AskChoice[];
   scope?: AskScope | null;
+  /** A local "something went wrong" line, not an answer from RedixFi (never saved to a rule). */
+  error?: boolean;
 }
 
 /**

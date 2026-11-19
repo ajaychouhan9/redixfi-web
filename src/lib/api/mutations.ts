@@ -3,7 +3,7 @@
 // Client-side write calls (auth required, so these can't run as cached
 // Server Component fetches). Response envelopes match the GET endpoints exactly.
 
-import { apiGet, apiGetPaged, apiGetOptional, apiMutate } from "./client";
+import { apiGet, apiGetBlob, apiGetPaged, apiGetOptional, apiMutate } from "./client";
 import type {
   ReviewQueueDetail,
   ReviewQueueList,
@@ -503,6 +503,21 @@ export interface MyScreen {
   stock_count?: number | null;
   counted_at?: string | null;
   snapshot?: { at: string | null; as_of: string | null; count: number } | null;
+  /** How many Ask AI answers are saved to this rule (release 2). */
+  answers?: number;
+}
+
+export interface RuleAnswer {
+  id: string;
+  rule_id: string;
+  symbol: string | null;
+  symbols: string[];
+  question: string;
+  answer: string;
+  sources: { type?: string; label?: string; detail?: string; url?: string; subject?: string; fetched_at?: string }[];
+  table: { columns: { key: string; label: string }[]; rows: Record<string, string | number | boolean | null>[]; total_rows?: number } | null;
+  answered_at: string | null;
+  saved_at: string | null;
 }
 
 export interface MyScreenSnapshot {
@@ -550,6 +565,25 @@ export async function replaceMyScreen(
   const env = await apiMutate<MyScreen>(`/my-screens/${encodeURIComponent(id)}`, "PUT", { params, ...(extras ?? {}) }, { token });
   return env.data;
 }
+
+/** "Add to my rule": the server copies the answer from the person's own conversation; the client only names it. */
+export async function saveRuleAnswer(token: string, ruleId: string, body: { conversation_id: string; answer_text: string; symbol?: string | null }): Promise<{ answer: RuleAnswer; already_saved: boolean }> {
+  const env = await apiMutate<{ answer: RuleAnswer; already_saved: boolean }>(`/my-screens/${encodeURIComponent(ruleId)}/answers`, "POST", body, { token });
+  return env.data;
+}
+
+export async function listRuleAnswers(token: string, ruleId: string): Promise<{ answers: RuleAnswer[]; count: number; limit: number }> {
+  const env = await apiGet<{ answers: RuleAnswer[]; count: number; limit: number }>(`/my-screens/${encodeURIComponent(ruleId)}/answers`, { token });
+  return env.data;
+}
+
+export async function deleteRuleAnswer(token: string, ruleId: string, answerId: string): Promise<void> {
+  await apiMutate<{ deleted: boolean }>(`/my-screens/${encodeURIComponent(ruleId)}/answers/${encodeURIComponent(answerId)}`, "DELETE", undefined, { token });
+}
+
+/** The real export of a rule (paid plans and the Pro trial). Free accounts get a 403 and open the stored sample instead. */
+export const downloadRuleExport = (ruleId: string, kind: "pdf" | "csv", token: string) =>
+  apiGetBlob(`/my-screens/${encodeURIComponent(ruleId)}/export.${kind}`, { token });
 
 export async function getMyScreenSnapshot(token: string, id: string): Promise<MyScreenSnapshot | null> {
   const env = await apiGet<{ snapshot: MyScreenSnapshot | null }>(`/my-screens/${encodeURIComponent(id)}/snapshot`, { token });
