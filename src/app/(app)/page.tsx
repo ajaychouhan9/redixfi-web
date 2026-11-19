@@ -18,7 +18,7 @@ export const metadata: Metadata = { alternates: { canonical: "/" } };
  */
 export default function HomePage() {
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-5">
+    <div className="@container mx-auto w-full min-w-0 max-w-4xl space-y-5">
       <section aria-labelledby="home-title" data-testid="home-search">
         <h1 id="home-title" className="max-w-2xl text-2xl font-semibold leading-tight sm:text-3xl" data-testid="hero-headline">
           Check any NSE stock in minutes: delivery, insider trades, points to watch and concall summaries.

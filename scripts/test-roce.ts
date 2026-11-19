@@ -69,7 +69,7 @@ assert.equal(fundParams({ ...EMPTY_FUND, roceMin: "" }).roce_min, undefined);
 assert.equal(fundChips({ ...EMPTY_FUND, roceMin: "20" }, () => undefined).find((c) => c.key === "roce")?.text, "ROCE above 20%");
 const filt = read("components/app/signals/FundamentalFilters.tsx");
 const roceInput = /ROCE % above[\s\S]*?data-testid="roce-min"/.exec(filt)?.[0] ?? "";
-assert.ok(roceInput.includes('placeholder="Enter a number"') && !/placeholder="e\.g\./.test(roceInput), "no suggested or preset number on the ROCE filter");
+assert.ok(roceInput.includes('placeholder="15"') && !roceInput.includes('value={"15"}'), "19 Nov 2026: the ROCE filter shows 15 as an example placeholder (labelled by the Example line), never pre-filled");
 assert.ok(!filt.includes("ROCE is not stored"), "the old 'ROCE is not stored' line is gone");
 assert.equal(roceFilterNote(0, 0), null);
 assert.equal(roceFilterNote(null, null), null);

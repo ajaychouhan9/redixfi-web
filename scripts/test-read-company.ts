@@ -66,8 +66,11 @@ assert.ok(!/\bsearchParams\b/.test(stock.replace(/AskPrefill/g, "")) || true);
 const page = strip(read("app/(app)/stock-check/page.tsx"));
 assert.ok(/export const revalidate = \d+/.test(page) && !/\b(cookies|headers)\(\)|searchParams|await |fetch\(/.test(page), "/stock-check is static");
 const comp = strip(read("components/app/start/ReadCompany.tsx"));
-assert.ok(!/fetch\(|getSignals|getResearch|useAskPanel|openWithQuestion/.test(comp), "chips only navigate; nothing is called on load");
-assert.ok((comp.match(/<Link/g) ?? []).length >= 4 && comp.includes("read-ask-chip"), "chips and buttons are links");
+assert.ok(!/fetch\(|getSignals|getResearch/.test(comp), "nothing is fetched on load");
+// 19 Nov 2026: the chips open the Ask panel over the page (with the sample company); they never navigate. The question is only typed in.
+assert.ok(/onClick=\{\(\) => openWithQuestion\(ASK_QUESTIONS\[s\.askKey\], SAMPLE_SYMBOL\)\}/.test(comp) && !/href=\{askHref/.test(comp), "chips open the panel, not another page");
+assert.ok(!/useEffect\([^)]*openWithQuestion/.test(comp), "nothing opens the panel on load");
+assert.ok((comp.match(/<Link/g) ?? []).length >= 3 && comp.includes("read-ask-chip"), "tab buttons are links; chips are buttons that open the panel");
 assert.ok(comp.includes("redixfi:read-company-notes") && comp.includes("localStorage"), "notes saved on this device only");
 assert.ok(!/score|grade|rating|verdict/i.test(comp.replace(/data-testid="[^"]*"/g, "").replace(/There is no score/g, "")), "no score or label on the notes");
 assert.ok(page.includes("<ShortlistLadder />") && PART2_INTRO.includes("A to Z") && PART2_TITLE === "Build Your Shortlist", "Part 2 is the shortlist ladder, A to Z");

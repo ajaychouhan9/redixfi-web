@@ -18,15 +18,16 @@ import {
   SAMPLE_NAME,
   SAMPLE_NOTE,
   SAMPLE_SYMBOL,
-  askHref,
   notesLine,
 } from "@/lib/read-company";
+import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 
 const NOTES_KEY = "redixfi:read-company-notes";
 const btn = "inline-flex min-h-[44px] items-center rounded-lg border border-accent px-4 text-sm font-semibold text-accent hover:bg-accent/10";
 
 /** The five steps, the notes list and the reading questions. Nothing here runs on load except reading the saved ticks from this device. */
 export function ReadCompany() {
+  const { openWithQuestion } = useAskPanel();
   const [done, setDone] = useState<boolean[]>(() => READ_STEPS.map(() => false));
   const [open, setOpen] = useState<boolean[]>(() => QUIZ.map(() => false));
 
@@ -97,14 +98,15 @@ export function ReadCompany() {
                 ))}
               </div>
               <div className="mt-3">
-                <Link
-                  href={askHref(SAMPLE_SYMBOL, s.askKey)}
+                <button
+                  type="button"
+                  onClick={() => openWithQuestion(ASK_QUESTIONS[s.askKey], SAMPLE_SYMBOL)}
                   className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-border bg-hover px-4 py-2 text-left text-sm text-foreground hover:border-accent"
                   data-testid="read-ask-chip"
                 >
                   <Sparkles size={14} className="shrink-0 text-accent" aria-hidden />
                   <span>{ASK_QUESTIONS[s.askKey]}</span>
-                </Link>
+                </button>
                 <p className="mt-1 text-xs text-foreground-muted" data-testid="read-chip-cost">
                   {CHIP_COST}
                 </p>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Example } from "@/components/app/signals/Example";
 import type { FundamentalsCoverage } from "@/lib/api/types";
 import { BankNote } from "@/components/app/stock-check/ShortlistLadder";
 import { FILTERS_NOTE } from "@/data/fundamental-screens";
@@ -21,16 +22,19 @@ export function FundamentalFilters({ value, onChange, coverage }: { value: FundF
       <div className="grid grid-cols-2 items-end gap-2 sm:grid-cols-3 lg:grid-cols-4">
         <label className={label}>
           P/E at most{count(coverage.pe)}
-          <input type="number" min={0} value={value.peMax} onChange={(e) => onChange({ peMax: e.target.value })} placeholder="e.g. 30" className={control} />
+          <input type="number" min={0} value={value.peMax} onChange={(e) => onChange({ peMax: e.target.value })} placeholder="25" className={control} />
+          <Example text="25 (times)" />
         </label>
         <label className={label}>
           ROE at least (%){count(coverage.roe)}
-          <input type="number" value={value.roeMin} onChange={(e) => onChange({ roeMin: e.target.value })} placeholder="e.g. 20" className={control} />
+          <input type="number" value={value.roeMin} onChange={(e) => onChange({ roeMin: e.target.value })} placeholder="15" className={control} />
+          <Example text="15 (%)" />
         </label>
         {coverage.roce !== undefined && (
           <label className={label}>
             ROCE % above (annual, calculated){count(coverage.roce)}
-            <input type="number" value={value.roceMin} onChange={(e) => onChange({ roceMin: e.target.value })} placeholder="Enter a number" className={control} data-testid="roce-min" />
+            <input type="number" value={value.roceMin} onChange={(e) => onChange({ roceMin: e.target.value })} placeholder="15" className={control} data-testid="roce-min" />
+          <Example text="15 (%)" />
           </label>
         )}
         {coverage.roce !== undefined && (
@@ -40,11 +44,13 @@ export function FundamentalFilters({ value, onChange, coverage }: { value: FundF
         )}
         <label className={label}>
           Profit growth at least (%){count(coverage.profit_growth)}
-          <input type="number" value={value.profitGrowthMin} onChange={(e) => onChange({ profitGrowthMin: e.target.value })} placeholder="e.g. 20" className={control} />
+          <input type="number" value={value.profitGrowthMin} onChange={(e) => onChange({ profitGrowthMin: e.target.value })} placeholder="10" className={control} />
+          <Example text="10 (%)" />
         </label>
         <label className={label}>
           Sales growth at least (%){count(coverage.sales_growth)}
-          <input type="number" value={value.salesGrowthMin} onChange={(e) => onChange({ salesGrowthMin: e.target.value })} placeholder="e.g. 20" className={control} />
+          <input type="number" value={value.salesGrowthMin} onChange={(e) => onChange({ salesGrowthMin: e.target.value })} placeholder="10" className={control} />
+          <Example text="10 (%)" />
         </label>
         <label className={label}>
           Price vs 200-day EMA{count(coverage.ema200)}
@@ -63,23 +69,28 @@ export function FundamentalFilters({ value, onChange, coverage }: { value: FundF
       <div className="mt-1 grid grid-cols-2 items-end gap-2 sm:grid-cols-3 lg:grid-cols-4">
         <label className={label}>
           Debt-to-equity at most{count(coverage.de)}
-          <input type="number" min={0} step="0.1" value={value.deMax} onChange={(e) => onChange({ deMax: e.target.value })} placeholder="e.g. 1" className={control} />
+          <input type="number" min={0} step="0.1" value={value.deMax} onChange={(e) => onChange({ deMax: e.target.value })} placeholder="1" className={control} />
+          <Example text="1 (times)" />
         </label>
         <label className={label}>
           Promoter holding at least (%){count(coverage.promoter)}
-          <input type="number" min={0} max={100} value={value.promoterMin} onChange={(e) => onChange({ promoterMin: e.target.value })} placeholder="e.g. 50" className={control} />
+          <input type="number" min={0} max={100} value={value.promoterMin} onChange={(e) => onChange({ promoterMin: e.target.value })} placeholder="50" className={control} />
+          <Example text="50 (%)" />
         </label>
         <label className={label}>
           Dividend yield at least (%){count(coverage.dividend_yield)}
-          <input type="number" min={0} step="0.1" value={value.dividendYieldMin} onChange={(e) => onChange({ dividendYieldMin: e.target.value })} placeholder="e.g. 2" className={control} />
+          <input type="number" min={0} step="0.1" value={value.dividendYieldMin} onChange={(e) => onChange({ dividendYieldMin: e.target.value })} placeholder="2" className={control} />
+          <Example text="2 (%)" />
         </label>
         <label className={label}>
           Promoter pledge at most (%){count(coverage.pledge)}
-          <input type="number" min={0} max={100} value={value.pledgeMax} onChange={(e) => onChange({ pledgeMax: e.target.value })} placeholder="e.g. 10" className={control} />
+          <input type="number" min={0} max={100} value={value.pledgeMax} onChange={(e) => onChange({ pledgeMax: e.target.value })} placeholder="10" className={control} />
+          <Example text="10 (%)" />
         </label>
         <label className={label}>
           Delivery at least (%){count(coverage.delivery)}
-          <input type="number" min={0} max={100} value={value.deliveryMin} onChange={(e) => onChange({ deliveryMin: e.target.value })} placeholder="e.g. 60" className={control} />
+          <input type="number" min={0} max={100} value={value.deliveryMin} onChange={(e) => onChange({ deliveryMin: e.target.value })} placeholder="50" className={control} />
+          <Example text="50 (%)" />
         </label>
         <label className={label}>
           Insider trades disclosed, last 30 days{count(coverage.insider_30d)}

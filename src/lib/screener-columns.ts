@@ -149,7 +149,7 @@ const ORDER: ColumnId[] = ["sector", "delivery", "volume", "from52", "week52", "
   "de", "promoter", "pledge", "dividend_yield", "insider", "deals", "news"];
 
 const PRESET_DEFS: { id: string; label: string; ids: ColumnId[] }[] = [
-  { id: "basic", label: "Basic", ids: ["sector", "delivery", "volume", "from52", "volatility", "chips", "news"] },
+  { id: "basic", label: "Basic", ids: ["sector", "delivery", "volume", "from52", "volatility", "roce", "chips", "news"] },
   { id: "fundamentals", label: "Fundamentals", ids: ["sector", "pe", "roe", "roce", "profit_growth", "sales_growth", "de", "promoter", "dividend_yield"] },
   { id: "technical", label: "Technical", ids: ["from52", "ema200", "volume", "volatility", "chips"] },
   { id: "activity", label: "Activity", ids: ["delivery", "insider", "deals", "volume", "news"] },

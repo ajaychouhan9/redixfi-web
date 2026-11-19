@@ -24,6 +24,7 @@ import { MarkdownAnswer } from "@/components/app/ask/MarkdownAnswer";
 import { SourcesSection } from "@/components/app/ask/SourcesSection";
 import { ScopeTag } from "@/components/app/ask/ScopeTag";
 import { AskPreview } from "@/components/app/stock-check/AskPreview";
+import { SamplePanel } from "@/components/app/ask/SamplePanel";
 import { SignalTableRow, type VisibleColumns } from "@/components/app/signals/SignalTableRow";
 import { filterChips } from "@/components/app/signals/SmartScreenerBox";
 import { Chip } from "@/components/ui/Chip";
@@ -210,7 +211,7 @@ function AskQuota({ usage, detailed = false }: { usage: AskUsageInfo | null; det
 
 export function AskRedixFi() {
   const { user, loading: authLoading, getToken } = useAuth();
-  const { open, setOpen, mode, setMode, pendingQuestion, clearPendingQuestion } = useAskPanel();
+  const { open, setOpen, mode, setMode, pendingQuestion, pendingSymbol, clearPendingQuestion } = useAskPanel();
   const pathname = usePathname();
   // UI polish batch, Item 4 — LOCKED DECISION. `closedAtPathRef` records
   // which route the panel was on the last time the user explicitly closed
@@ -596,11 +597,16 @@ export function AskRedixFi() {
   // fresh-start effect above has run, and is not sent: the person reads it and presses Send.
   useEffect(() => {
     if (open && pendingQuestion) {
-      if (user) setInput(pendingQuestion);
-      clearPendingQuestion();
+      if (user) {
+        // From a page that is not a stock page the question carries its own company (the sample company); the page behind is not touched.
+        if (pendingSymbol) pickSymbol(pendingSymbol);
+        setInput(pendingQuestion);
+        clearPendingQuestion();
+      }
+      // Logged out: SamplePanel reads the question and clears it.
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, pendingQuestion, user]);
+  }, [open, pendingQuestion, pendingSymbol, user]);
 
   // Loads resumable history once per distinct symbol context whenever the
   // panel is open (skipNextLoadRef skips the one stale pass after a fresh
@@ -799,7 +805,7 @@ export function AskRedixFi() {
               </Link>
               {open && (
                 <div className="max-h-[55vh] overflow-y-auto border-t border-border pt-3 text-left" data-testid="panel-preview">
-                  <AskPreview compact />
+                  <SamplePanel typed={pendingQuestion} onTypedUsed={clearPendingQuestion} />
                 </div>
               )}
             </div>

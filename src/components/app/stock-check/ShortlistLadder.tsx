@@ -13,12 +13,13 @@ import { formatNumber } from "@/lib/format";
 import { signupHref } from "@/lib/nav-items";
 import { stockPath } from "@/lib/seo/stock-symbol";
 import {
-  BANK_NOTE, BANK_WHY, BANK_WHY_LABEL, CLEAR_ALL, COMMON_LABEL, COMMON_RULES, COMPARE_NOTE, EMPTY_RULES, LADDER_INTRO, LIST_PAGE_SIZE, NO_ROCE_LINE,
+  BANK_NOTE, BANK_WHY, BANK_WHY_LABEL, CLEAR_ALL, DEBT_NOTE, DEBT_WHY, EXAMPLES, exampleLine, COMMON_LABEL, COMMON_RULES, COMPARE_NOTE, EMPTY_RULES, LADDER_INTRO, LIST_PAGE_SIZE, NO_ROCE_LINE,
   NUMBERS_AS_OF, PAST_LINE, RESULTS_LEAD, RESULTS_TITLE, RULES, SHOW_BUTTON, SORT_CHOICES, START_COMMON, STEP6_TITLE, STEP6_WHY, STEPS,
   cardValues, countsByStep, fromParams, hasAnyRule, needsPledge, num, roceGap, toParams, validLadderData,
   type LadderData, type RuleDef, type Rules,
 } from "@/lib/stock-check";
-import { ASK_QUESTIONS, SAMPLE_NAME, SAMPLE_SYMBOL, askHref } from "@/lib/read-company";
+import { ASK_QUESTIONS, SAMPLE_NAME, SAMPLE_SYMBOL } from "@/lib/read-company";
+import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 import { AskPreview } from "@/components/app/stock-check/AskPreview";
 
 const field = "h-10 w-28 rounded-lg border border-border bg-surface px-2 text-sm tabular-nums";
@@ -29,19 +30,19 @@ const fmtDate = (iso: string | null | undefined): string | null => {
 };
 
 /** The note shown on the ROCE and debt steps and under the Screener ROCE filter, with a Why? that opens the fuller reason. */
-export function BankNote({ testId = "bank-note" }: { testId?: string }) {
+export function BankNote({ testId = "bank-note", note = BANK_NOTE, why = BANK_WHY, whyTestId = "bank-why" }: { testId?: string; note?: string; why?: string; whyTestId?: string }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground-muted" data-testid={testId}>
       <p>
-        {BANK_NOTE}{" "}
+        {note}{" "}
         <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="font-medium text-accent underline" data-testid="bank-why-toggle">
           {BANK_WHY_LABEL}
         </button>
       </p>
       {open && (
-        <p className="mt-2 leading-relaxed" data-testid="bank-why">
-          {BANK_WHY}
+        <p className="mt-2 leading-relaxed" data-testid={whyTestId}>
+          {why}
         </p>
       )}
     </div>
@@ -62,11 +63,14 @@ function NumberRule({ d, rules, set }: { d: RuleDef; rules: Rules; set: (patch: 
           inputMode="decimal"
           value={rules[d.key] as string}
           onChange={(e) => set({ [d.key]: e.target.value } as Partial<Rules>)}
-          placeholder="Not set"
+          placeholder={EXAMPLES[d.key]?.value ?? "Not set"}
           className={field}
         />
         {d.unit && <span className="text-xs text-foreground-muted">{d.unit}</span>}
       </span>
+      {EXAMPLES[d.key] && (
+        <p className="basis-full text-[11px] text-foreground-faint" data-testid={`example-${d.key}`}>{exampleLine(EXAMPLES[d.key].text)}</p>
+      )}
     </div>
   );
 }
@@ -128,7 +132,7 @@ function StepBody({ step, rules, set, data }: { step: number; rules: Rules; set:
           )}
         </>
       )}
-      {step === 3 && <BankNote testId="bank-note-debt" />}
+      {step === 3 && <BankNote testId="bank-note-debt" note={DEBT_NOTE} why={DEBT_WHY} whyTestId="debt-why" />}
       {step === 5 && <p className="text-sm text-foreground-muted">A good company can still be priced high.</p>}
     </div>
   );
@@ -136,6 +140,7 @@ function StepBody({ step, rules, set, data }: { step: number; rules: Rules; set:
 
 /** "Build Your Shortlist": the rule ladder, counts after each step (in the browser), the shortlist, and Save my rules. */
 export function ShortlistLadder() {
+  const { openWithQuestion } = useAskPanel();
   const { user, getToken } = useAuth();
   const [data, setData] = useState<LadderData | null>(null);
   const [dataError, setDataError] = useState(false);
@@ -282,6 +287,20 @@ export function ShortlistLadder() {
         <p className="text-base font-semibold" data-testid="ladder-left">
           {left === null ? (dataError ? "Counts are not available right now" : "Loading the counts…") : `${left.toLocaleString("en-IN")} ${left === 1 ? "stock" : "stocks"} left`}
         </p>
+        {left !== null && (
+          <button
+            type="button"
+            onClick={() => {
+              show();
+              document.getElementById("ladder-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+            disabled={busy}
+            className="mt-1 min-h-[44px] w-full rounded-lg bg-accent px-4 text-sm font-semibold text-accent-foreground disabled:opacity-60 sm:w-auto"
+            data-testid="ladder-bar-show"
+          >
+            {`Show ${left.toLocaleString("en-IN")} ${left === 1 ? "stock" : "stocks"}`}
+          </button>
+        )}
         {data && <p className="text-xs text-foreground-muted" data-testid="ladder-asof">{asOf ? NUMBERS_AS_OF(asOf) : "Numbers as of the latest update"}</p>}
       </div>
       <p className="text-xs text-foreground-muted" data-testid="ladder-past">{PAST_LINE}</p>
@@ -324,9 +343,9 @@ export function ShortlistLadder() {
                   <ul className="space-y-2" data-testid="ladder-chips">
                     {Object.entries(ASK_QUESTIONS).map(([key, q]) => (
                       <li key={key}>
-                        <Link href={askHref(SAMPLE_SYMBOL, key)} className="inline-flex min-h-[44px] items-center rounded-full border border-border bg-hover px-4 py-2 text-sm hover:border-accent">
+                        <button type="button" onClick={() => openWithQuestion(q, SAMPLE_SYMBOL)} data-testid={`ladder-chip-${key}`} className="inline-flex min-h-[44px] items-center rounded-full border border-border bg-hover px-4 py-2 text-sm hover:border-accent">
                           {q}
-                        </Link>
+                        </button>
                       </li>
                     ))}
                     <li className="text-xs text-foreground-muted">These open Ask AI on {SAMPLE_NAME}, a sample company. Open any company from your shortlist and ask the same questions there.</li>
@@ -375,8 +394,8 @@ export function ShortlistLadder() {
         )}
       </section>
 
-      <section aria-labelledby="ladder-results" className="space-y-3" data-testid="ladder-results">
-        <h3 id="ladder-results" className="text-lg font-semibold">{RESULTS_TITLE}</h3>
+      <section id="ladder-results-section" aria-labelledby="ladder-results" className="space-y-3" data-testid="ladder-results">
+        <h3 id="ladder-results" className="scroll-mt-40 text-lg font-semibold">{RESULTS_TITLE}</h3>
         <p className="text-sm text-foreground-muted">{RESULTS_LEAD}</p>
         <div className="flex flex-wrap items-center gap-3">
           <label htmlFor="ladder-sort" className="text-sm font-medium">Sort by</label>

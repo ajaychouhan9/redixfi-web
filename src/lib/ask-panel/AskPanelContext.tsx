@@ -29,7 +29,9 @@ interface AskPanelContextValue {
   /** Open on top of whatever is on screen (sidebar nav item's "destination"). */
   openPanel: () => void;
   /** Open the panel with a question already typed in the input (not sent; the person presses Send). */
-  openWithQuestion: (question: string) => void;
+  openWithQuestion: (question: string, symbol?: string) => void;
+  /** The company the question is about, when it was opened from a page that is not a stock page. */
+  pendingSymbol: string | null;
   pendingQuestion: string | null;
   clearPendingQuestion: () => void;
 }
@@ -40,6 +42,7 @@ export function AskPanelProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [mode, setModeState] = useState<AskPanelMode>(DEFAULT_ASK_PANEL_MODE);
   const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
+  const [pendingSymbol, setPendingSymbol] = useState<string | null>(null);
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
       setModeState(restoreAskPanelMode(window.localStorage.getItem(ASK_PANEL_MODE_STORAGE_KEY)));
@@ -51,15 +54,19 @@ export function AskPanelProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(ASK_PANEL_MODE_STORAGE_KEY, nextMode);
   };
   const openPanel = () => setOpen(true);
-  const openWithQuestion = (question: string) => {
+  const openWithQuestion = (question: string, symbol?: string) => {
     setPendingQuestion(question);
+    setPendingSymbol(symbol ?? null);
     setOpen(true);
   };
-  const clearPendingQuestion = () => setPendingQuestion(null);
+  const clearPendingQuestion = () => {
+    setPendingQuestion(null);
+    setPendingSymbol(null);
+  };
   const value = useMemo(
-    () => ({ open, setOpen, openPanel, mode, setMode, openWithQuestion, pendingQuestion, clearPendingQuestion }),
+    () => ({ open, setOpen, openPanel, mode, setMode, openWithQuestion, pendingQuestion, pendingSymbol, clearPendingQuestion }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [open, mode, pendingQuestion],
+    [open, mode, pendingQuestion, pendingSymbol],
   );
   return <AskPanelContext.Provider value={value}>{children}</AskPanelContext.Provider>;
 }

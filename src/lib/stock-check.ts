@@ -29,6 +29,28 @@ export const BANK_WHY_LABEL = "Why?";
 export const BANK_WHY =
   "ROCE asks: for every Rs 100 put into the business, how much operating profit did it earn? That works for a company that makes or sells things, because interest it pays is a separate cost of raising money. A bank is different. It takes money from depositors and lends it out. Deposits are what it works with, and the interest it pays is part of its day-to-day cost, like steel for a car maker. So there is no clean profit before interest, and most of its liabilities are deposits. The result would look like a number but would not mean the same thing. Banks and finance companies are usually read with other measures: return on equity, return on assets, bad loans and the gap between what they earn on loans and pay on deposits. Return on equity is shown on this page. The others are not on the page yet.";
 
+export const DEBT_NOTE = "Debt to equity does not suit banks and finance companies. Borrowing is their business.";
+export const DEBT_WHY =
+  "Debt to equity compares what a company owes with what its owners put in. For a company that makes or sells things, debt pays for plants and stock, so a high ratio says something. A bank or a finance company takes in deposits or borrows, and lends the money out. Owing a lot is how that business works, so the ratio is high by design and cannot be compared with a maker of goods. Other measures are used for them.";
+
+/** Example values for the rules: what many people use. Examples only, not recommendations. */
+export const EXAMPLES: Record<string, { value: string; text: string }> = {
+  mcMin: { value: "500", text: "500 (₹ crore)" },
+  profitYears: { value: "5", text: "5 of 5 years" },
+  sales3: { value: "10", text: "10 (% a year)" },
+  profit3: { value: "10", text: "10 (% a year)" },
+  salesQ: { value: "10", text: "10 (%)" },
+  profitQg: { value: "10", text: "10 (%)" },
+  roe: { value: "15", text: "15 (%)" },
+  roce: { value: "15", text: "15 (%)" },
+  de: { value: "1", text: "1 (times)" },
+  pledge: { value: "10", text: "10 (%)" },
+  volRatio: { value: "1.5", text: "1.5 (times)" },
+  delivery: { value: "50", text: "50 (%)" },
+  pe: { value: "25", text: "25 (times)" },
+};
+export const exampleLine = (text: string): string => `Example: many people use ${text}. Set your own.`;
+
 export const NO_ROCE_LINE = (n: number): string =>
   `${n.toLocaleString("en-IN")} ${n === 1 ? "stock has" : "stocks have"} no ROCE figure and ${n === 1 ? "is" : "are"} left out of this filter`;
 
@@ -79,8 +101,14 @@ export const EMPTY_RULES: Rules = {
   mcMin: "", profitQ: false, profitYears: "", sales3: "", profit3: "", salesQ: "", profitQg: "",
   roe: "", roce: "", de: "", pledge: "", vol: "", volNum: "", volRatio: "", delivery: "", pe: "",
 };
-/** Common starting values (editable). Price behaviour and P/E are left empty: they are choices, not common rules. */
-export const COMMON_RULES: Rules = { ...EMPTY_RULES, mcMin: "1000", profitQ: true, profitYears: "5", sales3: "10", roe: "15", roce: "15", de: "1", pledge: "10" };
+/** Common starting values (editable): the same example values shown under each input. The calmer / more active choice is left unset. */
+export const COMMON_RULES: Rules = {
+  ...EMPTY_RULES,
+  profitQ: true,
+  mcMin: EXAMPLES.mcMin.value, profitYears: EXAMPLES.profitYears.value, sales3: EXAMPLES.sales3.value, profit3: EXAMPLES.profit3.value,
+  salesQ: EXAMPLES.salesQ.value, profitQg: EXAMPLES.profitQg.value, roe: EXAMPLES.roe.value, roce: EXAMPLES.roce.value, de: EXAMPLES.de.value,
+  pledge: EXAMPLES.pledge.value, volRatio: EXAMPLES.volRatio.value, delivery: EXAMPLES.delivery.value, pe: EXAMPLES.pe.value,
+};
 
 export interface RuleDef {
   key: keyof Rules;

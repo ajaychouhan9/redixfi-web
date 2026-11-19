@@ -119,4 +119,7 @@ const STANDARD = "RedixFi shows market data for information only. It gives no bu
   assert.ok(ex.includes("columns: shown.ids") && ex.includes("sanitizeColumns(p.columns)"), "columns travel in the shared and saved screen state");
   assert.ok(ex.includes("SIGNALS_COLUMNS_KEY_V2") && /try \{[\s\S]*localStorage\.setItem\(SIGNALS_COLUMNS_KEY_V2/.test(ex), "choice remembered in browser storage inside try/catch");
 }
+// 19 Nov 2026: ROCE is shown by default (it was only in the Fundamentals preset, so nobody saw it)
+assert.ok(DEFAULT_COLUMNS.includes("roce") && PRESETS[0].ids.includes("roce"), "ROCE is a default Screener column");
+
 console.log("prompt 6 column tests ok");

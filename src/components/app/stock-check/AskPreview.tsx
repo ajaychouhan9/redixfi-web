@@ -8,10 +8,12 @@ import { ASK_PREVIEW, formatStored } from "@/lib/ask-samples";
  * made once with the Ask AI pipeline, checked line by line against the database and the filings, and saved in src/data/ask-samples.json.
  * No model call and no request happens when this renders. Nothing here can be sent as a question.
  */
-export function AskPreview({ compact = false }: { compact?: boolean }) {
+export function AskPreview({ compact = false, only }: { compact?: boolean; only?: string }) {
+  const list = only ? samples.answers.filter((a) => a.id === only) : samples.answers;
   const when = formatStored(samples.stored_on);
   return (
     <section aria-labelledby="ask-preview-title" className="space-y-3" data-testid="ask-preview">
+      {!only && (
       <div>
         <h3 id="ask-preview-title" className={compact ? "text-sm font-semibold" : "text-base font-semibold"}>
           {ASK_PREVIEW.title}
@@ -20,8 +22,9 @@ export function AskPreview({ compact = false }: { compact?: boolean }) {
           {ASK_PREVIEW.sampleLine(samples.name)}
         </p>
       </div>
+      )}
       <ul className="space-y-3">
-        {samples.answers.map((a) => (
+        {list.map((a) => (
           <li key={a.id} className="rounded-xl border border-border bg-surface p-3" data-testid={`ask-sample-${a.id}`}>
             <p className="text-sm font-semibold">{a.question}</p>
             {a.lead && <p className="mt-2 text-sm leading-relaxed text-foreground-muted">{a.lead}</p>}

@@ -27,8 +27,8 @@ export function HomeBrief() {
   const bullets = shownBullets(brief?.bullets);
   const updated = updatedLine(brief?.updated_label, brief?.updated_at);
   return (
-    <section className="rounded-2xl border border-border bg-surface-raised p-4 sm:p-5" aria-labelledby="home-brief-title" data-testid="home-brief">
-      <div className="mb-3 flex items-center justify-between gap-3">
+    <section className="min-w-0 max-w-full rounded-2xl border border-border bg-surface-raised p-4 sm:p-5" aria-labelledby="home-brief-title" data-testid="home-brief">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <div className="flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/15">
             <Sparkles size={14} className="text-accent" aria-hidden />
@@ -46,7 +46,7 @@ export function HomeBrief() {
       )}
       {brief !== undefined && bullets.length === 0 && <p className="text-sm text-foreground-muted" data-testid="home-brief-empty">Today&apos;s brief is being prepared. It is written four times a day.</p>}
       {bullets.length > 0 && (
-        <ul className="list-disc space-y-1.5 pl-5 text-[15px] leading-[1.6] marker:text-accent-dim" data-testid="home-brief-bullets">
+        <ul className="list-disc space-y-1.5 break-words pl-5 text-[15px] leading-[1.6] marker:text-accent-dim [overflow-wrap:anywhere]" data-testid="home-brief-bullets">
           {bullets.map((b, i) => (
             <li key={i}>{b}</li>
           ))}

@@ -1,5 +1,6 @@
 "use client";
 
+import { Example } from "@/components/app/signals/Example";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { Search, Filter, ArrowUpDown, SlidersHorizontal, X, ChevronDown, Download, Lock } from "lucide-react";
 import { getSignals } from "@/lib/api/endpoints";
@@ -29,6 +30,7 @@ import { FeedbackBox } from "@/components/app/FeedbackBox";
 
 const SIGNALS_COLUMNS_KEY = "redixfi:signals-columns:v1";          // the old yes/no choice for seven columns (read once to carry the choice over)
 const SIGNALS_COLUMNS_KEY_V2 = "redixfi:signals-columns:v2";       // the list of chosen column ids
+const ROCE_DEFAULT_MIGRATION_KEY = "redixfi:signals-columns:roce-default:v1";   // one-time: ROCE joins the default columns of people who already have a saved choice
 const FROM52_DEFAULT_MIGRATION_KEY = "redixfi:signals-columns:from52-default:v1";
 
 /** The Screener's reported-figure controls as the state the column rules read. */
@@ -141,8 +143,12 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
       try {
         const v2 = window.localStorage.getItem(SIGNALS_COLUMNS_KEY_V2);
         const ids = v2 ? sanitizeColumns(JSON.parse(v2)) : [];
-        if (ids.length) setChosen(ids);
-        else {
+        if (ids.length) {
+          if (!window.localStorage.getItem(ROCE_DEFAULT_MIGRATION_KEY)) {
+            window.localStorage.setItem(ROCE_DEFAULT_MIGRATION_KEY, "1");
+            setChosen(sanitizeColumns([...ids, "roce"]));
+          } else setChosen(ids);
+        } else {
           const raw = window.localStorage.getItem(SIGNALS_COLUMNS_KEY);
           const legacy = raw ? JSON.parse(raw) : null;
           if (legacy && !window.localStorage.getItem(FROM52_DEFAULT_MIGRATION_KEY)) legacy.from52 = true;
@@ -548,7 +554,8 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
             {from52Preset === "custom" && (
               <label className={label}>
                 Max % below
-                <input value={from52Custom} onChange={(e) => setFrom52Custom(e.target.value)} type="number" min={0} max={100} placeholder="e.g. 3" className={control} />
+                <input value={from52Custom} onChange={(e) => setFrom52Custom(e.target.value)} type="number" min={0} max={100} placeholder="3" className={control} />
+                  <Example text="3 (% from the high)" />
               </label>
             )}
             <label className={label}>
@@ -561,11 +568,13 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
               <>
                 <label className={label}>
                   Min more-volatile %
-                  <input value={volMin} onChange={(e) => setVolMin(e.target.value)} type="number" min={0} max={100} placeholder="e.g. 25" className={control} />
+                  <input value={volMin} onChange={(e) => setVolMin(e.target.value)} type="number" min={0} max={100} placeholder="25" className={control} />
+                  <Example text="25 (% of stocks)" />
                 </label>
                 <label className={label}>
                   Max more-volatile %
-                  <input value={volMax} onChange={(e) => setVolMax(e.target.value)} type="number" min={0} max={100} placeholder="e.g. 50" className={control} />
+                  <input value={volMax} onChange={(e) => setVolMax(e.target.value)} type="number" min={0} max={100} placeholder="50" className={control} />
+                  <Example text="50 (% of stocks)" />
                 </label>
               </>
             )}
@@ -585,7 +594,8 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
               <div className="mt-2 grid grid-cols-2 items-end gap-2 rounded-lg border border-border/70 p-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
                 <label className={label}>
                   Volume vs usual ≥ (5-session avg)
-                  <input value={volumeMin} onChange={(e) => setVolumeMin(e.target.value)} type="number" min={0} step="0.1" placeholder="e.g. 1.0" className={control} />
+                  <input value={volumeMin} onChange={(e) => setVolumeMin(e.target.value)} type="number" min={0} step="0.1" placeholder="1.5" className={control} />
+                  <Example text="1.5 (times)" />
                 </label>
                 <label className={label}>
                   Delivery
