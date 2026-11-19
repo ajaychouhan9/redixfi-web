@@ -16,6 +16,7 @@ import { restoreAskMessages, type AskRenderableMessage } from "@/lib/ask-panel/h
 import { ASK_PANEL_WIDTHS, type AskPanelMode } from "@/lib/ask-panel/panelMode";
 import { getStarterQuestions } from "@/lib/ask-panel/starterQuestions";
 import { COMMON_QUESTION_CHIPS } from "@/lib/common-questions";
+import { CHIP_COST_LINE, HOW_TO_ASK_LINE, daysAvailableNote, howToAskGroups } from "@/lib/ask-panel/howToAsk";
 import { displayName } from "@/lib/company-name";
 import { useMobileViewport } from "@/lib/ask-panel/useMobileViewport";
 import { resolveVisibleChatSymbol } from "@/lib/ask-panel/contextHeader";
@@ -873,6 +874,32 @@ export function AskRedixFi() {
                         </button>
                       ))}
                     </div>
+                    {/* How to ask + example chips in four groups. Every ordinary answer uses 1 question (metering.QUESTION_COST). */}
+                    <div className="mb-4" data-testid="how-to-ask">
+                      <p className="text-[13px] font-medium text-foreground">How to ask: {HOW_TO_ASK_LINE}</p>
+                      <p className="mt-0.5 text-[11.5px] text-foreground-faint">{CHIP_COST_LINE}</p>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                        {howToAskGroups(effectiveSymbol).map((g) => (
+                          <div key={g.id} data-testid={`how-to-ask-${g.id}`}>
+                            <p className="text-[12px] font-semibold text-foreground-muted">{g.title}</p>
+                            <p className="mb-1.5 text-[11.5px] text-foreground-faint">{g.hint}</p>
+                            <div className="flex flex-col gap-1.5">
+                              {g.chips.map((q) => (
+                                <button
+                                  key={q}
+                                  onClick={() => send(q)}
+                                  disabled={authLoading}
+                                  className="rounded-lg border border-border bg-hover px-3 py-2 text-left text-[12.5px] font-medium leading-snug text-foreground-muted transition-colors hover:border-accent hover:text-foreground disabled:opacity-50"
+                                >
+                                  {q}
+                                  <span className="mt-0.5 block text-[10.5px] font-normal text-foreground-faint">Uses 1 question</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                     {/* Built-in common questions: fixed answers, no model call, no question used, on every plan. */}
                     <div className="mt-4" data-testid="common-questions">
                       <p className="mb-1.5 text-[12px] font-medium text-foreground-muted">
@@ -968,7 +995,7 @@ export function AskRedixFi() {
                           </div>
                         )}
                         <div className="overflow-x-auto rounded-lg border border-border">
-                          <table className="w-full min-w-[560px] text-sm">
+                          <table className="w-max min-w-full text-sm">
                             <thead>
                               <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wide text-foreground-faint">
                                 <th className="px-3 py-2">Symbol</th>
@@ -1010,12 +1037,19 @@ export function AskRedixFi() {
                             label="Download"
                           />
                         </div>
-                        <div className="overflow-x-auto rounded-lg border border-border">
-                          <table className="w-full min-w-[560px] text-sm">
+                        {(() => {
+                          const prevUser = i > 0 && messages[i - 1].role === "user" ? messages[i - 1].text : null;
+                          const note = daysAvailableNote(prevUser, m.table);
+                          return note ? (
+                            <p className="mb-1.5 text-xs text-foreground-muted" data-testid="table-days-note">{note}</p>
+                          ) : null;
+                        })()}
+                        <div className="max-w-full overflow-x-auto rounded-lg border border-border" data-testid="ask-table-scroll">
+                          <table className="w-max min-w-full text-sm">
                             <thead>
                               <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wide text-foreground-faint">
-                                {m.table.columns.map((col) => (
-                                  <th key={col.key} className="px-3 py-2">
+                                {m.table.columns.map((col, ci) => (
+                                  <th key={col.key} className={`whitespace-nowrap px-3 py-2 ${ci === 0 ? "sticky left-0 z-[1] bg-surface" : ""}`}>
                                     {col.label}
                                   </th>
                                 ))}
@@ -1037,8 +1071,8 @@ export function AskRedixFi() {
                                       </tr>
                                     )}
                                     <tr className={`border-b border-border last:border-0 ${dim ? "opacity-60" : ""}`}>
-                                      {m.table!.columns.map((col) => (
-                                        <td key={col.key} className="px-3 py-2">
+                                      {m.table!.columns.map((col, ci) => (
+                                        <td key={col.key} className={`whitespace-nowrap px-3 py-2 text-left ${ci === 0 ? "sticky left-0 z-[1] bg-surface" : ""}`}>
                                           {row[col.key] ?? "N/A"}
                                         </td>
                                       ))}

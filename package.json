@@ -23,7 +23,7 @@
     "check:wording": "node scripts/test-wording.mjs && node scripts/test-themes.mjs && node --experimental-strip-types scripts/test-read-company.ts && node --experimental-strip-types --import ./scripts/ts-alias.mjs scripts/test-roce.ts && node --experimental-strip-types --import ./scripts/ts-alias.mjs scripts/test-stock-check.ts && node --experimental-strip-types scripts/test-ux-small.ts && node --experimental-strip-types scripts/test-market-activity.ts && node --experimental-strip-types scripts/test-insider-display.ts && node --experimental-strip-types scripts/test-trust-fixes.ts && node scripts/test-legal-pages.mjs && node --experimental-strip-types --import ./scripts/ts-alias.mjs scripts/test-prompt3.ts && node --experimental-strip-types --import ./scripts/ts-alias.mjs scripts/test-prompt5.ts && node --experimental-strip-types --import ./scripts/ts-alias.mjs scripts/test-prompt6.ts && node scripts/test-prompt7.mjs && node --experimental-strip-types --import ./scripts/ts-alias.mjs scripts/test-conversion.ts && node --experimental-strip-types --import ./scripts/ts-alias.mjs scripts/test-simple-view.ts && node --experimental-strip-types --import ./scripts/ts-alias.mjs scripts/test-restructure.ts"
   },
   "dependencies": {
-    "@vercel/analytics": "^1.5.0",
+    "@vercel/analytics": "^1.5.0 && node --experimental-strip-types --import ./scripts/ts-alias.mjs scripts/test-ask-howto.ts",
     "clsx": "^2.1.1",
     "firebase": "^12.16.0",
     "lightweight-charts": "^5.2.0",
