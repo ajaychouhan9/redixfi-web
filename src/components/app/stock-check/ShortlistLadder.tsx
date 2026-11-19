@@ -13,9 +13,9 @@ import { formatNumber } from "@/lib/format";
 import { signupHref } from "@/lib/nav-items";
 import { stockPath } from "@/lib/seo/stock-symbol";
 import {
-  BANK_NOTE, BANK_WHY, BANK_WHY_LABEL, CLEAR_ALL, DEBT_NOTE, DEBT_WHY, EXAMPLES, exampleLine, COMMON_LABEL, COMMON_RULES, COMPARE_NOTE, EMPTY_RULES, LADDER_INTRO, LIST_PAGE_SIZE, NO_ROCE_LINE,
+  BANK_NOTE, BANK_WHY, BANK_WHY_LABEL, CLEAR_ALL, DEBT_NOTE, DEBT_WHY, EXAMPLES, exampleLine, ruleProblem, COMMON_LABEL, COMMON_RULES, COMPARE_NOTE, EMPTY_RULES, LADDER_INTRO, LIST_PAGE_SIZE, NO_ROCE_LINE,
   NUMBERS_AS_OF, PAST_LINE, RESULTS_LEAD, RESULTS_TITLE, RULES, SHOW_BUTTON, SORT_CHOICES, START_COMMON, STEP6_TITLE, STEP6_WHY, STEPS,
-  cardValues, countsByStep, fromParams, hasAnyRule, needsPledge, num, roceGap, toParams, validLadderData,
+  cardValues, countsByStep, fromParams, hasAnyRule, needsPledge, num, roceGap, toParams, validLadderData, volOn,
   type LadderData, type RuleDef, type Rules,
 } from "@/lib/stock-check";
 import { ASK_QUESTIONS, SAMPLE_NAME, SAMPLE_SYMBOL } from "@/lib/read-company";
@@ -71,6 +71,9 @@ function NumberRule({ d, rules, set }: { d: RuleDef; rules: Rules; set: (patch: 
       {EXAMPLES[d.key] && (
         <p className="basis-full text-[11px] text-foreground-faint" data-testid={`example-${d.key}`}>{exampleLine(EXAMPLES[d.key].text)}</p>
       )}
+      {ruleProblem(d, rules[d.key] as string) && (
+        <p className="basis-full text-[11px] text-foreground-muted" role="status" data-testid={`problem-${d.key}`}>{ruleProblem(d, rules[d.key] as string)}</p>
+      )}
     </div>
   );
 }
@@ -115,6 +118,9 @@ function StepBody({ step, rules, set, data }: { step: number; rules: Rules; set:
               <label htmlFor="rule-volNum">{rules.vol === "calmer" ? "More volatile than at most" : "More volatile than at least"}</label>
               <input id="rule-volNum" inputMode="decimal" value={rules.volNum} onChange={(e) => set({ volNum: e.target.value })} className={field} />
               <span className="text-xs text-foreground-muted">% of stocks</span>
+              {rules.volNum.trim() !== "" && !volOn(rules) && (
+                <p className="basis-full text-[11px] text-foreground-muted" role="status" data-testid="problem-volNum">Enter a number from 0 to 100. This is not used yet.</p>
+              )}
             </div>
           )}
           <p className="text-xs text-foreground-muted">Bigger swings can go either way.</p>

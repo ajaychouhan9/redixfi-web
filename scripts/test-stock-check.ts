@@ -6,7 +6,7 @@ import samples from "../src/data/ask-samples.json" with { type: "json" };
 import { ASK_PREVIEW, sampleIdFor } from "../src/lib/ask-samples.ts";
 import { ASK_QUESTIONS } from "../src/lib/read-company.ts";
 import {
-  BANK_NOTE, BANK_WHY, COMMON_LABEL, COMMON_RULES, DEBT_NOTE, DEBT_WHY, EXAMPLES, exampleLine, EMPTY_RULES, HOME_BUTTON, LADDER_TITLE, MENU_LABEL, NO_ROCE_LINE, PAGE_SUBTITLE, PAGE_TITLE, PAST_LINE,
+  BANK_NOTE, BANK_WHY, COMMON_LABEL, COMMON_RULES, DEBT_NOTE, DEBT_WHY, EXAMPLES, exampleLine, ruleProblem, validValue, EMPTY_RULES, HOME_BUTTON, LADDER_TITLE, MENU_LABEL, NO_ROCE_LINE, PAGE_SUBTITLE, PAGE_TITLE, PAST_LINE,
   PRICE_NOTE, RULES, SEO_TITLE, STEPS, STOCK_BUTTON, activeTests, countAfter, countsByStep, fromParams, hasAnyRule, roceGap, toParams, validLadderData,
   type LadderData, type Rules,
 } from "../src/lib/stock-check.ts";
@@ -201,4 +201,26 @@ assert.equal(sampleIdFor("", sq, aliases), null);
 const ctx = read("lib/ask-panel/AskPanelContext.tsx");
 assert.ok(ctx.includes("openWithQuestion: (question: string, symbol?: string) => void") && ctx.includes("pendingSymbol"), "the panel can carry a company with the question");
 assert.ok(read("components/app/ask/AskRedixFi.tsx").includes("if (pendingSymbol) pickSymbol(pendingSymbol)") && read("components/app/ask/AskRedixFi.tsx").includes("<SamplePanel"), "panel: company context from a non-stock page; samples for logged-out visitors");
+// ---- 6. values the server would refuse are not rules: not counted, not sent, and the person is told
+const rd = (k: string) => RULES.find((d) => d.key === k)!;
+assert.equal(validValue(rd("profitYears"), "5"), true);
+assert.equal(validValue(rd("profitYears"), "1.5"), false, "profit years is a whole number");
+assert.equal(validValue(rd("profitYears"), "6"), false);
+assert.equal(validValue(rd("profitYears"), "-1"), false);
+assert.equal(validValue(rd("de"), "-5"), false, "debt to equity cannot be negative");
+assert.equal(validValue(rd("de"), "0"), true);
+assert.equal(validValue(rd("pledge"), "101"), false);
+assert.equal(validValue(rd("volRatio"), "25"), false);
+assert.equal(validValue(rd("roe"), "999999999"), false);
+assert.equal(validValue(rd("roe"), "-5"), true, "a negative minimum is allowed for ROE");
+assert.equal(validValue(rd("roe"), "abc"), false);
+assert.equal(validValue(rd("mcMin"), "999999999999"), true, "market value has no upper limit");
+assert.equal(ruleProblem(rd("roe"), "abc"), "Enter a number. This is not used yet.");
+assert.equal(ruleProblem(rd("profitYears"), "6"), "Enter a whole number from 0 to 5. This is not used yet.");
+assert.equal(ruleProblem(rd("roe"), ""), null);
+assert.equal(ruleProblem(rd("roe"), "15"), null);
+assert.deepEqual(toParams({ ...EMPTY_RULES, profitYears: "10", de: "-5", roe: "abc", pledge: "5" }), { pledge_max: 5 }, "an unusable value is not sent");
+assert.equal(countAfter(data, { ...EMPTY_RULES, profitYears: "10", de: "-5", roe: "abc" }, 5), 5, "an unusable value does not filter the count");
+assert.ok(ladder.includes("ruleProblem(d, rules[d.key] as string)") && ladder.includes('data-testid="problem-volNum"'), "the problem line is shown");
+
 console.log("stock check tests: ok");

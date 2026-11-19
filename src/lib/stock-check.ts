@@ -120,23 +120,26 @@ export interface RuleDef {
   op: "min" | "max" | "gt0";
   /** The GET /signals (and saved-screen) parameter this rule sends. */
   param: string;
-  max?: number;
+  /** The range the server accepts for this filter (a value outside it is not a rule: it is not counted and not sent). */
+  lo?: number;
+  hi?: number;
+  int?: boolean;
 }
 export const RULES: RuleDef[] = [
   { key: "mcMin", step: 0, label: "Market value at least", unit: "₹ crore", hint: "shares × price", col: "mc", op: "min", param: "market_cap_min" },
   { key: "profitQ", step: 1, label: "Profit in the latest quarter", unit: "", hint: "earnings per share above zero", col: "eps", op: "gt0", param: "eps_positive" },
-  { key: "profitYears", step: 1, label: "Profit in at least this many of the last 5 years", unit: "of 5", hint: "5 means every one of the last five years", col: "py", op: "min", param: "profit_years_min", max: 5 },
-  { key: "sales3", step: 1, label: "Sales growth over 3 years at least", unit: "% a year", hint: "compound, from annual figures", col: "sg3", op: "min", param: "sales_cagr_3y_min" },
-  { key: "profit3", step: 1, label: "Profit growth over 3 years at least", unit: "% a year", hint: "compound, from annual figures", col: "pg3", op: "min", param: "profit_cagr_3y_min" },
-  { key: "salesQ", step: 1, label: "Sales growth, latest quarter, at least", unit: "%", hint: "against the same quarter a year earlier", col: "sgq", op: "min", param: "sales_growth_min" },
-  { key: "profitQg", step: 1, label: "Profit growth, latest quarter, at least", unit: "%", hint: "against the same quarter a year earlier", col: "pgq", op: "min", param: "profit_growth_min" },
-  { key: "roe", step: 2, label: "Return on equity at least", unit: "%", hint: "profit for each ₹100 owners have in the company", col: "roe", op: "min", param: "roe_min" },
-  { key: "roce", step: 2, label: "Return on capital employed (ROCE) at least", unit: "%", hint: "annual, calculated by RedixFi", col: "roce", op: "min", param: "roce_min" },
-  { key: "de", step: 3, label: "Debt to equity at most", unit: "times", hint: "what it owes compared with what owners put in", col: "de", op: "max", param: "de_max" },
-  { key: "pledge", step: 3, label: "Promoter pledge at most", unit: "% of promoter holding", hint: "latest disclosure", col: "pl", op: "max", param: "pledge_max" },
-  { key: "volRatio", step: 4, label: "Volume vs usual at least", unit: "times", hint: "last 5 days against the 20 days before", col: "vr", op: "min", param: "volume_ratio_min" },
-  { key: "delivery", step: 4, label: "Delivery at least", unit: "%", hint: "share of traded shares taken for delivery", col: "dl", op: "min", param: "delivery_pct_min" },
-  { key: "pe", step: 5, label: "P/E at most", unit: "times", hint: "price over the last 12 months of profit per share", col: "pe", op: "max", param: "pe_max" },
+  { key: "profitYears", step: 1, label: "Profit in at least this many of the last 5 years", unit: "of 5", hint: "5 means every one of the last five years", col: "py", op: "min", param: "profit_years_min", lo: 0, hi: 5, int: true },
+  { key: "sales3", step: 1, label: "Sales growth over 3 years at least", unit: "% a year", hint: "compound, from annual figures", col: "sg3", op: "min", param: "sales_cagr_3y_min", lo: -100, hi: 100000 },
+  { key: "profit3", step: 1, label: "Profit growth over 3 years at least", unit: "% a year", hint: "compound, from annual figures", col: "pg3", op: "min", param: "profit_cagr_3y_min", lo: -100, hi: 100000 },
+  { key: "salesQ", step: 1, label: "Sales growth, latest quarter, at least", unit: "%", hint: "against the same quarter a year earlier", col: "sgq", op: "min", param: "sales_growth_min", lo: -100, hi: 100000 },
+  { key: "profitQg", step: 1, label: "Profit growth, latest quarter, at least", unit: "%", hint: "against the same quarter a year earlier", col: "pgq", op: "min", param: "profit_growth_min", lo: -100000, hi: 100000 },
+  { key: "roe", step: 2, label: "Return on equity at least", unit: "%", hint: "profit for each ₹100 owners have in the company", col: "roe", op: "min", param: "roe_min", lo: -1000, hi: 1000 },
+  { key: "roce", step: 2, label: "Return on capital employed (ROCE) at least", unit: "%", hint: "annual, calculated by RedixFi", col: "roce", op: "min", param: "roce_min", lo: -1000, hi: 1000 },
+  { key: "de", step: 3, label: "Debt to equity at most", unit: "times", hint: "what it owes compared with what owners put in", col: "de", op: "max", param: "de_max", lo: 0, hi: 100000 },
+  { key: "pledge", step: 3, label: "Promoter pledge at most", unit: "% of promoter holding", hint: "latest disclosure", col: "pl", op: "max", param: "pledge_max", lo: 0, hi: 100 },
+  { key: "volRatio", step: 4, label: "Volume vs usual at least", unit: "times", hint: "last 5 days against the 20 days before", col: "vr", op: "min", param: "volume_ratio_min", lo: 0, hi: 20 },
+  { key: "delivery", step: 4, label: "Delivery at least", unit: "%", hint: "share of traded shares taken for delivery", col: "dl", op: "min", param: "delivery_pct_min", lo: 0, hi: 100 },
+  { key: "pe", step: 5, label: "P/E at most", unit: "times", hint: "price over the last 12 months of profit per share", col: "pe", op: "max", param: "pe_max", lo: 0, hi: 100000 },
 ];
 
 export const num = (v: string): number | undefined => {
@@ -145,9 +148,25 @@ export const num = (v: string): number | undefined => {
   return Number.isFinite(n) ? n : undefined;
 };
 
+/** Whether a typed value is a usable number for this rule (a number, a whole number where one is needed, inside the range the server accepts). */
+export function validValue(d: RuleDef, text: string): boolean {
+  const n = num(text);
+  if (n === undefined) return false;
+  if (d.int && !Number.isInteger(n)) return false;
+  if (d.lo !== undefined && n < d.lo) return false;
+  if (d.hi !== undefined && n > d.hi) return false;
+  return true;
+}
+/** The short line shown under an input when what was typed cannot be used (nothing is applied until it is fixed). */
+export function ruleProblem(d: RuleDef, text: string): string | null {
+  if (text.trim() === "" || validValue(d, text)) return null;
+  if (num(text) === undefined) return "Enter a number. This is not used yet.";
+  const range = d.lo !== undefined && d.hi !== undefined ? `${d.int ? "a whole number" : "a number"} from ${d.lo.toLocaleString("en-IN")} to ${d.hi.toLocaleString("en-IN")}` : "a different number";
+  return `Enter ${range}. This is not used yet.`;
+}
 /** A rule that is switched on. Price behaviour (calmer / more active) is handled beside the table-driven rules. */
-export const isOn = (r: Rules, d: RuleDef): boolean => (d.op === "gt0" ? r[d.key] === true : num(r[d.key] as string) !== undefined);
-export const volOn = (r: Rules): boolean => r.vol !== "" && num(r.volNum) !== undefined;
+export const isOn = (r: Rules, d: RuleDef): boolean => (d.op === "gt0" ? r[d.key] === true : validValue(d, r[d.key] as string));
+export const volOn = (r: Rules): boolean => r.vol !== "" && num(r.volNum) !== undefined && (num(r.volNum) as number) >= 0 && (num(r.volNum) as number) <= 100;
 
 type Test = { col: string; ok: (v: number) => boolean };
 export function activeTests(r: Rules, upToStep: number): Test[] {
