@@ -21,7 +21,7 @@ import { getStarterQuestions } from "@/lib/ask-panel/starterQuestions";
 import { COMMON_QUESTION_CHIPS } from "@/lib/common-questions";
 import { AddToShortlistButton } from "@/components/app/ask/AddToShortlistButton";
 import { FULL_CHECK_BUTTON } from "@/lib/fullcheck-copy";
-import { CHIP_COST_LINE, HOW_TO_ASK_LINE, LOOKUP_LIMIT_NOTE, daysAvailableNote, howToAskGroups } from "@/lib/ask-panel/howToAsk";
+import { CHIP_COST_LINE, FREE_ASK_LINE, HOW_TO_ASK_LINE, LOOKUP_LIMIT_NOTE, daysAvailableNote, howToAskGroups } from "@/lib/ask-panel/howToAsk";
 import { displayName } from "@/lib/company-name";
 import { useMobileViewport } from "@/lib/ask-panel/useMobileViewport";
 import { resolveVisibleChatSymbol } from "@/lib/ask-panel/contextHeader";
@@ -186,6 +186,17 @@ function AskQuota({ usage, detailed = false }: { usage: AskUsageInfo | null; det
     return (
       <div className={detailed ? "space-y-3" : "space-y-1.5"}>
         <QuotaBar label="Today" remaining={remaining} limit={limit} showTotal />
+      </div>
+    );
+  }
+
+  if (usage.tier === "free" && usage.daily_limit_per_symbol === null && usage.daily_limit !== null && usage.monthly_limit === null) {
+    const left = Math.max(0, usage.daily_limit - (usage.daily_used ?? 0));
+    return (
+      <div className={detailed ? "space-y-3" : "space-y-1.5"} data-testid="free-usage">
+        <QuotaBar label="Today" remaining={left} limit={usage.daily_limit} showTotal />
+        <p className="text-[11.5px] text-foreground-faint">{FREE_ASK_LINE}</p>
+        {addon}
       </div>
     );
   }

@@ -16,7 +16,7 @@ export const PLAN_MATRIX: PlanRow[] = [
   { feature: "News", free: "Delayed 24 hours", basic: "Same day", pro: "Same day" },
   { feature: "Compare stocks side by side", free: "Up to 5", basic: "Up to 5", pro: "Up to 10" },
   { feature: "Watchlist", free: "10 stocks", basic: "50 stocks", pro: "50 stocks" },
-  { feature: "Ask AI", free: "1 question per stock per day", basic: "10 a day, 200 a month", pro: "25 a day, 500 a month" },
+  { feature: "Ask AI", free: "3 questions a day, on any stock", basic: "10 a day, 200 a month", pro: "25 a day, 500 a month" },
   { feature: "Ask AI chat history kept", free: "6 hours", basic: "7 days", pro: "30 days" },
   { feature: "Alerts", free: "None", basic: "5 active, price, in-app and email", pro: "Unlimited: price, delivery, volume; in-app, email, push, Telegram" },
   { feature: "Company report PDF", free: "Free sample only", basic: "3 different stocks a month", pro: "15 different stocks a month" },

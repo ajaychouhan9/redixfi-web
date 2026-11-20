@@ -1627,8 +1627,9 @@ export interface WatchlistResponse {
 // ask_usage_snapshot). LOCKED rule (2026-09-11): one processed Ask AI
 // question = one question deducted, so `daily_used`/`monthly_used` are plain
 // question counts (the server is the single source of truth; this is a
-// read-only mirror). Free tier reports the per-stock-per-day gate instead
-// (daily_limit_per_symbol set, daily_limit/monthly_limit null).
+// read-only mirror). Free tier (from 21 Nov 2026) reports 3 questions a day on any stock:
+// daily_limit 3, daily_used, monthly_limit null, daily_limit_per_symbol null. Before that it reported a per-stock gate
+// (daily_limit_per_symbol set), which the panel still reads in case the old shape arrives.
 export interface AskUsageInfo {
   tier: string;
   is_pro_trial: boolean;
