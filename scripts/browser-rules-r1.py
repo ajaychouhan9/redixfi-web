@@ -2,7 +2,7 @@
 logged-in-only endpoints (saved rules, full check, Ask history) are answered by a mock so the logged-in screens can be exercised without a real account.
 
   python scripts/browser-rules-r1.py <site url> [shots dir]
-Widths 360 and 414, themes light / dark / premium. Prints one line per check and a count. Needs: pip install playwright (chromium installed).
+Widths 360 and 414, themes light / dark / slate. Prints one line per check and a count. Needs: pip install playwright (chromium installed).
 """
 import base64
 import json
@@ -15,7 +15,7 @@ from playwright.sync_api import sync_playwright
 
 SITE = sys.argv[1].rstrip("/")
 SHOTS = Path(sys.argv[2]) if len(sys.argv) > 2 else None
-API = "http://localhost:18001/api/v1"
+API = "https://api.redixfi.com/api/v1"
 if SHOTS:
     SHOTS.mkdir(parents=True, exist_ok=True)
 RESULTS = []
@@ -132,7 +132,7 @@ def run_logged_out(pw, theme, width):
     errs = []
     page.on("pageerror", lambda e: errs.append(str(e)))
     tag = f"[{theme} {width}] logged-out"
-    page.goto(f"{SITE}/stock-check", wait_until="networkidle")
+    page.goto(f"{SITE}/shortlist-lab#my-rules", wait_until="networkidle")
     page.wait_for_selector('[data-testid="ladder-left"]')
     page.wait_for_function("document.querySelector('[data-testid=ladder-left]').textContent.includes('left')", timeout=20000)
     check(f"{tag}: page loads, no horizontal scroll", overflow(page) <= 0, str(overflow(page)))
@@ -181,7 +181,7 @@ def run_logged_in(pw, theme, width, tier="pro"):
     errs = []
     page.on("pageerror", lambda e: errs.append(str(e)))
     tag = f"[{theme} {width}] {tier}"
-    page.goto(f"{SITE}/stock-check", wait_until="networkidle")
+    page.goto(f"{SITE}/shortlist-lab#my-rules", wait_until="networkidle")
     page.wait_for_selector('[data-testid="saved-list"]')
     page.wait_for_function("document.querySelector('[data-testid=ladder-left]').textContent.includes('left')", timeout=20000)
     saved = page.locator('[data-testid="saved-rule"]')
@@ -292,11 +292,44 @@ def run_logged_in(pw, theme, width, tier="pro"):
     br.close()
 
 
+def run_learn_logged_in(pw, theme, width, tier):
+    """Shortlist Lab, Learn tab, logged in (21 Nov 2026): one Try button opens a NEW Ask AI session with the sample stock selected; Free sees the 3-a-day line."""
+    br = pw.chromium.launch()
+    ctx = br.new_context(viewport={"width": width, "height": 800}, device_scale_factor=1)
+    page = ctx.new_page()
+    set_theme(page, theme)
+    page.add_init_script(f"try{{localStorage.setItem('redixfi:auth', {json.dumps(json.dumps(AUTH))})}}catch(e){{}}")
+    mock = Mock(tier=tier, limit=5)
+    page.route("**/api/v1/**", mock.handle)
+    errs = []
+    page.on("pageerror", lambda e: errs.append(str(e)))
+    tag = f"[{theme} {width}] Learn, logged in {tier}"
+    page.goto(f"{SITE}/shortlist-lab", wait_until="networkidle")
+    page.wait_for_selector('[data-testid="learn-try-button"]')
+    check(f"{tag}: no logged-out line", page.locator('[data-testid="learn-try-loggedout"]').count() == 0)
+    free_line = page.locator('[data-testid="learn-try-free"]')
+    if tier == "free":
+        check(f"{tag}: Free sees the 3-a-day line", free_line.count() == 1 and free_line.inner_text() == "With a free account you get 3 live questions a day on any stock.")
+    else:
+        check(f"{tag}: no Free line for a paid plan", free_line.count() == 0)
+    page.click('[data-testid="learn-try-button"]')
+    page.wait_for_selector('[data-testid="ask-stock-group"]', timeout=15000)
+    stocks = page.locator('[data-testid="ask-group-stocks"] li')
+    check(f"{tag}: a new Ask AI session opens with the sample stock selected", stocks.count() == 1 and "HINDUNILVR" in stocks.first.inner_text())
+    check(f"{tag}: the 5 questions are offered", page.locator('[data-testid="ask-group-questions"] li').count() == 5)
+    check(f"{tag}: the person can remove the sample stock to change it", page.locator('[aria-label="Remove HINDUNILVR"]').count() == 1)
+    check(f"{tag}: no horizontal scroll", overflow(page) <= 0, str(overflow(page)))
+    check(f"{tag}: no page errors", not errs, "; ".join(errs)[:200])
+    br.close()
+
+
 with sync_playwright() as pw:
-    for theme in ("light", "dark", "premium"):
+    for theme in ("light", "dark", "slate"):
         for width in (360, 414):
             run_logged_out(pw, theme, width)
             run_logged_in(pw, theme, width, "pro")
     run_logged_in(pw, "light", 360, "free")
+    for th, w, t in (("light", 360, "pro"), ("dark", 414, "pro"), ("slate", 360, "free"), ("light", 414, "free")):
+        run_learn_logged_in(pw, th, w, t)
 print(f"\n{sum(RESULTS)}/{len(RESULTS)} checks passed")
 sys.exit(0 if all(RESULTS) else 1)

@@ -11,7 +11,7 @@ export const FIND_LINE = "Find any stock in Screener, then open its page to see 
 export const TRY_BUTTON = "Try these questions in Ask AI";
 export const TRY_LINE = `Opens a new Ask AI session with ${SAMPLE_NAME} (${SAMPLE_SYMBOL}) selected. You can change the stock.`;
 export const TRY_LOGGED_OUT = "Without logging in you see stored sample answers for this one company. A different stock needs a log-in.";
-export const TRY_FREE = "With a free account, live answers on any stock use your daily allowance, which Ask AI shows.";
+export const TRY_FREE = "With a free account you get 3 live questions a day on any stock.";
 export const QUESTIONS_TITLE = "The 5 questions";
 export const STEP_WORD = "Step";
 

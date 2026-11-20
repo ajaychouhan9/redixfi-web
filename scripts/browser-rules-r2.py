@@ -2,7 +2,7 @@
 sample report for Free. Real page, real figures file and shortlist from a staged API on production data; logged-in-only endpoints are answered by a mock.
 
   python scripts/browser-rules-r2.py <site url> [shots dir]
-Widths 360 and 414, themes light / dark / premium.
+Widths 360 and 414, themes light / dark / slate.
 """
 import base64
 import json
@@ -113,7 +113,7 @@ def run(pw, theme, width, tier):
     errs = []
     page.on("pageerror", lambda e: errs.append(str(e)))
     tag = f"[{theme} {width}] {tier}"
-    page.goto(f"{SITE}/stock-check", wait_until="networkidle")
+    page.goto(f"{SITE}/shortlist-lab#my-rules", wait_until="networkidle")
     page.wait_for_selector('[data-testid="saved-list"]')
     rr = page.locator('[data-testid="rule-report"]').first
     # ---- saved answers under a rule
@@ -192,10 +192,10 @@ def run(pw, theme, width, tier):
 
 
 with sync_playwright() as pw:
-    for theme in ("light", "dark", "premium"):
+    for theme in ("light", "dark", "slate"):
         for width in (360, 414):
             run(pw, theme, width, "pro")
     run(pw, "light", 360, "free")
-    run(pw, "premium", 414, "free")
+    run(pw, "slate", 414, "free")
 print(f"\n{sum(RESULTS)}/{len(RESULTS)} checks passed")
 sys.exit(0 if all(RESULTS) else 1)

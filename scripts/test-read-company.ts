@@ -47,7 +47,7 @@ assert.ok(learn.includes("openWithStocks([SAMPLE_SYMBOL])") && learn.includes("o
 assert.equal(TRY_BUTTON, "Try these questions in Ask AI");
 assert.ok(TRY_LINE.includes("Hindustan Unilever") && TRY_LINE.includes("change the stock"));
 assert.ok(TRY_LOGGED_OUT.includes("stored sample answers") && TRY_LOGGED_OUT.includes("needs a log-in"));
-assert.ok(TRY_FREE.includes("daily allowance"));
+assert.equal(TRY_FREE, "With a free account you get 3 live questions a day on any stock.");
 assert.equal(QUESTIONS_TITLE, "The 5 questions");
 const tabs = strip(read("components/app/stock-check/LabTabs.tsx"));
 assert.ok(tabs.includes('role="tablist"') && tabs.includes("LEARN_TAB") && tabs.includes("RULES_TAB") && tabs.includes("#my-rules"), "two tabs, Learn and My rules");
