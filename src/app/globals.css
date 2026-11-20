@@ -151,10 +151,10 @@
 }
 
 
-/* Premium theme (18 Nov 2026): warm ivory, deep ink, dark-gold accent, serif headings, soft shadows. Every text pair here is at least 4.5:1
+/* Light theme (18 Nov 2026, named Premium until 21 Nov 2026; it replaced the old plain light theme): warm ivory, deep ink, dark-gold accent, serif headings, soft shadows. Every text pair here is at least 4.5:1
    (checked with a script, see api/docs/WEB_THEMES_PHASE1C_20261118.md). Chosen with the same variables as the other two, so no component changed. */
-:root[data-theme="premium"],
-[data-preview="premium"] {
+:root[data-theme="light"],
+[data-preview="light"] {
   color-scheme: light;
   --background: #faf6ec;
   --surface: #fffdf7;
@@ -190,18 +190,18 @@
   --hx-up: #13663f;
   --hx-down: #a9271a;
 }
-:root[data-theme="premium"] h1,
-:root[data-theme="premium"] h2,
-:root[data-theme="premium"] h3,
-[data-preview="premium"] h1,
-[data-preview="premium"] h2,
-[data-preview="premium"] h3 {
+:root[data-theme="light"] h1,
+:root[data-theme="light"] h2,
+:root[data-theme="light"] h3,
+[data-preview="light"] h1,
+[data-preview="light"] h2,
+[data-preview="light"] h3 {
   font-family: Georgia, "Times New Roman", serif;
   letter-spacing: 0.005em;
 }
-:root[data-theme="premium"] [class*="bg-surface-raised"],
-:root[data-theme="premium"] [class*="bg-surface "],
-[data-preview="premium"] [class*="bg-surface-raised"] {
+:root[data-theme="light"] [class*="bg-surface-raised"],
+:root[data-theme="light"] [class*="bg-surface "],
+[data-preview="light"] [class*="bg-surface-raised"] {
   box-shadow: 0 1px 2px rgba(60, 40, 10, 0.06), 0 6px 18px rgba(60, 40, 10, 0.06);
 }
 
@@ -334,4 +334,63 @@ body {
    buttons and fills keep the brand gold (dark text on it is 5.8:1). The hover state keeps its own colour. */
 :root[data-theme="light"] .text-accent {
   color: #8a6317;
+}
+
+/* Slate theme (21 Nov 2026): cool grey page, white cards, teal accent. Same variable names as the others, so no component changed.
+   Text pairs are checked by scripts/test-themes.ts (4.5:1 for text). Gain and loss colours are the Light theme's. */
+:root[data-theme="slate"],
+[data-preview="slate"] {
+  color-scheme: light;
+  --background: #f2f5f8;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --border: #d9e0e8;
+  --foreground: #17212b;
+  --foreground-muted: #5b6b7b;
+  --foreground-faint: #5b6b7b;
+  --hover: #d5eeea;
+
+  --accent: #0f766e;
+  --accent-dim: #115e59;
+  --accent-foreground: #ffffff;
+
+  --up: #13663f;
+  --up-bg: rgba(19, 102, 63, 0.09);
+  --down: #a9271a;
+  --down-bg: rgba(169, 39, 26, 0.09);
+  --neutral: #5b6b7b;
+  --neutral-bg: rgba(91, 107, 123, 0.1);
+
+  --amber: #8a4f00;
+  --amber-bg: rgba(138, 79, 0, 0.1);
+
+  --focus-ring: #0f766e;
+
+  --series-1: #1f5fb0;
+  --series-2: #b8481b;
+  --series-3: #12805a;
+  --series-4: #a86f00;
+  --series-5: #b03a6a;
+
+  --hx-up: #13663f;
+  --hx-down: #a9271a;
+}
+
+/* Phone tables (21 Nov 2026): under 640 px a table is drawn as stacked cards. Each cell shows its column name on top (data-label, set by
+   TableStacker) and the full text below; the header row is hidden for the eye but stays for screen readers. No sideways scroll. Wider screens
+   keep the normal table. A table with data-no-stack is left alone. */
+@media (max-width: 639px) {
+  table[data-stack] { display: block; width: 100% !important; min-width: 0 !important; max-width: 100%; border: 0; }
+  table[data-stack] thead { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  table[data-stack] tbody, table[data-stack] tfoot { display: block; width: 100%; }
+  table[data-stack] tr { display: block; width: 100%; margin: 0 0 0.625rem; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 0.75rem; background: var(--surface); }
+  table[data-stack] td, table[data-stack] th[scope="row"], table[data-stack] tbody th {
+    display: block; width: auto !important; min-width: 0 !important; max-width: 100%; padding: 0.25rem 0 !important; border: 0 !important;
+    text-align: left !important; white-space: normal !important; overflow-wrap: anywhere; position: static !important;
+  }
+  table[data-stack] td[data-label]::before { content: attr(data-label); display: block; font-size: 0.75rem; line-height: 1.2; font-weight: 500; color: var(--foreground-muted); }
+  table[data-stack] td:empty { display: none; }
+  table[data-stack] caption { display: block; text-align: left; }
+  /* wrappers made only to scroll a wide table sideways */
+  .overflow-x-auto:has(> table[data-stack]) { overflow-x: visible; }
 }

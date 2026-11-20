@@ -1,10 +1,10 @@
 /**
  * The main menu (corrected 18 Nov 2026). The side menu, in this order and the same for everyone, logged in or out:
- * Home, Screener, 7-Day Review, Market Overview, Ask AI, Pricing. "Start here" is not a menu item: it is the button on Home.
- * The phone bottom bar has five places: Home, Screener, Markets, Ask AI and Account (the profile icon, which opens the account menu).
+ * Home, Shortlist Lab, Screener, 7-Day Review, Market Overview, Ask AI, Pricing (21 Nov 2026).
+ * The phone bottom bar has five places: Home, Shortlist Lab, Screener, Markets and Account (Ask AI is the gold button in the top bar on every page) (the profile icon, which opens the account menu).
  * "Ask AI" opens the RedixFi AI panel; every other item is a page. Pure data and pure functions so the rules are testable without a browser.
  */
-export type NavId = "home" | "screener" | "review" | "market" | "ask" | "pricing" | "account";
+export type NavId = "home" | "lab" | "screener" | "review" | "market" | "ask" | "pricing" | "account";
 
 export interface NavItem {
   id: NavId;
@@ -18,6 +18,7 @@ export interface NavItem {
 /** The side menu. */
 export const NAV_ITEMS: NavItem[] = [
   { id: "home", label: "Home", short: "Home", href: "/" },
+  { id: "lab", label: "Shortlist Lab", short: "Lab", href: "/shortlist-lab" },
   { id: "screener", label: "Screener", short: "Screener", href: "/signals" },
   { id: "review", label: "7-Day Review", short: "7-Day", href: "/signals/7-day-review" },
   { id: "market", label: "Market Overview", short: "Markets", href: "/market" },
@@ -28,9 +29,9 @@ export const NAV_ITEMS: NavItem[] = [
 /** The phone bottom bar. */
 export const BOTTOM_ITEMS: NavItem[] = [
   { id: "home", label: "Home", short: "Home", href: "/" },
+  { id: "lab", label: "Shortlist Lab", short: "Lab", href: "/shortlist-lab" },
   { id: "screener", label: "Screener", short: "Screener", href: "/signals" },
   { id: "market", label: "Market Overview", short: "Markets", href: "/market" },
-  { id: "ask", label: "Ask AI", short: "Ask AI", href: null },
   { id: "account", label: "Account", short: "Account", href: null },
 ];
 
@@ -50,6 +51,7 @@ const MARKET_PATHS = ["/market", "/intraday", "/pulse", "/market-activity", "/ga
 export function activeNavId(pathname: string | null | undefined): NavId | null {
   const p = pathname ?? "";
   if (p === "/") return "home";
+  if (p.startsWith("/shortlist-lab") || p.startsWith("/full-check")) return "lab";
   if (p.startsWith(REVIEW)) return "review";
   if (p.startsWith("/signals")) return "screener";
   if (MARKET_PATHS.some((m) => p === m || p.startsWith(`${m}/`))) return "market";

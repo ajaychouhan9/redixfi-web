@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { Home, BarChart3, Activity, CalendarDays, Sparkles, UserCircle, CreditCard, type LucideIcon } from "lucide-react";
+import { Home, FlaskConical, BarChart3, Activity, CalendarDays, Sparkles, UserCircle, CreditCard, type LucideIcon } from "lucide-react";
 import { NAV_ITEMS, BOTTOM_ITEMS, activeNavId, type NavId } from "@/lib/nav-items";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
@@ -12,6 +12,7 @@ import { AccountPanel, initialsFor, useDismiss } from "@/components/layout/Accou
 
 const ICONS: Record<NavId, LucideIcon> = {
   home: Home,
+  lab: FlaskConical,
   screener: BarChart3,
   review: CalendarDays,
   market: Activity,

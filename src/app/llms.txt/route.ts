@@ -19,7 +19,7 @@ const BODY = `# RedixFi
 - Market Overview: https://www.redixfi.com/market
 - Stock Screener (delivery, volume, 52-week range and volatility by stock): https://www.redixfi.com/signals
 - 7-Day Review: https://www.redixfi.com/signals/7-day-review
-- The 15-Minute Stock Check (five steps to read a company, and a shortlist you build with your own rules): https://www.redixfi.com/stock-check
+- Shortlist Lab (learn the five questions to ask of a company, and build a shortlist with your own rules): https://www.redixfi.com/shortlist-lab
 - How it works: https://www.redixfi.com/how-it-works
 - Data sources: https://www.redixfi.com/more/data-sources
 - Disclaimer: https://www.redixfi.com/more/disclaimer

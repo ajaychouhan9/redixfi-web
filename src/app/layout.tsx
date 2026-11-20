@@ -1,3 +1,4 @@
+import { TableStacker } from "@/components/layout/TableStacker";
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
@@ -22,9 +23,9 @@ const plexMono = IBM_Plex_Mono({
   weight: ["400", "500", "600", "700"],
 });
 
-// Applied before hydration so the stored choice (or, with nothing saved, Premium) is on <html> before the first paint. The html tag also carries
-// data-theme="premium" from the server, so even without JavaScript the default is Premium and never the plain CSS fallback.
-const NO_FLASH_THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("redixfi:theme");if(t!=="dark"&&t!=="light"&&t!=="premium"){t="premium";}document.documentElement.dataset.theme=t;}catch(e){}})();`;
+// Applied before hydration so the stored choice (or, with nothing saved, Light) is on <html> before the first paint. The html tag also carries
+// data-theme="light" from the server, so even without JavaScript the default is Light and never the plain CSS fallback.
+const NO_FLASH_THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("redixfi:theme");if(t!=="dark"&&t!=="light"&&t!=="slate"){t="light";}document.documentElement.dataset.theme=t;}catch(e){}})();`;
 
 // Production serves the www host; the apex permanently redirects to it.
 // Keep metadata on the same host as robots.txt and sitemap.xml.
@@ -73,7 +74,7 @@ const CF_BEACON_TOKEN = process.env.NEXT_PUBLIC_CF_BEACON_TOKEN?.trim() ?? "";
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${plexSans.variable} ${plexMono.variable} h-full antialiased`} data-theme="premium" suppressHydrationWarning>
+    <html lang="en" className={`${plexSans.variable} ${plexMono.variable} h-full antialiased`} data-theme="light" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: NO_FLASH_THEME_SCRIPT }} />
       </head>
@@ -82,6 +83,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <AuthProvider>
             <AskPanelProvider>
               <PwaProvider>{children}</PwaProvider>
+              <TableStacker />
               <ConsentGate />
             </AskPanelProvider>
           </AuthProvider>

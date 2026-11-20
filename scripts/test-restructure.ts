@@ -49,7 +49,7 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\
   // the removed pages are really gone, and stock paths point at the one page
   for (const gone of ["app/(app)/rewind/page.tsx", "app/(app)/me/page.tsx", "app/(app)/research/page.tsx", "app/(app)/research/[symbol]/page.tsx", "app/(app)/signals/[symbol]/page.tsx", "app/(seo)/stocks/[symbol]/page.tsx", "app/(seo)/stocks/[symbol]/rewind/page.tsx", "app/(seo)/stocks/[symbol]/concall-summary/page.tsx"])
     assert.ok(!exists(gone), `${gone} is removed`);
-  for (const here of ["stocks/[symbol]", "market", "intraday", "pulse", "market-activity", "gainers-losers", "pricing", "stock-check"]) assert.ok(exists(`app/(app)/${here}/page.tsx`), `${here} is a page`);
+  for (const here of ["stocks/[symbol]", "market", "intraday", "pulse", "market-activity", "gainers-losers", "pricing", "shortlist-lab"]) assert.ok(exists(`app/(app)/${here}/page.tsx`), `${here} is a page`);
   assert.equal(stockPath("/signals", "tcs"), "/stocks/TCS");
   assert.equal(stockPath("/research", "M&M"), "/stocks/M%26M");
   assert.equal(stockTabPath("INFY", "rewind"), "/stocks/INFY#rewind");
@@ -97,13 +97,15 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\
 
 // ---- 3. the menu: side menu in the asked order, the phone bar, the account menu
 {
-  assert.deepEqual(NAV_ITEMS.map((i) => i.label), ["Home", "Screener", "7-Day Review", "Market Overview", "Ask AI", "Pricing"]);
-  assert.deepEqual(NAV_ITEMS.map((i) => i.href), ["/", "/signals", "/signals/7-day-review", "/market", null, "/pricing"]);
-  assert.deepEqual(BOTTOM_ITEMS.map((i) => i.short), ["Home", "Screener", "Markets", "Ask AI", "Account"]);
+  assert.deepEqual(NAV_ITEMS.map((i) => i.label), ["Home", "Shortlist Lab", "Screener", "7-Day Review", "Market Overview", "Ask AI", "Pricing"]);
+  assert.deepEqual(NAV_ITEMS.map((i) => i.href), ["/", "/shortlist-lab", "/signals", "/signals/7-day-review", "/market", null, "/pricing"]);
+  assert.deepEqual(BOTTOM_ITEMS.map((i) => i.short), ["Home", "Lab", "Screener", "Markets", "Account"]);
   assert.deepEqual(ACCOUNT_ITEMS.map((i) => i.label), ["Profile and plan", "Watchlist", "Alerts", "Billing"]);
   assert.equal(NAV_ITEMS.find((i) => i.id === "ask")!.href, null, "Ask AI opens a panel");
   for (const gone of ["Research", "Pro", "Rewind", "Intraday", "Start here"]) assert.ok(!NAV_ITEMS.some((i) => i.label.includes(gone)), `${gone} is not a menu item`);
   assert.equal(activeNavId("/"), "home");
+  assert.equal(activeNavId("/shortlist-lab"), "lab");
+  assert.equal(activeNavId("/full-check"), "lab");
   assert.equal(activeNavId("/signals"), "screener");
   assert.equal(activeNavId("/signals/7-day-review"), "review");
   for (const m of ["/market", "/intraday", "/pulse", "/market-activity", "/gainers-losers"]) assert.equal(activeNavId(m), "market", m);
@@ -174,7 +176,7 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\
   assert.ok(order.every((i, n) => i >= 0 && (n === 0 || i > order[n - 1])), `order: search, brief, boxes, movers, trial line (${order.join(",")})`);
   assert.ok(home.includes("Check any NSE stock in minutes: delivery, insider trades, points to watch and concall summaries.") && home.includes("No buy or sell advice."), "headline and sub-line");
   const boxes = strip(read("components/app/home/HomeBoxes.tsx"));
-  for (const t of ["New to stocks? Start the 15-minute check", "Screener", "Market Overview", "7-Day Review", "Ask AI"]) assert.ok(boxes.includes(`title="${t}"`), `box ${t}`);
+  for (const t of ["Shortlist Lab", "Screener", "Market Overview", "7-Day Review", "Ask AI"]) assert.ok(boxes.includes(`title="${t}"`), `box ${t}`);
   assert.ok(!/Rewind/.test(boxes), "no Rewind box");
   assert.equal((boxes.match(/<Box /g) ?? []).length, 5, "five boxes");
   const mv = strip(read("components/app/home/HomeMovers.tsx"));
@@ -251,9 +253,9 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\
   assert.equal(yieldText({ dividend_yield_pct: 0 }), "None");
   assert.equal(yieldText({ dividend_yield_pct: null }), "Not available");
   assert.deepEqual(START_WHAT_MATTERS.map((o) => o.label), ["Steady profits", "Growing sales", "Pays dividends"]);
-  const page = strip(read("app/(app)/stock-check/page.tsx"));
-  assert.ok(!/\b(cookies|headers)\(\)|searchParams|await |fetch\(/.test(page), "/stock-check is static");
-  assert.ok(read("app/sitemap.xml/route.ts").includes('"/stock-check"') && read("app/sitemap.xml/route.ts").includes('"/market"'), "sitemap lists /stock-check and /market");
+  const page = strip(read("app/(app)/shortlist-lab/page.tsx"));
+  assert.ok(!/\b(cookies|headers)\(\)|searchParams|await |fetch\(/.test(page), "/shortlist-lab is static");
+  assert.ok(read("app/sitemap.xml/route.ts").includes('"/shortlist-lab"') && read("app/sitemap.xml/route.ts").includes('"/market"'), "sitemap lists /shortlist-lab and /market");
   // Pricing: its own page and menu item; the research-lookups row is gone with the feature; no price changed
   const plans = read("data/plan-features.ts");
   assert.ok(!/Research page lookups/.test(plans), "the 3 research lookups a day line is removed");

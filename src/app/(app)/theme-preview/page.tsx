@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 const THEME_LIST = [
   { id: "light", label: "Light" },
   { id: "dark", label: "Dark" },
-  { id: "premium", label: "Premium" },
+  { id: "slate", label: "Slate" },
 ] as const;
 
 const ROWS = [

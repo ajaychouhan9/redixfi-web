@@ -226,7 +226,7 @@ function AskQuota({ usage, detailed = false }: { usage: AskUsageInfo | null; det
   );
 }
 
-/** Stocks picked on /stock-check: tap a company, then a question; the question is typed into the input for the person to read and send. */
+/** Stocks picked in Shortlist Lab: tap a company, then a question; the question is typed into the input for the person to read and send. */
 function StockGroupBlock({ symbols, focus, onFocus, onQuestion, onRemove }: {
   symbols: string[]; focus: string | null; onFocus: (s: string) => void; onQuestion: (q: string) => void; onRemove: (s: string) => void;
 }) {

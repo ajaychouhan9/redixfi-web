@@ -259,7 +259,7 @@ export function FullCheckPanel() {
 
       {estimate?.locked && (
         <div className="rounded-lg bg-amber-bg px-3 py-2 text-sm text-amber" data-testid="fc-locked">
-          {FULL_CHECK_FREE} <Link href="/stock-check" className="underline">Stock Check</Link> · <Link href="/pricing" className="underline">View plans</Link>
+          {FULL_CHECK_FREE} <Link href="/shortlist-lab" className="underline">Shortlist Lab</Link> · <Link href="/pricing" className="underline">View plans</Link>
         </div>
       )}
 

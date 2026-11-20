@@ -118,10 +118,11 @@ const printed = [
   ...lines.map((l) => `${l.question} ${l.answer} ${l.why}`),
   readFileSync(new URL("../src/components/app/stock/SimpleChecklist.tsx", import.meta.url), "utf8"),
   readFileSync(new URL("../src/components/app/stock/StockTabs.tsx", import.meta.url), "utf8"),
-  readFileSync(new URL("../src/app/(app)/stock-check/page.tsx", import.meta.url), "utf8").replace(/no buy or sell advice/gi, ""),
+  readFileSync(new URL("../src/app/(app)/shortlist-lab/page.tsx", import.meta.url), "utf8").replace(/no buy or sell advice/gi, ""),
   readFileSync(new URL("../src/lib/start-here.ts", import.meta.url), "utf8"),
   readFileSync(new URL("../src/lib/read-company.ts", import.meta.url), "utf8"),
-  readFileSync(new URL("../src/components/app/start/ReadCompany.tsx", import.meta.url), "utf8"),
+  readFileSync(new URL("../src/components/app/stock-check/LearnTab.tsx", import.meta.url), "utf8"),
+  readFileSync(new URL("../src/lib/learn.ts", import.meta.url), "utf8"),
 ]
   .join("\n")
   // code, not display text: comments, event targets and link targets

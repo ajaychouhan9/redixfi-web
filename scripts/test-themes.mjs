@@ -14,42 +14,42 @@ const lum = (h) => {
 };
 const ratio = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
 function block(selector) {
-  const i = css.indexOf(selector);
+  const i = css.lastIndexOf(selector);
   assert.ok(i >= 0, `${selector} exists`);
   return css.slice(i, css.indexOf("\n}", i));
 }
 const v = (b, name) => b.match(new RegExp(`${name}:[ ]*(#[0-9a-fA-F]{6})`))[1];
 
 // 1. all three themes are defined, and the page applies a stored choice before first paint
-for (const t of ["light", "dark", "premium"]) {
+for (const t of ["light", "dark", "slate"]) {
   assert.ok(css.includes(`:root[data-theme="${t}"]`), `${t} theme block`);
   assert.ok(css.includes(`[data-preview="${t}"]`), `${t} preview scope`);
 }
-assert.ok(layout.includes('t!=="premium"'), "the first-paint script accepts premium");
+assert.ok(layout.includes('t!=="slate"'), "the first-paint script accepts slate");
 assert.ok(!layout.includes("matchMedia") && !ctx.includes("matchMedia"), "the device setting no longer decides the default");
-assert.ok(layout.includes('t="premium"'), "nothing saved: the pre-paint script chooses Premium");
-assert.ok(/<html[^>]*data-theme="premium"/.test(layout), "the server HTML already carries Premium, so there is no flash and no light fallback");
-assert.ok(ctx.includes('DEFAULT_THEME: Theme = "premium"') && ctx.includes("useState<Theme>(DEFAULT_THEME)"), "the picker shows Premium selected by default");
-assert.ok(ctx.includes("localStorage.getItem(STORAGE_KEY)") && ctx.includes(": DEFAULT_THEME"), "a saved choice still wins");
-assert.ok(ctx.includes('"premium"') && ctx.includes("redixfi:theme"), "stored choice includes premium");
+assert.ok(layout.includes('t="light"'), "nothing saved: the pre-paint script chooses Light");
+assert.ok(/<html[^>]*data-theme="light"/.test(layout), "the server HTML already carries Light, so there is no flash and no light fallback");
+assert.ok(ctx.includes('DEFAULT_THEME: Theme = "light"') && ctx.includes("useState<Theme>(DEFAULT_THEME)"), "the picker shows Light selected by default");
+assert.ok(ctx.includes("readTheme(window.localStorage.getItem(STORAGE_KEY))") && ctx.includes(": DEFAULT_THEME"), "a saved choice still wins");
+assert.ok(ctx.includes('"slate"') && ctx.includes("redixfi:theme") && !ctx.includes('id: "premium"'), "stored choice includes slate; Premium is gone");
 
 // 2. text pairs of the premium theme (and the two fixed light values) are at least 4.5:1
-const P = block(':root[data-theme="premium"]');
+const P = block(':root[data-theme="light"],');
 const bg = v(P, "--background");
 const surf = v(P, "--surface");
 for (const [name, on] of [["--foreground", bg], ["--foreground", surf], ["--foreground-muted", bg], ["--foreground-muted", surf], ["--foreground-faint", bg], ["--foreground-faint", surf], ["--accent", bg], ["--up", bg], ["--up", surf], ["--down", bg], ["--down", surf], ["--amber", surf], ["--hx-up", bg], ["--hx-down", bg]]) {
-  assert.ok(ratio(v(P, name), on) >= 4.5, `premium ${name} on ${on} is ${ratio(v(P, name), on).toFixed(2)}`);
+  assert.ok(ratio(v(P, name), on) >= 4.5, `light ${name} on ${on} is ${ratio(v(P, name), on).toFixed(2)}`);
 }
-assert.ok(ratio(v(P, "--accent-foreground"), v(P, "--accent")) >= 4.5, "premium button text on the accent");
-const L = block('[data-preview=' + String.fromCharCode(34) + 'light' + String.fromCharCode(34) + '] {');
+assert.ok(ratio(v(P, "--accent-foreground"), v(P, "--accent")) >= 4.5, "light button text on the accent");
+const L = css.slice(css.indexOf('[data-preview=' + String.fromCharCode(34) + 'light' + String.fromCharCode(34) + '] {'), css.indexOf(String.fromCharCode(10) + '}'));
 assert.ok(ratio(v(L, "--foreground-faint"), v(L, "--background")) >= 4.5, "light faint text on the page background");
 assert.ok(ratio(v(L, "--down"), v(L, "--background")) >= 4.5, "light down colour on the page background");
-assert.ok(P.includes("Georgia") || css.includes("Georgia"), "premium has serif headings");
+assert.ok(P.includes("Georgia") || css.includes("Georgia"), "light has serif headings");
 
 // 3. the picker: three choices, in the dropdown and as a header icon for a visitor
 const toggle = read("components/ui/ThemeToggle.tsx");
 const menu = read("components/layout/AccountMenu.tsx");
-assert.ok(ctx.includes('"light"') && ctx.includes('"dark"') && ctx.includes('"premium"'));
+assert.ok(ctx.includes('"light"') && ctx.includes('"dark"') && ctx.includes('"slate"'));
 assert.ok((menu.match(/<ThemeChoice \/>/g) ?? []).length === 2, "theme choice in both the logged-in and the logged-out panel");
 assert.ok(menu.includes("<ThemeToggle />"), "header icon for a logged-out visitor");
 assert.ok(toggle.includes('data-testid="theme-button"'));

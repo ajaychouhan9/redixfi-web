@@ -1,15 +1,15 @@
-// "The 15-Minute Stock Check" (19 Nov 2026): the shortlist ladder as plain, testable data and functions. No React here.
+// "Shortlist Lab" (19 Nov 2026): the shortlist ladder as plain, testable data and functions. No React here.
 // The ladder counts stocks in the browser from ONE anonymous figures file (GET /ladder-data: numbers only, no symbol or name), so a
 // count never needs a server call per step. The shortlist with names still comes from GET /signals (same rules, same server tests).
 import type { SignalsListParams } from "@/lib/api/endpoints";
 import type { SharedScreenParams } from "@/lib/api/types";
 
-export const PAGE_TITLE = "The 15-Minute Stock Check";
-export const PAGE_SUBTITLE = "Stock analysis, simplified.";
-export const SEO_TITLE = "How to Analyse a Stock in 15 Minutes | RedixFi";
-export const MENU_LABEL = "Stock Check";
-export const HOME_BUTTON = "New to stocks? Start the 15-minute check";
-export const STOCK_BUTTON = "Run the 15-minute check";
+export const PAGE_TITLE = "Shortlist Lab";
+export const PAGE_SUBTITLE = "Set your rules. Read the result.";
+export const SEO_TITLE = "Shortlist Lab: set your rules, read the result | RedixFi";
+export const MENU_LABEL = "Shortlist Lab";
+export const HOME_BUTTON = "New to stocks? Learn the 5 questions";
+export const STOCK_BUTTON = "Learn the 5 questions";
 export const LADDER_TITLE = "Build Your Shortlist";
 export const LADDER_INTRO = "Set the rules that matter to you, one step at a time. The bar that stays on screen shows how many stocks are left after your rules.";
 export const COMMON_LABEL = "Common rules from published methods. Change them.";
@@ -315,15 +315,17 @@ export function sameRules(a: Rules, b: Rules): boolean {
 export interface StepDef {
   n: number;
   title: string;
+  /** One plain line under the name (the same as on the Learn tab). */
+  line: string;
   why: string;
 }
 export const STEPS: StepDef[] = [
-  { n: 0, title: "Size and trading", why: "Very small companies can be hard to trade at the price you see, and their numbers can jump around. A minimum market value leaves out the smallest ones. Market value describes size, not quality." },
-  { n: 1, title: "Is it earning?", why: "A company that makes a profit year after year has more room to pay its costs, repay loans and keep running. These rules look at the latest quarter, the last five years and growth over three years. A profit in the past does not promise one in the future." },
-  { n: 2, title: "Is it using money well?", why: "Return on equity asks how much profit a company earned for each ₹100 its owners have in it. ROCE asks how much operating profit it earned for each ₹100 put into the business. " + COMPARE_NOTE },
-  { n: 3, title: "Is it safe?", why: "Debt has to be paid back whatever the company earns. Debt to equity compares what it owes with what its owners put in. Promoter pledge shows how much of the promoters' holding is pledged to lenders as security." },
-  { n: 4, title: "How does the price behave?", why: "Two neutral options: calmer means the price has moved less than most stocks lately, more active means it has moved more. Bigger swings can go either way. Volume vs usual and delivery % describe how much trading there was and how much of it ended in delivery." },
-  { n: 5, title: "What you pay (optional)", why: "P/E is the price divided by the profit per share over the last 12 months. " + PRICE_NOTE + " A low P/E does not make a company a good one." },
+  { n: 0, title: "Size and trading", line: "How big the company is and how much of its stock changes hands.", why: "Very small companies can be hard to trade at the price you see, and their numbers can jump around. A minimum market value leaves out the smallest ones. Market value describes size, not quality." },
+  { n: 1, title: "Earnings", line: "Whether the company made a profit, and whether its sales and profit grew.", why: "A company that makes a profit year after year has more room to pay its costs, repay loans and keep running. These rules look at the latest quarter, the last five years and growth over three years. A profit in the past does not promise one in the future." },
+  { n: 2, title: "Returns", line: "How much profit the company made for the money put into it.", why: "Return on equity asks how much profit a company earned for each ₹100 its owners have in it. ROCE asks how much operating profit it earned for each ₹100 put into the business. " + COMPARE_NOTE },
+  { n: 3, title: "Debt and pledge", line: "How much the company owes, and how much of the promoters' shares are pledged to lenders.", why: "Debt has to be paid back whatever the company earns. Debt to equity compares what it owes with what its owners put in. Promoter pledge shows how much of the promoters' holding is pledged to lenders as security." },
+  { n: 4, title: "Price movement", line: "How much the price moved lately, and how much was traded.", why: "Two neutral options: calmer means the price has moved less than most stocks lately, more active means it has moved more. Bigger swings can go either way. Volume vs usual and delivery % describe how much trading there was and how much of it ended in delivery." },
+  { n: 5, title: "Price you pay", line: "How the price compares with the profit per share.", why: "P/E is the price divided by the profit per share over the last 12 months. " + PRICE_NOTE + " A low P/E does not make a company a good one." },
 ];
 // ---- the shortlist ------------------------------------------------------------------------------------------------------------------------
 export const SORT_CHOICES: { value: string; label: string; order: "asc" | "desc" }[] = [

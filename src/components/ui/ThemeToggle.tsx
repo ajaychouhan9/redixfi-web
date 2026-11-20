@@ -6,7 +6,7 @@ import { Palette } from "lucide-react";
 import { THEMES, useTheme } from "@/lib/theme/ThemeContext";
 import { useDismiss } from "@/components/layout/AccountMenu";
 
-/** Three buttons in a row: Light, Dark, Premium. Used inside the account panel. The choice is kept in this browser only. */
+/** Three buttons in a row: Light, Dark, Slate. Used inside the account panel. The choice is kept in this browser only. */
 export function ThemeChoice() {
   const { theme, setTheme } = useTheme();
   return (

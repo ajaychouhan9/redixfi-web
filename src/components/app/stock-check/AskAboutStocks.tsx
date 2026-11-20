@@ -78,7 +78,7 @@ export function AskAboutStocks({ selected, onRemove, onClear }: Props) {
         <>
           <p className="text-sm text-foreground-muted">
             Log in to tick stocks on your list and ask about them. Below is a stored sample answer for one company.{" "}
-            <Link href={signupHref("/stock-check")} className="font-medium text-accent hover:underline">Sign up free</Link> or <Link href="/login" className="font-medium text-accent hover:underline">log in</Link>.
+            <Link href={signupHref("/shortlist-lab")} className="font-medium text-accent hover:underline">Sign up free</Link> or <Link href="/login" className="font-medium text-accent hover:underline">log in</Link>.
           </p>
           <AskPreview />
         </>

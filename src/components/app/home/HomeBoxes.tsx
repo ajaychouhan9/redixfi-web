@@ -20,15 +20,15 @@ function Box({ icon: Icon, title, text }: { icon: LucideIcon; title: string; tex
 }
 
 /**
- * The five boxes on Home (17 Nov 2026): Start here, Screener, Market Overview, 7-Day Review and Ask AI. Not Rewind: it is a tab of every stock page.
+ * The five boxes on Home (17 Nov 2026): Shortlist Lab, Screener, Market Overview, 7-Day Review and Ask AI. Not Rewind: it is a tab of every stock page.
  * Neutral wording: each box says what is behind it, never what to do.
  */
 export function HomeBoxes() {
   const { openPanel } = useAskPanel();
   return (
     <nav aria-label="Where to go next" className="grid grid-cols-1 gap-3 @min-[26rem]:grid-cols-2 @min-[52rem]:grid-cols-5" data-testid="home-boxes">
-      <Link href="/stock-check" className={BOX} data-testid="home-box-start">
-        <Box icon={Compass} title="New to stocks? Start the 15-minute check" text="Five steps to read a company, then build a shortlist with your own rules." />
+      <Link href="/shortlist-lab" className={BOX} data-testid="home-box-start">
+        <Box icon={Compass} title="Shortlist Lab" text="New to stocks? Learn the 5 questions, then set your rules." />
       </Link>
       <Link href="/signals" className={BOX} data-testid="home-box-screener">
         <Box icon={BarChart3} title="Screener" text="Filter 2,000+ NSE stocks by the figures you choose." />

@@ -154,7 +154,7 @@ export function MyRulesCard({ rules, setRules, sort, left, asOf, active, setActi
       {!user ? (
         <p className="mt-3 border-t border-border pt-3 text-sm text-foreground-muted" data-testid="my-rules-loggedout">
           {LOGGED_OUT_LINE}{" "}
-          <Link href={signupHref("/stock-check")} className="font-medium text-accent hover:underline">Sign up free</Link> or <Link href="/login" className="font-medium text-accent hover:underline">log in</Link>.
+          <Link href={signupHref("/shortlist-lab")} className="font-medium text-accent hover:underline">Sign up free</Link> or <Link href="/login" className="font-medium text-accent hover:underline">log in</Link>.
         </p>
       ) : (
         <div className="mt-3 space-y-3 border-t border-border pt-3">

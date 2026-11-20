@@ -57,7 +57,7 @@ export function AddToRuleButton({ conversationId, text, symbol, getToken }: {
           </button>
           {state === "none" && (
             <p className="mt-1.5 text-foreground-muted" data-testid="add-to-rule-none">
-              {NO_RULES_YET} <Link href="/stock-check" className="font-medium text-accent underline">{SAVE_A_RULE_LINK}</Link>
+              {NO_RULES_YET} <Link href="/shortlist-lab" className="font-medium text-accent underline">{SAVE_A_RULE_LINK}</Link>
             </p>
           )}
           {(state === "choosing" || state === "saving") && (

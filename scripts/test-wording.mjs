@@ -254,9 +254,9 @@ for (const need of ["Biggest gains", "Biggest falls", "Open in Rewind", "Stock p
 const navItems = readFileSync(join(ROOT, "lib/nav-items.ts"), "utf8");
 const hrefsOf = (from, to) => [...navItems.slice(navItems.indexOf(from), navItems.indexOf(to)).matchAll(/href: ("[^"]+"|null)/g)].map((m) => m[1]).join(",");
 const navHrefs = hrefsOf("export const NAV_ITEMS", "export const BOTTOM_ITEMS");
-if (hrefsOf("export const BOTTOM_ITEMS", "export const ACCOUNT_ITEMS") !== '"/","/signals","/market",null,null') reviewHits.push("nav-items.ts: the phone bar must be Home, Screener, Markets, Ask AI, Account");
+if (hrefsOf("export const BOTTOM_ITEMS", "export const ACCOUNT_ITEMS") !== '"/","/shortlist-lab","/signals","/market",null') reviewHits.push("nav-items.ts: the phone bar must be Home, Shortlist Lab, Screener, Markets, Account");
 if (hrefsOf("export const ACCOUNT_ITEMS", "const REVIEW") !== '"/account","/watchlist","/account/alerts","/pricing"') reviewHits.push("nav-items.ts: the account menu must be Profile and plan, Watchlist, Alerts, Billing (then Log out)");
-if (navHrefs !== '"/","/signals","/signals/7-day-review","/market",null,"/pricing"') reviewHits.push(`nav-items.ts: the side menu must be Home, Screener, 7-Day Review, Market Overview, Ask AI, Pricing (found ${navHrefs})`);
+if (navHrefs !== '"/","/shortlist-lab","/signals","/signals/7-day-review","/market",null,"/pricing"') reviewHits.push(`nav-items.ts: the side menu must be Home, Shortlist Lab, Screener, 7-Day Review, Market Overview, Ask AI, Pricing (found ${navHrefs})`);
 if (/Research|Rewind|Intraday|"Pro"/.test(navItems.replace(/\/\*[\s\S]*?\*\//g, ""))) reviewHits.push("nav-items.ts: Research, Pro, Rewind and Intraday are not menu items");
 const side = readFileSync(join(ROOT, "components/layout/Sidebar.tsx"), "utf8");
 if (!side.includes("NAV_ITEMS.map") || !side.includes("export function BottomNav") || !side.includes("BOTTOM_ITEMS.map")) reviewHits.push("Sidebar.tsx: the sidebar must read NAV_ITEMS and the phone bar BOTTOM_ITEMS");

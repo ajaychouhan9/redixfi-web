@@ -14,8 +14,8 @@ export function FooterDisclaimer() {
       <p data-testid="footer-sentence">{STANDARD_LINE}</p>
       <p>{FOOTER_DATA_LINE}</p>
       <p data-testid="footer-links">
-        <Link href="/stock-check" className="underline" data-testid="footer-stock-check">
-          Stock Check
+        <Link href="/shortlist-lab" className="underline" data-testid="footer-stock-check">
+          Shortlist Lab
         </Link>{" "}
         ·{" "}
         <Link href="/news" className="underline">

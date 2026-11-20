@@ -182,8 +182,8 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
   const overview = (
     <>
       <p className="mb-3 text-sm" data-testid="read-company-link">
-        <Link href="/stock-check" className="inline-flex min-h-[44px] items-center rounded-lg border border-accent px-4 font-semibold text-accent hover:bg-accent/10" data-testid="run-check-button">
-          Run the 15-minute check
+        <Link href="/shortlist-lab" className="inline-flex min-h-[44px] items-center rounded-lg border border-accent px-4 font-semibold text-accent hover:bg-accent/10" data-testid="run-check-button">
+          Learn the 5 questions
         </Link>
       </p>
       <SimpleChecklist data={data} today={istToday()} priceLabel={priceLabel} />

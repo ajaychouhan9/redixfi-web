@@ -328,7 +328,8 @@ export function ShortlistLadder() {
             <section className="rounded-xl border border-border bg-surface" data-testid={`ladder-step-${s.n}`}>
               <button type="button" onClick={() => toggle(s.n)} aria-expanded={open[s.n]} className="flex min-h-[48px] w-full items-center justify-between gap-3 px-4 py-2 text-left">
                 <span className="text-sm font-semibold">
-                  Step {s.n}. {s.title}
+                  Step {s.n + 1}. {s.title}
+                  <span className="block text-xs font-normal text-foreground-muted" data-testid="ladder-step-line">{s.line}</span>
                 </span>
                 <span className="flex shrink-0 items-center gap-2 text-xs text-foreground-muted">
                   <span data-testid={`ladder-count-${s.n}`}>{counts ? `${counts[s.n].toLocaleString("en-IN")} left` : ""}</span>
@@ -396,7 +397,7 @@ export function ShortlistLadder() {
                         {added[r.symbol] === "added" ? "Added to watchlist" : added[r.symbol] === "error" ? "Could not add. Try again" : "Add to watchlist"}
                       </button>
                     ) : (
-                      <Link href={signupHref("/stock-check")} className="inline-flex min-h-[44px] items-center rounded-lg border border-border px-4 text-sm font-medium hover:border-accent" data-testid="ladder-watch-login">
+                      <Link href={signupHref("/shortlist-lab")} className="inline-flex min-h-[44px] items-center rounded-lg border border-border px-4 text-sm font-medium hover:border-accent" data-testid="ladder-watch-login">
                         Add to watchlist
                       </Link>
                     )}
@@ -417,7 +418,7 @@ export function ShortlistLadder() {
             )}
             {limited && (
               <p className="text-sm text-foreground-muted">
-                The full list is included with a free account. <Link href={signupHref("/stock-check")} className="font-medium text-accent hover:underline">Sign up free</Link>
+                The full list is included with a free account. <Link href={signupHref("/shortlist-lab")} className="font-medium text-accent hover:underline">Sign up free</Link>
               </p>
             )}
           </>

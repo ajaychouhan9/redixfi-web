@@ -15,35 +15,36 @@ const read = (p: string) => readFileSync(new URL(`../src/${p}`, import.meta.url)
 const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\/\/.*$/gm, "$1");
 
 // ---- 1. names, labels and addresses
-assert.equal(PAGE_TITLE, "The 15-Minute Stock Check");
-assert.equal(PAGE_SUBTITLE, "Stock analysis, simplified.");
-assert.equal(MENU_LABEL, "Stock Check");
-assert.equal(HOME_BUTTON, "New to stocks? Start the 15-minute check");
-assert.equal(STOCK_BUTTON, "Run the 15-minute check");
-assert.equal(SEO_TITLE, "How to Analyse a Stock in 15 Minutes | RedixFi");
+assert.equal(PAGE_TITLE, "Shortlist Lab");
+assert.equal(PAGE_SUBTITLE, "Set your rules. Read the result.");
+assert.equal(MENU_LABEL, "Shortlist Lab");
+assert.equal(HOME_BUTTON, "New to stocks? Learn the 5 questions");
+assert.equal(STOCK_BUTTON, "Learn the 5 questions");
+assert.equal(SEO_TITLE, "Shortlist Lab: set your rules, read the result | RedixFi");
 assert.equal(LADDER_TITLE, "Build Your Shortlist");
 assert.equal(COMMON_LABEL, "Common rules from published methods. Change them.");
 assert.equal(PAST_LINE, "Filters use past reported numbers. They do not tell what happens next.");
 assert.equal(PRICE_NOTE, "A good company can still be priced high.");
-const page = read("app/(app)/stock-check/page.tsx");
-assert.ok(page.includes('canonical: "/stock-check"') && page.includes("https://www.redixfi.com/stock-check") && page.includes("title: SEO_TITLE"), "title tag and canonical");
+const page = read("app/(app)/shortlist-lab/page.tsx");
+assert.ok(page.includes('canonical: "/shortlist-lab"') && page.includes("https://www.redixfi.com/shortlist-lab") && page.includes("title: SEO_TITLE"), "title tag and canonical");
 assert.ok(page.includes("PAGE_TITLE") && page.includes("PAGE_SUBTITLE") && /export const revalidate = \d+/.test(page) && !/\b(cookies|headers)\(\)|searchParams|await |fetch\(/.test(strip(page)), "static page with the new title");
-assert.ok(read("components/app/home/HomeBoxes.tsx").includes("New to stocks? Start the 15-minute check") && read("components/app/VisitorIntroStrip.tsx").includes(HOME_BUTTON), "home buttons");
+assert.ok(read("components/app/home/HomeBoxes.tsx").includes("Shortlist Lab") && read("components/app/VisitorIntroStrip.tsx").includes(HOME_BUTTON), "home buttons");
 const stockPage = read("app/(app)/stocks/[symbol]/page.tsx");
-assert.ok(stockPage.includes("Run the 15-minute check") && stockPage.includes('href="/stock-check"') && !stockPage.includes("New to this? Read a company in 15 minutes"), "stock page button replaces the small link");
-assert.ok(read("components/layout/FooterDisclaimer.tsx").includes("Stock Check") && read("components/layout/FooterDisclaimer.tsx").includes('href="/stock-check"'), "footer label");
+assert.ok(stockPage.includes("Learn the 5 questions") && stockPage.includes('href="/shortlist-lab"') && !stockPage.includes("New to this? Read a company in 15 minutes"), "stock page button replaces the small link");
+assert.ok(read("components/layout/FooterDisclaimer.tsx").includes("Shortlist Lab") && read("components/layout/FooterDisclaimer.tsx").includes('href="/shortlist-lab"'), "footer label");
 
-// ---- 2. /start returns a single 301 to /stock-check; the sitemap, llms.txt and internal links follow
+// ---- 2. /start and /stock-check each return a single 301 to /shortlist-lab; the sitemap, llms.txt and internal links follow
 const cfg = read("../next.config.ts");
 const rules = [...cfg.matchAll(/\{\s*source:\s*"([^"]+)",\s*destination:\s*"([^"]+)",\s*statusCode:\s*(\d+)\s*\}/g)].map((m) => ({ source: m[1], destination: m[2], status: Number(m[3]) }));
 const start = rules.filter((r) => r.source === "/start");
 assert.equal(start.length, 1, "exactly one redirect for /start");
-assert.deepEqual(start[0], { source: "/start", destination: "/stock-check", status: 301 });
-assert.ok(!rules.some((r) => r.source === "/stock-check"), "no chain: the destination is not redirected again");
+assert.deepEqual(start[0], { source: "/start", destination: "/shortlist-lab", status: 301 });
+assert.deepEqual(rules.filter((r) => r.source === "/stock-check"), [{ source: "/stock-check", destination: "/shortlist-lab", status: 301 }], "the old address goes straight to Shortlist Lab");
+assert.ok(!rules.some((r) => r.source === "/shortlist-lab"), "no chain: the destination is not redirected again");
 assert.ok(!/restructure|renamed/.test("") && !read("lib/seo/restructure-redirects.ts").includes('"/start"'), "no second /start rule in the restructure list");
 const sitemap = read("app/sitemap.xml/route.ts");
-assert.ok(sitemap.includes('"/stock-check"') && !sitemap.includes('"/start"'), "sitemap lists /stock-check only");
-assert.ok(read("app/llms.txt/route.ts").includes("https://www.redixfi.com/stock-check") && !read("app/llms.txt/route.ts").includes("redixfi.com/start"), "llms.txt");
+assert.ok(sitemap.includes('"/shortlist-lab"') && !sitemap.includes('"/stock-check"') && !sitemap.includes('"/start"'), "sitemap lists /shortlist-lab only");
+assert.ok(read("app/llms.txt/route.ts").includes("https://www.redixfi.com/shortlist-lab") && !read("app/llms.txt/route.ts").includes("redixfi.com/start"), "llms.txt");
 for (const f of ["app/(app)/signals/page.tsx", "components/app/home/HomeBoxes.tsx", "components/app/VisitorIntroStrip.tsx", "app/(app)/stocks/[symbol]/page.tsx"]) {
   assert.ok(!/href="\/start"/.test(read(f)), `${f} has no link to /start`);
 }
@@ -128,7 +129,7 @@ assert.ok(funds.includes("<BankNote testId=\"bank-note-screener\" />"), "under t
 assert.ok(ladder.includes("NO_ROCE_LINE(gap.noFigure)") && ladder.includes("NO_ROCE_LINE(roceCounts.no)"), "the no-figure line on the step and on the shortlist");
 
 // ---- 5. the ladder: steps, buttons, no ranking, no fake filter
-assert.deepEqual(STEPS.map((s) => s.title), ["Size and trading", "Is it earning?", "Is it using money well?", "Is it safe?", "How does the price behave?", "What you pay (optional)"]);
+assert.deepEqual(STEPS.map((s) => s.title), ["Size and trading", "Earnings", "Returns", "Debt and pledge", "Price movement", "Price you pay"]);
 assert.ok(STEPS.every((s) => s.why.split(/(?<=[.!?])\s+/).length <= 4), "each why-this-rule is two to four short sentences");
 assert.ok(ladder.includes("START_COMMON") && ladder.includes("CLEAR_ALL") && ladder.includes("COMMON_LABEL") && ladder.includes("ladder-bar") && ladder.includes("ladder-left") && /stocks?\"? : \"stocks\"|"stock" : "stocks"/.test(ladder));
 assert.ok(!/\bfetch\(/.test(ladder) && ladder.includes("getLadderData()") && (ladder.match(/getSignals\(/g) ?? []).length === 2, "one figures file; the list call, and the full-list call that runs only when a rule is saved with its stock list or run again");
@@ -166,7 +167,7 @@ for (const n of ["64,468", "61,328", "61,896", "15,040", "10,649", "10,277", "1,
 
 // ---- 7. wording guard on all new copy (the owner's banned list), and no risk labels
 const copy = [
-  strip(read("lib/stock-check.ts")), strip(read("lib/ask-samples.ts")), stored, strip(read("app/(app)/stock-check/page.tsx")).replace(/no buy or sell advice/g, ""),
+  strip(read("lib/stock-check.ts")), strip(read("lib/ask-samples.ts")), stored, strip(read("app/(app)/shortlist-lab/page.tsx")).replace(/no buy or sell advice/g, ""),
   ladder.replace(/target="_blank"|e\.target/g, ""), strip(read("lib/my-rules.ts")), strip(read("lib/ask-group.ts")),
   preview.replace(/target="_blank"/g, ""), strip(read("components/app/stock-check/LoggedOutPreview.tsx")),
 ].join("\n").replace(/className="[^"]*"/g, "").replace(/className=\{`[^`]*`\}/g, "").replace(/data-testid="[^"]*"/g, "");
@@ -191,8 +192,8 @@ for (const [key, v] of [["peMax", "25"], ["roeMin", "15"], ["roceMin", "15"], ["
 const explorer = read("components/app/signals/SignalsExplorer.tsx");
 assert.ok(explorer.includes('placeholder="1.5"') && explorer.includes('<Example text="1.5 (times)" />'), "Screener volume vs usual example");
 assert.ok(!/href=\{askHref/.test(ladder) && ladder.includes("openWithStocks(selected)") && !ladder.includes("ladder-step-6") && !ladder.includes("STEP6"), "Step 6 is gone; Ask AI opens a new session with the ticked stocks");
-const readCo = read("components/app/start/ReadCompany.tsx");
-assert.ok(!readCo.includes("askHref") && readCo.includes("openWithQuestion(ASK_QUESTIONS[s.askKey], SAMPLE_SYMBOL)"), "the chips on the reading steps open the panel too");
+const readCo = read("components/app/stock-check/LearnTab.tsx");
+assert.ok(!readCo.includes("askHref") && readCo.includes("openWithStocks([SAMPLE_SYMBOL])"), "the one Learn button opens the panel, not another page");
 assert.ok(ladder.includes('data-testid="ladder-bar-show"') && /ladder-bar[\s\S]*ladder-bar-show[\s\S]*ladder-asof/.test(ladder), "Show N stocks button inside the sticky bar");
 const samplePanel = read("components/app/ask/SamplePanel.tsx");
 assert.ok(samplePanel.includes("sampleIdFor(q, samples.answers, ALIASES)") && samplePanel.includes("LOGIN_FOR_OWN"), "the panel answers the sample questions and asks for a log-in for anything else");

@@ -52,8 +52,8 @@ export default async function SignalsPage({ searchParams }: { searchParams: Prom
         )}
         <GuestOnly>
           <p className="mt-1 text-xs text-foreground-muted">
-            <Link href="/stock-check" className="font-medium text-accent hover:underline" data-testid="signals-start-link">
-              New here? Try the simple view
+            <Link href="/shortlist-lab" className="font-medium text-accent hover:underline" data-testid="signals-start-link">
+              New to stocks? Learn the 5 questions
             </Link>
           </p>
         </GuestOnly>
