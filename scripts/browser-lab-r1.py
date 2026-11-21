@@ -83,7 +83,7 @@ with sync_playwright() as p:
             check(f"{tag}: six named steps on Learn", names == [f"Step {i + 1}. {n}" for i, n in enumerate(STEP_NAMES)], str(names))
             check(f"{tag}: every example shown in full, no toggle", page.locator("[data-testid=learn-example]").count() == 6 and page.get_by_text("Show the reading").count() == 0 and page.get_by_text("My notes").count() == 0)
             check(f"{tag}: no sample card, no points-to-watch or news buttons", page.get_by_text("Try it on a sample stock").count() == 0 and page.get_by_text("Open Points to watch").count() == 0 and page.get_by_text("Open News").count() == 0)
-            check(f"{tag}: find-in-Screener line on each step", page.locator("[data-testid=learn-find-line]").count() == 6 and "Find any stock in Screener, then open its page to see this section." in page.locator("[data-testid=learn-find-line]").first.inner_text())
+            check(f"{tag}: find-in-Screener line on each step", page.locator("[data-testid=learn-find-line]").count() == 6 and "Find any stock in Screener, open its page and look in the Overview tab." in page.locator("[data-testid=learn-find-line]").first.inner_text() and page.locator("[data-testid=learn-find-line] a").count() == 6)
             check(f"{tag}: one Try button", page.locator("[data-testid=learn-try-button]").count() == 1 and page.inner_text("[data-testid=learn-try-button]").strip() == "Try these questions in Ask AI")
             check(f"{tag}: logged-out line shown", "needs a log-in" in page.inner_text("[data-testid=learn-try-loggedout]"))
             shot(page, f"learn-{width}-{theme}")
