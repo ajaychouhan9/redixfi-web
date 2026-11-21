@@ -7,7 +7,7 @@ import { ASK_PREVIEW, sampleIdFor } from "../src/lib/ask-samples.ts";
 import { ASK_QUESTIONS } from "../src/lib/read-company.ts";
 import {
   BANK_NOTE, BANK_WHY, COMMON_LABEL, COMMON_RULES, DEBT_NOTE, DEBT_WHY, EXAMPLES, exampleLine, ruleProblem, validValue, COUNTS_NOTE, EMPTY_RULES, HOME_BUTTON, LADDER_TITLE, MENU_LABEL, NO_ROCE_LINE, PAGE_SUBTITLE, PAGE_TITLE, PAST_LINE,
-  PRICE_NOTE, RULES, SEO_TITLE, STEPS, STOCK_BUTTON, activeTests, countAfter, countsByStep, fromParams, hasAnyRule, roceGap, toParams, validLadderData,
+  PRICE_NOTE, RULES, SEO_TITLE, STEPS, activeTests, countAfter, countsByStep, fromParams, hasAnyRule, roceGap, toParams, validLadderData,
   type LadderData, type Rules,
 } from "../src/lib/stock-check.ts";
 
@@ -19,7 +19,6 @@ assert.equal(PAGE_TITLE, "Shortlist Lab");
 assert.equal(PAGE_SUBTITLE, "Set your rules. Read the result.");
 assert.equal(MENU_LABEL, "Shortlist Lab");
 assert.equal(HOME_BUTTON, "New to stocks? Learn the 5 questions");
-assert.equal(STOCK_BUTTON, "Learn the 5 questions");
 assert.equal(SEO_TITLE, "Shortlist Lab: set your rules, read the result | RedixFi");
 assert.equal(LADDER_TITLE, "Build Your Shortlist");
 assert.equal(COMMON_LABEL, "Common rules from published methods. Change them.");
@@ -30,7 +29,7 @@ assert.ok(page.includes('canonical: "/shortlist-lab"') && page.includes("https:/
 assert.ok(page.includes("PAGE_TITLE") && page.includes("PAGE_SUBTITLE") && /export const revalidate = \d+/.test(page) && !/\b(cookies|headers)\(\)|searchParams|await |fetch\(/.test(strip(page)), "static page with the new title");
 assert.ok(read("components/app/home/HomeBoxes.tsx").includes("Shortlist Lab") && read("components/app/VisitorIntroStrip.tsx").includes(HOME_BUTTON), "home buttons");
 const stockPage = read("app/(app)/stocks/[symbol]/page.tsx");
-assert.ok(stockPage.includes("Learn the 5 questions") && stockPage.includes('href="/shortlist-lab"') && !stockPage.includes("New to this? Read a company in 15 minutes"), "stock page button replaces the small link");
+assert.ok(!stockPage.includes("Learn the 5 questions") && !stockPage.includes("run-check-button") && !stockPage.includes("New to this? Read a company in 15 minutes"), "the stock page has no learn link");
 assert.ok(read("components/layout/FooterDisclaimer.tsx").includes("Shortlist Lab") && read("components/layout/FooterDisclaimer.tsx").includes('href="/shortlist-lab"'), "footer label");
 
 // ---- 2. /start and /stock-check each return a single 301 to /shortlist-lab; the sitemap, llms.txt and internal links follow
@@ -131,8 +130,8 @@ assert.ok(ladder.includes("NO_ROCE_LINE(gap.noFigure)") && ladder.includes("NO_R
 // ---- 5. the ladder: steps, buttons, no ranking, no fake filter
 assert.deepEqual(STEPS.map((s) => s.title), ["Size and trading", "Earnings", "Returns", "Debt and pledge", "Price movement", "Price you pay"]);
 assert.ok(STEPS.every((s) => s.why.split(/(?<=[.!?])\s+/).length <= 4), "each why-this-rule is two to four short sentences");
-assert.ok(ladder.includes("START_COMMON") && ladder.includes("CLEAR_ALL") && ladder.includes("COMMON_LABEL") && ladder.includes("ladder-bar") && ladder.includes("ladder-left") && /stocks?\"? : \"stocks\"|"stock" : "stocks"/.test(ladder));
-assert.ok(!/\bfetch\(/.test(ladder) && ladder.includes("getLadderData()") && (ladder.match(/getSignals\(/g) ?? []).length === 2, "one figures file; the list call, and the full-list call that runs only when a rule is saved with its stock list or run again");
+assert.ok(ladder.includes("COMMON_RULES") && ladder.includes("<CommonValuesCard") && ladder.includes("ladder-bar") && ladder.includes("ladder-left") && /stocks?\"? : \"stocks\"|"stock" : "stocks"/.test(ladder));
+assert.ok(!/\bfetch\(/.test(ladder) && ladder.includes("getLadderData()") && (ladder.match(/getSignals\(/g) ?? []).length === 1, "one figures file and one list call (the saved result is made by the server)");
 assert.ok(ladder.includes("Add to watchlist") && ladder.includes("Read this company") && ladder.includes("RESULTS_TITLE") && ladder.includes('value: "name"') === false);
 assert.ok(ladder.includes("NUMBERS_AS_OF(asOf)"), "numbers as of <date>");
 assert.equal(read("lib/stock-check.ts").includes("sort: \"composite"), false);
@@ -167,12 +166,13 @@ for (const n of ["64,468", "61,328", "61,896", "15,040", "10,649", "10,277", "1,
 
 // ---- 7. wording guard on all new copy (the owner's banned list), and no risk labels
 const copy = [
-  strip(read("lib/stock-check.ts")), strip(read("lib/ask-samples.ts")), stored, strip(read("app/(app)/shortlist-lab/page.tsx")).replace(/no buy or sell advice/g, ""),
-  ladder.replace(/target="_blank"|e\.target/g, ""), strip(read("lib/my-rules.ts")), strip(read("lib/ask-group.ts")),
+  strip(read("lib/stock-check.ts")).replace(/export const SKIP[A-Z_]* = [^;]*;/g, ""), strip(read("lib/ask-samples.ts")), stored, strip(read("app/(app)/shortlist-lab/page.tsx")).replace(/no buy or sell advice/g, ""),
+  // "Skip" is the owner's own name for the step switch (Use / Skip, 21 Nov 2026), not advice about a stock: the switch labels and the code that handles them are left out of the scan
+  ladder.replace(/target="_blank"|e[.]target/g, "").split(String.fromCharCode(10)).filter((l) => !/skip/i.test(l)).join(String.fromCharCode(10)), strip(read("lib/my-rules.ts")), strip(read("lib/ask-group.ts")),
   preview.replace(/target="_blank"/g, ""), strip(read("components/app/stock-check/LoggedOutPreview.tsx")),
 ].join("\n").replace(/className="[^"]*"/g, "").replace(/className=\{`[^`]*`\}/g, "").replace(/data-testid="[^"]*"/g, "");
 const BANNED = /\b(buy|buying|sell|selling|targets?|picks?|bullish|bearish|strong signal|catch a falling knife|skip|avoid|candidates?|high conviction|red flags?|turnaround|top stocks|best stocks|quality stocks)\b/gi;
-assert.deepEqual((copy.match(BANNED) ?? []).map((h) => h.toLowerCase()), [], "banned words in the new copy");
+assert.deepEqual((copy.match(BANNED) ?? []).map((h) => h.toLowerCase()), [], "banned words in the new copy: " + JSON.stringify(copy.match(BANNED)) + copy.split(String.fromCharCode(10)).filter((l) => /\bskip\b/i.test(l)).join(" // "));
 assert.ok(!/\b(aggressive|conservative|risk appetite|risk profile|your risk)\b/i.test(copy), "no risk appetite and no aggressive or conservative labels");
 assert.ok(!/\b(top|best)\b/i.test(copy.replace(/top-|top:/g, "")), "never top or best");
 assert.ok(!/\b(will rise|will fall|will go up|will go down|going to)\b/i.test(copy), "no forecast wording");

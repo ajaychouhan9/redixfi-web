@@ -53,14 +53,17 @@ export interface FullCheckReport {
   sections: FullCheckSection[];
   numbers: { columns: { key: string; label: string }[]; rows: Record<string, string | number | null>[]; notes: string[]; as_of: string | null; available: boolean };
   ownership: { holdings: { label: string; text: string; source: string | null }[]; insiders: FullCheckSection; deals: FullCheckSection };
+  /** The fifth question: price change and delivery for the last 10 days (reports made before 21 Nov 2026 do not have it). */
+  price?: FullCheckSection;
   footer: string;
 }
 
 export const estimateFullCheck = async (symbols: string[], opts?: FetchOpts) =>
   (await apiMutate<FullCheckEstimate>("/fullcheck/estimate", "POST", { symbols }, opts)).data;
 
-export const startFullCheck = async (symbols: string[], opts?: FetchOpts) =>
-  (await apiMutate<{ run: FullCheckRun; charged: number }>("/fullcheck/runs", "POST", { symbols }, opts)).data;
+/** `link` ties the run to a saved result of a rule, so the rule's report can include these answers. */
+export const startFullCheck = async (symbols: string[], opts?: FetchOpts, link?: { rule_id: string; rule_run_id: string }) =>
+  (await apiMutate<{ run: FullCheckRun; charged: number }>("/fullcheck/runs", "POST", { symbols, ...(link ?? {}) }, opts)).data;
 
 export const getFullCheckRun = async (id: string, opts?: FetchOpts) => (await apiGet<{ run: FullCheckRun }>(`/fullcheck/runs/${encodeURIComponent(id)}`, opts)).data.run;
 
@@ -72,5 +75,5 @@ export const getFullCheckReport = async (id: string, symbol: string, opts?: Fetc
 export const downloadFullCheckPdf = (id: string, symbol: string, token: string) =>
   apiGetBlob(`/fullcheck/runs/${encodeURIComponent(id)}/${encodeURIComponent(symbol)}/pdf`, { token });
 
-export const downloadFullCheckCsv = (id: string, symbol: string, token: string) =>
-  apiGetBlob(`/fullcheck/runs/${encodeURIComponent(id)}/${encodeURIComponent(symbol)}/numbers.csv`, { token });
+/** One row per stock per question for the whole run: the answer, its source and its date (the numbers-only CSV was removed). */
+export const downloadFullCheckCsv = (id: string, token: string) => apiGetBlob(`/fullcheck/runs/${encodeURIComponent(id)}/answers.csv`, { token });

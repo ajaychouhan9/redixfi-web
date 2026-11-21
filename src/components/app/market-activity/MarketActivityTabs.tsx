@@ -33,7 +33,7 @@ export function MarketActivityTabs({
   onChange: (key: MarketActivityTabDef["key"]) => void;
 }) {
   return (
-    <div className="mb-4 flex gap-1 overflow-x-auto border-b border-border">
+    <div className="sticky-tabs mb-4 flex gap-1 overflow-x-auto border-b border-border">
       {MARKET_ACTIVITY_TABS.map((t) => (
         <button
           key={t.key}

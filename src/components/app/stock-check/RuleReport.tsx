@@ -3,27 +3,14 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 
-import { ApiError } from "@/lib/api/client";
-import { deleteRuleAnswer, downloadRuleExport, listRuleAnswers, type MyScreen, type RuleAnswer } from "@/lib/api/mutations";
+import { deleteRuleAnswer, listRuleAnswers, type MyScreen, type RuleAnswer } from "@/lib/api/mutations";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { isPaidEntitled } from "@/lib/entitlements";
 import {
-  ANSWERS_EMPTY, ANSWERS_NOTE, ANSWERS_TITLE, ANSWER_AS_OF, EXPORT_CSV, EXPORT_FAILED, EXPORT_FREE_NOTE, EXPORT_LEAD, EXPORT_PDF, REMOVE_ANSWER, SAMPLE_PDF_PATH, SAMPLE_REPORT,
+  ANSWERS_EMPTY, ANSWERS_NOTE, ANSWERS_TITLE, ANSWER_AS_OF, REMOVE_ANSWER,
   answerSources, saveErrorText,
 } from "@/lib/rule-answers";
 
 const btn = "min-h-[44px] rounded-lg border border-border px-3 text-sm font-medium hover:border-accent disabled:opacity-60";
-
-function saveBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
 
 const cell = (v: unknown): string => (v === null || v === undefined || v === "" ? "No figure" : typeof v === "number" ? v.toLocaleString("en-IN", { maximumFractionDigits: 2 }) : String(v));
 
@@ -56,12 +43,10 @@ function AnswerItem({ a, onRemove }: { a: RuleAnswer; onRemove: (id: string) => 
 
 /** Under one saved rule: its saved Ask AI answers, and the PDF / CSV export (paid plans) or the stored sample report (Free). */
 export function RuleReport({ rule, onChanged }: { rule: MyScreen; onChanged: () => void }) {
-  const { user, getToken } = useAuth();
-  const paid = isPaidEntitled(user);
+  const { getToken } = useAuth();
   const [open, setOpen] = useState(false);
   const [answers, setAnswers] = useState<RuleAnswer[] | null>(null);
   const [limit, setLimit] = useState<number | null>(null);
-  const [busy, setBusy] = useState<"pdf" | "csv" | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
   async function toggle() {
@@ -90,22 +75,6 @@ export function RuleReport({ rule, onChanged }: { rule: MyScreen; onChanged: () 
       setMsg("That answer could not be removed right now.");
     }
   }
-  async function download(kind: "pdf" | "csv") {
-    setBusy(kind);
-    setMsg(null);
-    try {
-      const token = await getToken();
-      if (!token) throw new Error("login");
-      const { blob, filename } = await downloadRuleExport(rule.id, kind, token);
-      saveBlob(blob, filename ?? `redixfi-rule.${kind}`);
-    } catch (e) {
-      const d = e instanceof ApiError ? (e.detail as { message?: string } | undefined) : undefined;
-      setMsg(d?.message ?? EXPORT_FAILED);
-    } finally {
-      setBusy(null);
-    }
-  }
-
   const n = answers ? answers.length : rule.answers ?? 0;
   return (
     <div className="mt-2 space-y-2 border-t border-border pt-2" data-testid="rule-report">
@@ -114,16 +83,7 @@ export function RuleReport({ rule, onChanged }: { rule: MyScreen; onChanged: () 
           {ANSWERS_TITLE(n)}
           <ChevronDown size={14} className={open ? "rotate-180" : ""} aria-hidden />
         </button>
-        {paid ? (
-          <>
-            <button type="button" onClick={() => void download("pdf")} disabled={busy !== null} className={btn} data-testid="rule-export-pdf">{busy === "pdf" ? "Preparing…" : EXPORT_PDF}</button>
-            <button type="button" onClick={() => void download("csv")} disabled={busy !== null} className={btn} data-testid="rule-export-csv">{busy === "csv" ? "Preparing…" : EXPORT_CSV}</button>
-          </>
-        ) : (
-          <a href={SAMPLE_PDF_PATH} target="_blank" rel="noopener noreferrer" className={`${btn} inline-flex items-center`} data-testid="rule-sample-report">{SAMPLE_REPORT}</a>
-        )}
       </div>
-      <p className="text-xs text-foreground-muted" data-testid="rule-export-note">{paid ? EXPORT_LEAD : EXPORT_FREE_NOTE}</p>
       {msg && <p className="text-xs text-foreground-muted" role="status" data-testid="rule-report-msg">{msg}</p>}
       {open && (
         <div className="space-y-2" data-testid="rule-answers">

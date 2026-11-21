@@ -7,7 +7,12 @@ import { ASK_QUESTIONS, SAMPLE_NAME, SAMPLE_SYMBOL } from "@/lib/read-company";
 export const LEARN_TAB = "Learn";
 export const RULES_TAB = "My rules";
 export const LEARN_INTRO = "Six steps, and the five questions to ask Ask AI about any company. Facts from filings and the exchange. Not advice.";
-export const FIND_LINE = "Find any stock in Screener, then open its page to see this section.";
+/** The line under each step (21 Nov 2026): only "Screener" is a link. `tabs` are the real tab names on a stock page (src/lib/stock-tabs.ts). */
+export function findLine(tabs: string[]): string {
+  const where = tabs.length === 1 ? `the ${tabs[0]} tab` : `the ${tabs.slice(0, -1).join(", ")} and ${tabs[tabs.length - 1]} tabs`;
+  return `Find any stock in Screener, open its page and look in ${where}.`;
+}
+export const READY_LINE = "Ready to filter? Open the My rules tab to shortlist stocks as per your rule.";
 export const TRY_BUTTON = "Try these questions in Ask AI";
 export const TRY_LINE = `Opens a new Ask AI session with ${SAMPLE_NAME} (${SAMPLE_SYMBOL}) selected. You can change the stock.`;
 export const TRY_LOGGED_OUT = "Without logging in you see stored sample answers for this one company. A different stock needs a log-in.";
@@ -21,6 +26,8 @@ export interface LearnStep {
   name: string;
   /** One plain line under the name; the same line is used on the My rules tab. */
   line: string;
+  /** Tabs of a stock page where this step's figures are shown. */
+  tabs: string[];
   look: string;
   means: string;
   example: { q: string; a: string };
@@ -30,6 +37,7 @@ export const LEARN_STEPS: LearnStep[] = [
   {
     n: 1,
     name: "Size and trading",
+    tabs: ["Overview"],
     line: "How big the company is and how much of its stock changes hands.",
     look: "Market value (market cap) is the number of shares multiplied by the price. Volume is the number of shares traded in a day. Both are on a stock's Overview tab.",
     means: "Market value describes size, not quality. Very small companies can be hard to trade at the price you see, and their numbers can jump around.",
@@ -41,6 +49,7 @@ export const LEARN_STEPS: LearnStep[] = [
   {
     n: 2,
     name: "Earnings",
+    tabs: ["Annual report"],
     line: "Whether the company made a profit, and whether its sales and profit grew.",
     look: "On a stock's Annual report tab, Quarterly results show the last eight quarters: revenue, net profit and margin %. The annual figures show sales and profit for the last years.",
     means: "Revenue and profit that are higher than in the same quarter a year before mean the company sold and earned more than it did then. Margin is the share of each rupee of sales left as operating profit. A profit in the past does not promise one in the future.",
@@ -52,6 +61,7 @@ export const LEARN_STEPS: LearnStep[] = [
   {
     n: 3,
     name: "Returns",
+    tabs: ["Annual report"],
     line: "How much profit the company made for the money put into it.",
     look: "Return on equity (ROE) is profit as a share of the money the owners have put in. Return on capital employed (ROCE) is operating profit before exceptional items divided by the capital the business uses (total assets minus current liabilities). Both are on the Annual report tab.",
     means: "Both show how much profit a company made for each ₹100 put in. ROCE is not shown for banks, insurers and finance companies, whose business is lending or insuring. Compare a company with others of its own kind.",
@@ -63,6 +73,7 @@ export const LEARN_STEPS: LearnStep[] = [
   {
     n: 4,
     name: "Debt and pledge",
+    tabs: ["Annual report", "Insiders & promoters"],
     line: "How much the company owes, and how much of the promoters' shares are pledged to lenders.",
     look: "Debt to equity compares what a company owes with what its owners put in (Annual report tab). Promoter pledge is the share of the promoters' holding given as security for a loan (Insiders & promoters tab).",
     means: "Debt has to be paid back whatever the company earns. Debt works differently for banks and lenders, whose business is borrowing and lending. A pledge is a fact about the holding; the filing does not say what will happen.",
@@ -74,6 +85,7 @@ export const LEARN_STEPS: LearnStep[] = [
   {
     n: 5,
     name: "Price movement",
+    tabs: ["Overview"],
     line: "How much the price moved lately, and how much was traded.",
     look: "Delivery % is the share of the day's traded shares that were taken for holding. Volume vs usual compares the last five days with the twenty days before. Both are on the Overview tab.",
     means: "A high delivery % means more of the traded shares were taken for holding than for same-day trading. Bigger swings in the price can go either way.",
@@ -85,6 +97,7 @@ export const LEARN_STEPS: LearnStep[] = [
   {
     n: 6,
     name: "Price you pay",
+    tabs: ["Overview"],
     line: "How the price compares with the profit per share.",
     look: "P/E is the price divided by the profit per share over the last 12 months. It is on the Overview tab.",
     means: "The price says what you pay. It does not say how the business is doing. Compare a company with others of its own kind. A low P/E describes the price against profit, not the business.",

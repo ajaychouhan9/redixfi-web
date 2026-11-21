@@ -3,7 +3,7 @@ import type { MyScreen } from "@/lib/api/mutations";
 import type { Rules } from "@/lib/stock-check";
 
 export const MY_RULES_TITLE = "My rules";
-export const MY_RULES_LEAD = "Start with common rules, or open a rule you saved. Change the steps below, then save.";
+export const MY_RULES_LEAD = "Open a rule you saved, or set the steps below and save them under a name. Each time you press Show stocks on a saved rule, the result is saved with it.";
 export const NAME_PLACEHOLDER = "Name these rules";
 export const SNAPSHOT_LABEL = "Also save today's stock list (a dated copy)";
 export const SNAPSHOT_HELP = "The rules are always saved. With the list, you can open the rule later and see the stocks as they were on that date.";
@@ -17,7 +17,10 @@ export const SAVE_AS_NEW_RULE = "Save as a new rule";
 export const REPLACE_QUESTION = (name: string): string => `You changed the rules in "${name}". Replace the old rule, or save these as a new rule?`;
 export const LOGGED_OUT_LINE = "Keep your rules under a name and open them again later.";
 export const PLAN_LINE = (limit: number, have: number): string => `Your plan keeps ${limit} saved ${limit === 1 ? "rule" : "rules"}. You have ${have}.`;
-export const LIMIT_REACHED = (limit: number): string => `Your plan keeps up to ${limit} saved ${limit === 1 ? "rule" : "rules"}. Delete one, replace one, or choose a larger plan.`;
+export const LIMIT_REACHED = (limit: number): string =>
+  limit === 1
+    ? "Your Free plan keeps 1 saved rule. Delete the saved rule, or update it with Save, to save this one. Basic keeps 10 and Pro 30."
+    : `Your plan keeps up to ${limit} saved rules. Delete one, or update a saved rule with Save.`;
 export const SHOWING_RULE = (name: string): string => `Showing rule: ${name}`;
 export const RULES_APPLIED_TITLE = "Rules applied";
 export const RULES_APPLIED_NOTE = "Read only. To change a rule, use the steps above or My rules.";
@@ -28,6 +31,8 @@ export interface ActiveRule {
   name: string;
   /** The rules as they were when the rule was opened or last saved, to tell whether they were changed since. */
   base: Rules;
+  /** The steps set to Skip when the rule was opened or last saved. */
+  skipped: number[];
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

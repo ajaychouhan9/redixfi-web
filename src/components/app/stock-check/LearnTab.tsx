@@ -6,11 +6,11 @@ import { Sparkles } from "lucide-react";
 import { LoggedOutPreview } from "@/components/app/stock-check/LoggedOutPreview";
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { FIND_LINE, FIVE_QUESTIONS, LEARN_INTRO, LEARN_STEPS, QUESTIONS_TITLE, STEP_WORD, TRY_BUTTON, TRY_FREE, TRY_LINE, TRY_LOGGED_OUT } from "@/lib/learn";
+import { findLine, FIVE_QUESTIONS, READY_LINE, LEARN_INTRO, LEARN_STEPS, QUESTIONS_TITLE, STEP_WORD, TRY_BUTTON, TRY_FREE, TRY_LINE, TRY_LOGGED_OUT } from "@/lib/learn";
 import { SAMPLE_SYMBOL } from "@/lib/read-company";
 
 /** The Learn tab: six steps with every example reading shown in full, then one button into Ask AI. Nothing runs on load. */
-export function LearnTab() {
+export function LearnTab({ onOpenRules }: { onOpenRules?: () => void }) {
   const { user } = useAuth();
   const { openPanel, openWithStocks } = useAskPanel();
   const free = !!user && user.tier === "free" && !user.is_pro_trial;
@@ -53,14 +53,20 @@ export function LearnTab() {
                 <p className="mt-1 text-sm leading-relaxed text-foreground-muted">{s.example.a}</p>
               </div>
               <p className="mt-3 text-xs text-foreground-muted" data-testid="learn-find-line">
-                {FIND_LINE.split("Screener")[0]}
+                {findLine(s.tabs).split("Screener")[0]}
                 <Link href="/signals" className="font-medium text-accent hover:underline">Screener</Link>
-                {FIND_LINE.split("Screener")[1]}
+                {findLine(s.tabs).split("Screener")[1]}
               </p>
             </section>
           </li>
         ))}
       </ol>
+
+      <p className="text-sm" data-testid="learn-ready-line">
+        {READY_LINE.split("My rules tab")[0]}
+        <button type="button" onClick={onOpenRules} className="font-medium text-accent hover:underline" data-testid="learn-ready-link">My rules tab</button>
+        {READY_LINE.split("My rules tab")[1]}
+      </p>
     </div>
   );
 }

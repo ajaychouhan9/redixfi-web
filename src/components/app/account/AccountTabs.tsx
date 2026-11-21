@@ -15,7 +15,7 @@ const TABS = [
 export function AccountTabs() {
   const pathname = usePathname();
   return (
-    <div className="mb-4 flex gap-1 overflow-x-auto border-b border-border [scrollbar-width:none]">
+    <div className="sticky-tabs mb-4 flex gap-1 overflow-x-auto border-b border-border [scrollbar-width:none]">
       {TABS.map((t) => (
         <Link
           key={t.href}

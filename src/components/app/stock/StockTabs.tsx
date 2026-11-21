@@ -49,7 +49,7 @@ export function StockTabs({ panels }: { panels: Partial<Record<StockTabId, React
 
   return (
     <div className="mt-4" data-testid="stock-tabs">
-      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0" data-testid="stock-tab-scroll">
+      <div className="sticky-tabs -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0" data-testid="stock-tab-scroll">
         <div role="tablist" aria-label="Sections of this stock page" onKeyDown={onKeyDown} className="flex min-w-max gap-1 border-b border-border">
           {STOCK_TABS.map((t) => {
             const on = active === t.id;

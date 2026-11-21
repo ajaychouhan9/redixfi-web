@@ -66,7 +66,7 @@ assert.ok(read("app/(app)/layout.tsx").includes("<FooterDisclaimer />") && read(
 for (const f of all) assert.ok(!f.text.includes("StandardLineNote"), `${f.rel}: no per-page standard line block`);
 
 // ---- Ask AI, CSV, alerts, llms.txt carry the sentence
-assert.ok(read("components/app/ask/AskRedixFi.tsx").includes("COMPLIANCE_LINE = STANDARD_LINE"), "Ask AI surface carries the sentence");
+assert.ok(read("components/app/ask/AskRedixFi.tsx").includes("NOT_ADVICE_LINE") && read("components/app/ask/AskRedixFi.tsx").includes("Not investment advice") && !read("components/app/ask/AskRedixFi.tsx").includes("COMPLIANCE_LINE"), "Ask AI shows one small line under each answer; the fixed footer is gone (21 Nov 2026)");
 assert.ok(read("lib/screener-columns.ts").includes("STANDARD_LINE"), "CSV first row is the sentence");
 assert.ok(read("lib/alertFooter.ts").includes(ONE), "alert footer");
 assert.ok(read("app/llms.txt/route.ts").includes(ONE), "llms.txt");

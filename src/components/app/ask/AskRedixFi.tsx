@@ -17,11 +17,8 @@ import { shouldStartFreshOnReopen } from "@/lib/ask-panel/freshStartRule";
 import { mayLoadPageConversation } from "@/lib/ask-panel/conversationSelectionRule";
 import { restoreAskMessages, type AskRenderableMessage } from "@/lib/ask-panel/historyMessage";
 import { ASK_PANEL_WIDTHS, type AskPanelMode } from "@/lib/ask-panel/panelMode";
-import { getStarterQuestions } from "@/lib/ask-panel/starterQuestions";
-import { COMMON_QUESTION_CHIPS } from "@/lib/common-questions";
 import { AddToShortlistButton } from "@/components/app/ask/AddToShortlistButton";
-import { FULL_CHECK_BUTTON } from "@/lib/fullcheck-copy";
-import { CHIP_COST_LINE, FREE_ASK_LINE, HOW_TO_ASK_LINE, LOOKUP_LIMIT_NOTE, daysAvailableNote, howToAskGroups } from "@/lib/ask-panel/howToAsk";
+import { FREE_ASK_LINE, daysAvailableNote } from "@/lib/ask-panel/howToAsk";
 import { displayName } from "@/lib/company-name";
 import { useMobileViewport } from "@/lib/ask-panel/useMobileViewport";
 import { resolveVisibleChatSymbol } from "@/lib/ask-panel/contextHeader";
@@ -40,7 +37,6 @@ import { downloadXlsx } from "@/lib/xlsx";
 import { isPaidEntitled, isProEntitled } from "@/lib/entitlements";
 import { UpgradeLink } from "@/components/ui/UpgradeLink";
 import { track } from "@/lib/analytics";
-import { STANDARD_LINE } from "@/lib/compliance/standard-line";
 import type {
   AskConversationListItem,
   AskChatContext,
@@ -120,9 +116,8 @@ const STATUS_STAGES = ["Searching signals...", "Analyzing data...", "Composing a
 // (GET /ask/suggestions' has_concall, already fetched for the chips).
 const STATUS_STAGES_WITH_CONCALL = ["Searching signals...", "Reading concall transcript...", "Analyzing data...", "Composing answer..."];
 
-// Fixed UI copy (never LLM-generated) shown directly above the input. Uses
-// the one-sentence line used in every footer.
-const COMPLIANCE_LINE = STANDARD_LINE;
+// Fixed UI copy (never LLM-generated): the one small line under every answer (21 Nov 2026; the fixed footer above the input was removed).
+const NOT_ADVICE_LINE = "Not investment advice";
 
 /** Top-ribbon entry point. Same Sparkles mark as the sidebar nav item. */
 export function AskRedixFiTrigger() {
@@ -173,12 +168,7 @@ function QuotaBar({ label, remaining, limit, showTotal = false }: { label: strin
 function AskQuota({ usage, detailed = false }: { usage: AskUsageInfo | null; detailed?: boolean }) {
   if (!usage) return <p className="text-[12px] text-foreground-faint">Loading usage…</p>;
 
-  const topup = usage.topup_questions_remaining;
-  const addon = topup > 0 && (
-    <p className="text-[12px] text-foreground-faint">
-      Add-on: <span className="font-mono text-foreground">{topup}</span> remaining
-    </p>
-  );
+  // The panel shows "Today" only; the month and add-on counts are on the Account page (21 Nov 2026).
 
   if (usage.is_pro_trial) {
     const limit = usage.daily_limit ?? 25;
@@ -196,7 +186,6 @@ function AskQuota({ usage, detailed = false }: { usage: AskUsageInfo | null; det
       <div className={detailed ? "space-y-3" : "space-y-1.5"} data-testid="free-usage">
         <QuotaBar label="Today" remaining={left} limit={usage.daily_limit} showTotal />
         <p className="text-[11.5px] text-foreground-faint">{FREE_ASK_LINE}</p>
-        {addon}
       </div>
     );
   }
@@ -210,18 +199,14 @@ function AskQuota({ usage, detailed = false }: { usage: AskUsageInfo | null; det
             <span className="font-mono font-semibold">{usage.daily_limit_per_symbol}</span> per stock
           </span>
         </div>
-        {addon}
       </div>
     );
   }
 
   const dailyRemaining = Math.max(0, (usage.daily_limit ?? 0) - (usage.daily_used ?? 0));
-  const monthlyRemaining = Math.max(0, (usage.monthly_limit ?? 0) - (usage.monthly_used ?? 0));
   return (
     <div className={detailed ? "space-y-3" : "space-y-2"}>
       <QuotaBar label="Today" remaining={dailyRemaining} limit={usage.daily_limit} />
-      <QuotaBar label="This month" remaining={monthlyRemaining} limit={usage.monthly_limit} />
-      {addon}
     </div>
   );
 }
@@ -250,7 +235,7 @@ function StockGroupBlock({ symbols, focus, onFocus, onQuestion, onRemove }: {
             <li key={key}>
               <button type="button" onClick={() => onQuestion(q)} data-testid={`ask-group-q-${key}`} className="w-full rounded-lg border border-border bg-hover px-3 py-2 text-left text-[12.5px] font-medium leading-snug text-foreground-muted hover:border-accent hover:text-foreground">
                 {q}
-                <span className="mt-0.5 block text-[10.5px] font-normal text-foreground-faint">{ALL_AT_ONCE.has(key) && symbols.length > 1 ? "All selected stocks" : "One company"}</span>
+                {ALL_AT_ONCE.has(key) && symbols.length > 1 && <span className="mt-0.5 block text-[10.5px] font-normal text-foreground-faint">All selected stocks</span>}
               </button>
             </li>
           );
@@ -627,9 +612,7 @@ export function AskRedixFi() {
     }
   }
 
-  const starterQuestions = currentSuggestions ? getStarterQuestions(currentSuggestions.list, effectiveSymbol) : [];
   // Hidden as soon as the user types or sends; they never cover the input.
-  const showStarters = messages.length === 0 && historyLoaded && !busy && !input.trim() && starterQuestions.length > 0;
   // Phones: size the sheet from the visible viewport so the input stays
   // above the on-screen keyboard (iOS shrinks only the visual viewport).
   const mobileViewport = useMobileViewport();
@@ -936,72 +919,6 @@ export function AskRedixFi() {
                 )}
                 {messages.length === 0 && historyLoaded && (
                   <div>
-                    <div className="mb-4">
-                      <p className="text-base font-semibold text-foreground">Explore what RedixFi can answer</p>
-                      <p className="mt-1 text-[12px] text-foreground-faint">
-                        <span className="md:hidden">{showStarters ? "Tap a suggestion below or write your own." : "Write your question below."}</span>
-                        <span className="hidden md:inline">Choose a research question or write your own below.</span>
-                      </p>
-                    </div>
-                    <div className={`hidden gap-2.5 ${showStarters ? "md:grid" : ""} ${mode === "full" ? "lg:grid-cols-3 xl:grid-cols-4" : mode === "half" ? "lg:grid-cols-2" : "grid-cols-1"}`}>
-                      {starterQuestions.map((p) => (
-                        <button
-                          key={p}
-                          onClick={() => send(p)}
-                          disabled={authLoading}
-                          className="min-h-20 rounded-xl border border-border bg-hover px-4 py-3 text-left text-[13px] font-medium leading-relaxed text-foreground-muted shadow-sm transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-accent hover:bg-surface hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50"
-                        >
-                          {p}
-                        </button>
-                      ))}
-                    </div>
-                    {/* How to ask + example chips in four groups. Every ordinary answer uses 1 question (metering.QUESTION_COST). */}
-                    <div className="mb-4" data-testid="how-to-ask">
-                      <p className="text-[13px] font-medium text-foreground">How to ask: {HOW_TO_ASK_LINE}</p>
-                      <p className="mt-0.5 text-[11.5px] text-foreground-faint">{CHIP_COST_LINE} {LOOKUP_LIMIT_NOTE}</p>
-                      <Link href="/full-check" className="mt-2 inline-block rounded-lg border border-accent px-3 py-1.5 text-[12.5px] font-semibold text-foreground hover:bg-hover" data-testid="ask-full-check-link">
-                        {FULL_CHECK_BUTTON}
-                      </Link>
-                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                        {howToAskGroups(effectiveSymbol).map((g) => (
-                          <div key={g.id} data-testid={`how-to-ask-${g.id}`}>
-                            <p className="text-[12px] font-semibold text-foreground-muted">{g.title}</p>
-                            <p className="mb-1.5 text-[11.5px] text-foreground-faint">{g.hint}</p>
-                            <div className="flex flex-col gap-1.5">
-                              {g.chips.map((q) => (
-                                <button
-                                  key={q}
-                                  onClick={() => send(q)}
-                                  disabled={authLoading}
-                                  className="rounded-lg border border-border bg-hover px-3 py-2 text-left text-[12.5px] font-medium leading-snug text-foreground-muted transition-colors hover:border-accent hover:text-foreground disabled:opacity-50"
-                                >
-                                  {q}
-                                  <span className="mt-0.5 block text-[10.5px] font-normal text-foreground-faint">Uses 1 question</span>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    {/* Built-in common questions: fixed answers, no model call, no question used, on every plan. */}
-                    <div className="mt-4" data-testid="common-questions">
-                      <p className="mb-1.5 text-[12px] font-medium text-foreground-muted">
-                        Common questions <span className="font-normal text-foreground-faint">· instant, free</span>
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {COMMON_QUESTION_CHIPS.map((q) => (
-                          <button
-                            key={q}
-                            onClick={() => send(q)}
-                            disabled={authLoading}
-                            className="rounded-full border border-border bg-hover px-3 py-1.5 text-left text-[12.5px] font-medium leading-snug text-foreground-muted transition-colors hover:border-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50"
-                          >
-                            {q}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
                     {open && user.tier === "free" && !user.is_pro_trial && (
                       <div className="mt-4 border-t border-border pt-3" data-testid="panel-preview-free">
                         <AskPreview compact />
@@ -1216,6 +1133,7 @@ export function AskRedixFi() {
                         ))}
                       </div>
                     )}
+                    {m.role === "ai" && <p className="mt-1.5 text-[11px] text-foreground-faint" data-testid="ask-not-advice">{NOT_ADVICE_LINE}</p>}
                   </div>
                 ))}
                 {busy && (
@@ -1237,31 +1155,8 @@ export function AskRedixFi() {
                 </div>
               )}
 
-              {/* Phones: suggestions are one short horizontal row right above
-                  the input (capped at a quarter of the screen), never a
-                  full-height list that pushes the input off screen. */}
-              {showStarters && (
-                <div className="border-t border-border pt-2 md:hidden">
-                  <div className="flex max-h-[25dvh] snap-x gap-2 overflow-x-auto px-3 pb-1" role="group" aria-label="Suggested questions">
-                    {starterQuestions.map((p) => (
-                      <button
-                        key={p}
-                        onClick={() => send(p)}
-                        disabled={authLoading}
-                        className="w-56 shrink-0 snap-start rounded-xl border border-border bg-hover px-3 py-2 text-left text-[12.5px] font-medium leading-snug text-foreground-muted transition-colors hover:border-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50"
-                      >
-                        <span className="line-clamp-2">{p}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
 
-              {/* Compliance line lives immediately above the input, always
-                  visible; the input row below stays uncrowded. */}
               <div className="border-t border-border pb-[env(safe-area-inset-bottom)]">
-                <p className="px-3 pt-2 text-center text-[11px] text-foreground-faint">{COMPLIANCE_LINE}</p>
-                <p className="px-3 text-center text-[11px] text-foreground-faint" data-testid="ask-cost-line">Each answer uses 1 question, including number lists and lookups. Nothing is used if we cannot answer.</p>
                 <div className="flex items-center gap-2 p-3">
                   {!effectiveSymbol && (
                     <Search size={14} className="shrink-0 text-foreground-faint" aria-hidden />
@@ -1272,7 +1167,7 @@ export function AskRedixFi() {
                     onKeyDown={(e) => e.key === "Enter" && send(input)}
                     onFocus={() => setInputFocused(true)}
                     onBlur={() => setInputFocused(false)}
-                    placeholder={authLoading ? "Loading your account…" : "Ask anything — a stock, a sector, or in general…"}
+                    placeholder={authLoading ? "Loading your account…" : "Ask about a stock, a sector, or up to 8 stocks"}
                     disabled={busy || authLoading}
                     className="flex-1 rounded-lg border border-border bg-hover px-3 py-2 text-sm outline-none disabled:opacity-60"
                   />

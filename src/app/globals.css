@@ -394,3 +394,10 @@ body {
   /* wrappers made only to scroll a wide table sideways */
   .overflow-x-auto:has(> table[data-stack]) { overflow-x: visible; }
 }
+
+/* Fixed tab bars (21 Nov 2026): a page's tab bar stays put while only the content under it scrolls. On a desktop the header is already fixed
+   (--header-height), so the bar sits just below it; on a phone the header scrolls away and the bar sits at the very top.
+   --tabs-h is the bar's own height, so a second sticky bar (the "stocks left" bar in My rules) can stack under it. */
+:root { --tabs-h: 46px; }
+.sticky-tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; background: var(--background); }
+@media (min-width: 768px) { .sticky-tabs { top: var(--header-height, 4rem); } }

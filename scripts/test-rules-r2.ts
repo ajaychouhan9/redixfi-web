@@ -50,8 +50,10 @@ assert.equal(SAMPLE_PDF_PATH, "/samples/rule-report-sample.pdf");
 assert.ok(EXPORT_LEAD.includes("each with its date and sources"));
 assert.ok(EXPORT_FREE_NOTE.includes("one example company, no real data"));
 const rr = strip(read("components/app/stock-check/RuleReport.tsx"));
-assert.ok(rr.includes("isPaidEntitled(user)") && /paid \? \([\s\S]*?rule-export-pdf[\s\S]*?rule-export-csv[\s\S]*?\) : \([\s\S]*?rule-sample-report/.test(rr), "paid: PDF and CSV; Free: the sample link only");
-assert.ok(rr.includes("href={SAMPLE_PDF_PATH}") && rr.includes('target="_blank"') && !/downloadRuleExport[\s\S]{0,40}SAMPLE/.test(rr), "the sample is a stored file opened in a new tab, not an API call");
+const sr = strip(read("components/app/stock-check/SavedResults.tsx"));
+assert.ok(sr.includes("isPaidEntitled(user)") && /paid \? \([\s\S]*?saved-result-pdf[\s\S]*?saved-result-csv[\s\S]*?\) : \([\s\S]*?saved-result-sample/.test(sr), "paid: report PDF and CSV on each saved result; Free: the sample link only");
+assert.ok(!rr.includes("rule-export-pdf") && !rr.includes("downloadRuleExport"), "the older per-rule export buttons are gone");
+assert.ok(sr.includes("href={SAMPLE_PDF_PATH}") && sr.includes('target="_blank"') && !/downloadRunReport[\s\S]{0,40}SAMPLE/.test(sr), "the sample is a stored file opened in a new tab, not an API call");
 assert.ok(strip(read("components/app/stock-check/MyRulesCard.tsx")).includes("<RuleReport rule={s}"), "export and saved answers are under each saved rule");
 // the stored sample files: fixed, one example company, no user data
 for (const [path, head] of [["public/samples/rule-report-sample.pdf", "%PDF-"], ["public/samples/rule-report-sample.csv", ""]] as const) {

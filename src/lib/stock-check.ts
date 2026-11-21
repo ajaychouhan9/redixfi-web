@@ -9,7 +9,6 @@ export const PAGE_SUBTITLE = "Set your rules. Read the result.";
 export const SEO_TITLE = "Shortlist Lab: set your rules, read the result | RedixFi";
 export const MENU_LABEL = "Shortlist Lab";
 export const HOME_BUTTON = "New to stocks? Learn the 5 questions";
-export const STOCK_BUTTON = "Learn the 5 questions";
 export const LADDER_TITLE = "Build Your Shortlist";
 export const LADDER_INTRO = "Set the rules that matter to you, one step at a time. The bar that stays on screen shows how many stocks are left after your rules.";
 export const COMMON_LABEL = "Common rules from published methods. Change them.";
@@ -365,3 +364,49 @@ export function cardValues(r: Rules, row: Record<string, unknown>): { label: str
 
 /** The Screener row carries the promoter pledge only when asked for it. */
 export const needsPledge = (r: Rules): boolean => num(r.pledge) !== undefined;
+
+// ---- Use / Skip per step (21 Nov 2026) --------------------------------------------------------------------------------------------------
+export const STEP_COUNT = 6;
+export const USE_LABEL = "Use";
+export const SKIP_LABEL = "Skip";
+export const SKIPPED_NOTE = "Skipped. Your values are kept, but this step is not applied.";
+
+/** The rules with every skipped step cleared: what is applied (counted, listed and sent to the Screener). A blank box is never applied either (see isOn / validValue). */
+export function applySkips(r: Rules, skipped: number[]): Rules {
+  if (!skipped.length) return r;
+  const out: Rules = { ...r };
+  for (const d of RULES) {
+    if (!skipped.includes(d.step)) continue;
+    (out as unknown as Record<string, unknown>)[d.key] = EMPTY_RULES[d.key];
+  }
+  if (skipped.includes(4)) {
+    out.vol = "";
+    out.volNum = "";
+  }
+  return out;
+}
+
+/** Whether a step has at least one rule applied. */
+export function stepHasRule(r: Rules, step: number): boolean {
+  return RULES.some((d) => d.step === step && isOn(r, d)) || (step === 4 && volOn(r));
+}
+
+/** "3 of 5 filters set": the steps in use, and how many of them have at least one value set. A skipped step is not counted in either number. */
+export function filtersSet(r: Rules, skipped: number[]): { set: number; of: number } {
+  const inUse = [0, 1, 2, 3, 4, 5].filter((n) => !skipped.includes(n));
+  return { set: inUse.filter((n) => stepHasRule(r, n)).length, of: inUse.length };
+}
+export const filtersLine = (r: Rules, skipped: number[]): string => {
+  const f = filtersSet(r, skipped);
+  return `${f.set} of ${f.of} filters set`;
+};
+
+/** The same two skipped lists (order does not matter). */
+export const sameSkips = (a: number[], b: number[]): boolean => [...a].sort().join(",") === [...b].sort().join(",");
+
+// ---- Common starting values (one card) -------------------------------------------------------------------------------------------------
+export const COMMON_CARD_TITLE = "Common starting values";
+export const COMMON_CARD_SUBTITLE = "Typical numbers from published methods. Change any of them.";
+export const FILL_LINK = "Fill with these values";
+/** Every value the card fills, as one plain line each. */
+export const commonLines = (): string[] => describeRules(COMMON_RULES);

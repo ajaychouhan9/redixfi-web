@@ -9,15 +9,16 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { signupHref } from "@/lib/nav-items";
 import {
   DELETE_BUTTON, LIMIT_REACHED, LOGGED_OUT_LINE, MY_RULES_LEAD, MY_RULES_TITLE, NAME_PLACEHOLDER, OPEN_BUTTON, PLAN_LINE, REPLACE_OLD, REPLACE_QUESTION,
-  RUN_AGAIN_BUTTON, SAVE_AS_NEW_RULE, SAVE_BUTTON, SAVE_NEW_BUTTON, SNAPSHOT_HELP, SNAPSHOT_LABEL, copyName, saveAction, savedLine, snapshotLine,
+  RUN_AGAIN_BUTTON, SAVE_AS_NEW_RULE, SAVE_BUTTON, SAVE_NEW_BUTTON, copyName, saveAction, savedLine,
   type ActiveRule,
 } from "@/lib/my-rules";
 import { RuleReport } from "@/components/app/stock-check/RuleReport";
-import { CLEAR_ALL, COMMON_LABEL, COMMON_RULES, EMPTY_RULES, START_COMMON, hasAnyRule, sameRules, toParams, type Rules } from "@/lib/stock-check";
+import { filtersLine, hasAnyRule, sameRules, sameSkips, toParams, type Rules } from "@/lib/stock-check";
 
 interface Props {
   rules: Rules;
-  setRules: (r: Rules) => void;
+  /** The steps set to Skip (their values are kept in the rule, not applied). */
+  skipped: number[];
   /** The list sort the saved rule keeps (a saved rule is a query, as in the Screener). */
   sort: { value: string; order: "asc" | "desc" };
   /** The live count after all steps (from the figures file), or null while it loads. */
@@ -26,8 +27,6 @@ interface Props {
   asOf: string | null;
   active: ActiveRule | null;
   setActive: (a: ActiveRule | null) => void;
-  /** Every symbol that meets the current rules (loaded only when the person asks to save the stock list). Null when it could not be loaded. */
-  fetchSymbols: () => Promise<string[] | null>;
   onOpen: (s: MyScreen) => void;
   onRunAgain: (s: MyScreen) => void;
 }
@@ -35,12 +34,11 @@ interface Props {
 const btn = "min-h-[44px] rounded-lg border border-border px-3 text-sm font-medium hover:border-accent";
 
 /** One card: common rules, then the rules the person saved (name, date, stock count), with Open, Save, Save as new and Delete. */
-export function MyRulesCard({ rules, setRules, sort, left, asOf, active, setActive, fetchSymbols, onOpen, onRunAgain }: Props) {
+export function MyRulesCard({ rules, skipped, sort, left, active, setActive, onOpen, onRunAgain }: Props) {
   const { user, getToken } = useAuth();
   const [saved, setSaved] = useState<MyScreen[]>([]);
   const [limit, setLimit] = useState<number | null>(null);
   const [name, setName] = useState("");
-  const [withList, setWithList] = useState(false);
   const [asking, setAsking] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -70,7 +68,7 @@ export function MyRulesCard({ rules, setRules, sort, left, asOf, active, setActi
   }, [active?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const anyRule = hasAnyRule(rules);
-  const changed = !!active && !sameRules(rules, active.base);
+  const changed = !!active && (!sameRules(rules, active.base) || !sameSkips(skipped, active.skipped));
 
   async function persist(mode: "new" | "replace", wantedName: string) {
     setMsg(null);
@@ -82,15 +80,7 @@ export function MyRulesCard({ rules, setRules, sort, left, asOf, active, setActi
     try {
       const token = await getToken();
       if (!token) throw new Error("Log in to save your rules.");
-      let extras: MyScreenSaveExtras = { stock_count: left };
-      if (withList) {
-        const syms = await fetchSymbols();
-        if (!syms || syms.length === 0) {
-          setMsg("The stock list could not be loaded just now, so nothing was saved. Please try again.");
-          return;
-        }
-        extras = { stock_count: syms.length, snapshot_symbols: syms, snapshot_as_of: asOf };
-      }
+      const extras: MyScreenSaveExtras = { stock_count: left, skipped };
       const params = { ...toParams(rules), sort: sort.value, order: sort.order } as never;
       let out: MyScreen;
       if (mode === "replace" && active) {
@@ -100,7 +90,7 @@ export function MyRulesCard({ rules, setRules, sort, left, asOf, active, setActi
         out = await createMyScreen(token, wantedName.trim(), params, extras);
         setMsg(`Saved "${out.name}".`);
       }
-      setActive({ id: out.id, name: out.name, base: rules });
+      setActive({ id: out.id, name: out.name, base: rules, skipped: [...skipped] });
       setName(out.name);
       await load();
     } catch (e) {
@@ -141,15 +131,7 @@ export function MyRulesCard({ rules, setRules, sort, left, asOf, active, setActi
       <h3 id="my-rules-title" className="text-base font-semibold">{MY_RULES_TITLE}</h3>
       <p className="mt-1 text-sm text-foreground-muted">{MY_RULES_LEAD}</p>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2" data-testid="my-rules-common">
-        <button type="button" onClick={() => { setRules(COMMON_RULES); setActive(null); setAsking(false); }} className="min-h-[44px] rounded-lg bg-accent px-4 text-sm font-semibold text-accent-foreground" data-testid="ladder-common">
-          {START_COMMON}
-        </button>
-        <button type="button" onClick={() => { setRules(EMPTY_RULES); setActive(null); setAsking(false); }} className="min-h-[44px] rounded-lg border border-border px-4 text-sm font-medium text-foreground-muted hover:text-foreground" data-testid="ladder-clear">
-          {CLEAR_ALL}
-        </button>
-      </div>
-      <p className="mt-1 text-xs text-foreground-muted" data-testid="ladder-common-label">{COMMON_LABEL}</p>
+      <p className="mt-2 text-sm font-medium" data-testid="my-rules-filters-set">{filtersLine(rules, skipped)}</p>
 
       {!user ? (
         <p className="mt-3 border-t border-border pt-3 text-sm text-foreground-muted" data-testid="my-rules-loggedout">
@@ -162,7 +144,6 @@ export function MyRulesCard({ rules, setRules, sort, left, asOf, active, setActi
             <ul className="space-y-2" data-testid="saved-list">
               {saved.map((s) => {
                 const isActive = active?.id === s.id;
-                const snap = snapshotLine(s);
                 return (
                   <li key={s.id} className={`rounded-lg border px-3 py-2 text-sm ${isActive ? "border-accent" : "border-border"}`} data-testid="saved-rule" data-active={isActive ? "1" : "0"}>
                     <p className="break-words font-medium">
@@ -170,10 +151,10 @@ export function MyRulesCard({ rules, setRules, sort, left, asOf, active, setActi
                       {isActive && changed ? <span className="ml-2 text-xs font-normal text-foreground-muted">(changed, not saved)</span> : null}
                     </p>
                     <p className="text-xs text-foreground-muted" data-testid="saved-rule-line">{savedLine(s)}</p>
-                    {snap && <p className="text-xs text-foreground-muted" data-testid="saved-rule-snapshot">{snap}</p>}
+                    <p className="text-xs text-foreground-muted" data-testid="saved-rule-filters">{s.filters_set ?? 0} {(s.filters_set ?? 0) === 1 ? "rule" : "rules"} applied{(s.skipped?.length ?? 0) > 0 ? `, ${s.skipped!.length} ${s.skipped!.length === 1 ? "step" : "steps"} skipped` : ""}</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       <button type="button" onClick={() => { setAsking(false); onOpen(s); }} className={btn} data-testid="saved-open">{OPEN_BUTTON}</button>
-                      {s.snapshot && <button type="button" onClick={() => { setAsking(false); onRunAgain(s); }} className={btn} data-testid="saved-run-again">{RUN_AGAIN_BUTTON}</button>}
+                      <button type="button" onClick={() => { setAsking(false); onRunAgain(s); }} className={btn} data-testid="saved-run-again">{RUN_AGAIN_BUTTON}</button>
                       {confirmDelete === s.id ? (
                         <>
                           <button type="button" onClick={() => void remove(s.id)} className={`${btn} border-accent`} data-testid="saved-delete-confirm">Delete this rule</button>
@@ -194,13 +175,6 @@ export function MyRulesCard({ rules, setRules, sort, left, asOf, active, setActi
           <div className="space-y-2">
             <label htmlFor="save-name" className="sr-only">Name for these rules</label>
             <input id="save-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} placeholder={NAME_PLACEHOLDER} className="h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm" data-testid="save-name" />
-            <label className="flex items-start gap-2 text-sm">
-              <input type="checkbox" checked={withList} onChange={(e) => setWithList(e.target.checked)} className="mt-1 h-4 w-4 shrink-0" data-testid="save-with-list" />
-              <span>
-                {SNAPSHOT_LABEL}
-                <span className="block text-xs text-foreground-muted">{SNAPSHOT_HELP}</span>
-              </span>
-            </label>
             <div className="flex flex-wrap gap-2">
               <button type="button" onClick={onSave} disabled={busy} className="min-h-[44px] rounded-lg border border-accent px-4 text-sm font-semibold text-accent hover:bg-accent/10 disabled:opacity-60" data-testid="save-rules-button">{SAVE_BUTTON}</button>
               <button type="button" onClick={onSaveNew} disabled={busy} className={`${btn} disabled:opacity-60`} data-testid="save-new-button">{SAVE_NEW_BUTTON}</button>

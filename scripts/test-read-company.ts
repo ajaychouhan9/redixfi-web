@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
 
 import { ASK_QUESTIONS, PART2_INTRO, PART2_TITLE, SAMPLE_SYMBOL, askHref, askQuestionFor } from "../src/lib/read-company.ts";
-import { FIND_LINE, FIVE_QUESTIONS, LEARN_INTRO, LEARN_STEPS, QUESTIONS_TITLE, STEP_NAMES, TRY_BUTTON, TRY_FREE, TRY_LINE, TRY_LOGGED_OUT } from "../src/lib/learn.ts";
+import { findLine, READY_LINE, FIVE_QUESTIONS, LEARN_INTRO, LEARN_STEPS, QUESTIONS_TITLE, STEP_NAMES, TRY_BUTTON, TRY_FREE, TRY_LINE, TRY_LOGGED_OUT } from "../src/lib/learn.ts";
 import { STEPS } from "../src/lib/stock-check.ts";
 
 const read = (p: string) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
@@ -19,7 +19,14 @@ for (const s of LEARN_STEPS) {
   assert.ok(s.look.length > 40 && s.means.length > 40, `step ${s.n} has both texts`);
   assert.ok(s.example.q.length > 20 && s.example.a.length > 40, `step ${s.n} has a full example reading`);
 }
-assert.equal(FIND_LINE, "Find any stock in Screener, then open its page to see this section.");
+assert.equal(findLine(["Overview"]), "Find any stock in Screener, open its page and look in the Overview tab.");
+assert.equal(findLine(["Annual report", "Insiders & promoters"]), "Find any stock in Screener, open its page and look in the Annual report and Insiders & promoters tabs.");
+assert.equal(READY_LINE, "Ready to filter? Open the My rules tab to shortlist stocks as per your rule.");
+{
+  // every step points at real stock-page tab names
+  const real = new Set(["Overview", "Annual report", "Concall", "Points to watch", "News", "Insiders & promoters", "Rewind", "Ask AI"]);
+  for (const st of LEARN_STEPS) for (const t of st.tabs) assert.ok(real.has(t), `${st.name}: ${t} is not a stock-page tab`);
+}
 
 // 2. the five fixed questions, and the only way the address can use them
 assert.equal(SAMPLE_SYMBOL, "HINDUNILVR");
@@ -33,7 +40,7 @@ assert.equal(askHref("HINDUNILVR", "points"), "/stocks/HINDUNILVR?ask=points");
 const prefill = strip(read("components/app/stock/AskPrefill.tsx"));
 assert.ok(prefill.includes("askQuestionFor(key)") && prefill.includes("openWithQuestion(question)") && !/\.send\(|fetch\(/.test(prefill), "the prefill only types the question; it sends nothing");
 const stock = strip(read("app/(app)/stocks/[symbol]/page.tsx"));
-assert.ok(stock.includes("<AskPrefill />") && stock.includes("Learn the 5 questions") && stock.includes('href="/shortlist-lab"') && !stock.includes('href="/start"') && !stock.includes('href="/stock-check"'), "stock page links to Shortlist Lab");
+assert.ok(stock.includes("<AskPrefill />") && !stock.includes("Learn the 5 questions") && !stock.includes("read-company-link") && !stock.includes('href="/start"') && !stock.includes('href="/stock-check"'), "the stock page has no learn-the-rule link (removed 21 Nov 2026)");
 
 // 3. the Learn tab: what was removed, what is there, nothing runs on load
 const learn = strip(read("components/app/stock-check/LearnTab.tsx"));
@@ -58,7 +65,7 @@ assert.ok(existsSync(new URL("../src/app/(app)/shortlist-lab/page.tsx", import.m
 
 // 4. wording guard on every sentence of the Learn tab
 const all = [
-  LEARN_INTRO, TRY_LINE, TRY_LOGGED_OUT, TRY_FREE, FIND_LINE, PART2_INTRO,
+  LEARN_INTRO, TRY_LINE, TRY_LOGGED_OUT, TRY_FREE, findLine(["Overview"]), READY_LINE, PART2_INTRO,
   ...LEARN_STEPS.flatMap((s) => [s.name, s.line, s.look, s.means, s.example.q, s.example.a]),
   ...Object.values(ASK_QUESTIONS),
   learn.replace(/data-testid="[^"]*"/g, ""),

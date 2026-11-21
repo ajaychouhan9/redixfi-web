@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { ApiError } from "@/lib/api/client";
 import { estimateFullCheck, startFullCheck, type FullCheckEstimate } from "@/lib/api/fullcheck";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { ASK_ALL_LABEL, ASK_ALL_LEAD, ASK_GROUP_LEAD, ASK_GROUP_MAX, ASK_GROUP_TITLE } from "@/lib/ask-group";
+import { ASK_ALL_LABEL, ASK_BLOCK_ASK, ASK_BLOCK_ASK_ALL, ASK_BLOCK_TITLE, ASK_GROUP_LEAD, ASK_GROUP_MAX, askAllUses } from "@/lib/ask-group";
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 import { costLine } from "@/lib/fullcheck-copy";
 import { signupHref } from "@/lib/nav-items";
@@ -17,23 +18,51 @@ interface Props {
   selected: string[];
   onRemove: (symbol: string) => void;
   onClear: () => void;
+  /** The saved rule and the saved result the stocks come from, when there is one: the reports made here then belong to that result. */
+  ruleId?: string | null;
+  runId?: string | null;
 }
 
 const btn = "min-h-[44px] rounded-lg border border-border px-4 text-sm font-medium hover:border-accent disabled:opacity-60";
 
-/** "Ask AI about these stocks": below the stock list. Ask AI opens a new session with the ticked stocks; Ask all 5 runs the full check (cost shown, confirmed first). */
-export function AskAboutStocks({ selected, onRemove, onClear }: Props) {
+/**
+ * "Read your shortlist with AI": its own block after the stock list (not a step). Ask AI opens one chat with the ticked stocks. Ask all 5 makes a saved report for each
+ * ticked stock and uses questions from the plan (the number is shown first and confirmed); when it starts, the Full check page opens by itself with a progress banner.
+ */
+export function AskAboutStocks({ selected, onRemove, onClear, ruleId, runId }: Props) {
   const { user, getToken } = useAuth();
   const { openWithStocks } = useAskPanel();
+  const router = useRouter();
   const [estimate, setEstimate] = useState<FullCheckEstimate | null>(null);
+  const [preview, setPreview] = useState<FullCheckEstimate | null>(null);
   const [locked, setLocked] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [started, setStarted] = useState(false);
+
+  // the number of questions Ask all 5 would use for the ticked stocks (read only; nothing is used until it is confirmed)
+  const key = selected.join(",");
+  useEffect(() => {
+    if (!user || selected.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPreview(null);
+      return;
+    }
+    let live = true;
+    (async () => {
+      try {
+        const token = await getToken();
+        if (!token) return;
+        const e = await estimateFullCheck(selected, { token });
+        if (live) setPreview(e);
+      } catch {
+        if (live) setPreview(null);
+      }
+    })();
+    return () => { live = false; };
+  }, [key, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function askAll() {
     setMessage(null);
-    setStarted(false);
     setEstimate(null);
     setLocked(null);
     setBusy(true);
@@ -57,9 +86,9 @@ export function AskAboutStocks({ selected, onRemove, onClear }: Props) {
     try {
       const token = await getToken();
       if (!token) throw new Error("login");
-      await startFullCheck(selected, { token });
+      const out = await startFullCheck(selected, { token }, ruleId && runId ? { rule_id: ruleId, rule_run_id: runId } : undefined);
       setEstimate(null);
-      setStarted(true);
+      router.push(`/full-check?run=${encodeURIComponent(out.run.id)}&started=1`);
     } catch (e) {
       const d = e instanceof ApiError ? (e.detail as { message?: string; reason?: string } | undefined) : undefined;
       if (d?.reason === "plan_locked") {
@@ -72,8 +101,13 @@ export function AskAboutStocks({ selected, onRemove, onClear }: Props) {
   }
 
   return (
-    <section className="space-y-3 rounded-xl border border-border bg-surface p-4" aria-labelledby="ask-about-title" data-testid="ask-about">
-      <h3 id="ask-about-title" className="text-base font-semibold">{ASK_GROUP_TITLE}</h3>
+    <section id="ask-about" className="space-y-3 rounded-xl border border-border bg-surface p-4" aria-labelledby="ask-about-title" data-testid="ask-about">
+      <h3 id="ask-about-title" className="text-base font-semibold">{ASK_BLOCK_TITLE}</h3>
+      <p className="text-sm text-foreground-muted" data-testid="ask-block-explain">
+        <span className="font-medium text-foreground">{ASK_BLOCK_ASK}</span>
+        {" "}
+        <span className="font-medium text-foreground">{ASK_BLOCK_ASK_ALL}</span>
+      </p>
       {!user ? (
         <>
           <p className="text-sm text-foreground-muted">
@@ -98,6 +132,9 @@ export function AskAboutStocks({ selected, onRemove, onClear }: Props) {
               ))}
             </ul>
           )}
+          {preview && !preview.locked && selected.length > 0 && (
+            <p className="text-sm text-foreground-muted" data-testid="ask-all-uses">{askAllUses(selected.length, preview.total)}</p>
+          )}
           <div className="flex flex-wrap gap-2">
             <button type="button" disabled={selected.length === 0} onClick={() => openWithStocks(selected)} className="min-h-[44px] rounded-lg bg-accent px-5 text-sm font-semibold text-accent-foreground disabled:opacity-50" data-testid="ask-ai-button">
               Ask AI
@@ -107,7 +144,6 @@ export function AskAboutStocks({ selected, onRemove, onClear }: Props) {
             </button>
             {selected.length > 0 && <button type="button" onClick={onClear} className={`${btn} text-foreground-muted`}>Clear selection</button>}
           </div>
-          <p className="text-xs text-foreground-muted">{ASK_ALL_LEAD}</p>
 
           {estimate && (
             <div className="rounded-lg border border-accent bg-surface-raised p-3 text-sm" role="group" aria-label="Confirm the full check" data-testid="ask-all-confirm">
@@ -120,11 +156,6 @@ export function AskAboutStocks({ selected, onRemove, onClear }: Props) {
                 <button type="button" onClick={() => setEstimate(null)} className={btn}>Cancel</button>
               </div>
             </div>
-          )}
-          {started && (
-            <p className="text-sm" role="status" data-testid="ask-all-started">
-              The full check has started. <Link href="/full-check" className="font-medium text-accent hover:underline">Follow it and read the reports on the Full check page</Link>.
-            </p>
           )}
           {locked && (
             <div className="space-y-3" data-testid="ask-all-locked">

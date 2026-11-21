@@ -45,7 +45,7 @@ export function LabTabs() {
 
   return (
     <div data-testid="lab-tabs">
-      <div role="tablist" aria-label="Shortlist Lab" className="flex gap-1 border-b border-border">
+      <div role="tablist" aria-label="Shortlist Lab" className="sticky-tabs flex gap-1 border-b border-border" data-testid="lab-tablist">
         {TABS.map((t, i) => (
           <button
             key={t.id}
@@ -66,7 +66,7 @@ export function LabTabs() {
         ))}
       </div>
       <div role="tabpanel" id="lab-panel-learn" aria-labelledby="lab-tab-learn" hidden={tab !== "learn"} className="pt-5">
-        {seen.learn && <LearnTab />}
+        {seen.learn && <LearnTab onOpenRules={() => { choose("rules"); window.scrollTo({ top: 0 }); }} />}
       </div>
       <div role="tabpanel" id="lab-panel-rules" aria-labelledby="lab-tab-rules" hidden={tab !== "rules"} className="pt-5">
         {seen.rules && (

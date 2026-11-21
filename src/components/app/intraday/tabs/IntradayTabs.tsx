@@ -92,6 +92,7 @@ export function IntradayTabs({ tab, defaultTab, initial }: { tab: IntradayTabId;
   const data = useTabData(tab, initial);
   return (
     <div className="space-y-4">
+      <div className="sticky-tabs py-1">
       <nav aria-label="Intraday views" className="inline-flex max-w-full rounded-lg border border-border p-0.5" data-testid="intraday-tabs">
         {TAB_ORDER.map((t) => (
           <Link
@@ -108,6 +109,7 @@ export function IntradayTabs({ tab, defaultTab, initial }: { tab: IntradayTabId;
           </Link>
         ))}
       </nav>
+      </div>
       <p className="text-sm text-foreground-muted" data-testid="intraday-subtitle">
         {TAB_SUBTITLE[tab]}
       </p>

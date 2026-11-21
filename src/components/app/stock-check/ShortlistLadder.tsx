@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 
 import { getLadderData, getSignals } from "@/lib/api/endpoints";
-import { addToWatchlist, getMyScreenSnapshot, type MyScreen } from "@/lib/api/mutations";
+import { addToWatchlist, saveRuleRun, type MyScreen, type RuleRunSaved } from "@/lib/api/mutations";
 import type { SignalRow } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { displayName } from "@/lib/company-name";
@@ -14,12 +14,15 @@ import { signupHref } from "@/lib/nav-items";
 import { stockPath } from "@/lib/seo/stock-symbol";
 import {
   BANK_NOTE, BANK_WHY, BANK_WHY_LABEL, DEBT_NOTE, DEBT_WHY, EXAMPLES, exampleLine, ruleProblem, COUNTS_NOTE, COMPARE_NOTE, EMPTY_RULES, LADDER_INTRO, LIST_PAGE_SIZE, NO_GROWTH_LINE, NO_ROCE_LINE,
-  NUMBERS_AS_OF, PAST_LINE, RESULTS_LEAD, RESULTS_TITLE, RULES, SHOW_BUTTON, SORT_CHOICES, STEPS,
-  cardValues, countsByStep, fromParams, growthGap, needsPledge, num, roceGap, toParams, validLadderData, volOn,
+  NUMBERS_AS_OF, PAST_LINE, RESULTS_LEAD, RESULTS_TITLE, RULES, SHOW_BUTTON, SKIPPED_NOTE, SKIP_LABEL, SORT_CHOICES, STEPS, USE_LABEL,
+  applySkips, cardValues, countsByStep, filtersLine, fromParams, growthGap, needsPledge, num, roceGap, toParams, validLadderData, volOn, COMMON_RULES,
   type LadderData, type RuleDef, type Rules,
 } from "@/lib/stock-check";
 import { ASK_GROUP_MAX, toggleSelected } from "@/lib/ask-group";
-import { RUN_AGAIN_RESULT, SHOWING_RULE, diffLists, fmtDay, type ActiveRule } from "@/lib/my-rules";
+import { SHOWING_RULE, fmtDay, type ActiveRule } from "@/lib/my-rules";
+import { DIFF_NOTE, DROP_CANCEL, DROP_CONFIRM, DROP_WARNING, SAME_DAY_NOTE, SAVED_NOTE } from "@/lib/saved-results";
+import { CommonValuesCard } from "@/components/app/stock-check/CommonValuesCard";
+import { SavedResults } from "@/components/app/stock-check/SavedResults";
 import { AskAboutStocks } from "@/components/app/stock-check/AskAboutStocks";
 import { MyRulesCard } from "@/components/app/stock-check/MyRulesCard";
 import { RulesApplied } from "@/components/app/stock-check/RulesApplied";
@@ -152,6 +155,7 @@ export function ShortlistLadder() {
   const [data, setData] = useState<LadderData | null>(null);
   const [dataError, setDataError] = useState(false);
   const [rules, setRules] = useState<Rules>(EMPTY_RULES);
+  const [skipped, setSkipped] = useState<number[]>([]);
   const [open, setOpen] = useState<boolean[]>([true, false, false, false, false, false]);
   const [sort, setSort] = useState(SORT_CHOICES[0].value);
 
@@ -172,6 +176,14 @@ export function ShortlistLadder() {
   const [runAgainLine, setRunAgainLine] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [capNote, setCapNote] = useState(false);
+  // saved results (runs) of the open rule
+  const [runNote, setRunNote] = useState<string | null>(null);
+  const [dropAsk, setDropAsk] = useState<{ ruleId: string; drops: string; limit: number; params: Record<string, unknown>; skipped: number[] } | null>(null);
+  const [resultsKey, setResultsKey] = useState(0);
+  const [currentRunId, setCurrentRunId] = useState<string | null>(null);
+  // the sticky "stocks left" bar steps aside while the list and the AI block are on screen
+  const [barHidden, setBarHidden] = useState(false);
+  const seen = useRef<Record<string, boolean>>({});
 
   useEffect(() => {
     let live = true;
@@ -187,13 +199,36 @@ export function ShortlistLadder() {
     };
   }, []);
 
-  const counts = useMemo(() => (data ? countsByStep(data, rules) : null), [data, rules]);
+  const applied = useMemo(() => applySkips(rules, skipped), [rules, skipped]);
+  const counts = useMemo(() => (data ? countsByStep(data, applied) : null), [data, applied]);
   const left = counts ? counts[5] : null;
   const set = (patch: Partial<Rules>) => setRules((r) => ({ ...r, ...patch }));
   const toggle = (i: number) => setOpen((o) => o.map((v, k) => (k === i ? !v : v)));
   const choice = SORT_CHOICES.find((s) => s.value === sort) ?? SORT_CHOICES[0];
 
-  async function load(nextPage: number, useRules: Rules = rules, fromName: string | null = shownFrom) {
+  /** Save the result of this run with the open saved rule (the server runs the rule again and stores the stocks, the figures date and these values). */
+  async function saveRun(ruleId: string, params: Record<string, unknown>, sk: number[], confirmDrop = false) {
+    try {
+      const token = await getToken();
+      if (!token) return;
+      const out: RuleRunSaved = await saveRuleRun(token, ruleId, params, sk, confirmDrop);
+      if (out.needs_confirm) {
+        setDropAsk({ ruleId, drops: fmtDate(out.drops?.run_date) ?? out.drops?.run_date ?? "", limit: out.limit, params, skipped: sk });
+        return;
+      }
+      setDropAsk(null);
+      if (out.run) setCurrentRunId(out.run.id);
+      setResultsKey((k) => k + 1);
+      const bits = [SAVED_NOTE(out.run?.count ?? 0)];
+      if (out.replaced_same_day) bits.push(SAME_DAY_NOTE);
+      if (out.diff) bits.push(DIFF_NOTE(fmtDate(out.diff.since) ?? out.diff.since, out.diff.added.length, out.diff.dropped.length));
+      setRunNote(bits.join(" "));
+    } catch {
+      setRunNote("This result could not be saved with the rule right now. The list above is not affected.");
+    }
+  }
+
+  async function load(nextPage: number, useRules: Rules = applied, fromName: string | null = shownFrom, save?: { ruleId: string; params: Record<string, unknown>; skipped: number[] }) {
     setState("loading");
     try {
       const token = user ? await getToken() : null;
@@ -210,56 +245,39 @@ export function ShortlistLadder() {
       setShownRules(useRules);
       setShownFrom(fromName);
       setState("ok");
+      if (save && nextPage === 1) void saveRun(save.ruleId, save.params, save.skipped);
     } catch {
       if (nextPage > 1) setLimited(true);
       setState(nextPage > 1 ? "ok" : "error");
     }
   }
-  function show(useRules: Rules = rules, fromName: string | null = active ? active.name : null) {
+  function show(useRules: Rules = applied, fromName: string | null = active ? active.name : null, save?: { ruleId: string; params: Record<string, unknown>; skipped: number[] }) {
     setRows([]);
     setTotal(null);
     setLimited(false);
     setRunAgainLine(null);
+    setRunNote(null);
+    setDropAsk(null);
     setSelected([]);
-    void load(1, useRules, fromName);
-  }
-
-  /** Every symbol that meets the given rules, 200 at a time (only used when a rule is saved with its stock list, or run again). Null when it cannot be loaded. */
-  async function fetchSymbols(useRules: Rules = rules): Promise<string[] | null> {
-    try {
-      const token = user ? await getToken() : null;
-      const out: string[] = [];
-      for (let p = 1; p <= 20; p += 1) {
-        const env = await getSignals({ ...toParams(useRules), sort: "name", order: "asc", page: p, size: 200 }, token ? { token } : undefined);
-        out.push(...env.data.map((r) => r.symbol));
-        if (out.length >= env.page_info.total || env.data.length === 0) return out;
-      }
-      return out;
-    } catch {
-      return null;
-    }
+    // Show stocks on an open saved rule also saves the result (the values on screen, with the Skip choices)
+    const toSave = save ?? (user && active ? { ruleId: active.id, params: toParams(rules) as Record<string, unknown>, skipped } : undefined);
+    void load(1, useRules, fromName, toSave);
   }
 
   function openRule(s: MyScreen) {
     const r = fromParams(s.params);
+    const sk = s.skipped ?? [];
     setRules(r);
-    setActive({ id: s.id, name: s.name, base: r });
+    setSkipped(sk);
+    setActive({ id: s.id, name: s.name, base: r, skipped: sk });
+    setCurrentRunId(null);
     setNotice(`Opened "${s.name}". The list below shows its stocks.`);
-    show(r, s.name);
+    show(applySkips(r, sk), s.name, { ruleId: s.id, params: toParams(r) as Record<string, unknown>, skipped: sk });
     document.getElementById("ladder-results-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
-  async function runAgain(s: MyScreen) {
+  /** Run again: open the rule and show its stocks now; the result is saved with the rule and compared with the one before. */
+  function runAgain(s: MyScreen) {
     openRule(s);
-    try {
-      const token = await getToken();
-      if (!token) return;
-      const [snap, now] = await Promise.all([getMyScreenSnapshot(token, s.id), fetchSymbols(fromParams(s.params))]);
-      if (!snap || !now) return setRunAgainLine("The saved list could not be compared just now.");
-      const d = diffLists(snap.stocks.map((x) => x.symbol), now);
-      setRunAgainLine(RUN_AGAIN_RESULT(fmtDate(snap.as_of) ?? fmtDate(snap.at), { added: d.added.length, left: d.left.length }));
-    } catch {
-      setRunAgainLine("The saved list could not be compared just now.");
-    }
   }
 
   async function addWatch(symbol: string) {
@@ -279,6 +297,19 @@ export function ShortlistLadder() {
   }
 
   const asOf = fmtDate(data?.as_of);
+
+  // hide the sticky bar while the stock list or the AI block is in view
+  useEffect(() => {
+    const ids = ["ladder-results-section", "ask-about"];
+    const els = ids.map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[];
+    if (!els.length || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) seen.current[e.target.id] = e.isIntersecting;
+      setBarHidden(Object.values(seen.current).some(Boolean));
+    }, { rootMargin: "-120px 0px -30% 0px" });
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [state, user, active?.id]);
   const more = state === "ok" && total !== null && rows.length < total && !limited;
   const busy = state === "loading";
 
@@ -286,23 +317,27 @@ export function ShortlistLadder() {
     <div className="space-y-4" data-testid="ladder">
       <MyRulesCard
         rules={rules}
-        setRules={(r) => { setRules(r); setNotice(null); }}
+        skipped={skipped}
         sort={{ value: choice.value, order: choice.order }}
         left={left}
         asOf={data?.as_of ?? null}
         active={active}
         setActive={setActive}
-        fetchSymbols={() => fetchSymbols(rules)}
         onOpen={openRule}
-        onRunAgain={(s) => void runAgain(s)}
+        onRunAgain={runAgain}
+      />
+      <CommonValuesCard
+        onFill={() => { setRules(COMMON_RULES); setSkipped([]); setNotice(null); }}
+        onClear={() => { setRules(EMPTY_RULES); setSkipped([]); setNotice(null); }}
       />
       {notice && <p className="text-sm text-foreground-muted" role="status" data-testid="ladder-notice">{notice}</p>}
       <p className="text-sm text-foreground-muted">{LADDER_INTRO}</p>
 
-      <div className="sticky top-0 z-20 -mx-1 rounded-xl border border-border bg-surface-raised px-4 py-2 shadow-sm md:top-[var(--header-height,0px)]" data-testid="ladder-bar" aria-live="polite">
+      <div className={`sticky top-[var(--tabs-h)] z-20 -mx-1 rounded-xl border border-border bg-surface-raised px-4 py-2 shadow-sm transition-opacity md:top-[calc(var(--header-height,0px)+var(--tabs-h))] ${barHidden ? "pointer-events-none opacity-0" : ""}`} data-testid="ladder-bar" data-hidden={barHidden ? "1" : "0"} aria-hidden={barHidden} aria-live="polite">
         <p className="text-base font-semibold" data-testid="ladder-left">
           {left === null ? (dataError ? "Counts are not available right now" : "Loading the counts…") : `${left.toLocaleString("en-IN")} ${left === 1 ? "stock" : "stocks"} left`}
         </p>
+        <p className="text-xs font-medium text-foreground" data-testid="ladder-filters-set">{filtersLine(rules, skipped)}</p>
         <p className="text-xs text-foreground-muted" data-testid="ladder-counts-note">{COUNTS_NOTE}</p>
         {left !== null && (
           <button
@@ -326,23 +361,42 @@ export function ShortlistLadder() {
         {STEPS.map((s) => (
           <li key={s.n}>
             <section className="rounded-xl border border-border bg-surface" data-testid={`ladder-step-${s.n}`}>
-              <button type="button" onClick={() => toggle(s.n)} aria-expanded={open[s.n]} className="flex min-h-[48px] w-full items-center justify-between gap-3 px-4 py-2 text-left">
-                <span className="text-sm font-semibold">
-                  Step {s.n + 1}. {s.title}
-                  <span className="block text-xs font-normal text-foreground-muted" data-testid="ladder-step-line">{s.line}</span>
-                </span>
-                <span className="flex shrink-0 items-center gap-2 text-xs text-foreground-muted">
-                  <span data-testid={`ladder-count-${s.n}`}>{counts ? `${counts[s.n].toLocaleString("en-IN")} left` : ""}</span>
-                  <ChevronDown size={14} className={open[s.n] ? "rotate-180" : ""} aria-hidden />
-                </span>
-              </button>
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pr-3">
+                <button type="button" onClick={() => toggle(s.n)} aria-expanded={open[s.n]} className="flex min-h-[48px] min-w-0 flex-1 items-center justify-between gap-3 px-4 py-2 text-left">
+                  <span className={`text-sm font-semibold ${skipped.includes(s.n) ? "text-foreground-muted" : ""}`}>
+                    Step {s.n + 1}. {s.title}
+                    <span className="block text-xs font-normal text-foreground-muted" data-testid="ladder-step-line">{s.line}</span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2 text-xs text-foreground-muted">
+                    <span data-testid={`ladder-count-${s.n}`}>{counts ? `${counts[s.n].toLocaleString("en-IN")} left` : ""}</span>
+                    <ChevronDown size={14} className={open[s.n] ? "rotate-180" : ""} aria-hidden />
+                  </span>
+                </button>
+                <div role="group" aria-label={`Step ${s.n + 1}: use or skip`} className="flex shrink-0 overflow-hidden rounded-lg border border-border text-xs font-medium" data-testid={`step-switch-${s.n}`}>
+                  {([[false, USE_LABEL], [true, SKIP_LABEL]] as const).map(([skip, label]) => (
+                    <button
+                      key={label}
+                      type="button"
+                      aria-pressed={skipped.includes(s.n) === skip}
+                      onClick={() => { setSkipped((l) => (skip ? (l.includes(s.n) ? l : [...l, s.n]) : l.filter((x) => x !== s.n))); setNotice(null); }}
+                      className={`min-h-[44px] px-4 ${skipped.includes(s.n) === skip ? "bg-accent text-accent-foreground" : "text-foreground-muted hover:text-foreground"}`}
+                      data-testid={`step-${skip ? "skip" : "use"}-${s.n}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               {open[s.n] && (
                 <div className="space-y-3 border-t border-border px-4 pb-4 pt-3">
                   <div>
                     <p className="text-sm font-semibold">Why this rule</p>
                     <p className="mt-1 text-sm leading-relaxed text-foreground-muted" data-testid="ladder-why">{s.why}</p>
                   </div>
-                  <StepBody step={s.n} rules={rules} set={(p) => { set(p); setNotice(null); }} data={data} />
+                  {skipped.includes(s.n) && <p className="text-sm text-foreground-muted" data-testid={`step-skipped-note-${s.n}`}>{SKIPPED_NOTE}</p>}
+                  <fieldset disabled={skipped.includes(s.n)} className={skipped.includes(s.n) ? "opacity-50" : ""} data-testid={`step-body-${s.n}`} data-skipped={skipped.includes(s.n) ? "1" : "0"}>
+                    <StepBody step={s.n} rules={rules} set={(p) => { set(p); setNotice(null); }} data={data} />
+                  </fieldset>
                 </div>
               )}
             </section>
@@ -371,6 +425,16 @@ export function ShortlistLadder() {
             {shownFrom && <p className="text-base font-semibold" data-testid="showing-rule">{SHOWING_RULE(shownFrom)}</p>}
             <RulesApplied rules={shownRules} />
             {runAgainLine && <p className="text-sm text-foreground-muted" role="status" data-testid="run-again-line">{runAgainLine}</p>}
+            {runNote && <p className="text-sm text-foreground-muted" role="status" data-testid="run-saved-note">{runNote}</p>}
+            {dropAsk && (
+              <div className="rounded-lg border border-accent bg-surface-raised p-3 text-sm" role="group" aria-label="Remove the oldest result?" data-testid="run-drop-ask">
+                <p>{DROP_WARNING(dropAsk.limit, dropAsk.drops)}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => void saveRun(dropAsk.ruleId, dropAsk.params, dropAsk.skipped, true)} className="min-h-[44px] rounded-lg bg-accent px-4 text-sm font-semibold text-accent-foreground" data-testid="run-drop-confirm">{DROP_CONFIRM}</button>
+                  <button type="button" onClick={() => setDropAsk(null)} className="min-h-[44px] rounded-lg border border-border px-4 text-sm font-medium" data-testid="run-drop-cancel">{DROP_CANCEL}</button>
+                </div>
+              </div>
+            )}
             <p className="text-sm font-medium" data-testid="ladder-total">
               {total !== null ? `${total.toLocaleString("en-IN")} ${total === 1 ? "stock meets" : "stocks meet"} the rules you chose.` : ""}
               {sort !== "name" ? ` Sorted by ${SORT_CHOICES.find((c) => c.value === sort)?.label.toLowerCase()}, as you chose.` : ""}
@@ -426,7 +490,17 @@ export function ShortlistLadder() {
         {capNote && <p className="text-sm text-foreground-muted" role="status" data-testid="ask-cap-note">You can select up to {ASK_GROUP_MAX} stocks at a time.</p>}
       </section>
 
-      <AskAboutStocks selected={selected} onRemove={(s) => { setSelected((l) => l.filter((x) => x !== s)); setCapNote(false); }} onClear={() => { setSelected([]); setCapNote(false); }} />
+      {user && active && (
+        <SavedResults ruleId={active.id} ruleName={active.name} refreshKey={resultsKey} selected={selected} onTick={tick} currentRunId={currentRunId} onChoose={setCurrentRunId} />
+      )}
+
+      <AskAboutStocks
+        selected={selected}
+        onRemove={(s) => { setSelected((l) => l.filter((x) => x !== s)); setCapNote(false); }}
+        onClear={() => { setSelected([]); setCapNote(false); }}
+        ruleId={active?.id ?? null}
+        runId={currentRunId}
+      />
     </div>
   );
 }

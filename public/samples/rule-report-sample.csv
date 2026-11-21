@@ -1,38 +1,28 @@
 ﻿"RedixFi rule report (SAMPLE: one example company, no real data)"
 Rule,Sample rule (one example company)
-Generated,2026-11-19
+Run date,2026-11-19
+Figures as of,2026-11-19
 
-Rules applied
-Return on equity at least 15 %
-Debt to equity at most 1 times
-
-Stocks that meet the rules: 1,As of 2026-11-19
-Symbol,Company,ROE (%),Debt to equity
-HINDUNILVR,HINDUSTAN UNILEVER LTD.,30.85,0.03
-
-Saved answers: 3
-Stock,Question,Answer as of,Answer,Sources
-HINDUNILVR,"List the points to watch for this company, with sources",2026-11-19,Points to watch from Hindustan Unilever's filed documents. Showing 3 of 11 items. See all on the Points to watch tab.,NSE promoter pledge disclosure (18 Jul 2026); Annual report FY2025-26 (Filed 2 Jun 2026)
-,Table for the answer above,,,
-,Point to watch,What the filing says,Date
-,Promoter share pledge,Promoters have pledged 0.54% of their holding (0.50% in the earlier disclosure).,As of 18 Jul 2026
-,Contingent liabilities,"The auditor's report names provisions and contingent liabilities relating to taxation, litigation and claims as a key audit matter (Notes 2, 9, 21 and 24 to the standalone financial statements).","Annual report FY2025-26, filed 2 Jun 2026"
-,Statutory dues in dispute,"The auditor's report lists statutory dues that are disputed and pending before appellate authorities, tribunals or courts: income tax, sales tax, excise duty, customs duty and service tax, for periods from 1979-80 to 2025-26.","Annual report FY2025-26, filed 2 Jun 2026"
-HINDUNILVR,"What did management say in the latest concall and annual report? List guidance, capex plans and risks",2026-11-19,"The latest filings on file for this company are results and investor presentations, not call transcripts, so this answer is from those and the annual report.
-Guidance: Consolidated EBITDA margin to be within the current guided range of 22-24%. Focus on volume-led profit growth under the company's own strategy (results presentation, 28 Oct 2026).
-Capex plans: Growth-led capex investment to step up from 2% to 3% of turnover, with capital to be deployed on bolt-on acquisitions (investor presentation, 9 Sep 2026).
-Risks named: Commodity inflation is expected to continue in the short term (28 Oct 2026). The auditor's report names the estimates behind provisions and contingent liabilities for tax, litigation and claims as a key audit matter, because the judgement involved is high (annual report FY2025-26).",Results presentation (Filed 28 Oct 2026); Investor presentation (Filed 9 Sep 2026); Annual report FY2025-26 (Filed 2 Jun 2026)
-HINDUNILVR,"Show sales, profit, margin and debt for the last 3 years",2026-11-19,"Consolidated figures for the years ended 31 March, in Rs crore.
+Stock,Company,Question,Answer,Source,Date
+HINDUNILVR,HINDUSTAN UNILEVER LTD.,List the points to watch for this company.,"Points to watch from Hindustan Unilever's filed documents. Showing 3 of 11 items. See all on the Points to watch tab.
+Point to watch: Promoter share pledge; What the filing says: Promoters have pledged 0.54% of their holding (0.50% in the earlier disclosure).; Date: As of 18 Jul 2026
+Point to watch: Contingent liabilities; What the filing says: The auditor's report names provisions and contingent liabilities relating to taxation, litigation and claims as a key audit matter (Notes 2, 9, 21 and 24 to the standalone financial statements).; Date: Annual report FY2025-26, filed 2 Jun 2026
+Point to watch: Statutory dues in dispute; What the filing says: The auditor's report lists statutory dues that are disputed and pending before appellate authorities, tribunals or courts: income tax, sales tax, excise duty, customs duty and service tax, for periods from 1979-80 to 2025-26.; Date: Annual report FY2025-26, filed 2 Jun 2026",NSE promoter pledge disclosure (18 Jul 2026); Annual report FY2025-26 (Filed 2 Jun 2026),2026-11-19
+HINDUNILVR,HINDUSTAN UNILEVER LTD.,"Show this company's sales, profit, margin and debt trend for the last 3 years.","Consolidated figures for the years ended 31 March, in Rs crore.
 FY2026 profit includes Rs 4,407 crore from the ice cream business, which was demerged and is reported as discontinued operations. Without it, FY2026 profit after tax would be Rs 10,633 crore. FY2025 includes a loss of Rs 9 crore from the same business (Rs 10,658 crore without it). Exceptional items are included in both years, as reported. The margin row uses all profit.
 Sales are revenue from operations. Profit after tax is the share of the owners of the company. Margin is profit after tax ÷ sales, calculated by RedixFi. Debt is borrowings plus lease liabilities. Reported figures, not adjusted.
 FY2026 and FY2025 are as shown in the annual report for FY2025-26; FY2024 is as shown in the annual report for FY2024-25. That report showed FY2025 sales of Rs 63,121 crore, which differs from the Rs 61,328 crore in the later report.
-At 31 March 2026 the debt figure is lease liabilities of Rs 1,478 crore and no borrowings.",Annual report FY2025-26 (Filed 2 Jun 2026); Annual report FY2024-25 (Filed 29 May 2025)
-,Table for the answer above,,,
-,,FY2026,FY2025,FY2024
-,Sales,"64,468","61,328","61,896"
-,Profit after tax,"15,040","10,649","10,277"
-,"Margin, all profit",23.3%,17.4%,16.6%
-,"Debt, 31 March","1,478","1,648","1,484"
+At 31 March 2026 the debt figure is lease liabilities of Rs 1,478 crore and no borrowings.
+c0: Sales; FY2026: 64,468; FY2025: 61,328; FY2024: 61,896
+c0: Profit after tax; FY2026: 15,040; FY2025: 10,649; FY2024: 10,277
+c0: Margin, all profit; FY2026: 23.3%; FY2025: 17.4%; FY2024: 16.6%
+c0: Debt, 31 March; FY2026: 1,478; FY2025: 1,648; FY2024: 1,484",Annual report FY2025-26 (Filed 2 Jun 2026); Annual report FY2024-25 (Filed 29 May 2025),2026-11-19
+HINDUNILVR,HINDUSTAN UNILEVER LTD.,"Show recent promoter, insider and bulk or block deal activity.",Not asked yet,,
+HINDUNILVR,HINDUSTAN UNILEVER LTD.,"List the guidance, capex plans and risks mentioned in the latest concall and annual report.","The latest filings on file for this company are results and investor presentations, not call transcripts, so this answer is from those and the annual report.
+Guidance: Consolidated EBITDA margin to be within the current guided range of 22-24%. Focus on volume-led profit growth under the company's own strategy (results presentation, 28 Oct 2026).
+Capex plans: Growth-led capex investment to step up from 2% to 3% of turnover, with capital to be deployed on bolt-on acquisitions (investor presentation, 9 Sep 2026).
+Risks named: Commodity inflation is expected to continue in the short term (28 Oct 2026). The auditor's report names the estimates behind provisions and contingent liabilities for tax, litigation and claims as a key audit matter, because the judgement involved is high (annual report FY2025-26).",Results presentation (Filed 28 Oct 2026); Investor presentation (Filed 9 Sep 2026); Annual report FY2025-26 (Filed 2 Jun 2026),2026-11-19
+HINDUNILVR,HINDUSTAN UNILEVER LTD.,Show the last 10 days of price change and delivery %.,Not asked yet,,
 
 RedixFi shows market data for information only. It gives no buy or sell advice or predictions.
 Facts from filings. Not investment advice.

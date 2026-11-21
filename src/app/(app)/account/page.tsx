@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AccountTabs } from "@/components/app/account/AccountTabs";
 import { AddPhoneCard } from "@/components/app/account/AddPhoneCard";
 import { SubscriptionStatusCard } from "@/components/app/account/SubscriptionStatusCard";
+import { AskUsageCard } from "@/components/app/account/AskUsageCard";
 import { RequireAuth } from "@/components/app/account/RequireAuth";
 import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -47,6 +48,7 @@ function AccountProfile() {
         </dl>
       </Card>
       <SubscriptionStatusCard profile={profile} onChange={setProfile} />
+      <AskUsageCard />
       <button onClick={logout} className="text-sm font-medium text-down">
         Log out
       </button>

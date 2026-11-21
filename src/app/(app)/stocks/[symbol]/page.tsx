@@ -181,11 +181,6 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
   // ---- Overview: the seven plain questions, then the price and trading readings they point to
   const overview = (
     <>
-      <p className="mb-3 text-sm" data-testid="read-company-link">
-        <Link href="/shortlist-lab" className="inline-flex min-h-[44px] items-center rounded-lg border border-accent px-4 font-semibold text-accent hover:bg-accent/10" data-testid="run-check-button">
-          Learn the 5 questions
-        </Link>
-      </p>
       <SimpleChecklist data={data} today={istToday()} priceLabel={priceLabel} />
       <StockSignupOffer companyName={data.company_name} className="mt-4" />
 

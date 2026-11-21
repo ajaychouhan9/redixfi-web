@@ -505,6 +505,34 @@ export interface MyScreen {
   snapshot?: { at: string | null; as_of: string | null; count: number } | null;
   /** How many Ask AI answers are saved to this rule (release 2). */
   answers?: number;
+  /** 21 Nov 2026: the steps (0 to 5) set to Skip (their values are kept but not applied), and how many rules are applied. */
+  skipped?: number[];
+  filters_set?: number;
+}
+
+/** A saved result ("run") of a saved rule. */
+export interface RuleRun {
+  id: string;
+  run_date: string;
+  count: number;
+  as_of: string | null;
+  earlier_values: boolean;
+  answers: number;
+  skipped: number[];
+  params: Record<string, unknown>;
+  added: number | null;
+  dropped: number | null;
+  since: string | null;
+}
+export interface RuleRunSaved {
+  saved: boolean;
+  needs_confirm: boolean;
+  drops?: { id: string; run_date: string } | null;
+  limit: number;
+  run?: { id: string; run_date: string; count: number; as_of: string | null };
+  replaced_same_day?: boolean;
+  dropped?: { id: string; run_date: string } | null;
+  diff?: { since: string; added: string[]; dropped: string[] } | null;
 }
 
 export interface RuleAnswer {
@@ -529,6 +557,7 @@ export interface MyScreenSnapshot {
 
 /** What a save may carry beside the rules: the stock count shown beside the rule, and (optionally) the stock list as a dated snapshot. */
 export interface MyScreenSaveExtras {
+  skipped?: number[];
   stock_count?: number | null;
   snapshot_symbols?: string[] | null;
   snapshot_as_of?: string | null;
@@ -584,6 +613,29 @@ export async function deleteRuleAnswer(token: string, ruleId: string, answerId: 
 /** The real export of a rule (paid plans and the Pro trial). Free accounts get a 403 and open the stored sample instead. */
 export const downloadRuleExport = (ruleId: string, kind: "pdf" | "csv", token: string) =>
   apiGetBlob(`/my-screens/${encodeURIComponent(ruleId)}/export.${kind}`, { token });
+
+// ---------- saved results (runs) of a saved rule, 21 Nov 2026 ----------
+const runPath = (ruleId: string, runId?: string) => `/my-screens/${encodeURIComponent(ruleId)}/runs${runId ? `/${encodeURIComponent(runId)}` : ""}`;
+
+/** The server runs the rule and saves the result. At the plan limit nothing is saved until `confirmDrop` is true (the oldest result is then removed). */
+export async function saveRuleRun(token: string, ruleId: string, params: Record<string, unknown>, skipped: number[], confirmDrop = false): Promise<RuleRunSaved> {
+  const env = await apiMutate<RuleRunSaved>(runPath(ruleId), "POST", { params, skipped, confirm_drop: confirmDrop }, { token });
+  return env.data;
+}
+export async function listRuleRuns(token: string, ruleId: string): Promise<{ runs: RuleRun[]; limit: number; count: number }> {
+  const env = await apiGet<{ runs: RuleRun[]; limit: number; count: number }>(runPath(ruleId), { token });
+  return env.data;
+}
+export async function getRuleRun(token: string, ruleId: string, runId: string) {
+  const env = await apiGet<{ run: { id: string; run_date: string; count: number; as_of: string | null }; columns: string[][]; stocks: { symbol: string; company: string; values: string[] }[]; diff: { since: string; added: string[]; dropped: string[] } | null }>(runPath(ruleId, runId), { token });
+  return env.data;
+}
+export async function deleteRuleRun(token: string, ruleId: string, runId: string): Promise<void> {
+  await apiMutate<{ deleted: boolean }>(runPath(ruleId, runId), "DELETE", undefined, { token });
+}
+/** The combined report of one result (paid plans and the Pro trial). `symbols` are the chosen stocks (up to 8). */
+export const downloadRunReport = (ruleId: string, runId: string, kind: "pdf" | "csv", symbols: string[], token: string) =>
+  apiGetBlob(`${runPath(ruleId, runId)}/report.${kind}${symbols.length ? `?symbols=${encodeURIComponent(symbols.join(","))}` : ""}`, { token });
 
 export async function getMyScreenSnapshot(token: string, id: string): Promise<MyScreenSnapshot | null> {
   const env = await apiGet<{ snapshot: MyScreenSnapshot | null }>(`/my-screens/${encodeURIComponent(id)}/snapshot`, { token });

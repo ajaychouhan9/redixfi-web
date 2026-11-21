@@ -8,8 +8,14 @@ export const ASK_GROUP_MAX = 8; // the existing lookup cap (settings.ASK_LOOKUP_
 export const ASK_GROUP_TITLE = "Ask AI about these stocks";
 export const ASK_GROUP_LEAD = "Tick up to 8 stocks on your list, then press Ask AI. A new Ask AI session opens with those stocks and the five questions ready. Nothing is sent until you press Send.";
 export const ASK_ALL_LABEL = "Ask all 5";
+// "Read your shortlist with AI" (21 Nov 2026): a block of its own after the list, not a step.
+export const ASK_BLOCK_TITLE = "Read your shortlist with AI";
+export const ASK_BLOCK_ASK = "\"Ask AI\" is one question in chat.";
+export const ASK_BLOCK_ASK_ALL = "\"Ask all 5\" makes a saved report for each ticked stock and uses questions from your plan.";
+export const askAllUses = (stocks: number, questions: number): string =>
+  `Ask all 5 for ${stocks} ${stocks === 1 ? "stock" : "stocks"} uses ${questions} ${questions === 1 ? "question" : "questions"} from your plan. Nothing is used until you confirm.`;
 export const ASK_ALL_LEAD = "Runs the full check on every ticked stock: points to watch, what management said, three years of numbers and holdings, with sources.";
-export const ASK_GROUP_PANEL_NOTE = "Price and delivery can be asked for all of these stocks at once. The other four questions are answered one company at a time: tap a company, then a question.";
+export const ASK_GROUP_PANEL_NOTE = "Price can be asked for all of them at once. The other questions are asked one stock at a time.";
 
 /** The question keys that can name every selected stock in one question. */
 export const ALL_AT_ONCE: ReadonlySet<string> = new Set(["price"]);
