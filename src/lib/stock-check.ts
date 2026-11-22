@@ -11,13 +11,14 @@ export const MENU_LABEL = "Shortlist Lab";
 export const HOME_BUTTON = "New to stocks? Learn the 5 questions";
 export const LADDER_TITLE = "Build Your Shortlist";
 export const LADDER_INTRO = "Set the rules that matter to you, one step at a time. The bar that stays on screen shows how many stocks are left after your rules.";
-export const COMMON_LABEL = "Common rules from published methods. Change them.";
-export const START_COMMON = "Start with common rules";
 export const CLEAR_ALL = "Clear all";
+export const FILL_BUTTON = "Fill typical values";
+export const BLANK_LINE = "Leave a field blank to ignore it.";
+export const FILL_NOTE = "Typical numbers from published methods. Change any of them. A field with no published number is left blank.";
 export const PAST_LINE = "Filters use past reported numbers. They do not tell what happens next.";
 export const RESULTS_TITLE = "Your shortlist";
-export const RESULTS_LEAD = "Stocks that meet the rules you chose, listed A to Z unless you choose a column to sort by. We do not rank them.";
-export const SHOW_BUTTON = "Show stocks that meet my rules";
+export const RESULTS_LEAD = "Stocks that match your rule today, listed A to Z unless you choose a column to sort by. We do not rank them.";
+export const SHOW_BUTTON = "Show stocks that meet my rule";
 export const PRICE_NOTE = "A good company can still be priced high.";
 export const COMPARE_NOTE = "Compare a company with others of its own kind.";
 export const COUNTS_NOTE = "Counts come from last night's figures. The final list may differ by a few stocks.";
@@ -103,12 +104,19 @@ export interface Rules {
   volRatio: string;
   delivery: string;
   pe: string;
+  /** "Price and volume" (22 Nov 2026): price change of at least chgMin % over chgMonths months (1, 3 or 6); within near52 % of the 52-week high; above the avgDays-day average (50 or 200); latest day's volume at least volDay times its 20-day average. */
+  chgMonths: "" | "1" | "3" | "6";
+  chgMin: string;
+  near52: string;
+  avgDays: "" | "50" | "200";
+  volDay: string;
 }
 export const EMPTY_RULES: Rules = {
   mcMin: "", profitQ: false, profitYears: "", sales3: "", profit3: "", salesQ: "", profitQg: "", growthUp: false,
   roe: "", roce: "", de: "", pledge: "", vol: "", volNum: "", volRatio: "", delivery: "", pe: "",
+  chgMonths: "", chgMin: "", near52: "", avgDays: "", volDay: "",
 };
-/** Common starting values (editable): the example values shown under each input for Steps 0, 1, 2, 3 and 5. Step 4 (price behaviour: volume vs usual, delivery, calmer / more active) is left on No rule: it depends on one day of trading. */
+/** Typical values (editable) for "Fill typical values": the example values shown under each input for steps 1, 2, 3, 4 and 6. Step 5 (price behaviour: volume vs usual, delivery, calmer / more active) and step 7 (Price and volume) are left blank: no published number is on file for them, and the volume and delivery ones depend on one day of trading. */
 export const COMMON_RULES: Rules = {
   ...EMPTY_RULES,
   profitQ: true,
@@ -148,6 +156,8 @@ export const RULES: RuleDef[] = [
   { key: "volRatio", step: 4, label: "Volume vs usual at least", unit: "times", hint: "last 5 days against the 20 days before", col: "vr", op: "min", param: "volume_ratio_min", lo: 0, hi: 20 },
   { key: "delivery", step: 4, label: "Delivery at least", unit: "%", hint: "share of traded shares taken for delivery", col: "dl", op: "min", param: "delivery_pct_min", lo: 0, hi: 100 },
   { key: "pe", step: 5, label: "P/E at most", unit: "times", hint: "price over the last 12 months of profit per share", col: "pe", op: "max", param: "pe_max", lo: 0, hi: 100000 },
+  { key: "near52", step: 6, label: "Price within this % of its 52-week high", unit: "%", hint: "how far the latest price is below the highest price of the last 52 weeks", col: "h52", op: "max", param: "from_52w_max", lo: 0, hi: 100 },
+  { key: "volDay", step: 6, label: "Latest day's volume at least", unit: "times its 20-day average", hint: "shares traded on the latest trading day, against the average of the 20 days before it", col: "vd", op: "min", param: "volume_day_min", lo: 0, hi: 1000 },
 ];
 
 export const num = (v: string): number | undefined => {
@@ -174,6 +184,9 @@ export function ruleProblem(d: RuleDef, text: string): string | null {
 }
 /** A rule that is switched on. Price behaviour (calmer / more active) is handled beside the table-driven rules. */
 export const isOn = (r: Rules, d: RuleDef): boolean => (d.op === "gt0" || d.op === "flag" ? r[d.key] === true : validValue(d, r[d.key] as string));
+/** Price change over 1, 3 or 6 months: both the period and a number are needed (a period alone, or a number alone, is not a rule). */
+export const chgOn = (r: Rules): boolean => (r.chgMonths === "1" || r.chgMonths === "3" || r.chgMonths === "6") && num(r.chgMin) !== undefined && (num(r.chgMin) as number) >= -100 && (num(r.chgMin) as number) <= 100000;
+export const avgOn = (r: Rules): boolean => r.avgDays === "50" || r.avgDays === "200";
 export const volOn = (r: Rules): boolean => r.vol !== "" && num(r.volNum) !== undefined && (num(r.volNum) as number) >= 0 && (num(r.volNum) as number) <= 100;
 
 type Test = { col: string; ok: (v: number) => boolean };
@@ -191,6 +204,10 @@ export function activeTests(r: Rules, upToStep: number): Test[] {
   if (upToStep >= 4 && volOn(r)) {
     const n = num(r.volNum) as number;
     out.push({ col: "vol", ok: r.vol === "calmer" ? (v) => v <= n : (v) => v >= n });
+  }
+  if (upToStep >= 6) {
+    if (chgOn(r)) out.push({ col: `r${r.chgMonths}`, ok: (v) => v >= (num(r.chgMin) as number) });
+    if (avgOn(r)) out.push({ col: `a${r.avgDays}`, ok: (v) => v === 1 });
   }
   return out;
 }
@@ -223,15 +240,15 @@ export function countAfter(data: LadderData, r: Rules, upToStep: number): number
   return n;
 }
 
-/** Counts after steps 0..5 (step 6 has no rules). */
+/** Counts after steps 0..6 (the last one is the count after every rule). */
 export function countsByStep(data: LadderData, r: Rules): number[] {
-  return [0, 1, 2, 3, 4, 5].map((s) => countAfter(data, r, s));
+  return [0, 1, 2, 3, 4, 5, 6].map((s) => countAfter(data, r, s));
 }
 
 /** Stocks with no ROCE figure among those meeting every other rule that is on (the "left out of this filter" line), and how many of those are banks, insurers or finance companies. */
 export function roceGap(data: LadderData, r: Rules): { noFigure: number; notApplicable: number } {
   const idx = indexOf(data);
-  const tests = activeTests(r, 5)
+  const tests = activeTests(r, 6)
     .filter((t) => t.col !== "roce")
     .map((t) => ({ i: idx[t.col], ok: t.ok }));
   let noFigure = 0;
@@ -250,7 +267,7 @@ export function roceGap(data: LadderData, r: Rules): { noFigure: number; notAppl
 export function growthGap(data: LadderData, r: Rules): number {
   const idx = indexOf(data);
   if (idx.gs === undefined) return 0;
-  const tests = activeTests(r, 5)
+  const tests = activeTests(r, 6)
     .filter((t) => t.col !== "gs")
     .map((t) => ({ i: idx[t.col], ok: t.ok }));
   let n = 0;
@@ -269,6 +286,11 @@ export function toParams(r: Rules): Partial<SignalsListParams> {
     p[d.param] = d.op === "gt0" || d.op === "flag" ? true : (num(r[d.key] as string) as number);
   }
   if (volOn(r)) p[r.vol === "calmer" ? "volatility_max" : "volatility_min"] = num(r.volNum) as number;
+  if (chgOn(r)) {
+    p.price_change_months = Number(r.chgMonths);
+    p.price_change_min = num(r.chgMin) as number;
+  }
+  if (avgOn(r)) p.above_avg_days = Number(r.avgDays);
   return p as Partial<SignalsListParams>;
 }
 
@@ -288,10 +310,15 @@ export function fromParams(p: SharedScreenParams | Record<string, unknown>): Rul
     out.vol = "active";
     out.volNum = String(q.volatility_min);
   }
+  if ((q.price_change_months === 1 || q.price_change_months === 3 || q.price_change_months === 6) && typeof q.price_change_min === "number" && Number.isFinite(q.price_change_min)) {
+    out.chgMonths = String(q.price_change_months);
+    out.chgMin = String(q.price_change_min);
+  }
+  if (q.above_avg_days === 50 || q.above_avg_days === 200) out.avgDays = String(q.above_avg_days);
   return out as unknown as Rules;
 }
 
-export const hasAnyRule = (r: Rules): boolean => RULES.some((d) => isOn(r, d)) || volOn(r);
+export const hasAnyRule = (r: Rules): boolean => RULES.some((d) => isOn(r, d)) || volOn(r) || chgOn(r) || avgOn(r);
 
 /** Every rule that is switched on, as one plain line each (for the read-only "Rules applied" card and the saved-rule summary). Empty when no rule is on. */
 export function describeRules(r: Rules): string[] {
@@ -302,6 +329,8 @@ export function describeRules(r: Rules): string[] {
     else out.push(`${d.label} ${num(r[d.key] as string)}${d.unit ? ` ${d.unit}` : ""}`);
   }
   if (volOn(r)) out.push(`Price movement: ${r.vol === "calmer" ? "calmer, more volatile than at most" : "more active, more volatile than at least"} ${num(r.volNum)}% of stocks`);
+  if (chgOn(r)) out.push(`Price change over ${r.chgMonths} ${r.chgMonths === "1" ? "month" : "months"} at least ${num(r.chgMin)}%`);
+  if (avgOn(r)) out.push(`Price above its ${r.avgDays}-day average`);
   return out;
 }
 
@@ -325,7 +354,18 @@ export const STEPS: StepDef[] = [
   { n: 3, title: "Debt and pledge", line: "How much the company owes, and how much of the promoters' shares are pledged to lenders.", why: "Debt has to be paid back whatever the company earns. Debt to equity compares what it owes with what its owners put in. Promoter pledge shows how much of the promoters' holding is pledged to lenders as security." },
   { n: 4, title: "Price movement", line: "How much the price moved lately, and how much was traded.", why: "Two neutral options: calmer means the price has moved less than most stocks lately, more active means it has moved more. Bigger swings can go either way. Volume vs usual and delivery % describe how much trading there was and how much of it ended in delivery." },
   { n: 5, title: "Price you pay", line: "How the price compares with the profit per share.", why: "P/E is the price divided by the profit per share over the last 12 months. " + PRICE_NOTE + " A low P/E does not make a company a good one." },
+  { n: 6, title: "Price and volume", line: "How the price has moved over past months, and how much was traded on the latest day.", why: "These four filters describe the past: how far the price moved over 1, 3 or 6 months, how close it is to its 52-week high, whether it is above its 50-day or 200-day average, and how the latest day's volume compares with the usual. They show what already happened. They do not say what happens next." },
 ];
+
+/** The four "Price and volume" filters: a short label, what each one tells you (a fact about past prices or volume) and what it does not tell you. */
+export const PV_FILTERS = [
+  { id: "chg", label: "Price change over 1, 3 or 6 months", tells: "How far the price moved over that time, from past closing prices.", not: "It is not a prediction and not advice." },
+  { id: "near52", label: "Price near its 52-week high", tells: "How close the latest price is to the highest price of the last 52 weeks.", not: "It is not a prediction and not advice." },
+  { id: "avg", label: "Price above its 50-day or 200-day average", tells: "Whether the latest closing price is above the average of the last 50 or 200 closing prices.", not: "It is not a prediction and not advice." },
+  { id: "volDay", label: "Latest day's volume against its 20-day average", tells: "How many shares traded on the latest trading day, compared with the average of the 20 days before it.", not: "It is not a prediction and not advice." },
+] as const;
+export const PV_MATCH_NOTE = "Results are stocks that match your rule today.";
+export const PV_AS_OF = (d: string): string => `Prices as of ${d}`;
 // ---- the shortlist ------------------------------------------------------------------------------------------------------------------------
 export const SORT_CHOICES: { value: string; label: string; order: "asc" | "desc" }[] = [
   { value: "name", label: "Name, A to Z", order: "asc" },
@@ -359,54 +399,18 @@ export function cardValues(r: Rules, row: Record<string, unknown>): { label: str
   if (num(r.volRatio) !== undefined) add("Volume vs usual", f1(n("volume_ratio_5d"), "x"));
   if (num(r.delivery) !== undefined) add("Delivery", f1(n("delivery_pct"), "%"));
   if (num(r.pe) !== undefined) add("P/E", f1(n("pe")));
+  if (chgOn(r)) add(`Price change, ${r.chgMonths} ${r.chgMonths === "1" ? "month" : "months"}`, f1(n(`ret_${r.chgMonths}m`), "%"));
+  if (num(r.near52) !== undefined) add("Below 52-week high", f1(n("pct_below_52w_high"), "%"));
+  if (avgOn(r)) add(`Above ${r.avgDays}-day average`, row[`sma${r.avgDays}_above`] === true ? "Yes" : row[`sma${r.avgDays}_above`] === false ? "No" : "Not available");
+  if (num(r.volDay) !== undefined) add("Latest volume vs 20-day average", f1(n("vol_day_x"), "x"));
   return out;
 }
 
 /** The Screener row carries the promoter pledge only when asked for it. */
 export const needsPledge = (r: Rules): boolean => num(r.pledge) !== undefined;
 
-// ---- Use / Skip per step (21 Nov 2026) --------------------------------------------------------------------------------------------------
-export const STEP_COUNT = 6;
-export const USE_LABEL = "Use";
-export const SKIP_LABEL = "Skip";
-export const SKIPPED_NOTE = "Skipped. Your values are kept, but this step is not applied.";
+/** The saved-rule values of a step (for the one line under a saved rule): how many rules are set. */
+export const rulesSetCount = (r: Rules): number => describeRules(r).length;
 
-/** The rules with every skipped step cleared: what is applied (counted, listed and sent to the Screener). A blank box is never applied either (see isOn / validValue). */
-export function applySkips(r: Rules, skipped: number[]): Rules {
-  if (!skipped.length) return r;
-  const out: Rules = { ...r };
-  for (const d of RULES) {
-    if (!skipped.includes(d.step)) continue;
-    (out as unknown as Record<string, unknown>)[d.key] = EMPTY_RULES[d.key];
-  }
-  if (skipped.includes(4)) {
-    out.vol = "";
-    out.volNum = "";
-  }
-  return out;
-}
-
-/** Whether a step has at least one rule applied. */
-export function stepHasRule(r: Rules, step: number): boolean {
-  return RULES.some((d) => d.step === step && isOn(r, d)) || (step === 4 && volOn(r));
-}
-
-/** "3 of 5 filters set": the steps in use, and how many of them have at least one value set. A skipped step is not counted in either number. */
-export function filtersSet(r: Rules, skipped: number[]): { set: number; of: number } {
-  const inUse = [0, 1, 2, 3, 4, 5].filter((n) => !skipped.includes(n));
-  return { set: inUse.filter((n) => stepHasRule(r, n)).length, of: inUse.length };
-}
-export const filtersLine = (r: Rules, skipped: number[]): string => {
-  const f = filtersSet(r, skipped);
-  return `${f.set} of ${f.of} filters set`;
-};
-
-/** The same two skipped lists (order does not matter). */
-export const sameSkips = (a: number[], b: number[]): boolean => [...a].sort().join(",") === [...b].sort().join(",");
-
-// ---- Common starting values (one card) -------------------------------------------------------------------------------------------------
-export const COMMON_CARD_TITLE = "Common starting values";
-export const COMMON_CARD_SUBTITLE = "Typical numbers from published methods. Change any of them.";
-export const FILL_LINK = "Fill with these values";
-/** Every value the card fills, as one plain line each. */
-export const commonLines = (): string[] => describeRules(COMMON_RULES);
+/** "Fill typical values": every field with a published typical number is filled; a field with none stays blank. Returns new rules (the sort and everything else are not touched). */
+export const typicalRules = (): Rules => ({ ...COMMON_RULES });

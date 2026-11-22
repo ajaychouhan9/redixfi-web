@@ -9,16 +9,16 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { signupHref } from "@/lib/nav-items";
 import {
   DELETE_BUTTON, LIMIT_REACHED, LOGGED_OUT_LINE, MY_RULES_LEAD, MY_RULES_TITLE, NAME_PLACEHOLDER, OPEN_BUTTON, PLAN_LINE, REPLACE_OLD, REPLACE_QUESTION,
-  RUN_AGAIN_BUTTON, SAVE_AS_NEW_RULE, SAVE_BUTTON, SAVE_NEW_BUTTON, copyName, saveAction, savedLine,
+  RULES_SET_LINE, RUN_AGAIN_BUTTON, SAVE_AS_NEW_RULE, SAVE_BUTTON, SAVE_NEW_BUTTON, copyName, saveAction, savedLine,
   type ActiveRule,
 } from "@/lib/my-rules";
 import { RuleReport } from "@/components/app/stock-check/RuleReport";
-import { filtersLine, hasAnyRule, sameRules, sameSkips, toParams, type Rules } from "@/lib/stock-check";
+import { fromParams, hasAnyRule, rulesSetCount, sameRules, toParams, type Rules } from "@/lib/stock-check";
 
 interface Props {
   rules: Rules;
-  /** The steps set to Skip (their values are kept in the rule, not applied). */
-  skipped: number[];
+  /** Changes when a rule was saved somewhere else on the page (Save this result), so the list is read again. */
+  reloadKey?: number;
   /** The list sort the saved rule keeps (a saved rule is a query, as in the Screener). */
   sort: { value: string; order: "asc" | "desc" };
   /** The live count after all steps (from the figures file), or null while it loads. */
@@ -34,7 +34,7 @@ interface Props {
 const btn = "min-h-[44px] rounded-lg border border-border px-3 text-sm font-medium hover:border-accent";
 
 /** One card: common rules, then the rules the person saved (name, date, stock count), with Open, Save, Save as new and Delete. */
-export function MyRulesCard({ rules, skipped, sort, left, active, setActive, onOpen, onRunAgain }: Props) {
+export function MyRulesCard({ rules, reloadKey = 0, sort, left, active, setActive, onOpen, onRunAgain }: Props) {
   const { user, getToken } = useAuth();
   const [saved, setSaved] = useState<MyScreen[]>([]);
   const [limit, setLimit] = useState<number | null>(null);
@@ -59,7 +59,7 @@ export function MyRulesCard({ rules, skipped, sort, left, active, setActive, onO
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
-  }, [load]);
+  }, [load, reloadKey]);
 
   // the name box follows the opened rule
   useEffect(() => {
@@ -68,7 +68,7 @@ export function MyRulesCard({ rules, skipped, sort, left, active, setActive, onO
   }, [active?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const anyRule = hasAnyRule(rules);
-  const changed = !!active && (!sameRules(rules, active.base) || !sameSkips(skipped, active.skipped));
+  const changed = !!active && !sameRules(rules, active.base);
 
   async function persist(mode: "new" | "replace", wantedName: string) {
     setMsg(null);
@@ -80,7 +80,7 @@ export function MyRulesCard({ rules, skipped, sort, left, active, setActive, onO
     try {
       const token = await getToken();
       if (!token) throw new Error("Log in to save your rules.");
-      const extras: MyScreenSaveExtras = { stock_count: left, skipped };
+      const extras: MyScreenSaveExtras = { stock_count: left };
       const params = { ...toParams(rules), sort: sort.value, order: sort.order } as never;
       let out: MyScreen;
       if (mode === "replace" && active) {
@@ -90,7 +90,7 @@ export function MyRulesCard({ rules, skipped, sort, left, active, setActive, onO
         out = await createMyScreen(token, wantedName.trim(), params, extras);
         setMsg(`Saved "${out.name}".`);
       }
-      setActive({ id: out.id, name: out.name, base: rules, skipped: [...skipped] });
+      setActive({ id: out.id, name: out.name, base: rules });
       setName(out.name);
       await load();
     } catch (e) {
@@ -131,8 +131,6 @@ export function MyRulesCard({ rules, skipped, sort, left, active, setActive, onO
       <h3 id="my-rules-title" className="text-base font-semibold">{MY_RULES_TITLE}</h3>
       <p className="mt-1 text-sm text-foreground-muted">{MY_RULES_LEAD}</p>
 
-      <p className="mt-2 text-sm font-medium" data-testid="my-rules-filters-set">{filtersLine(rules, skipped)}</p>
-
       {!user ? (
         <p className="mt-3 border-t border-border pt-3 text-sm text-foreground-muted" data-testid="my-rules-loggedout">
           {LOGGED_OUT_LINE}{" "}
@@ -151,7 +149,7 @@ export function MyRulesCard({ rules, skipped, sort, left, active, setActive, onO
                       {isActive && changed ? <span className="ml-2 text-xs font-normal text-foreground-muted">(changed, not saved)</span> : null}
                     </p>
                     <p className="text-xs text-foreground-muted" data-testid="saved-rule-line">{savedLine(s)}</p>
-                    <p className="text-xs text-foreground-muted" data-testid="saved-rule-filters">{s.filters_set ?? 0} {(s.filters_set ?? 0) === 1 ? "rule" : "rules"} applied{(s.skipped?.length ?? 0) > 0 ? `, ${s.skipped!.length} ${s.skipped!.length === 1 ? "step" : "steps"} skipped` : ""}</p>
+                    <p className="text-xs text-foreground-muted" data-testid="saved-rule-filters">{RULES_SET_LINE(rulesSetCount(fromParams(s.params)))}</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       <button type="button" onClick={() => { setAsking(false); onOpen(s); }} className={btn} data-testid="saved-open">{OPEN_BUTTON}</button>
                       <button type="button" onClick={() => { setAsking(false); onRunAgain(s); }} className={btn} data-testid="saved-run-again">{RUN_AGAIN_BUTTON}</button>

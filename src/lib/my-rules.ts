@@ -3,7 +3,7 @@ import type { MyScreen } from "@/lib/api/mutations";
 import type { Rules } from "@/lib/stock-check";
 
 export const MY_RULES_TITLE = "My rules";
-export const MY_RULES_LEAD = "Open a rule you saved, or set the steps below and save them under a name. Each time you press Show stocks on a saved rule, the result is saved with it.";
+export const MY_RULES_LEAD = "Open a rule you saved, or set the steps below and save them under a name. Each time you press Show stocks that meet my rule on a saved rule, the result is saved with it.";
 export const NAME_PLACEHOLDER = "Name these rules";
 export const SNAPSHOT_LABEL = "Also save today's stock list (a dated copy)";
 export const SNAPSHOT_HELP = "The rules are always saved. With the list, you can open the rule later and see the stocks as they were on that date.";
@@ -24,6 +24,16 @@ export const LIMIT_REACHED = (limit: number): string =>
 export const SHOWING_RULE = (name: string): string => `Showing rule: ${name}`;
 export const RULES_APPLIED_TITLE = "Rules applied";
 export const RULES_APPLIED_NOTE = "Read only. To change a rule, use the steps above or My rules.";
+export const SAVE_RESULT_BUTTON = "Save this result";
+export const SAVE_RESULT_NAME_LABEL = "Name for this rule";
+export const SAVE_RESULT_NAME_HELP = "The rule and this result are saved together under this name.";
+export const SAVE_RESULT_CONFIRM = "Save the rule and this result";
+export const SAVE_RESULT_CANCEL = "Cancel";
+export const SAVE_RESULT_NEED_NAME = "Give the rule a name first.";
+export const SAVE_RESULT_NEED_RULE = "Set at least one rule first.";
+export const SAVED_RULE_AND_RESULT = (name: string, n: number): string => `Saved the rule "${name}" and its result (${n.toLocaleString("en-IN")} ${n === 1 ? "stock" : "stocks"}).`;
+export const SAVED_RESULT_ONLY = (name: string, n: number): string => `Saved this result with "${name}" (${n.toLocaleString("en-IN")} ${n === 1 ? "stock" : "stocks"}).`;
+export const RULES_SET_LINE = (n: number): string => `${n} ${n === 1 ? "rule" : "rules"} applied`;
 export const NO_RULES_LINE = "No rule is applied: every stock is listed.";
 
 export interface ActiveRule {
@@ -31,8 +41,6 @@ export interface ActiveRule {
   name: string;
   /** The rules as they were when the rule was opened or last saved, to tell whether they were changed since. */
   base: Rules;
-  /** The steps set to Skip when the rule was opened or last saved. */
-  skipped: number[];
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

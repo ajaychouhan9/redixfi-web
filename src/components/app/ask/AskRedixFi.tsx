@@ -10,7 +10,10 @@ import { ApiError } from "@/lib/api/client";
 import { searchResearch } from "@/lib/api/endpoints";
 import { AddToRuleButton } from "@/components/app/ask/AddToRuleButton";
 import { canSaveAnswer } from "@/lib/rule-answers";
-import { ASK_GROUP_PANEL_NOTE, ASK_GROUP_TITLE, ALL_AT_ONCE, GROUP_KEYS, groupQuestion } from "@/lib/ask-group";
+import {
+  ASK_GROUP_TITLE, GROUP_ALL_NOTE, GROUP_CANCEL, GROUP_KEYS, GROUP_RUN, askRemaining, groupFailedLine, groupNotEnough, groupNotRunLine, groupProgress, groupQuestion, groupQuestionAll,
+  groupRunFewer, groupUses,
+} from "@/lib/ask-group";
 import { askRedixfi, getAskConversations, getAskHistory, getAskSuggestions, getUsage, updateAskContext } from "@/lib/api/mutations";
 import { getCurrentSymbol, onCurrentSymbolChange } from "@/lib/current-symbol";
 import { shouldStartFreshOnReopen } from "@/lib/ask-panel/freshStartRule";
@@ -213,8 +216,9 @@ function AskQuota({ usage, detailed = false }: { usage: AskUsageInfo | null; det
 
 /** Stocks picked in Shortlist Lab: tap a company, then a question; the question is typed into the input for the person to read and send. */
 function StockGroupBlock({ symbols, focus, onFocus, onQuestion, onRemove }: {
-  symbols: string[]; focus: string | null; onFocus: (s: string) => void; onQuestion: (q: string) => void; onRemove: (s: string) => void;
+  symbols: string[]; focus: string | null; onFocus: (s: string) => void; onQuestion: (key: string, q: string) => void; onRemove: (s: string) => void;
 }) {
+  const many = symbols.length >= 2;
   return (
     <div className="mb-4 rounded-xl border border-border bg-surface-raised p-3" data-testid="ask-stock-group">
       <p className="text-sm font-semibold text-foreground">{ASK_GROUP_TITLE}</p>
@@ -226,16 +230,15 @@ function StockGroupBlock({ symbols, focus, onFocus, onQuestion, onRemove }: {
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-[11.5px] text-foreground-faint">{ASK_GROUP_PANEL_NOTE}</p>
+      {many && <p className="mt-2 text-[11.5px] text-foreground-faint" data-testid="ask-group-note">{GROUP_ALL_NOTE}</p>}
       <ul className="mt-2 flex flex-col gap-1.5" data-testid="ask-group-questions">
         {GROUP_KEYS.map((key) => {
-          const q = groupQuestion(key, symbols, focus);
+          const q = many ? groupQuestionAll(key, symbols.length) : groupQuestion(key, symbols, focus);
           if (!q) return null;
           return (
             <li key={key}>
-              <button type="button" onClick={() => onQuestion(q)} data-testid={`ask-group-q-${key}`} className="w-full rounded-lg border border-border bg-hover px-3 py-2 text-left text-[12.5px] font-medium leading-snug text-foreground-muted hover:border-accent hover:text-foreground">
+              <button type="button" onClick={() => onQuestion(key, q)} data-testid={`ask-group-q-${key}`} className="w-full rounded-lg border border-border bg-hover px-3 py-2 text-left text-[12.5px] font-medium leading-snug text-foreground-muted hover:border-accent hover:text-foreground">
                 {q}
-                {ALL_AT_ONCE.has(key) && symbols.length > 1 && <span className="mt-0.5 block text-[10.5px] font-normal text-foreground-faint">All selected stocks</span>}
               </button>
             </li>
           );
@@ -260,6 +263,9 @@ export function AskRedixFi() {
   // Stocks picked from a Stock Check shortlist ("Ask AI about these stocks"): shown at the top of a new session with the five questions as suggestions.
   const [stockGroup, setStockGroup] = useState<string[] | null>(null);
   const [groupFocus, setGroupFocus] = useState<string | null>(null);
+  // A question for 2 to 8 stocks waiting for the person to confirm the number of questions it will use, and the progress while it runs.
+  const [groupPlan, setGroupPlan] = useState<{ key: string | null; text: string; symbols: string[] } | null>(null);
+  const [groupRun, setGroupRun] = useState<{ done: number; total: number } | null>(null);
   const [pageSymbol, setPageSymbol] = useState<string | null>(null);
   const [chatContext, setChatContext] = useState<AskChatContext | null>(null);
   const [results, setResults] = useState<ResearchSearchRow[]>([]);
@@ -557,6 +563,154 @@ export function AskRedixFi() {
       setCopiedIndex(index);
       setTimeout(() => setCopiedIndex((cur) => (cur === index ? null : cur)), 1500);
     });
+  }
+
+  /** One answer table (shared by a single answer and by each stock of a group reply). */
+  function renderTable(table: AskTableResult, prevUser: string | null, heading?: string) {
+    return (
+                        <div className="mt-2" key={heading ?? "table"}>
+                          {heading && <p className="mb-1 text-xs font-semibold text-foreground">{heading}</p>}
+                          <div className="mb-1.5 flex justify-end">
+                            <ExportButton
+                              canExport={isPaidEntitled(user)}
+                              disabledTitle="CSV and Excel downloads are on Basic and Pro"
+                              onExport={() => {
+                                const rows = tableExportRows(table);
+                                downloadCsv("redixfi-ask-table.csv", rows);
+                              }}
+                              onCsv={() => {
+                                const rows = tableExportRows(table);
+                                downloadCsv("redixfi-ask-table.csv", rows);
+                              }}
+                              onXlsx={() => {
+                                const rows = tableExportRows(table);
+                                downloadXlsx("redixfi-ask-table.xlsx", [{ name: "AI Result", rows }]);
+                              }}
+                              label="Download"
+                            />
+                          </div>
+                          {(() => {
+                            const note = daysAvailableNote(prevUser, table);
+                            return note ? (
+                              <p className="mb-1.5 text-xs text-foreground-muted" data-testid="table-days-note">{note}</p>
+                            ) : null;
+                          })()}
+                          <div className="max-w-full overflow-x-auto rounded-lg border border-border" data-testid="ask-table-scroll">
+                            <table className="w-max min-w-full text-sm">
+                              <thead>
+                                <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wide text-foreground-faint">
+                                  {table.columns.map((col, ci) => (
+                                    <th key={col.key} className={`whitespace-nowrap px-3 py-2 ${ci === 0 ? "sticky left-0 z-[1] bg-surface" : ""}`}>
+                                      {col.label}
+                                    </th>
+                                  ))}
+                                  {table.columns[0]?.key === "symbol" && <th className="whitespace-nowrap px-3 py-2">Shortlist</th>}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {table.rows.map((row, i) => {
+                                  const gk = table.group_key;
+                                  const grp = gk ? (row[gk] as string | null | undefined) : null;
+                                  const prevGrp = gk && i > 0 ? (table.rows[i - 1][gk] as string | null | undefined) : null;
+                                  const dim = grp === "Older";
+                                  return (
+                                    <Fragment key={i}>
+                                      {grp && grp !== prevGrp && (
+                                        <tr className="border-b border-border bg-neutral-bg">
+                                          <td colSpan={table.columns.length} className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
+                                            {GROUP_LABELS[grp] ?? grp}
+                                          </td>
+                                        </tr>
+                                      )}
+                                      <tr className={`border-b border-border last:border-0 ${dim ? "opacity-60" : ""}`}>
+                                        {table.columns.map((col, ci) => (
+                                          <td key={col.key} className={`whitespace-nowrap px-3 py-2 text-left ${ci === 0 ? "sticky left-0 z-[1] bg-surface" : ""}`}>
+                                            {row[col.key] ?? "N/A"}
+                                          </td>
+                                        ))}
+                                        {table.columns[0]?.key === "symbol" && (
+                                          <td className="whitespace-nowrap px-3 py-2">
+                                            {typeof row.symbol === "string" && row.symbol ? <AddToShortlistButton symbol={row.symbol} getToken={getToken} /> : null}
+                                          </td>
+                                        )}
+                                      </tr>
+                                    </Fragment>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+    );
+  }
+
+  // ---- one question for 2 to 8 stocks (22 Nov 2026) ----------------------------------------------------------------------------------------------
+  /** Ask to confirm first: "This will use N questions. You have M left." Nothing is sent until the person confirms. */
+  function planGroup(key: string | null, text: string) {
+    if (!stockGroup || stockGroup.length < 2 || busy) return;
+    // let the keyboard close first, so the sheet has settled before the person taps Run it, a fewer-stocks button or Cancel
+    if (typeof document !== "undefined") (document.activeElement as HTMLElement | null)?.blur?.();
+    setLimit(null);
+    setGroupPlan({ key, text, symbols: [...stockGroup] });
+    refreshUsage();
+  }
+  /** The Send box and the Enter key: with 2 to 8 stocks in the session, a typed question is asked for every stock the same way. */
+  function submit(text: string) {
+    if (!text.trim() || busy || authLoading) return;
+    if (stockGroup && stockGroup.length >= 2) {
+      setInput("");
+      planGroup(null, text.trim());
+      return;
+    }
+    void send(text);
+  }
+  async function runGroup(symbols: string[]) {
+    const plan = groupPlan;
+    if (!plan || !symbols.length || busy) return;
+    setGroupPlan(null);
+    setBusy(true);
+    setLimit(null);
+    setResults([]);
+    setGroupRun({ done: 0, total: symbols.length });
+    track("ask_ai_question", { signed_in: !!user });
+    setMessages((prev) => [...prev, { role: "user", text: plan.text }]);
+    const parts: NonNullable<AskRenderableMessage["group"]>["parts"] = [];
+    const failed: string[] = [];
+    const notRun: string[] = [];
+    let stop = false;
+    try {
+      const token = await getToken();
+      for (let i = 0; i < symbols.length; i += 1) {
+        const sym = symbols[i];
+        if (stop || !token) {
+          notRun.push(sym);
+          continue;
+        }
+        setGroupRun({ done: i, total: symbols.length });
+        const question = plan.key ? (groupQuestion(plan.key, [sym], sym) as string) : plan.text;
+        try {
+          const r = await askRedixfi(token, { page_context_symbol: null, chat_context_symbol: sym, question, conversation_id: null, selected_symbol: null });
+          const wrongStock = !!r.resolved_symbol && r.resolved_symbol.toUpperCase() !== sym.toUpperCase();
+          if (wrongStock || r.mode === "clarify" || (r.choices && r.choices.length > 0) || !r.answer?.trim()) failed.push(sym);
+          else parts.push({ symbol: sym, text: r.answer, table: r.table, sourceCitations: r.source_citations, scope: r.scope ?? null });
+        } catch (e) {
+          if (e instanceof ApiError && e.status === 429) {
+            setLimit(e.detail as AskLimitDetail);
+            stop = true;
+            notRun.push(sym);
+          } else failed.push(sym);
+        }
+      }
+      if (parts.length === 0 && failed.length + notRun.length > 0) {
+        setMessages((prev) => [...prev, { role: "ai", text: failed.length ? groupFailedLine(failed) : groupNotRunLine(notRun), error: true }]);
+      } else {
+        setMessages((prev) => [...prev, { role: "ai", text: "", group: { parts, failed, notRun } }]);
+      }
+    } finally {
+      setGroupRun(null);
+      setBusy(false);
+      refreshUsage();
+    }
   }
 
   // `selectedSymbol` — set only by a clarification button tap: the server
@@ -909,7 +1063,7 @@ export function AskRedixFi() {
                     symbols={stockGroup}
                     focus={groupFocus}
                     onFocus={setGroupFocus}
-                    onQuestion={(q) => setInput(q)}
+                    onQuestion={(key, q) => (stockGroup.length >= 2 ? planGroup(key, q) : setInput(q))}
                     onRemove={(sym) => {
                       const next = stockGroup.filter((x) => x !== sym);
                       setStockGroup(next.length ? next : null);
@@ -948,7 +1102,19 @@ export function AskRedixFi() {
                         }
                       >
                         {m.role === "ai" && <ScopeTag scope={m.scope} />}
-                        {m.role === "ai" ? <MarkdownAnswer text={m.text} /> : m.text}
+                        {m.role === "ai" && m.group ? (
+                          <div className="space-y-3" data-testid="ask-group-reply">
+                            {m.group.parts.map((pt) => (
+                              <div key={pt.symbol} data-testid={`ask-group-part-${pt.symbol}`}>
+                                <p className="mb-1 text-sm font-semibold">{pt.symbol}</p>
+                                <MarkdownAnswer text={pt.text} />
+                                {pt.sourceCitations && <SourcesSection citations={pt.sourceCitations} />}
+                              </div>
+                            ))}
+                            {m.group.failed.length > 0 && <p className="text-xs text-foreground-muted" data-testid="ask-group-failed">{groupFailedLine(m.group.failed)}</p>}
+                            {m.group.notRun.length > 0 && <p className="text-xs text-foreground-muted" data-testid="ask-group-notrun">{groupNotRunLine(m.group.notRun)}</p>}
+                          </div>
+                        ) : m.role === "ai" ? <MarkdownAnswer text={m.text} /> : m.text}
                         {m.webSourced && (
                           <div className="mt-2 flex items-center gap-1.5 border-t border-border pt-2 text-[12px] text-foreground-faint">
                             <Globe size={11} className="shrink-0" />
@@ -1019,83 +1185,8 @@ export function AskRedixFi() {
                       </div>
                     )}
 
-                    {/* Shared table renderer for tabular + document-extraction
-                        answers. Renders EXCLUSIVELY off `m.table.columns`. */}
-                    {m.table && m.table.rows.length > 0 && (
-                      <div className="mt-2">
-                        <div className="mb-1.5 flex justify-end">
-                          <ExportButton
-                            canExport={isPaidEntitled(user)}
-                            disabledTitle="CSV and Excel downloads are on Basic and Pro"
-                            onExport={() => {
-                              const rows = tableExportRows(m.table!);
-                              downloadCsv("redixfi-ask-table.csv", rows);
-                            }}
-                            onCsv={() => {
-                              const rows = tableExportRows(m.table!);
-                              downloadCsv("redixfi-ask-table.csv", rows);
-                            }}
-                            onXlsx={() => {
-                              const rows = tableExportRows(m.table!);
-                              downloadXlsx("redixfi-ask-table.xlsx", [{ name: "AI Result", rows }]);
-                            }}
-                            label="Download"
-                          />
-                        </div>
-                        {(() => {
-                          const prevUser = i > 0 && messages[i - 1].role === "user" ? messages[i - 1].text : null;
-                          const note = daysAvailableNote(prevUser, m.table);
-                          return note ? (
-                            <p className="mb-1.5 text-xs text-foreground-muted" data-testid="table-days-note">{note}</p>
-                          ) : null;
-                        })()}
-                        <div className="max-w-full overflow-x-auto rounded-lg border border-border" data-testid="ask-table-scroll">
-                          <table className="w-max min-w-full text-sm">
-                            <thead>
-                              <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wide text-foreground-faint">
-                                {m.table.columns.map((col, ci) => (
-                                  <th key={col.key} className={`whitespace-nowrap px-3 py-2 ${ci === 0 ? "sticky left-0 z-[1] bg-surface" : ""}`}>
-                                    {col.label}
-                                  </th>
-                                ))}
-                                {m.table.columns[0]?.key === "symbol" && <th className="whitespace-nowrap px-3 py-2">Shortlist</th>}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {m.table.rows.map((row, i) => {
-                                const gk = m.table!.group_key;
-                                const grp = gk ? (row[gk] as string | null | undefined) : null;
-                                const prevGrp = gk && i > 0 ? (m.table!.rows[i - 1][gk] as string | null | undefined) : null;
-                                const dim = grp === "Older";
-                                return (
-                                  <Fragment key={i}>
-                                    {grp && grp !== prevGrp && (
-                                      <tr className="border-b border-border bg-neutral-bg">
-                                        <td colSpan={m.table!.columns.length} className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
-                                          {GROUP_LABELS[grp] ?? grp}
-                                        </td>
-                                      </tr>
-                                    )}
-                                    <tr className={`border-b border-border last:border-0 ${dim ? "opacity-60" : ""}`}>
-                                      {m.table!.columns.map((col, ci) => (
-                                        <td key={col.key} className={`whitespace-nowrap px-3 py-2 text-left ${ci === 0 ? "sticky left-0 z-[1] bg-surface" : ""}`}>
-                                          {row[col.key] ?? "N/A"}
-                                        </td>
-                                      ))}
-                                      {m.table!.columns[0]?.key === "symbol" && (
-                                        <td className="whitespace-nowrap px-3 py-2">
-                                          {typeof row.symbol === "string" && row.symbol ? <AddToShortlistButton symbol={row.symbol} getToken={getToken} /> : null}
-                                        </td>
-                                      )}
-                                    </tr>
-                                  </Fragment>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )}
+                    {m.table && m.table.rows.length > 0 && renderTable(m.table, i > 0 && messages[i - 1].role === "user" ? messages[i - 1].text : null)}
+                    {m.group && m.group.parts.filter((pt) => pt.table && pt.table.rows.length > 0).map((pt) => renderTable(pt.table as AskTableResult, null, pt.symbol))}
 
                     {/* Clarification choices — tapping answers the ORIGINAL
                         question about that stock (server keeps it pending).
@@ -1137,10 +1228,28 @@ export function AskRedixFi() {
                   </div>
                 ))}
                 {busy && (
-                  <p className="text-xs text-foreground-faint">
-                    {(hasConcallSignal ? STATUS_STAGES_WITH_CONCALL : STATUS_STAGES)[statusStageIndex]}
+                  <p className="text-xs text-foreground-faint" data-testid={groupRun ? "ask-group-progress" : undefined}>
+                    {groupRun ? groupProgress(groupRun.done, groupRun.total) : (hasConcallSignal ? STATUS_STAGES_WITH_CONCALL : STATUS_STAGES)[statusStageIndex]}
                   </p>
                 )}
+                {groupPlan && !busy && (() => {
+                  const n = groupPlan.symbols.length;
+                  const left = askRemaining(usage);
+                  const enough = left === null || left >= n;
+                  return (
+                    <div className="rounded-xl border border-accent bg-surface-raised p-3 text-sm" role="group" aria-label="Confirm the question for all stocks" data-testid="ask-group-confirm">
+                      <p className="font-medium" data-testid="ask-group-uses">{groupUses(n, left)}</p>
+                      {!enough && <p className="mt-1 text-xs text-foreground-muted" data-testid="ask-group-notenough">{groupNotEnough(n, left as number)}</p>}
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {enough && <button type="button" onClick={() => void runGroup(groupPlan.symbols)} className="min-h-[44px] rounded-lg bg-accent px-4 text-sm font-semibold text-accent-foreground" data-testid="ask-group-run">{GROUP_RUN}</button>}
+                        {!enough && (left as number) > 0 && (
+                          <button type="button" onClick={() => void runGroup(groupPlan.symbols.slice(0, left as number))} className="min-h-[44px] rounded-lg bg-accent px-4 text-sm font-semibold text-accent-foreground" data-testid="ask-group-fewer">{groupRunFewer(left as number)}</button>
+                        )}
+                        <button type="button" onClick={() => setGroupPlan(null)} className="min-h-[44px] rounded-lg border border-border px-4 text-sm font-medium" data-testid="ask-group-cancel">{GROUP_CANCEL}</button>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {limit && (
@@ -1164,7 +1273,7 @@ export function AskRedixFi() {
                   <input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && send(input)}
+                    onKeyDown={(e) => e.key === "Enter" && submit(input)}
                     onFocus={() => setInputFocused(true)}
                     onBlur={() => setInputFocused(false)}
                     placeholder={authLoading ? "Loading your account…" : "Ask about a stock, a sector, or up to 8 stocks"}
@@ -1172,7 +1281,7 @@ export function AskRedixFi() {
                     className="flex-1 rounded-lg border border-border bg-hover px-3 py-2 text-sm outline-none disabled:opacity-60"
                   />
                   <button
-                    onClick={() => send(input)}
+                    onClick={() => submit(input)}
                     disabled={busy || !input.trim() || authLoading}
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground disabled:opacity-50"
                     aria-label="Send"

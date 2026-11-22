@@ -27,6 +27,42 @@ function saveBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+/** "Download report (PDF)" and "(CSV)" for one saved result (paid plans and the Pro trial); Free accounts get the stored sample. Covers the ticked stocks (up to 8). */
+export function ReportDownload({ ruleId, runId, selected }: { ruleId: string; runId: string; selected: string[] }) {
+  const { user, getToken } = useAuth();
+  const paid = isPaidEntitled(user);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  async function report(kind: "pdf" | "csv") {
+    setBusy(kind);
+    setMsg(null);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("login");
+      const { blob, filename } = await downloadRunReport(ruleId, runId, kind, selected, token);
+      saveBlob(blob, filename ?? `redixfi-rule-report.${kind}`);
+    } catch (e) {
+      const d = e instanceof ApiError ? (e.detail as { message?: string } | undefined) : undefined;
+      setMsg(d?.message ?? REPORT_FAILED);
+    } finally {
+      setBusy(null);
+    }
+  }
+  return (
+    <>
+      {paid ? (
+        <>
+          <button type="button" onClick={() => void report("pdf")} disabled={busy !== null} className={btn} data-testid="saved-result-pdf">{busy === "pdf" ? "Preparing…" : REPORT_PDF}</button>
+          <button type="button" onClick={() => void report("csv")} disabled={busy !== null} className={btn} data-testid="saved-result-csv">{busy === "csv" ? "Preparing…" : REPORT_CSV}</button>
+        </>
+      ) : (
+        <a href={SAMPLE_PDF_PATH} target="_blank" rel="noopener noreferrer" className={`${btn} inline-flex items-center`} data-testid="saved-result-sample">{SAMPLE_REPORT}</a>
+      )}
+      {msg && <span className="basis-full text-sm text-foreground-muted" role="status" data-testid="saved-results-msg">{msg}</span>}
+    </>
+  );
+}
+
 interface Props {
   ruleId: string;
   ruleName: string;
@@ -48,7 +84,6 @@ export function SavedResults({ ruleId, ruleName, refreshKey, selected, onTick, c
   const [limit, setLimit] = useState<number | null>(null);
   const [viewing, setViewing] = useState<string | null>(null);
   const [stocks, setStocks] = useState<{ symbol: string; company: string }[]>([]);
-  const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
@@ -97,22 +132,6 @@ export function SavedResults({ ruleId, ruleName, refreshKey, selected, onTick, c
       setMsg("That result could not be removed right now.");
     }
   }
-  async function report(runId: string, kind: "pdf" | "csv") {
-    setBusy(`${runId}:${kind}`);
-    setMsg(null);
-    try {
-      const token = await getToken();
-      if (!token) throw new Error("login");
-      const { blob, filename } = await downloadRunReport(ruleId, runId, kind, selected, token);
-      saveBlob(blob, filename ?? `redixfi-rule-report.${kind}`);
-    } catch (e) {
-      const d = e instanceof ApiError ? (e.detail as { message?: string } | undefined) : undefined;
-      setMsg(d?.message ?? REPORT_FAILED);
-    } finally {
-      setBusy(null);
-    }
-  }
-
   if (runs === null) return msg ? <p className="text-sm text-foreground-muted" role="status">{msg}</p> : null;
   return (
     <section className="space-y-3 rounded-xl border border-border bg-surface p-4" aria-labelledby="saved-results-title" data-testid="saved-results">
@@ -127,14 +146,7 @@ export function SavedResults({ ruleId, ruleName, refreshKey, selected, onTick, c
             {r.added !== null && r.dropped !== null && <p className="text-xs text-foreground-muted" data-testid="saved-result-diff">{RESULT_SINCE(fmtDay(r.since) ?? "", r.added, r.dropped)}</p>}
             <div className="mt-2 flex flex-wrap gap-2">
               <button type="button" onClick={() => void view(r)} aria-expanded={viewing === r.id} className={btn} data-testid="saved-result-view">{viewing === r.id ? RESULT_HIDE : RESULT_VIEW}</button>
-              {paid ? (
-                <>
-                  <button type="button" onClick={() => void report(r.id, "pdf")} disabled={busy !== null} className={btn} data-testid="saved-result-pdf">{busy === `${r.id}:pdf` ? "Preparing…" : REPORT_PDF}</button>
-                  <button type="button" onClick={() => void report(r.id, "csv")} disabled={busy !== null} className={btn} data-testid="saved-result-csv">{busy === `${r.id}:csv` ? "Preparing…" : REPORT_CSV}</button>
-                </>
-              ) : (
-                <a href={SAMPLE_PDF_PATH} target="_blank" rel="noopener noreferrer" className={`${btn} inline-flex items-center`} data-testid="saved-result-sample">{SAMPLE_REPORT}</a>
-              )}
+              <ReportDownload ruleId={ruleId} runId={r.id} selected={selected} />
               {confirmDelete === r.id ? (
                 <>
                   <button type="button" onClick={() => void remove(r.id)} className={`${btn} border-accent`} data-testid="saved-result-delete-confirm">{RESULT_DELETE}</button>

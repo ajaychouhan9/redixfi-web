@@ -1,4 +1,4 @@
-// Shortlist Lab, Learn tab (21 Nov 2026): six named steps, every example reading shown in full, one Ask AI button, the five fixed questions
+// Shortlist Lab, Learn tab (21 Nov 2026): seven named steps, every example reading shown in full, one Ask AI button, the five fixed questions
 // and the address parameter that may only use them. Replaces the 18 Nov test of the old 15-minute page.
 import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
@@ -10,8 +10,8 @@ import { STEPS } from "../src/lib/stock-check.ts";
 const read = (p: string) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
 const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\/\/.*$/gm, "$1");
 
-// 1. six steps, the same names on both tabs, one plain line each
-assert.deepEqual(STEP_NAMES, ["Size and trading", "Earnings", "Returns", "Debt and pledge", "Price movement", "Price you pay"]);
+// 1. seven steps, the same names on both tabs, one plain line each
+assert.deepEqual(STEP_NAMES, ["Size and trading", "Earnings", "Returns", "Debt and pledge", "Price movement", "Price you pay", "Price and volume"]);
 assert.deepEqual(STEPS.map((s) => s.title), STEP_NAMES, "My rules uses the same step names");
 assert.deepEqual(STEPS.map((s) => s.line), LEARN_STEPS.map((s) => s.line), "and the same plain line under each");
 for (const s of LEARN_STEPS) {

@@ -505,9 +505,6 @@ export interface MyScreen {
   snapshot?: { at: string | null; as_of: string | null; count: number } | null;
   /** How many Ask AI answers are saved to this rule (release 2). */
   answers?: number;
-  /** 21 Nov 2026: the steps (0 to 5) set to Skip (their values are kept but not applied), and how many rules are applied. */
-  skipped?: number[];
-  filters_set?: number;
 }
 
 /** A saved result ("run") of a saved rule. */
@@ -518,7 +515,6 @@ export interface RuleRun {
   as_of: string | null;
   earlier_values: boolean;
   answers: number;
-  skipped: number[];
   params: Record<string, unknown>;
   added: number | null;
   dropped: number | null;
@@ -557,7 +553,6 @@ export interface MyScreenSnapshot {
 
 /** What a save may carry beside the rules: the stock count shown beside the rule, and (optionally) the stock list as a dated snapshot. */
 export interface MyScreenSaveExtras {
-  skipped?: number[];
   stock_count?: number | null;
   snapshot_symbols?: string[] | null;
   snapshot_as_of?: string | null;
@@ -618,8 +613,14 @@ export const downloadRuleExport = (ruleId: string, kind: "pdf" | "csv", token: s
 const runPath = (ruleId: string, runId?: string) => `/my-screens/${encodeURIComponent(ruleId)}/runs${runId ? `/${encodeURIComponent(runId)}` : ""}`;
 
 /** The server runs the rule and saves the result. At the plan limit nothing is saved until `confirmDrop` is true (the oldest result is then removed). */
-export async function saveRuleRun(token: string, ruleId: string, params: Record<string, unknown>, skipped: number[], confirmDrop = false): Promise<RuleRunSaved> {
-  const env = await apiMutate<RuleRunSaved>(runPath(ruleId), "POST", { params, skipped, confirm_drop: confirmDrop }, { token });
+export async function saveRuleRun(token: string, ruleId: string, params: Record<string, unknown>, confirmDrop = false): Promise<RuleRunSaved> {
+  const env = await apiMutate<RuleRunSaved>(runPath(ruleId), "POST", { params, confirm_drop: confirmDrop }, { token });
+  return env.data;
+}
+/** "Save this result" for a rule that is not saved yet (22 Nov 2026): the server runs the rule, then saves the rule under this name and the result together. */
+export interface RuleSavedWithResult { saved: boolean; rule: MyScreen; run: { id: string; run_date: string; count: number; as_of: string | null }; limit: number; rule_limit: number }
+export async function saveRuleWithResult(token: string, name: string, params: Record<string, unknown>): Promise<RuleSavedWithResult> {
+  const env = await apiMutate<RuleSavedWithResult>("/my-screens/with-result", "POST", { name, params }, { token });
   return env.data;
 }
 export async function listRuleRuns(token: string, ruleId: string): Promise<{ runs: RuleRun[]; limit: number; count: number }> {

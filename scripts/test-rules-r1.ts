@@ -9,7 +9,7 @@ import {
 import {
   LIMIT_REACHED, PLAN_LINE, REPLACE_OLD, REPLACE_QUESTION, RUN_AGAIN_RESULT, SAVE_AS_NEW_RULE, SHOWING_RULE, copyName, diffLists, fmtDay, saveAction, savedLine, snapshotLine,
 } from "../src/lib/my-rules.ts";
-import { ALL_AT_ONCE, ASK_GROUP_MAX, GROUP_KEYS, groupQuestion, joinNames, toggleSelected } from "../src/lib/ask-group.ts";
+import { ASK_GROUP_MAX, GROUP_KEYS, askRemaining, groupNotEnough, groupQuestion, groupQuestionAll, groupRunFewer, groupUses, joinNames, toggleSelected } from "../src/lib/ask-group.ts";
 
 const read = (p: string) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
 const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\/\/.*$/gm, "$1");
@@ -22,7 +22,7 @@ for (const k of ["profitYears", "sales3", "profit3", "salesQ", "profitQg", "prof
 assert.equal(COMMON_RULES.growthUp, false, "Start with common rules does not tick the new box (existing common rules unchanged)");
 assert.deepEqual(toParams(COMMON_RULES), { market_cap_min: 500, eps_positive: true, profit_years_min: 5, sales_cagr_3y_min: 10, profit_cagr_3y_min: 10, sales_growth_min: 10, profit_growth_min: 10, roe_min: 15, roce_min: 15, de_max: 1, pledge_max: 10, pe_max: 25 });
 
-const COLS = ["mc", "eps", "py", "sgq", "pgq", "sg3", "pg3", "roe", "roce", "rna", "de", "pl", "vol", "vr", "dl", "pe", "gs"];
+const COLS = ["mc", "eps", "py", "sgq", "pgq", "sg3", "pg3", "roe", "roce", "rna", "de", "pl", "vol", "vr", "dl", "pe", "gs", "h52", "r1", "r3", "r6", "a50", "a200", "vd"];
 const row = (o: Record<string, number | null>): (number | null)[] => COLS.map((c) => (c in o ? o[c] : null));
 const data: LadderData = {
   version: 1, as_of: "2026-11-19", fund_quarter_end: "2026-09-30", built_at: "2026-11-19T14:00:00Z", cols: COLS,
@@ -36,7 +36,7 @@ assert.equal(countAfter(data, EMPTY_RULES, 5), 6);
 assert.equal(countAfter(data, on, 0), 6, "a step-1 rule does not count at step 0");
 assert.equal(countAfter(data, on, 1), 3, "only stocks with a 1 pass; 0 and no figure are left out");
 assert.equal(countAfter(data, { ...on, mcMin: "1000" }, 5), 1);
-assert.deepEqual(countsByStep(data, { ...on, mcMin: "1000" }), [4, 1, 1, 1, 1, 1]);
+assert.deepEqual(countsByStep(data, { ...on, mcMin: "1000" }), [4, 1, 1, 1, 1, 1, 1]);
 assert.equal(countAfter({ ...data, cols: ["mc"], rows: [[1]] }, on, 5), 0, "an older file with no gs column matches nothing");
 assert.equal(growthGap(data, on), 2, "two stocks have fewer than four annual figures");
 assert.equal(growthGap(data, { ...on, mcMin: "1000" }), 2, "counted among the stocks that meet every other rule");
@@ -107,7 +107,19 @@ assert.equal(joinNames(["A"]), "A");
 assert.equal(joinNames(["A", "B"]), "A and B");
 assert.equal(joinNames(["A", "B", "C"]), "A, B and C");
 assert.deepEqual(GROUP_KEYS, ["points", "financials", "holders", "management", "price"], "the five questions");
-assert.deepEqual([...ALL_AT_ONCE], ["price"], "only the price question is asked for all stocks at once (checked on production data 20 Nov 2026)");
+// 22 Nov 2026: with 2 to 8 stocks every one of the five questions is asked for every stock and shown as one reply
+assert.equal(groupQuestionAll("points", 3), "List the points to watch for all 3 stocks.");
+assert.equal(groupQuestionAll("price", 8), "Show the last 10 days of price change and delivery % for all 8 stocks.");
+for (const k of GROUP_KEYS) assert.ok(/for all 4 stocks\.$/.test(groupQuestionAll(k, 4) as string), `${k}: sample question says for all N stocks`);
+assert.equal(groupQuestionAll("points", 1), null, "one stock: the single-stock text is used");
+assert.equal(groupUses(3, 10), "This will use 3 questions. You have 10 left.");
+assert.equal(groupUses(1, 2), "This will use 1 question. You have 2 left.");
+assert.equal(groupNotEnough(5, 2), "You have 2 left, which is not enough for all 5 stocks.");
+assert.equal(groupRunFewer(2), "Run for the first 2 stocks");
+const U = { daily_limit: 3, daily_used: 1, monthly_limit: null, monthly_used: null, topup_questions_remaining: 0 };
+assert.equal(askRemaining(U), 2, "Free: 3 live questions a day, 1 used");
+assert.equal(askRemaining({ ...U, daily_limit: 25, daily_used: 5, monthly_limit: 300, monthly_used: 295, topup_questions_remaining: 2 }), 7, "the lower of today and the month plus added questions");
+assert.equal(askRemaining(null), null);
 const syms = ["HINDUNILVR", "TCS", "ITC"];
 assert.equal(groupQuestion("points", syms, "TCS"), "List the points to watch for TCS.");
 assert.equal(groupQuestion("points", syms, null), "List the points to watch for HINDUNILVR.", "no company chosen: the first one");
@@ -115,7 +127,7 @@ assert.equal(groupQuestion("points", syms, "NOPE"), "List the points to watch fo
 assert.equal(groupQuestion("financials", syms, "ITC"), "Show ITC's sales, profit, margin and debt trend for the last 3 years.");
 assert.equal(groupQuestion("holders", syms, "TCS"), "Show recent promoter, insider and bulk or block deal activity for TCS.");
 assert.equal(groupQuestion("management", syms, "TCS"), "List the guidance, capex plans and risks mentioned in the latest concall and annual report for TCS.");
-assert.equal(groupQuestion("price", syms, "TCS"), "Show the last 10 days of price change and delivery % for HINDUNILVR, TCS and ITC.");
+assert.equal(groupQuestion("price", syms, "TCS"), "Show the last 10 days of price change and delivery % for TCS.", "a question about one stock names that stock");
 assert.equal(groupQuestion("price", ["TCS"], "TCS"), "Show the last 10 days of price change and delivery % for TCS.", "one stock: no list of names");
 assert.equal(groupQuestion("nope", syms, null), null);
 assert.equal(groupQuestion("points", [], null), null);
@@ -127,7 +139,7 @@ const ladder = src.ShortlistLadder;
 assert.ok(ladder.includes("SHOWING_RULE(shownFrom)") && ladder.includes('data-testid="showing-rule"') && ladder.includes("<RulesApplied rules={shownRules} />"), "Showing rule: <name> and the rules-applied card sit above the stocks");
 assert.ok(ladder.indexOf("showing-rule") < ladder.indexOf('data-testid="ladder-cards"') && ladder.indexOf("<RulesApplied") < ladder.indexOf('data-testid="ladder-cards"'), "both are above the stock cards");
 assert.ok(src.RulesApplied.includes("aria-expanded={open}") && src.RulesApplied.includes("RULES_APPLIED_NOTE") && !/<input|<textarea|onChange/.test(src.RulesApplied), "collapsible and read only");
-assert.ok(strip(read("components/app/stock-check/CommonValuesCard.tsx")).includes("ladder-common") && strip(read("components/app/stock-check/CommonValuesCard.tsx")).includes("ladder-clear") && src.MyRulesCard.includes("saved-list") && src.MyRulesCard.includes("saved-open") && src.MyRulesCard.includes("saved-delete") && src.MyRulesCard.includes("save-rules-button") && src.MyRulesCard.includes("save-new-button"), "one card: common rules, saved rules, Open, Save, Save as new, Delete");
+assert.ok(ladder.includes("ladder-fill") && ladder.includes("ladder-clear") && src.MyRulesCard.includes("saved-list") && src.MyRulesCard.includes("saved-open") && src.MyRulesCard.includes("saved-delete") && src.MyRulesCard.includes("save-rules-button") && src.MyRulesCard.includes("save-new-button"), "one card: common rules, saved rules, Open, Save, Save as new, Delete");
 assert.ok(src.MyRulesCard.includes('data-testid="replace-ask"') && src.MyRulesCard.includes("saveAction(!!active, changed)"), "the ask-once prompt");
 assert.ok(src.MyRulesCard.includes("savedLine(s)") && src.MyRulesCard.includes("RUN_AGAIN_BUTTON"), "name, date, stock count and Run again");
 assert.ok(src.MyRulesCard.includes("limit !== null && saved.length >= limit") && src.MyRulesCard.includes("PLAN_LINE(limit, saved.length)"), "plan limits are kept");
@@ -144,5 +156,5 @@ const ctx = read("lib/ask-panel/AskPanelContext.tsx");
 assert.ok(ctx.includes("openWithStocks: (symbols: string[]) => void") && ctx.includes("setPendingQuestion(null)"), "context: a new session with stocks");
 const panel = read("components/app/ask/AskRedixFi.tsx");
 assert.ok(panel.includes("if (open && pendingStocks && user)") && panel.includes("startNewConversation();") && panel.includes("<StockGroupBlock"), "the panel starts a NEW session with the stocks and the five questions");
-assert.ok(panel.includes("onQuestion={(q) => setInput(q)}"), "a suggestion is typed into the input, not sent");
+assert.ok(panel.includes("setInput(q)") && panel.includes("planGroup(key, q)") && panel.includes("groupUses(n, left)"), "one stock: a suggestion is typed into the input, not sent; 2 to 8 stocks: the number of questions is shown and confirmed first, nothing is sent before");
 console.log("rules release 1 tests: ok");

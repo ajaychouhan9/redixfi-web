@@ -1,5 +1,5 @@
-"""Browser checks for Shortlist Lab releases 2 and 3 (21 Nov 2026): fixed tab bars, Learn tab, Ask AI clean-up, Use/Skip, common values card,
-saved results, reports, Read your shortlist with AI, Full check page. Real site build, real figures file and real shortlist (live API, read only);
+"""Browser checks for Shortlist Lab releases 2 and 3 (21 Nov 2026) and the 22 Nov 2026 release: fixed tab bars, Learn tab, Ask AI clean-up, blank-field rules (no Use/Skip),
+Fill typical values, the Price and volume step, saved results, Save this result, reports, Ask AI for 2 to 8 stocks, Read your shortlist with AI, Full check page. Real site build, real figures file and real shortlist (live API, read only);
 logged-in-only endpoints are answered by a mock so Free / paid screens can be exercised without a real account.
 
   python scripts/browser-lab-r2r3.py <site url> [shots dir]
@@ -7,6 +7,8 @@ Widths 360, 414 and 1280 (desktop), themes light / dark / slate. One line per ch
 """
 import base64
 import json
+import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -18,6 +20,7 @@ SHOTS = Path(sys.argv[2]) if len(sys.argv) > 2 else None
 if SHOTS:
     SHOTS.mkdir(parents=True, exist_ok=True)
 RESULTS = []
+LADDER_JSON = Path(os.environ["LADDER_FILE"]).read_text(encoding="utf-8") if os.environ.get("LADDER_FILE") else None   # a rebuilt counts file, before it is deployed
 WIDTHS = [360, 414, 1280]
 THEMES = ["light", "dark", "slate"]
 
@@ -47,11 +50,13 @@ def env(data, **kw):
 
 
 class Mock:
-    def __init__(self, tier="pro", limit=10):
+    def __init__(self, tier="pro", limit=10, saved=True, fail=(), daily_used=None):
         self.tier, self.limit = tier, limit
+        self.fail = set(fail)
+        self.daily_used = 4 if daily_used is None else daily_used
         self.screens = [{"id": "s1", "name": "My growers", "params": RULE_PARAMS, "created_at": "2026-11-18T10:00:00Z", "last_viewed_at": None, "updated_at": "2026-11-19T10:00:00Z",
-                         "stock_count": 52, "counted_at": None, "snapshot": None, "skipped": [], "filters_set": 3, "answers": 0}]
-        self.runs = [{"id": "r1", "run_date": "2026-11-19", "count": 9, "as_of": "2026-11-18", "earlier_values": True, "answers": 2, "skipped": [], "params": {"roe_min": 12},
+                         "stock_count": 52, "counted_at": None, "snapshot": None, "answers": 0}] if saved else []
+        self.runs = [{"id": "r1", "run_date": "2026-11-19", "count": 9, "as_of": "2026-11-18", "earlier_values": True, "answers": 2, "params": {"roe_min": 12},
                       "added": None, "dropped": None, "since": None}]
         self.run_limit = limit
         self.calls = []
@@ -67,44 +72,65 @@ class Mock:
             body = None
         self.calls.append((m, path, body))
         j = lambda data, status=200: route.fulfill(status=status, content_type="application/json", body=json.dumps(env(data)))
+        if path == "/ladder-data" and LADDER_JSON:
+            return route.fulfill(status=200, content_type="application/json", body=LADDER_JSON)
         if path in ("/signals", "/ladder-data"):
             r = route.fetch(headers={k: v for k, v in req.headers.items() if k.lower() != "authorization"})
             return route.fulfill(response=r)
         if path == "/me":
             return j({**user(self.tier), "subscription": {"plan": self.tier, "status": "active", "renews": "2026-12-20T00:00:00Z", "cancel_requested_at": None, "cancel_at": None}, "phone_verified": False})
         if path == "/me/usage":
+            if self.tier == "free":
+                return j({"research_views_remaining": 0, "unlimited": False, "ask_redixfi": {"tier": "free", "is_pro_trial": False, "daily_limit_per_symbol": None,
+                          "daily_used": self.daily_used, "daily_limit": 3, "monthly_used": None, "monthly_limit": None, "topup_questions_remaining": 0}})
             return j({"research_views_remaining": 0, "unlimited": True, "ask_redixfi": {"tier": self.tier, "is_pro_trial": False, "daily_limit_per_symbol": None,
-                      "daily_used": 4, "daily_limit": 10, "monthly_used": 40, "monthly_limit": 200, "topup_questions_remaining": 25}})
+                      "daily_used": self.daily_used, "daily_limit": 10, "monthly_used": 40, "monthly_limit": 200, "topup_questions_remaining": 25}})
+        if path == "/ask" and m == "POST":
+            sym = (body or {}).get("chat_context_symbol") or "NONE"
+            self.asked = getattr(self, "asked", []) + [(sym, (body or {}).get("question"))]
+            if sym in self.fail:
+                return route.fulfill(status=500, content_type="application/json", body=json.dumps({"detail": "model down"}))
+            self.daily_used += 1
+            return j({"answer": f"Answer for {sym}: the filing says what it says.", "sources_used": [], "source_citations": [], "refused": False, "conversation_id": f"c_{sym}",
+                      "mode": "symbol", "resolved_symbol": sym, "compare": None, "screen": None, "table": None, "follow_ups": [], "choices": [], "quota_unchanged": False})
+        if path == "/my-screens/with-result" and m == "POST":
+            if len(self.screens) >= self.limit:
+                return route.fulfill(status=403, content_type="application/json", body=json.dumps({"detail": "Your Free plan keeps 1 saved rule. Delete the saved rule, or update it with Save, to save this one. Basic keeps 10 and Pro 30."}))
+            s = {"id": "s9", "name": body["name"], "params": body["params"], "created_at": "2026-11-22T10:00:00Z", "last_viewed_at": None, "updated_at": "2026-11-22T10:00:00Z",
+                 "stock_count": len(SYMS), "counted_at": None, "snapshot": None, "answers": 0}
+            self.screens.append(s)
+            self.runs.insert(0, {"id": "r9", "run_date": "2026-11-22", "count": len(SYMS), "as_of": "2026-11-20", "earlier_values": False, "answers": 0, "params": body["params"], "added": None, "dropped": None, "since": None})
+            return j({"saved": True, "rule": s, "run": {"id": "r9", "run_date": "2026-11-22", "count": len(SYMS), "as_of": "2026-11-20"}, "limit": self.run_limit, "rule_limit": self.limit})
         if path == "/my-screens" and m == "GET":
             return j({"screens": self.screens, "limit": self.limit, "count": len(self.screens)})
         if path == "/my-screens" and m == "POST":
             if len(self.screens) >= self.limit:
                 return route.fulfill(status=403, content_type="application/json", body=json.dumps({"detail": "Your Free plan keeps 1 saved rule. Delete the saved rule, or update it with Save, to save this one. Basic keeps 10 and Pro 30."}))
             s = {"id": "s9", "name": body["name"], "params": body["params"], "created_at": "2026-11-20T10:00:00Z", "last_viewed_at": None, "updated_at": "2026-11-20T10:00:00Z",
-                 "stock_count": body.get("stock_count"), "counted_at": None, "snapshot": None, "skipped": body.get("skipped", []), "filters_set": 2, "answers": 0}
+                 "stock_count": body.get("stock_count"), "counted_at": None, "snapshot": None, "answers": 0}
             self.screens.append(s)
             return j(s)
-        if path.startswith("/my-screens/s1/runs/") and path.endswith("/report.pdf"):
+        if re.match(r"^/my-screens/s\d/runs/", path) and path.endswith("/report.pdf"):
             return route.fulfill(status=200, content_type="application/pdf", headers={"content-disposition": 'attachment; filename="rule-report.pdf"'}, body=b"%PDF-1.4 test")
-        if path.startswith("/my-screens/s1/runs/") and path.endswith("/report.csv"):
+        if re.match(r"^/my-screens/s\d/runs/", path) and path.endswith("/report.csv"):
             return route.fulfill(status=200, content_type="text/csv", headers={"content-disposition": 'attachment; filename="rule-report.csv"'}, body=b"Stock,Company\r\n")
-        if path == "/my-screens/s1/runs" and m == "POST":
+        if re.match(r"^/my-screens/s\d/runs$", path) and m == "POST":
             if body.get("confirm_drop") is not True and len(self.runs) >= self.run_limit:
                 return j({"saved": False, "needs_confirm": True, "drops": {"id": self.runs[-1]["id"], "run_date": self.runs[-1]["run_date"]}, "limit": self.run_limit})
             if len(self.runs) >= self.run_limit:
                 self.runs.pop()
-            self.runs.insert(0, {"id": "r2", "run_date": "2026-11-21", "count": len(SYMS), "as_of": "2026-11-20", "earlier_values": False, "answers": 0, "skipped": body.get("skipped", []),
+            self.runs.insert(0, {"id": "r2", "run_date": "2026-11-21", "count": len(SYMS), "as_of": "2026-11-20", "earlier_values": False, "answers": 0,
                                  "params": body["params"], "added": 2, "dropped": 1, "since": "2026-11-19"})
             return j({"saved": True, "needs_confirm": False, "run": {"id": "r2", "run_date": "2026-11-21", "count": len(SYMS), "as_of": "2026-11-20"}, "replaced_same_day": False,
                       "dropped": None, "limit": self.run_limit, "diff": {"since": "2026-11-19", "added": ["OFSS", "TECHM"], "dropped": ["ZZZZ"]}})
-        if path == "/my-screens/s1/runs" and m == "GET":
+        if re.match(r"^/my-screens/s\d/runs$", path) and m == "GET":
             return j({"runs": self.runs, "limit": self.run_limit, "count": len(self.runs)})
-        if path.startswith("/my-screens/s1/runs/") and m == "GET":
+        if re.match(r"^/my-screens/s\d/runs/", path) and m == "GET":
             return j({"run": {"id": "r2", "run_date": "2026-11-21", "count": len(SYMS), "as_of": "2026-11-20"}, "columns": [["roe", "ROE (%)"]],
                       "stocks": [{"symbol": s, "company": s.title() + " Ltd", "values": ["20"]} for s in SYMS], "diff": None})
         if path.startswith("/my-screens/") and m == "DELETE":
             return j({"deleted": True})
-        if path.startswith("/my-screens/s1/answers"):
+        if re.match(r"^/my-screens/s\d/answers", path):
             return j({"answers": [], "count": 0, "limit": 40})
         if path == "/fullcheck/estimate":
             locked = self.tier == "free"
@@ -155,6 +181,8 @@ def new_page(br, width, theme, mock=None, tier="pro"):
     page = ctx.new_page()
     if mock is not None:
         page.route("**/api/v1/**", mock.handle)
+    elif LADDER_JSON:
+        page.route("**/api/v1/ladder-data", lambda route: route.fulfill(status=200, content_type="application/json", body=LADDER_JSON))
     return ctx, page
 
 
@@ -193,7 +221,7 @@ def logged_out(br, width, theme):
     check(f"{tag}: Learn: no 'What this site does not do' card, no 'Know markets already?' line", "What this site does not do" not in body and "Know markets already" not in body)
     ready = page.locator("[data-testid=learn-ready-line]")
     check(f"{tag}: Learn: ready line text", ready.inner_text().strip() == "Ready to filter? Open the My rules tab to shortlist stocks as per your rule.", ready.inner_text())
-    check(f"{tag}: Learn: step lines name the real tab, only Screener is a link", page.locator("[data-testid=learn-find-line] a").count() == 6 and "look in the Overview tab." in page.locator("[data-testid=learn-find-line]").first.inner_text()
+    check(f"{tag}: Learn: step lines name the real tab, only Screener is a link", page.locator("[data-testid=learn-find-line] a").count() == 7 and "look in the Overview tab." in page.locator("[data-testid=learn-find-line]").first.inner_text()
           and "Annual report and Insiders & promoters tabs" in page.locator("[data-testid=learn-step-4] [data-testid=learn-find-line]").inner_text())
     check(f"{tag}: Lab tab bar is fixed while the content scrolls", fixed_ok(page, "[data-testid=lab-tablist]", width), str(top_of(page, "[data-testid=lab-tablist]")))
     page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
@@ -202,35 +230,70 @@ def logged_out(br, width, theme):
     check(f"{tag}: the words My rules tab switch to that tab", page.evaluate("location.hash") == "#my-rules" and page.locator("[data-testid=lab-tab-rules][aria-selected=true]").count() == 1)
     wait_counts(page)
     check(f"{tag}: My rules: no horizontal scroll", overflow(page) <= 0, str(overflow(page)))
-    # Use / Skip
-    check(f"{tag}: a Use / Skip switch on every step", all(page.locator(f"[data-testid=step-switch-{i}] button").count() == 2 for i in range(6)))
-    check(f"{tag}: header says 0 of 6 filters set at the start", page.locator("[data-testid=ladder-filters-set]").inner_text().strip() == "0 of 6 filters set")
-    page.locator("[data-testid=ladder-common]").click()
-    page.wait_for_function("document.querySelector('[data-testid=ladder-filters-set]').textContent.startsWith('5 of 6')", timeout=10000)
-    check(f"{tag}: Fill with these values sets the steps (5 of 6 filters set: Price movement is left empty)", page.locator("[data-testid=ladder-filters-set]").inner_text().strip() == "5 of 6 filters set")
-    left_all = int(page.locator("[data-testid=ladder-left]").inner_text().split()[0].replace(",", ""))
-    page.locator("[data-testid=step-skip-2]").click()
-    page.wait_for_function("document.querySelector('[data-testid=ladder-filters-set]').textContent.startsWith('4 of 5')", timeout=10000)
-    left_skip = int(page.locator("[data-testid=ladder-left]").inner_text().split()[0].replace(",", ""))
-    check(f"{tag}: Skip: header shows 4 of 5 filters set and the list widens ({left_all} -> {left_skip})", left_skip >= left_all and page.locator("[data-testid=ladder-filters-set]").inner_text().strip() == "4 of 5 filters set")
+    # no Use / Skip, a blank field is ignored, one Fill typical values button
+    check(f"{tag}: seven steps, no Use / Skip switch, no 'N of M filters set' line", page.locator("section[data-testid^=ladder-step-]").count() == 7 and page.locator("[data-testid^=step-switch-]").count() == 0
+          and page.locator("[data-testid=ladder-filters-set]").count() == 0 and page.locator("[data-testid=my-rules-filters-set]").count() == 0 and "filters set" not in page.inner_text("body"))
+    check(f"{tag}: one line under the heading: Leave a field blank to ignore it.", page.locator("[data-testid=ladder-blank-line]").inner_text().strip() == "Leave a field blank to ignore it.")
+    check(f"{tag}: the Common starting values card is gone", page.locator("[data-testid=common-values]").count() == 0 and "Common starting values" not in page.inner_text("body"))
+    fill = page.locator("[data-testid=ladder-fill]")
+    check(f"{tag}: a Fill typical values button and a Clear all link sit near the top of the steps", fill.inner_text().strip() == "Fill typical values" and page.locator("[data-testid=ladder-clear]").inner_text().strip() == "Clear all"
+          and top_of(page, "[data-testid=ladder-fill]") < top_of(page, "[data-testid=ladder-step-0]"))
+    check(f"{tag}: the show button has no number on it", page.locator("[data-testid=ladder-bar-show]").inner_text().strip() == "Show stocks that meet my rule", page.locator("[data-testid=ladder-bar-show]").inner_text())
+    check(f"{tag}: the stocks left count and its note are kept", "left" in page.locator("[data-testid=ladder-left]").inner_text() and "Counts come from last night's figures" in page.locator("[data-testid=ladder-counts-note]").inner_text())
+    left_none = int(page.locator("[data-testid=ladder-left]").inner_text().split()[0].replace(",", ""))
+    fill.click()
+    page.wait_for_timeout(300)
     page.locator("[data-testid=ladder-step-2] button").first.click()
-    page.wait_for_selector("[data-testid=step-body-2]")
-    fs = page.locator("[data-testid=step-body-2]")
-    check(f"{tag}: a skipped step is greyed out and its boxes are disabled, values kept", fs.get_attribute("data-skipped") == "1" and fs.locator("input#rule-roe").is_disabled() and fs.locator("input#rule-roe").input_value() == "15", fs.locator("input#rule-roe").input_value())
-    page.locator("[data-testid=step-use-2]").click()
-    page.wait_for_function("document.querySelector('[data-testid=ladder-filters-set]').textContent.startsWith('5 of 6')", timeout=10000)
-    check(f"{tag}: Use brings it back with the same value", page.locator("input#rule-roe").input_value() == "15")
+    page.wait_for_selector("input#rule-roe", timeout=10000)
+    check(f"{tag}: Fill typical values fills the Returns boxes with the published typical numbers", page.locator("input#rule-roe").input_value() == "15" and page.locator("input#rule-roce").input_value() == "15")
+    left_all = int(page.locator("[data-testid=ladder-left]").inner_text().split()[0].replace(",", ""))
+    check(f"{tag}: ...and the count falls ({left_none} -> {left_all})", left_all < left_none)
     page.fill("input#rule-roe", "")
     page.fill("input#rule-roce", "")
-    page.wait_for_function("document.querySelector('[data-testid=ladder-filters-set]').textContent.startsWith('4 of 6')", timeout=10000)
-    check(f"{tag}: a blank box is never applied (both Returns boxes blank: 4 of 6 filters set)", page.locator("[data-testid=ladder-filters-set]").inner_text().strip() == "4 of 6 filters set")
-    # common card
-    card = page.locator("[data-testid=common-values]")
-    check(f"{tag}: one Common starting values card with subtitle and every value", card.count() == 1 and "Typical numbers from published methods. Change any of them." in card.inner_text()
-          and "Fill with these values" in card.inner_text() and "Market value at least 500" in card.inner_text() and "P/E at most 25" in card.inner_text())
+    page.wait_for_timeout(300)
+    left_blank = int(page.locator("[data-testid=ladder-left]").inner_text().split()[0].replace(",", ""))
+    check(f"{tag}: a blank box is not counted (both Returns boxes blank: {left_all} -> {left_blank})", left_blank >= left_all)
+    # step 7, Price and volume
+    page.locator("[data-testid=ladder-step-6] button").first.click()
+    page.wait_for_selector("[data-testid=pv-step]", timeout=10000)
+    names = [page.locator(f"[data-testid=ladder-step-{i}] button span").first.inner_text().split("\n")[0] for i in range(7)]
+    check(f"{tag}: Step 7 is Price and volume", names[6] == "Step 7. Price and volume", names[6])
+    blocks = [page.locator(f"[data-testid=pv-{k}]") for k in ("chg", "near52", "avg", "volDay")]
+    check(f"{tag}: four optional filters, each with what it tells you and what it does not tell you", all(b.count() == 1 for b in blocks)
+          and all("What it tells you:" in b.inner_text() and "What it does not tell you:" in b.inner_text() and "It is not a prediction and not advice." in b.inner_text() for b in blocks))
+    check(f"{tag}: the four are blank at the start (Fill typical values leaves them blank: no published number)", page.locator("#rule-chgMonths").input_value() == "" and page.locator("#rule-chgMin").input_value() == ""
+          and page.locator("#rule-near52").input_value() == "" and page.locator("#rule-avgDays").input_value() == "" and page.locator("#rule-volDay").input_value() == "")
+    opts = page.evaluate("Array.from(document.querySelectorAll('#rule-chgMonths option')).map(o => o.value)")
+    check(f"{tag}: the price change period is 1, 3 or 6 months, nothing shorter", opts == ["", "1", "3", "6"], str(opts))
+    pvtxt = " ".join(b.inner_text() for b in blocks)
+    check(f"{tag}: no indicator names and none of the banned words in the new labels", not re.search(r"\b(RSI|MACD|strong|breakout|buy|picks?|top|best)\b", pvtxt, re.I), pvtxt[:200])
+    before = int(page.locator("[data-testid=ladder-left]").inner_text().split()[0].replace(",", ""))
+    page.select_option("#rule-chgMonths", "3")
+    page.wait_for_selector("[data-testid=problem-chg-pair]", timeout=5000)
+    mid = int(page.locator("[data-testid=ladder-left]").inner_text().split()[0].replace(",", ""))
+    check(f"{tag}: a period with no number is not used (told in words, count unchanged {before} -> {mid})", mid == before and "Choose both the period and the number" in page.locator("[data-testid=problem-chg-pair]").inner_text())
+    page.fill("#rule-chgMin", "10")
+    page.wait_for_timeout(300)
+    c1 = int(page.locator("[data-testid=ladder-left]").inner_text().split()[0].replace(",", ""))
+    page.select_option("#rule-avgDays", "200")
+    page.wait_for_timeout(300)
+    c2 = int(page.locator("[data-testid=ladder-left]").inner_text().split()[0].replace(",", ""))
+    page.fill("#rule-near52", "10")
+    page.wait_for_timeout(300)
+    c3 = int(page.locator("[data-testid=ladder-left]").inner_text().split()[0].replace(",", ""))
+    page.fill("#rule-volDay", "1.5")
+    page.wait_for_timeout(300)
+    c4 = int(page.locator("[data-testid=ladder-left]").inner_text().split()[0].replace(",", ""))
+    check(f"{tag}: each Price and volume filter narrows the live count ({before} -> {c1} -> {c2} -> {c3} -> {c4})", c1 < before and c2 <= c1 and c3 <= c2 and c4 <= c3 and before > 0, f"{before},{c1},{c2},{c3},{c4}")
+    page.locator("[data-testid=ladder-clear]").click()
+    page.wait_for_timeout(300)
+    check(f"{tag}: Clear all empties every field including the new ones", page.locator("#rule-chgMonths").input_value() == "" and page.locator("#rule-near52").input_value() == "" and page.locator("#rule-avgDays").input_value() == ""
+          and page.locator("#rule-volDay").input_value() == "" and int(page.locator("[data-testid=ladder-left]").inner_text().split()[0].replace(",", "")) == left_none)
+    check(f"{tag}: Price and volume step: no horizontal scroll", overflow(page) <= 0, str(overflow(page)))
     # list, then the AI block after it; the sticky bar steps aside
     page.locator("[data-testid=ladder-bar-show]").click()
     page.wait_for_selector("[data-testid=ladder-card]", timeout=40000)
+    check(f"{tag}: results are called stocks that match your rule today", "match your rule today" in page.locator("[data-testid=ladder-total]").inner_text() or "matches your rule today" in page.locator("[data-testid=ladder-total]").inner_text())
     page.locator("#ladder-results-section").scroll_into_view_if_needed()
     page.wait_for_timeout(600)
     check(f"{tag}: the stocks-left bar steps aside at the results", page.locator("[data-testid=ladder-bar]").get_attribute("data-hidden") == "1")
@@ -296,7 +359,7 @@ def logged_in(br, width, theme, tier):
         page.locator("[data-testid=saved-result-pdf]").first.scroll_into_view_if_needed()
         with page.expect_download(timeout=15000) as dl:
             page.locator("[data-testid=saved-result-pdf]").first.click()
-        check(f"{tag}: Report (PDF) downloads", dl.value.suggested_filename.endswith(".pdf"))
+        check(f"{tag}: Download report (PDF) downloads", dl.value.suggested_filename.endswith(".pdf"))
         rep = [c for c in mock.calls if c[1].endswith("/report.pdf")]
         check(f"{tag}: the report asks for the 8 chosen stocks", len(rep) == 1)
         # Ask all 5 -> opens the Full check page by itself
@@ -333,6 +396,156 @@ def logged_in(br, width, theme, tier):
         check(f"{tag}: a second saved rule asks to delete or update the old one", "Delete the saved rule, or update it with Save" in msg, msg)
     check(f"{tag}: no horizontal scroll", overflow(page) <= 0, str(overflow(page)))
     ctx.close()
+
+
+def tick_cards(page, n):
+    boxes = page.locator("[data-testid=ladder-select] input[type=checkbox]")
+    for i in range(n):
+        boxes.nth(i).click()
+    page.wait_for_timeout(300)
+    return page.evaluate("Array.from(document.querySelectorAll('[data-testid=ladder-select] input:checked')).map(i => i.getAttribute('aria-label').replace('Select ', '').replace(' for Ask AI', ''))")
+
+
+def open_rule_and_tick(page, n):
+    page.goto(SITE + "/shortlist-lab", wait_until="networkidle", timeout=90000)
+    page.click("[data-testid=lab-tab-rules]")
+    page.wait_for_selector("[data-testid=saved-list]", timeout=40000)
+    wait_counts(page)
+    page.locator("[data-testid=saved-open]").first.click()
+    page.wait_for_selector("[data-testid=ladder-card]", timeout=40000)
+    return tick_cards(page, n)
+
+
+def group_ask(br, width, theme, tier):
+    """Ask AI with 2 to 8 stocks: one question for every stock, shown as one reply; the number of questions is shown first; fewer stocks are offered when there are not enough."""
+    tag = f"[{theme} {width}] {tier} group ask"
+    mock = Mock(tier=tier, limit=1 if tier == "free" else 10, daily_used=(1 if tier == "free" else 4))
+    ctx, page = new_page(br, width, theme, mock, tier)
+    ticked = open_rule_and_tick(page, 3)
+    mock.fail = {ticked[1]}
+    page.locator("[data-testid=ask-ai-button]").click()
+    page.wait_for_selector("[data-testid=ask-stock-group]", timeout=20000)
+    grp = page.locator("[data-testid=ask-stock-group]").inner_text()
+    check(f"{tag}: the panel lists the stocks and the five questions say 'for all 3 stocks'", all(f"for all 3 stocks" in page.locator(f"[data-testid=ask-group-q-{k}]").inner_text() for k in ("points", "financials", "holders", "management", "price")) and ticked[0] in grp)
+    check(f"{tag}: the 'asked one stock at a time' line is gone, no repeated One company labels", "one stock at a time" not in grp and "One company" not in grp and "Each question is asked for every stock" in grp)
+    check(f"{tag}: the sample question text does not name only the first stock", ticked[0] not in page.locator("[data-testid=ask-group-q-holders]").inner_text())
+    page.locator("[data-testid=ask-group-q-holders]").click()
+    page.wait_for_selector("[data-testid=ask-group-confirm]", timeout=10000)
+    left = 2 if tier == "free" else 6
+    uses = page.locator("[data-testid=ask-group-uses]").inner_text()
+    check(f"{tag}: before it runs: 'This will use 3 questions. You have {left} left.'", uses == f"This will use 3 questions. You have {left} left.", uses)
+    check(f"{tag}: nothing was sent before the confirmation", not getattr(mock, "asked", []))
+    if tier == "free":
+        ne = page.locator("[data-testid=ask-group-notenough]").inner_text()
+        check(f"{tag}: Free (3 live questions a day, 1 used): blocked with a clear message and an offer to run fewer", ne == "You have 2 left, which is not enough for all 3 stocks." and page.locator("[data-testid=ask-group-run]").count() == 0
+              and page.locator("[data-testid=ask-group-fewer]").inner_text().strip() == "Run for the first 2 stocks", ne)
+        page.locator("[data-testid=ask-group-fewer]").click()
+    else:
+        check(f"{tag}: enough questions: a Run it button, no block", page.locator("[data-testid=ask-group-run]").count() == 1 and page.locator("[data-testid=ask-group-notenough]").count() == 0)
+        page.locator("[data-testid=ask-group-run]").click()
+    page.wait_for_selector("[data-testid=ask-group-reply]", timeout=30000)
+    asked = [a[0] for a in mock.asked]
+    reply = page.locator("[data-testid=ask-group-reply]")
+    if tier == "free":
+        check(f"{tag}: only the first 2 stocks were asked, in the order selected", asked == ticked[:2], str(asked))
+        check(f"{tag}: one reply, stock by stock; the stock that failed is named and not charged", reply.locator(f"[data-testid=ask-group-part-{ticked[0]}]").count() == 1 and f"{ticked[1]} could not be answered" in reply.inner_text() and "not charged" in reply.inner_text(), reply.inner_text()[:200])
+    else:
+        check(f"{tag}: every stock was asked once, in the order selected", asked == ticked, str(asked))
+        check(f"{tag}: the same question for every stock, each naming its own stock", all(q and sym in q for sym, q in mock.asked) and all("promoter, insider" in q for _, q in mock.asked), str(mock.asked))
+        parts = [t.get_attribute("data-testid") for t in reply.locator("[data-testid^=ask-group-part-]").all()]
+        check(f"{tag}: one reply, stock by stock in the order selected (first and third; the second failed)", parts == [f"ask-group-part-{ticked[0]}", f"ask-group-part-{ticked[2]}"], str(parts))
+        check(f"{tag}: the stock that failed is named, with 'not charged'", f"{ticked[1]} could not be answered. It was not charged." in reply.inner_text(), reply.inner_text()[:200])
+    check(f"{tag}: one small 'Not investment advice' line under the reply", page.locator("[data-testid=ask-not-advice]").count() >= 1)
+    check(f"{tag}: no horizontal scroll with the reply", overflow(page) <= 0, str(overflow(page)))
+    ctx.close()
+    if tier != "pro":
+        return
+    # 8 stocks with 6 questions left: blocked, fewer offered
+    mock = Mock(tier=tier, limit=10)
+    ctx, page = new_page(br, width, theme, mock, tier)
+    ticked8 = open_rule_and_tick(page, 8)
+    page.locator("[data-testid=ask-ai-button]").click()
+    page.wait_for_selector("[data-testid=ask-stock-group]", timeout=20000)
+    page.locator("[data-testid=ask-group-q-points]").click()
+    page.wait_for_selector("[data-testid=ask-group-confirm]", timeout=10000)
+    check(f"{tag}: 8 stocks, 6 left: 'This will use 8 questions. You have 6 left.' and a clear block", page.locator("[data-testid=ask-group-uses]").inner_text() == "This will use 8 questions. You have 6 left."
+          and page.locator("[data-testid=ask-group-notenough]").inner_text() == "You have 6 left, which is not enough for all 8 stocks." and page.locator("[data-testid=ask-group-run]").count() == 0)
+    page.locator("[data-testid=ask-group-fewer]").click()
+    page.wait_for_selector("[data-testid=ask-group-reply]", timeout=40000)
+    check(f"{tag}: it ran for the first 6 only", [a[0] for a in mock.asked] == ticked8[:6], str([a[0] for a in mock.asked]))
+    page.wait_for_timeout(300)
+    ctx.close()
+    # a typed question with 2 stocks behaves the same, and Cancel sends nothing
+    mock = Mock(tier=tier, limit=10)
+    ctx, page = new_page(br, width, theme, mock, tier)
+    open_rule_and_tick(page, 2)
+    page.locator("[data-testid=ask-ai-button]").click()
+    page.wait_for_selector("[data-testid=ask-stock-group]", timeout=20000)
+    inp = page.locator('input[placeholder="Ask about a stock, a sector, or up to 8 stocks"]')
+    inp.fill("What does the company make?")
+    inp.press("Enter")
+    page.wait_for_selector("[data-testid=ask-group-confirm]", timeout=10000)
+    check(f"{tag}: a typed question with 2 stocks shows 'This will use 2 questions. You have 6 left.' first", page.locator("[data-testid=ask-group-uses]").inner_text() == "This will use 2 questions. You have 6 left.")
+    page.locator("[data-testid=ask-group-cancel]").click()
+    page.wait_for_timeout(300)
+    check(f"{tag}: Cancel sends nothing", not getattr(mock, "asked", []) and page.locator("[data-testid=ask-group-confirm]").count() == 0)
+    ctx.close()
+
+
+def save_result_flow(br, width, theme, tier):
+    """Save this result: on the results of any run, also for a rule that is not saved yet (asks for a name); the report button sits next to it."""
+    tag = f"[{theme} {width}] {tier} save result"
+    mock = Mock(tier=tier, limit=1 if tier == "free" else 10, saved=(tier == "free"))
+    ctx, page = new_page(br, width, theme, mock, tier)
+    page.goto(SITE + "/shortlist-lab", wait_until="networkidle", timeout=90000)
+    page.click("[data-testid=lab-tab-rules]")
+    page.wait_for_selector("[data-testid=ladder-fill]", timeout=40000)
+    wait_counts(page)
+    page.locator("[data-testid=ladder-fill]").click()
+    page.locator("[data-testid=ladder-bar-show]").click()
+    page.wait_for_selector("[data-testid=ladder-card]", timeout=40000)
+    btn = page.locator("[data-testid=save-result-button]")
+    check(f"{tag}: a clear 'Save this result' button on the results of a rule that is not saved yet", btn.count() == 1 and btn.inner_text().strip() == "Save this result")
+    btn.click()
+    page.wait_for_selector("[data-testid=save-result-form]", timeout=5000)
+    page.locator("[data-testid=save-result-confirm]").click()
+    check(f"{tag}: it asks for a rule name", "Give the rule a name first." in page.locator("[data-testid=save-result-msg]").inner_text())
+    page.fill("[data-testid=save-result-name]", "Quality check")
+    page.locator("[data-testid=save-result-confirm]").click()
+    page.wait_for_selector("[data-testid=save-result-msg]", timeout=10000)
+    page.wait_for_timeout(500)
+    msg = page.locator("[data-testid=save-result-msg]").inner_text()
+    if tier == "free":
+        check(f"{tag}: Free already has 1 saved rule: asked to delete or update it, nothing saved", "Delete the saved rule, or update it with Save" in msg and len(mock.screens) == 1, msg)
+    else:
+        check(f"{tag}: confirmation: the rule and the result are saved together", msg.startswith('Saved the rule "Quality check" and its result (10 stocks).'), msg)
+        check(f"{tag}: the saved rule appears in My rules and its saved result is listed", page.locator("[data-testid=saved-rule]").count() == 1 and page.locator("[data-testid=saved-result]").count() >= 1 and "22 Nov 2026" in page.locator("[data-testid=saved-result]").first.inner_text())
+        pdf = page.locator("[data-testid=save-result-block] [data-testid=saved-result-pdf]")
+        check(f"{tag}: Download report (PDF) sits right next to the saved result", pdf.count() == 1 and pdf.inner_text().strip() == "Download report (PDF)" and pdf.is_visible(), str(pdf.count()))
+        pdf.scroll_into_view_if_needed()
+        with page.expect_download(timeout=15000) as dl:
+            pdf.click()
+        check(f"{tag}: the report downloads", dl.value.suggested_filename.endswith(".pdf"))
+        box = pdf.bounding_box()
+        check(f"{tag}: the report button is inside the screen (no sideways scroll)", box is not None and box["x"] >= 0 and box["x"] + box["width"] <= width + 1 and overflow(page) <= 0, str(box))
+    ctx.close()
+    if tier == "pro":
+        # Free with no saved rule sees the stored sample next to the saved result, not a real report
+        mock = Mock(tier="free", limit=1, saved=False)
+        ctx, page = new_page(br, width, theme, mock, "free")
+        page.goto(SITE + "/shortlist-lab", wait_until="networkidle", timeout=90000)
+        page.click("[data-testid=lab-tab-rules]")
+        page.wait_for_selector("[data-testid=ladder-fill]", timeout=40000)
+        wait_counts(page)
+        page.locator("[data-testid=ladder-fill]").click()
+        page.locator("[data-testid=ladder-bar-show]").click()
+        page.wait_for_selector("[data-testid=ladder-card]", timeout=40000)
+        page.locator("[data-testid=save-result-button]").click()
+        page.fill("[data-testid=save-result-name]", "Free rule")
+        page.locator("[data-testid=save-result-confirm]").click()
+        page.wait_for_selector("[data-testid=save-result-block] [data-testid=saved-result-sample]", timeout=10000)
+        check(f"[{theme} {width}] free save result: a Free account keeps the stored sample report (no real download)", page.locator("[data-testid=save-result-block] [data-testid=saved-result-pdf]").count() == 0)
+        ctx.close()
 
 
 def other_tab_pages(br, width, theme):
@@ -384,6 +597,10 @@ with sync_playwright() as p:
             logged_out(br, width, theme)
             logged_in(br, width, theme, "pro")
             logged_in(br, width, theme, "free")
+            group_ask(br, width, theme, "pro")
+            group_ask(br, width, theme, "free")
+            save_result_flow(br, width, theme, "pro")
+            save_result_flow(br, width, theme, "free")
             account_page(br, width, theme)
             other_tab_pages(br, width, theme)
     br.close()

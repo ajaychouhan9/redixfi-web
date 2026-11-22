@@ -1,12 +1,12 @@
 /**
  * Shortlist Lab, Learn tab (21 Nov 2026): the copy as plain data so the wording guard and the tests can read every sentence.
- * Facts only: no verdicts, no labels, no scores. The six step names are the same on the Learn tab and the My rules tab.
+ * Facts only: no verdicts, no labels, no scores. The seven step names are the same on the Learn tab and the My rules tab.
  */
 import { ASK_QUESTIONS, SAMPLE_NAME, SAMPLE_SYMBOL } from "@/lib/read-company";
 
 export const LEARN_TAB = "Learn";
 export const RULES_TAB = "My rules";
-export const LEARN_INTRO = "Six steps, and the five questions to ask Ask AI about any company. Facts from filings and the exchange. Not advice.";
+export const LEARN_INTRO = "Seven steps, and the five questions to ask Ask AI about any company. Facts from filings and the exchange. Not advice.";
 /** The line under each step (21 Nov 2026): only "Screener" is a link. `tabs` are the real tab names on a stock page (src/lib/stock-tabs.ts). */
 export function findLine(tabs: string[]): string {
   const where = tabs.length === 1 ? `the ${tabs[0]} tab` : `the ${tabs.slice(0, -1).join(", ")} and ${tabs[tabs.length - 1]} tabs`;
@@ -21,7 +21,7 @@ export const QUESTIONS_TITLE = "The 5 questions";
 export const STEP_WORD = "Step";
 
 export interface LearnStep {
-  /** 1 to 6, shown as "Step 1". */
+  /** 1 to 7, shown as "Step 1". */
   n: number;
   name: string;
   /** One plain line under the name; the same line is used on the My rules tab. */
@@ -104,6 +104,18 @@ export const LEARN_STEPS: LearnStep[] = [
     example: {
       q: "The price is ₹300 and the profit per share over the last 12 months is ₹20. What is the P/E?",
       a: "300 ÷ 20 = 15 times. The price is 15 times the last 12 months' profit per share. It describes the price against profit. It does not say what the price will do.",
+    },
+  },
+  {
+    n: 7,
+    name: "Price and volume",
+    tabs: ["Overview"],
+    line: "How the price has moved over past months, and how much was traded on the latest day.",
+    look: "The Overview tab shows the price, the 52-week range and the day's volume. The change over 1, 3 or 6 months compares the latest close with the close that long ago. An average is the sum of the last 50 or 200 closing prices divided by 50 or 200.",
+    means: "These are facts about the past: where the price has been and how many shares traded. They do not say what the price will do next.",
+    example: {
+      q: "The price was ₹200 three months ago and is ₹230 now. What is the change?",
+      a: "(230 - 200) ÷ 200 = 15%. The price is 15% higher than it was three months ago. It describes the past. It does not say what the price will do.",
     },
   },
 ];
