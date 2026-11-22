@@ -6,7 +6,7 @@ import samples from "../src/data/ask-samples.json" with { type: "json" };
 import { ASK_PREVIEW, sampleIdFor } from "../src/lib/ask-samples.ts";
 import { ASK_QUESTIONS } from "../src/lib/read-company.ts";
 import {
-  BANK_NOTE, BANK_WHY, COMMON_LABEL, COMMON_RULES, DEBT_NOTE, DEBT_WHY, EXAMPLES, exampleLine, ruleProblem, validValue, COUNTS_NOTE, EMPTY_RULES, HOME_BUTTON, LADDER_TITLE, MENU_LABEL, NO_ROCE_LINE, PAGE_SUBTITLE, PAGE_TITLE, PAST_LINE,
+  BANK_NOTE, BANK_WHY, COMMON_RULES, DEBT_NOTE, DEBT_WHY, EXAMPLES, exampleLine, ruleProblem, validValue, COUNTS_NOTE, EMPTY_RULES, HOME_BUTTON, LADDER_TITLE, MENU_LABEL, NO_ROCE_LINE, PAGE_SUBTITLE, PAGE_TITLE, PAST_LINE,
   PRICE_NOTE, RULES, SEO_TITLE, STEPS, activeTests, countAfter, countsByStep, fromParams, hasAnyRule, roceGap, toParams, validLadderData,
   type LadderData, type Rules,
 } from "../src/lib/stock-check.ts";
@@ -21,7 +21,6 @@ assert.equal(MENU_LABEL, "Shortlist Lab");
 assert.equal(HOME_BUTTON, "New to stocks? Learn the 5 questions");
 assert.equal(SEO_TITLE, "Shortlist Lab: set your rules, read the result | RedixFi");
 assert.equal(LADDER_TITLE, "Build Your Shortlist");
-assert.equal(COMMON_LABEL, "Common rules from published methods. Change them.");
 assert.equal(PAST_LINE, "Filters use past reported numbers. They do not tell what happens next.");
 assert.equal(PRICE_NOTE, "A good company can still be priced high.");
 const page = read("app/(app)/shortlist-lab/page.tsx");
@@ -49,7 +48,7 @@ for (const f of ["app/(app)/signals/page.tsx", "components/app/home/HomeBoxes.ts
 }
 
 // ---- 3. live counts: pure, from anonymous rows
-const COLS = ["mc", "eps", "py", "sgq", "pgq", "sg3", "pg3", "roe", "roce", "rna", "de", "pl", "vol", "vr", "dl", "pe", "gs"];
+const COLS = ["mc", "eps", "py", "sgq", "pgq", "sg3", "pg3", "roe", "roce", "rna", "de", "pl", "vol", "vr", "dl", "pe", "gs", "h52", "r1", "r3", "r6", "a50", "a200", "vd"];
 const row = (o: Record<string, number | null>): (number | null)[] => COLS.map((c) => (c in o ? o[c] : null));
 const data: LadderData = {
   version: 1, as_of: "2026-11-19", fund_quarter_end: "2026-09-30", built_at: "2026-11-19T14:00:00Z", cols: COLS,
@@ -62,11 +61,11 @@ const data: LadderData = {
   ],
 };
 assert.ok(validLadderData(data) && !validLadderData({ ...data, version: 2 }) && !validLadderData({ ...data, rows: [[1]] }) && !validLadderData(null));
-assert.equal(countAfter(data, EMPTY_RULES, 5), 5, "no rules: every stock");
+assert.equal(countAfter(data, EMPTY_RULES, 6), 5, "no rules: every stock");
 assert.equal(countAfter(data, { ...EMPTY_RULES, mcMin: "1000" }, 0), 4, "size rule");
 assert.equal(countAfter(data, { ...EMPTY_RULES, mcMin: "1000" }, 1) , 4);
 const common: Rules = { ...COMMON_RULES };
-assert.deepEqual(countsByStep(data, common), [5, 3, 2, 1, 1, 1], "the count after each step only gets smaller");
+assert.deepEqual(countsByStep(data, common), [5, 3, 2, 1, 1, 1, 1], "the count after each step only gets smaller");
 assert.ok(countsByStep(data, common).every((n, i, a) => i === 0 || n <= a[i - 1]));
 assert.equal(countAfter(data, { ...EMPTY_RULES, profitYears: "5" }, 0), 5, "a rule from a later step does not count in an earlier step");
 assert.equal(countAfter(data, { ...EMPTY_RULES, profitYears: "5" }, 1), 3);
@@ -99,7 +98,7 @@ assert.deepEqual(
   { mc: "500", py: "5", s3: "10", p3: "10", sq: "10", pq: "10", roe: "15", roce: "15", de: "1", pl: "10", pe: "25" },
   "Start with common rules fills the example values",
 );
-for (const d of RULES.filter((r) => r.op !== "gt0" && r.op !== "flag")) {
+for (const d of RULES.filter((r) => r.op !== "gt0" && r.op !== "flag" && r.step < 6)) {
   assert.ok(EXAMPLES[d.key], `${d.key} has an example`);
   if (d.step === 4) assert.equal(COMMON_RULES[d.key], "", `${d.key}: Start with common rules leaves Step 4 on No rule (the example stays as the placeholder)`);
   else assert.equal(COMMON_RULES[d.key], EXAMPLES[d.key].value, `${d.key} common value equals its example`);
@@ -128,9 +127,9 @@ assert.ok(funds.includes("<BankNote testId=\"bank-note-screener\" />"), "under t
 assert.ok(ladder.includes("NO_ROCE_LINE(gap.noFigure)") && ladder.includes("NO_ROCE_LINE(roceCounts.no)"), "the no-figure line on the step and on the shortlist");
 
 // ---- 5. the ladder: steps, buttons, no ranking, no fake filter
-assert.deepEqual(STEPS.map((s) => s.title), ["Size and trading", "Earnings", "Returns", "Debt and pledge", "Price movement", "Price you pay"]);
+assert.deepEqual(STEPS.map((s) => s.title), ["Size and trading", "Earnings", "Returns", "Debt and pledge", "Price movement", "Price you pay", "Price and volume"]);
 assert.ok(STEPS.every((s) => s.why.split(/(?<=[.!?])\s+/).length <= 4), "each why-this-rule is two to four short sentences");
-assert.ok(ladder.includes("COMMON_RULES") && ladder.includes("<CommonValuesCard") && ladder.includes("ladder-bar") && ladder.includes("ladder-left") && /stocks?\"? : \"stocks\"|"stock" : "stocks"/.test(ladder));
+assert.ok(ladder.includes("typicalRules()") && ladder.includes("ladder-fill") && ladder.includes("ladder-bar") && ladder.includes("ladder-left") && /stocks?\"? : \"stocks\"|"stock" : "stocks"/.test(ladder));
 assert.ok(!/\bfetch\(/.test(ladder) && ladder.includes("getLadderData()") && (ladder.match(/getSignals\(/g) ?? []).length === 1, "one figures file and one list call (the saved result is made by the server)");
 assert.ok(ladder.includes("Add to watchlist") && ladder.includes("Read this company") && ladder.includes("RESULTS_TITLE") && ladder.includes('value: "name"') === false);
 assert.ok(ladder.includes("NUMBERS_AS_OF(asOf)"), "numbers as of <date>");
@@ -166,9 +165,9 @@ for (const n of ["64,468", "61,328", "61,896", "15,040", "10,649", "10,277", "1,
 
 // ---- 7. wording guard on all new copy (the owner's banned list), and no risk labels
 const copy = [
-  strip(read("lib/stock-check.ts")).replace(/export const SKIP[A-Z_]* = [^;]*;/g, ""), strip(read("lib/ask-samples.ts")), stored, strip(read("app/(app)/shortlist-lab/page.tsx")).replace(/no buy or sell advice/g, ""),
-  // "Skip" is the owner's own name for the step switch (Use / Skip, 21 Nov 2026), not advice about a stock: the switch labels and the code that handles them are left out of the scan
-  ladder.replace(/target="_blank"|e[.]target/g, "").split(String.fromCharCode(10)).filter((l) => !/skip/i.test(l)).join(String.fromCharCode(10)), strip(read("lib/my-rules.ts")), strip(read("lib/ask-group.ts")),
+  strip(read("lib/stock-check.ts")), strip(read("lib/ask-samples.ts")), stored, strip(read("app/(app)/shortlist-lab/page.tsx")).replace(/no buy or sell advice/g, ""),
+  // the Use / Skip switch was removed on 22 Nov 2026: nothing is left out of this scan any more
+  ladder.replace(/target="_blank"|e[.]target/g, ""), strip(read("lib/my-rules.ts")), strip(read("lib/ask-group.ts")),
   preview.replace(/target="_blank"/g, ""), strip(read("components/app/stock-check/LoggedOutPreview.tsx")),
 ].join("\n").replace(/className="[^"]*"/g, "").replace(/className=\{`[^`]*`\}/g, "").replace(/data-testid="[^"]*"/g, "");
 const BANNED = /\b(buy|buying|sell|selling|targets?|picks?|bullish|bearish|strong signal|catch a falling knife|skip|avoid|candidates?|high conviction|red flags?|turnaround|top stocks|best stocks|quality stocks)\b/gi;
@@ -177,7 +176,7 @@ assert.ok(!/\b(aggressive|conservative|risk appetite|risk profile|your risk)\b/i
 assert.ok(!/\b(top|best)\b/i.test(copy.replace(/top-|top:/g, "")), "never top or best");
 assert.ok(!/\b(will rise|will fall|will go up|will go down|going to)\b/i.test(copy), "no forecast wording");
 assert.ok(copy.includes("points to watch") && !/red flag/i.test(copy), "points to watch, never red flag");
-assert.ok(copy.includes("stocks that meet the rules you chose") || copy.includes("Stocks that meet the rules you chose"), "results are called stocks that meet the rules you chose");
+assert.ok(copy.includes("stocks match your rule today") || copy.includes("Stocks that match your rule today"), "results are called stocks that match your rule today");
 
 // ---- 5. examples in every input, chips that open the panel, the sticky bar button, the stored answers inside the panel
 for (const d of RULES.filter((r) => r.op !== "gt0" && r.op !== "flag")) assert.ok(ladder.includes("EXAMPLES[d.key]") && ladder.includes("exampleLine(EXAMPLES[d.key].text)"), "every number input shows its example line");

@@ -62,8 +62,8 @@ for (const [path, head] of [["public/samples/rule-report-sample.pdf", "%PDF-"], 
 assert.ok(readFileSync(new URL("../public/samples/rule-report-sample.pdf", import.meta.url)).subarray(0, 5).toString() === "%PDF-");
 assert.equal(SAMPLE_CSV_PATH, "/samples/rule-report-sample.csv");
 const csv = readFileSync(new URL("../public/samples/rule-report-sample.csv", import.meta.url), "utf8");
-for (const needle of ["SAMPLE: one example company, no real data", "HINDUNILVR", "Rules applied", "Answer as of", "RedixFi shows market data for information only", "Facts from filings. Not investment advice."]) assert.ok(csv.includes(needle), `sample csv has ${needle}`);
-assert.equal((csv.match(/^HINDUNILVR,HINDUSTAN UNILEVER LTD.,/gm) ?? []).length, 1, "one example company in the list");
+for (const needle of ["SAMPLE: one example company, no real data", "HINDUNILVR", "Figures as of", "Not asked yet", "RedixFi shows market data for information only", "Facts from filings. Not investment advice."]) assert.ok(csv.includes(needle), `sample csv has ${needle}`);
+assert.equal((csv.match(/^HINDUNILVR,HINDUSTAN UNILEVER LTD.,/gm) ?? []).length, 5, "one example company, one row for each of the five questions");
 assert.ok(!/@|u_test|user_id/.test(csv), "no user data in the sample");
 
 // ---- wording guard on the new copy

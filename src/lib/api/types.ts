@@ -168,6 +168,13 @@ export interface SignalRow {
   ema200?: number | null;
   ema200_state?: "above" | "below" | null;
   ema200_as_of?: string | null;
+  /** 22 Nov 2026 "Price and volume" facts (past prices only): % price change over 1, 3 and 6 months, above the 50 / 200-day average, latest day's volume over its 20-day average. */
+  ret_1m?: number | null;
+  ret_3m?: number | null;
+  ret_6m?: number | null;
+  sma50_above?: boolean | null;
+  sma200_above?: boolean | null;
+  vol_day_x?: number | null;
   de?: number | null;
   promoter_pct?: number | null;
   shareholding_date?: string | null;
@@ -2393,6 +2400,11 @@ export interface SharedScreenParams {
   profit_growth_min?: number | null;
   sales_growth_min?: number | null;
   ema200_state?: "above" | "below" | null;
+  /** 22 Nov 2026 "Price and volume" filters (past prices only). The period is 1, 3 or 6 months; the average is the 50 or 200-day one. */
+  price_change_min?: number | null;
+  price_change_months?: number | null;
+  above_avg_days?: number | null;
+  volume_day_min?: number | null;
   /** 13 Nov 2026 filters. A stock missing the figure is not matched. */
   de_max?: number | null;
   promoter_min?: number | null;

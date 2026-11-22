@@ -16,7 +16,7 @@ SHOTS = Path(sys.argv[2]) if len(sys.argv) > 2 else None
 if SHOTS:
     SHOTS.mkdir(parents=True, exist_ok=True)
 RESULTS = []
-STEP_NAMES = ["Size and trading", "Earnings", "Returns", "Debt and pledge", "Price movement", "Price you pay"]
+STEP_NAMES = ["Size and trading", "Earnings", "Returns", "Debt and pledge", "Price movement", "Price you pay", "Price and volume"]
 TABLE_PAGES = ["/signals", "/market-activity", "/gainers-losers", "/intraday", "/signals/7-day-review", "/stocks/TCS", "/sample-report", "/pulse", "/pricing", "/theme-preview"]
 
 
@@ -79,11 +79,11 @@ with sync_playwright() as p:
             tabs = page.locator("[role=tab]")
             check(f"{tag}: two tabs Learn and My rules", tabs.count() == 2 and tabs.nth(0).inner_text() == "Learn" and tabs.nth(1).inner_text() == "My rules")
             # Learn tab
-            names = [page.locator(f"[data-testid=learn-step-{i}] h2").inner_text() for i in range(1, 7)]
-            check(f"{tag}: six named steps on Learn", names == [f"Step {i + 1}. {n}" for i, n in enumerate(STEP_NAMES)], str(names))
-            check(f"{tag}: every example shown in full, no toggle", page.locator("[data-testid=learn-example]").count() == 6 and page.get_by_text("Show the reading").count() == 0 and page.get_by_text("My notes").count() == 0)
+            names = [page.locator(f"[data-testid=learn-step-{i}] h2").inner_text() for i in range(1, 8)]
+            check(f"{tag}: seven named steps on Learn", names == [f"Step {i + 1}. {n}" for i, n in enumerate(STEP_NAMES)], str(names))
+            check(f"{tag}: every example shown in full, no toggle", page.locator("[data-testid=learn-example]").count() == 7 and page.get_by_text("Show the reading").count() == 0 and page.get_by_text("My notes").count() == 0)
             check(f"{tag}: no sample card, no points-to-watch or news buttons", page.get_by_text("Try it on a sample stock").count() == 0 and page.get_by_text("Open Points to watch").count() == 0 and page.get_by_text("Open News").count() == 0)
-            check(f"{tag}: find-in-Screener line on each step", page.locator("[data-testid=learn-find-line]").count() == 6 and "Find any stock in Screener, open its page and look in the Overview tab." in page.locator("[data-testid=learn-find-line]").first.inner_text() and page.locator("[data-testid=learn-find-line] a").count() == 6)
+            check(f"{tag}: find-in-Screener line on each step", page.locator("[data-testid=learn-find-line]").count() == 7 and "Find any stock in Screener, open its page and look in the Overview tab." in page.locator("[data-testid=learn-find-line]").first.inner_text() and page.locator("[data-testid=learn-find-line] a").count() == 7)
             check(f"{tag}: one Try button", page.locator("[data-testid=learn-try-button]").count() == 1 and page.inner_text("[data-testid=learn-try-button]").strip() == "Try these questions in Ask AI")
             check(f"{tag}: logged-out line shown", "needs a log-in" in page.inner_text("[data-testid=learn-try-loggedout]"))
             shot(page, f"learn-{width}-{theme}")
@@ -97,9 +97,9 @@ with sync_playwright() as p:
             page.click("[data-testid=lab-tab-rules]")
             check(f"{tag}: the My rules tab puts #my-rules in the address", page.evaluate("location.hash") == "#my-rules")
             page.wait_for_selector("[data-testid=ladder-step-0]", timeout=60000)
-            heads = [page.locator(f"[data-testid=ladder-step-{i}] button span").first.inner_text().split("\n")[0] for i in range(6)]
-            check(f"{tag}: My rules shows the same six names as Steps 1 to 6", heads == [f"Step {i + 1}. {n}" for i, n in enumerate(STEP_NAMES)], str(heads))
-            check(f"{tag}: one plain line under each step name", page.locator("[data-testid=ladder-step-line]").count() == 6)
+            heads = [page.locator(f"[data-testid=ladder-step-{i}] button span").first.inner_text().split("\n")[0] for i in range(7)]
+            check(f"{tag}: My rules shows the same seven names as Steps 1 to 7", heads == [f"Step {i + 1}. {n}" for i, n in enumerate(STEP_NAMES)], str(heads))
+            check(f"{tag}: one plain line under each step name", page.locator("[data-testid=ladder-step-line]").count() == 7)
             page.wait_for_function("document.querySelector('[data-testid=ladder-count-0]') && document.querySelector('[data-testid=ladder-count-0]').textContent.includes('left')", timeout=60000)
             c0 = page.inner_text("[data-testid=ladder-count-0]")
             check(f"{tag}: live counts from the real figures file ({c0})", "left" in c0)

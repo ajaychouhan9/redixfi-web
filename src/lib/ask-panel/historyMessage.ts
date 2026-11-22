@@ -27,6 +27,12 @@ export interface AskRenderableMessage {
   quotaUnchanged?: boolean;
   choices?: AskChoice[];
   scope?: AskScope | null;
+  /** One reply for several stocks (22 Nov 2026): each stock's own answer in the order selected, and the stocks that could not be answered or were not asked. */
+  group?: {
+    parts: { symbol: string; text: string; table?: AskTableResult | null; sourceCitations?: SourceCitation[]; scope?: AskScope | null }[];
+    failed: string[];
+    notRun: string[];
+  };
   /** A local "something went wrong" line, not an answer from RedixFi (never saved to a rule). */
   error?: boolean;
 }

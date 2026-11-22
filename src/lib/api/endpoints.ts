@@ -107,6 +107,11 @@ export interface SignalsListParams {
   profit_growth_min?: number;
   sales_growth_min?: number;
   ema200_state?: "above" | "below";
+  /** 22 Nov 2026 "Price and volume": price change of at least this % over 1, 3 or 6 months; above the 50 or 200-day average; latest day's volume at least this many times its 20-day average. */
+  price_change_min?: number;
+  price_change_months?: number;
+  above_avg_days?: number;
+  volume_day_min?: number;
   /** 13 Nov 2026 filters. A stock missing the figure is not matched. */
   de_max?: number;
   promoter_min?: number;

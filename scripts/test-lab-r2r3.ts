@@ -1,19 +1,20 @@
-// Shortlist Lab: Learn tab fixes, fixed tab bars, Ask AI clean-up, Use / Skip steps, common values card, saved results, reports (21 Nov 2026).
+// Shortlist Lab: Learn tab fixes, fixed tab bars, Ask AI clean-up, saved results, reports (21 Nov 2026). Use / Skip and the common values card were removed on 22 Nov 2026 (blank = ignored; one Fill typical values button).
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 import { LEARN_STEPS, READY_LINE, findLine } from "../src/lib/learn.ts";
 import { PLAN_MATRIX } from "../src/data/plan-features.ts";
 import {
-  COMMON_CARD_SUBTITLE, COMMON_RULES, EMPTY_RULES, applySkips, commonLines, filtersLine, filtersSet, sameSkips, stepHasRule, toParams, validValue, RULES, countAfter, countsByStep,
+  BLANK_LINE, CLEAR_ALL, COMMON_RULES, EMPTY_RULES, FILL_BUTTON, SHOW_BUTTON, hasAnyRule, toParams, typicalRules, validValue, RULES, countAfter, countsByStep,
   type LadderData, type Rules,
 } from "../src/lib/stock-check.ts";
-import { ASK_BLOCK_ASK, ASK_BLOCK_ASK_ALL, ASK_BLOCK_TITLE, ASK_GROUP_PANEL_NOTE, askAllUses } from "../src/lib/ask-group.ts";
+import { ASK_BLOCK_ASK, ASK_BLOCK_ASK_ALL, ASK_BLOCK_TITLE, GROUP_ALL_NOTE, askAllUses } from "../src/lib/ask-group.ts";
 import { DROP_WARNING, REPORT_LEAD, RESULT_EARLIER, RESULT_LIMIT_LINE, RESULT_SINCE } from "../src/lib/saved-results.ts";
 import { LIMIT_REACHED } from "../src/lib/my-rules.ts";
 import { IN_RUN_TITLE, ADD_FROM_WATCHLIST, bannerLine } from "../src/lib/fullcheck-copy.ts";
 
 const read = (p: string) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
+const readFileSyncExists = (p: string): boolean => existsSync(new URL(`../src/${p}`, import.meta.url));
 const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\/\/.*$/gm, "$1");
 
 // ---- A1 / A2 / A5: the Learn tab
@@ -25,7 +26,7 @@ assert.ok(learn.includes("onOpenRules") && learn.includes('data-testid="learn-re
 assert.ok(strip(read("components/app/stock-check/LabTabs.tsx")).includes("onOpenRules={() =>"), "the tab bar switches");
 assert.equal(findLine(["Overview"]), "Find any stock in Screener, open its page and look in the Overview tab.");
 const tabNames = ["Overview", "Annual report", "Concall", "Points to watch", "News", "Insiders & promoters", "Rewind", "Ask AI"];
-assert.deepEqual(LEARN_STEPS.map((s) => s.tabs), [["Overview"], ["Annual report"], ["Annual report"], ["Annual report", "Insiders & promoters"], ["Overview"], ["Overview"]]);
+assert.deepEqual(LEARN_STEPS.map((s) => s.tabs), [["Overview"], ["Annual report"], ["Annual report"], ["Annual report", "Insiders & promoters"], ["Overview"], ["Overview"], ["Overview"]]);
 const tabsSrc = read("lib/stock-tabs.ts");
 for (const t of tabNames) assert.ok(tabsSrc.includes(`label: "${t}"`), `${t} is a real stock-page tab`);
 assert.ok(learn.includes(">Screener</Link>") && (learn.match(/<Link /g) ?? []).length === 1, "only Screener is a link");
@@ -52,44 +53,42 @@ assert.ok((ask.match(/ask-not-advice/g) ?? []).length === 1, "one place, so ever
 for (const gone of ["Explore what RedixFi can answer", "Common questions", "how-to-ask", "common-questions", "Uses 1 question", "This month", "Add-on", "starterQuestions"]) assert.ok(!ask.includes(gone), `removed from Ask AI: ${gone}`);
 assert.ok(ask.includes('placeholder={authLoading ? "Loading your account…" : "Ask about a stock, a sector, or up to 8 stocks"}'), "placeholder");
 assert.ok(ask.includes("Select stock") && ask.includes("<AskQuota") && ask.includes("StockGroupBlock") && ask.includes("panel-preview-free"), "kept: stock chip, Today, stock group, sample");
-assert.ok(!ask.includes("One company") && ASK_GROUP_PANEL_NOTE.length < 110, "one short line, no repeated One company labels");
+assert.ok(!ask.includes("One company") && GROUP_ALL_NOTE.length < 140, "one short line, no repeated One company labels");
+assert.ok(!ask.includes("The other questions are asked one stock at a time") && !read("lib/ask-group.ts").includes("asked one stock at a time"), "the one-stock-at-a-time line is gone");
 const acct = strip(read("components/app/account/AskUsageCard.tsx"));
 assert.ok(acct.includes("This month") && acct.includes("Add-on") && read("app/(app)/account/page.tsx").includes("<AskUsageCard />"), "month and add-on counts are on the Account page");
 
-// ---- C: Use / Skip, filters set, common values
+// ---- C: a blank field is ignored (no Use / Skip), one Fill typical values button
 const withRules = (p: Partial<Rules>): Rules => ({ ...EMPTY_RULES, ...p });
 const r = withRules({ mcMin: "500", roe: "15", de: "1", pe: "25" });
-assert.equal(filtersLine(r, []), "4 of 6 filters set".replace("4 of 6", `${filtersSet(r, []).set} of 6`));
-assert.deepEqual(filtersSet(r, []), { set: 4, of: 6 });
-assert.equal(filtersLine(r, [4]), "4 of 5 filters set", "a skipped step is not in the total");
-assert.equal(filtersLine(r, [3]), "3 of 5 filters set", "a skipped step with values is not counted as set");
-assert.equal(filtersLine(withRules({ roe: "  " }), []), "0 of 6 filters set", "a blank box is never applied");
-const sk = applySkips(r, [2]);
-assert.equal(sk.roe, "") ;
-assert.equal(sk.mcMin, "500");
-assert.equal(r.roe, "15", "the values are kept, only the applied copy is cleared");
-assert.deepEqual(toParams(applySkips(r, [2, 3])), { market_cap_min: 500, pe_max: 25 });
-assert.deepEqual(toParams(r), { market_cap_min: 500, roe_min: 15, de_max: 1, pe_max: 25 }, "what is saved keeps every value");
-assert.equal(applySkips(withRules({ vol: "calmer", volNum: "25" }), [4]).vol, "");
-assert.ok(stepHasRule(r, 2) && !stepHasRule(r, 4) && !stepHasRule(applySkips(r, [2]), 2));
-assert.ok(sameSkips([3, 1], [1, 3]) && !sameSkips([1], []));
-// the counts follow the applied rules
+assert.deepEqual(toParams(r), { market_cap_min: 500, roe_min: 15, de_max: 1, pe_max: 25 });
+assert.deepEqual(toParams(withRules({ roe: "  " })), {}, "a blank box is never applied");
+assert.ok(hasAnyRule(r) && !hasAnyRule(EMPTY_RULES) && !hasAnyRule(withRules({ roe: " " })));
+const everything = [ladder, strip(read("lib/stock-check.ts")), strip(read("lib/my-rules.ts")), strip(read("components/app/stock-check/MyRulesCard.tsx")), strip(read("components/app/stock-check/SavedResults.tsx")), strip(read("lib/api/mutations.ts"))].join("\n");
+assert.ok(!/skipped|Skip|SKIP|applySkips|filtersLine|filtersSet|step-switch|of \d filters set/.test(everything.replace(/skipped\?: boolean/g, "")), "no Use / Skip anywhere in the ladder, My rules, saved results or the API client");
+assert.ok(!read("components/app/stock-check/ShortlistLadder.tsx").includes("filters set") && !read("components/app/stock-check/MyRulesCard.tsx").includes("filters set"), "no N of M filters set line");
+// the counts follow the rules that have a value
 const data: LadderData = { version: 1, as_of: "2026-11-20", fund_quarter_end: null, built_at: "x", cols: ["mc", "roe", "de", "pe"], rows: [[600, 20, 0.5, 20], [600, 10, 0.5, 20], [100, 20, 0.5, 20]] };
-assert.equal(countAfter(data, withRules({ mcMin: "500", roe: "15" }), 5), 1);
-assert.equal(countAfter(data, applySkips(withRules({ mcMin: "500", roe: "15" }), [2]), 5), 2, "skipping the Returns step widens the list");
-assert.deepEqual(countsByStep(data, applySkips(withRules({ mcMin: "500", roe: "15" }), [0])), [3, 3, 2, 2, 2, 2]);
-assert.ok(RULES.every((d) => d.step >= 0 && d.step <= 5) && validValue(RULES[0], "500"));
-// the common card
-assert.equal(COMMON_CARD_SUBTITLE, "Typical numbers from published methods. Change any of them.");
-const lines = commonLines();
-assert.ok(lines.length >= 10 && lines.some((l) => l.startsWith("Market value at least 500")) && lines.some((l) => l.startsWith("P/E at most 25")), "every value it fills is shown");
-assert.equal(lines.length, Object.keys(toParams(COMMON_RULES)).length, "one line for each value it fills");
-const card = strip(read("components/app/stock-check/CommonValuesCard.tsx"));
-assert.ok(card.includes("FILL_LINK") && card.includes("commonLines()") && (card.match(/<button/g) ?? []).length === 2, "Fill with these values, plus Clear all");
-assert.ok(ladder.includes("<CommonValuesCard") && (ladder.match(/<CommonValuesCard/g) ?? []).length === 1, "one common card");
-// switch on every step; skipped is greyed and not editable
-assert.ok(ladder.includes('data-testid={`step-switch-${s.n}`}') && ladder.includes("fieldset disabled={skipped.includes(s.n)}") && ladder.includes("opacity-50"), "Use / Skip per step, greyed when skipped");
-assert.ok(ladder.includes("filtersLine(rules, skipped)") && ladder.includes("applySkips(rules, skipped)"), "header count and applied rules");
+assert.equal(countAfter(data, withRules({ mcMin: "500", roe: "15" }), 6), 1);
+assert.equal(countAfter(data, withRules({ mcMin: "500", roe: "" }), 6), 2, "clearing a field widens the list");
+assert.deepEqual(countsByStep(data, withRules({ mcMin: "500", roe: "15" })), [2, 2, 1, 1, 1, 1, 1]);
+assert.ok(RULES.every((d) => d.step >= 0 && d.step <= 6) && validValue(RULES[0], "500"));
+// one button, one Clear all link, one line about blank fields; the old card is gone
+assert.equal(FILL_BUTTON, "Fill typical values");
+assert.equal(CLEAR_ALL, "Clear all");
+assert.equal(BLANK_LINE, "Leave a field blank to ignore it.");
+assert.equal(SHOW_BUTTON, "Show stocks that meet my rule");
+assert.ok(ladder.includes("FILL_BUTTON") && ladder.includes("CLEAR_ALL") && ladder.includes("BLANK_LINE") && ladder.includes("typicalRules()"), "the ladder has the button, Clear all and the blank line");
+assert.ok(!ladder.includes("CommonValuesCard") && !readFileSyncExists("components/app/stock-check/CommonValuesCard.tsx"), "the Common starting values card is gone");
+assert.ok(!/Show \$\{left|Show \$\{?left/.test(ladder) && ladder.includes("{SHOW_BUTTON}"), "the show button has no number on it");
+assert.ok(ladder.includes("data-testid=\"ladder-counts-note\"") && ladder.includes("COUNTS_NOTE") && ladder.includes("stocks left") || ladder.includes("stock\" : \"stocks\"} left"), "the stocks left count and its note stay");
+{
+  const typical = typicalRules();
+  assert.deepEqual(typical, COMMON_RULES);
+  for (const k of ["chgMonths", "chgMin", "near52", "avgDays", "volDay", "volRatio", "delivery", "vol", "volNum"] as const) assert.equal(typical[k], "", `${k}: no published number, left blank`);
+  const copyAll = (FILL_BUTTON + BLANK_LINE + CLEAR_ALL + SHOW_BUTTON + ladder).replace(/className="[^"]*"/g, "").replace(/className=\{`[^`]*`\}/g, "");
+  assert.ok(!/\b(standard|recommended|best)\b/i.test(copyAll), "never standard, recommended or best");
+}
 // the AI block is its own block after the list, not a step
 const ask2 = strip(read("components/app/stock-check/AskAboutStocks.tsx"));
 assert.equal(ASK_BLOCK_TITLE, "Read your shortlist with AI");
@@ -110,7 +109,7 @@ assert.ok(REPORT_LEAD.includes("up to 8") && REPORT_LEAD.includes("Not asked yet
 assert.ok(LIMIT_REACHED(1).includes("Delete the saved rule") && LIMIT_REACHED(1).includes("update it with Save"), "Free: delete or update the old rule");
 const myrules = strip(read("components/app/stock-check/MyRulesCard.tsx"));
 for (const a of ["saved-open", "saved-delete", "save-rules-button", "save-new-button", "saved-run-again"]) assert.ok(myrules.includes(a), `rule actions are in the My rules card: ${a}`);
-for (const f of ["components/app/stock-check/SavedResults.tsx", "components/app/stock-check/AskAboutStocks.tsx", "components/app/stock-check/CommonValuesCard.tsx"]) {
+for (const f of ["components/app/stock-check/SavedResults.tsx", "components/app/stock-check/AskAboutStocks.tsx"]) {
   const t = strip(read(f));
   for (const a of ["saved-open", "save-rules-button", "save-new-button", "saved-run-again"]) assert.ok(!t.includes(a), `${f} has no rule action ${a}`);
 }
