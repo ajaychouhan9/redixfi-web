@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { findLine, FIVE_QUESTIONS, READY_LINE, LEARN_INTRO, LEARN_STEPS, QUESTIONS_TITLE, STEP_WORD, TRY_BUTTON, TRY_FREE, TRY_LINE, TRY_LOGGED_OUT } from "@/lib/learn";
 import { SAMPLE_SYMBOL } from "@/lib/read-company";
 
-/** The Learn tab: six steps with every example reading shown in full, then one button into Ask AI. Nothing runs on load. */
+/** The Learn tab: seven steps with every example reading shown in full, then one button into Ask AI. Nothing runs on load. */
 export function LearnTab({ onOpenRules }: { onOpenRules?: () => void }) {
   const { user } = useAuth();
   const { openPanel, openWithStocks } = useAskPanel();

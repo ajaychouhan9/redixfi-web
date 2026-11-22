@@ -7,7 +7,7 @@ import { PAGE_SUBTITLE, PAGE_TITLE, SEO_TITLE } from "@/lib/stock-check";
 export const revalidate = 3600;
 
 const DESCRIPTION =
-  "Learn six steps and five questions, then set your own rules and read the result. Facts from filings and the exchange. Not advice.";
+  "Learn seven steps and five questions, then set your own rules and read the result. Facts from filings and the exchange. Not advice.";
 
 export const metadata: Metadata = {
   title: SEO_TITLE,
