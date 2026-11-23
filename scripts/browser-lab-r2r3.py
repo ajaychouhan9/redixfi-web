@@ -21,8 +21,9 @@ if SHOTS:
     SHOTS.mkdir(parents=True, exist_ok=True)
 RESULTS = []
 LADDER_JSON = Path(os.environ["LADDER_FILE"]).read_text(encoding="utf-8") if os.environ.get("LADDER_FILE") else None   # a rebuilt counts file, before it is deployed
-WIDTHS = [360, 414, 1280]
-THEMES = ["light", "dark", "slate"]
+WIDTHS = [int(x) for x in os.environ["LAB_WIDTHS"].split(",")] if os.environ.get("LAB_WIDTHS") else [360, 414, 1280]
+THEMES = os.environ["LAB_THEMES"].split(",") if os.environ.get("LAB_THEMES") else ["light", "dark", "slate"]
+ONLY = os.environ.get("LAB_ONLY", "")   # comma list of flow names to run (all when empty), for quick re-runs
 
 
 def check(name, ok, extra=""):
@@ -306,7 +307,7 @@ def logged_out(br, width, theme):
           and "Calmer" in page.locator("[data-testid=learn-step-5]").inner_text())
     page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
     page.locator("[data-testid=learn-ready-link]").click()
-    page.wait_for_selector("[data-testid=ladder-step-0]", timeout=40000)
+    page.wait_for_selector("[data-testid=create-new-rule]", timeout=40000)
     check(f"{tag}: the words My rules tab switch to that tab", page.evaluate("location.hash") == "#my-rules" and page.locator("[data-testid=lab-tab-rules][aria-selected=true]").count() == 1)
     check(f"{tag}: My rules: no horizontal scroll", overflow(page) <= 0, str(overflow(page)))
     # two tabs
@@ -446,7 +447,7 @@ def logged_out(br, width, theme):
     check(f"{tag}: the Results page has no Show button and nothing sticky on top of it", page.get_by_role("button", name="Show stocks that meet my rule").count() == 0
           and page.evaluate("() => Array.from(document.querySelectorAll('[data-testid=ladder] *')).filter(e => getComputedStyle(e).position === 'sticky').length") == 0)
     ask = page.locator("[data-testid=ask-about]")
-    check(f"{tag}: the Ask AI card sits inside the result card, after the stocks; no 'Read your shortlist with AI' card", ask.locator("h3").inner_text() == "Ask AI" and "Read your shortlist with AI" not in page.inner_text("body")
+    check(f"{tag}: the Ask AI card sits inside the result card, after the stocks; no 'Read your shortlist with AI' card", ask.locator("h3").first.inner_text() == "Ask AI" and "Read your shortlist with AI" not in page.inner_text("body")
           and page.evaluate("() => document.querySelector('[data-testid=ask-about]').compareDocumentPosition(document.querySelector('[data-testid=ladder-cards]')) & 2") != 0
           and page.evaluate("() => !!document.querySelector('[data-testid=ladder-results] [data-testid=ask-about]')") and page.locator("[data-testid=ask-block-explain]").count() == 0)
     go_section(page, "rules")
@@ -773,7 +774,11 @@ def group_ask(br, width, theme, tier):
         sts = {a: t.strip() for a, t in zip(ticked, [page.locator("[data-testid=stock-ask-status]").nth(i).inner_text() for i in range(3)])}
         check(f"{tag}: each stock row shows its Ask AI status: '1 of 5 answered' for the two answered stocks, 'Not asked' for the one that failed", sorted(page.locator("[data-testid=stock-ask-status]").all_inner_texts()[:3]) == ["1 of 5 answered", "1 of 5 answered", "Not asked"], str(sts))
         check(f"{tag}: the 'Ask AI answers (N)' count follows: 2", "Ask AI answers (2)" in page.locator("[data-testid=saved-result-answers]").inner_text(), page.locator("[data-testid=saved-result-answers]").inner_text()[:60])
-        # the same question again: answered stocks are skipped, not charged; Ask again is a choice
+        # the same question again (a new Ask AI session with the same ticked stocks): answered stocks are skipped, not charged; Ask again is a choice
+        page.locator('button[aria-label="Close RedixFi AI"]').first.click()
+        page.wait_for_timeout(400)
+        page.locator("[data-testid=saved-result-stocks] [data-testid=ask-ai-button]").click()
+        page.wait_for_selector("[data-testid=ask-stock-group]", timeout=20000)
         page.locator("[data-testid=ask-group-q-holders]").click()
         page.wait_for_selector("[data-testid=ask-group-skipped]", timeout=10000)
         page.wait_for_function("document.querySelector('[data-testid=ask-group-uses]') && document.querySelector('[data-testid=ask-group-uses]').textContent === 'This will use 1 question. You have 4 left.'", timeout=10000)
@@ -953,21 +958,28 @@ def account_page(br, width, theme):
 
 with sync_playwright() as p:
     br = p.chromium.launch()
+    flows = [
+        ("logged_out", lambda w, t: logged_out(br, w, t)),
+        ("logged_in", lambda w, t: (logged_in(br, w, t, "pro"), logged_in(br, w, t, "free"))),
+        ("group_ask", lambda w, t: (group_ask(br, w, t, "pro"), group_ask(br, w, t, "free"))),
+        ("save_result", lambda w, t: (save_result_flow(br, w, t, "pro"), save_result_flow(br, w, t, "free"))),
+        ("group_save", lambda w, t: group_save_flow(br, w, t)),
+        ("delete_rule", lambda w, t: (delete_rule_flow(br, w, t, "pro"), delete_rule_flow(br, w, t, "free"))),
+        ("limits", lambda w, t: limit_flow(br, w, t)),
+        ("account", lambda w, t: account_page(br, w, t)),
+        ("tabs", lambda w, t: other_tab_pages(br, w, t)),
+    ]
     for width in WIDTHS:
         for theme in THEMES:
-            logged_out(br, width, theme)
-            logged_in(br, width, theme, "pro")
-            logged_in(br, width, theme, "free")
-            group_ask(br, width, theme, "pro")
-            group_ask(br, width, theme, "free")
-            save_result_flow(br, width, theme, "pro")
-            save_result_flow(br, width, theme, "free")
-            group_save_flow(br, width, theme)
-            delete_rule_flow(br, width, theme, "pro")
-            delete_rule_flow(br, width, theme, "free")
-            limit_flow(br, width, theme)
-            account_page(br, width, theme)
-            other_tab_pages(br, width, theme)
+            for name, fn in flows:
+                if ONLY and name not in ONLY.split(","):
+                    continue
+                try:
+                    fn(width, theme)
+                except Exception as e:  # noqa: BLE001
+                    import traceback
+                    fr = [f for f in traceback.extract_tb(e.__traceback__) if f.filename.endswith("browser-lab-r2r3.py")][-1]
+                    check(f"[{theme} {width}] {name}: ran to the end", False, f"line {fr.lineno}: {fr.line[:120]} -> {str(e).splitlines()[0][:150]}")
     br.close()
 
 print(f"\n{sum(RESULTS)}/{len(RESULTS)} checks passed")

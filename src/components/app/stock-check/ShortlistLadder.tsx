@@ -434,6 +434,7 @@ export function ShortlistLadder() {
     setRunNote(null);
     setDropAsk(null);
     setLiveSaved(null);
+    setViewRule(null);
     setSel({ owner: "live", list: [], f: null });
     setSaveMsg(null);
     setSaveOpen(false);
@@ -513,7 +514,7 @@ export function ShortlistLadder() {
       setSaveBusy(false);
     }
   }
-  /** "Delete a different result": the person picks which saved result goes instead of the oldest. */
+  /** "Delete a different result": the person chooses which saved result goes instead of the oldest. */
   async function pickToDelete() {
     if (!dropAsk) return;
     try {

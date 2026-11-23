@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 
@@ -236,9 +236,12 @@ export function SavedResults({ ruleId, ruleName, refreshKey, selectedFor, onTick
     }
   }, [getToken, ruleId, loadAnswers]);
   // "View stocks" on the rule page opens the newest result
+  const consumed = useRef(0);
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (viewNonce > 0 && runs && runs.length) void open(runs[0].id);
+    if (viewNonce > 0 && consumed.current !== viewNonce && runs && runs.length) {
+      consumed.current = viewNonce;
+      void open(runs[0].id);
+    }
   }, [viewNonce, runs?.length]); // eslint-disable-line react-hooks/exhaustive-deps
   // an open result reads its answers again when a result was saved or answers were added
   useEffect(() => {
