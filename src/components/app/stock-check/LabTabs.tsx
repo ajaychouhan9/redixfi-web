@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import { LearnTab } from "@/components/app/stock-check/LearnTab";
 import { ShortlistLadder } from "@/components/app/stock-check/ShortlistLadder";
 import { LEARN_TAB, RULES_TAB } from "@/lib/learn";
-import { PART2_INTRO, PART2_TITLE } from "@/lib/read-company";
 
 type TabId = "learn" | "rules";
 const TABS: { id: TabId; label: string }[] = [
@@ -70,11 +69,7 @@ export function LabTabs() {
       </div>
       <div role="tabpanel" id="lab-panel-rules" aria-labelledby="lab-tab-rules" hidden={tab !== "rules"} className="pt-5">
         {seen.rules && (
-          <>
-            <h2 className="text-xl font-semibold" data-testid="read-part2">{PART2_TITLE}</h2>
-            <p className="mt-1 text-sm text-foreground-muted">{PART2_INTRO}</p>
-            <div className="mt-4"><ShortlistLadder /></div>
-          </>
+          <ShortlistLadder />
         )}
       </div>
     </div>

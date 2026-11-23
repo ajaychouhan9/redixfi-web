@@ -25,5 +25,3 @@ export function askHref(symbol: string, key: string): string {
   return `/stocks/${symbol}?ask=${key}`;
 }
 
-export const PART2_TITLE = "Build Your Shortlist";
-export const PART2_INTRO = "Part 2. Choose the rules that matter to you. The stocks that meet them are listed A to Z unless you choose a column to sort by. We do not rank them.";

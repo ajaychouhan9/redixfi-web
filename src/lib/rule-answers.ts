@@ -10,7 +10,7 @@ export const ALREADY_IN = (name: string): string => `Already in "${name}"`;
 export const SAVE_FAILED = "The answer could not be added just now. Please try again.";
 
 export const ANSWERS_TITLE = (n: number): string => `Saved answers (${n})`;
-export const ANSWERS_EMPTY = "No answers saved to this rule yet. In Ask AI, press Add to my rule under an answer.";
+export const ANSWERS_EMPTY = "No answers saved to this rule yet. Ask AI about the stocks you tick on the Results page and the answers are saved to your result.";
 export const ANSWERS_NOTE = (limit: number): string => `Up to ${limit} answers can be saved to one rule.`;
 export const REMOVE_ANSWER = "Remove";
 export const ANSWER_AS_OF = (date: string | null): string => `Answer as of ${date ?? "date not available"}`;

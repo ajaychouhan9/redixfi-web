@@ -591,13 +591,13 @@ export async function replaceMyScreen(
 }
 
 /** "Add to my rule": the server copies the answer from the person's own conversation; the client only names it. */
-export async function saveRuleAnswer(token: string, ruleId: string, body: { conversation_id: string; answer_text: string; symbol?: string | null }): Promise<{ answer: RuleAnswer; already_saved: boolean }> {
+export async function saveRuleAnswer(token: string, ruleId: string, body: { conversation_id: string; answer_text: string; symbol?: string | null; run_id?: string | null }): Promise<{ answer: RuleAnswer; already_saved: boolean }> {
   const env = await apiMutate<{ answer: RuleAnswer; already_saved: boolean }>(`/my-screens/${encodeURIComponent(ruleId)}/answers`, "POST", body, { token });
   return env.data;
 }
 
-export async function listRuleAnswers(token: string, ruleId: string): Promise<{ answers: RuleAnswer[]; count: number; limit: number }> {
-  const env = await apiGet<{ answers: RuleAnswer[]; count: number; limit: number }>(`/my-screens/${encodeURIComponent(ruleId)}/answers`, { token });
+export async function listRuleAnswers(token: string, ruleId: string, runId?: string): Promise<{ answers: RuleAnswer[]; count: number; limit: number }> {
+  const env = await apiGet<{ answers: RuleAnswer[]; count: number; limit: number }>(`/my-screens/${encodeURIComponent(ruleId)}/answers${runId ? `?run_id=${encodeURIComponent(runId)}` : ""}`, { token });
   return env.data;
 }
 
@@ -635,8 +635,8 @@ export async function deleteRuleRun(token: string, ruleId: string, runId: string
   await apiMutate<{ deleted: boolean }>(runPath(ruleId, runId), "DELETE", undefined, { token });
 }
 /** The combined report of one result (paid plans and the Pro trial). `symbols` are the chosen stocks (up to 8). */
-export const downloadRunReport = (ruleId: string, runId: string, kind: "pdf" | "csv", symbols: string[], token: string) =>
-  apiGetBlob(`${runPath(ruleId, runId)}/report.${kind}${symbols.length ? `?symbols=${encodeURIComponent(symbols.join(","))}` : ""}`, { token });
+export const downloadRunReport = (ruleId: string, runId: string, kind: "pdf" | "csv", symbols: string[], token: string, onlyStock = false) =>
+  apiGetBlob(`${runPath(ruleId, runId)}/report.${kind}${symbols.length ? `?symbols=${encodeURIComponent(symbols.join(","))}${onlyStock ? "&only=stock" : ""}` : ""}`, { token });
 
 export async function getMyScreenSnapshot(token: string, id: string): Promise<MyScreenSnapshot | null> {
   const env = await apiGet<{ snapshot: MyScreenSnapshot | null }>(`/my-screens/${encodeURIComponent(id)}/snapshot`, { token });

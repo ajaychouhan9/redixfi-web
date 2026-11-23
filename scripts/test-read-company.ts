@@ -3,9 +3,9 @@
 import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
 
-import { ASK_QUESTIONS, PART2_INTRO, PART2_TITLE, SAMPLE_SYMBOL, askHref, askQuestionFor } from "../src/lib/read-company.ts";
-import { findLine, READY_LINE, FIVE_QUESTIONS, LEARN_INTRO, LEARN_STEPS, QUESTIONS_TITLE, STEP_NAMES, TRY_BUTTON, TRY_FREE, TRY_LINE, TRY_LOGGED_OUT } from "../src/lib/learn.ts";
-import { STEPS } from "../src/lib/stock-check.ts";
+import { ASK_QUESTIONS, SAMPLE_SYMBOL, askHref, askQuestionFor } from "../src/lib/read-company.ts";
+import { findLine, READY_LINE, FIVE_QUESTIONS, LEARN_FIELDS, LEARN_INTRO, LEARN_STEPS, STEP_NAMES } from "../src/lib/learn.ts";
+import { PV_FILTERS, RULES, STEPS, VOL_LABEL } from "../src/lib/stock-check.ts";
 
 const read = (p: string) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
 const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\/\/.*$/gm, "$1");
@@ -50,22 +50,29 @@ for (const gone of ["Show the reading", "Hide the reading", "read-sample", "My n
 assert.ok(!existsSync(new URL("../src/components/app/start/ReadCompany.tsx", import.meta.url)), "the old page component is gone");
 assert.ok(!/fetch\(|getSignals|getResearch|localStorage/.test(learn), "nothing is fetched or stored on load");
 assert.ok(learn.includes("learn-example") && learn.includes("s.example.a") && !/useState|aria-expanded/.test(learn), "every example reading is shown in full, with no toggle");
-assert.ok(learn.includes("openWithStocks([SAMPLE_SYMBOL])") && learn.includes("openPanel()") && learn.includes("user ?"), "one button: a new session with the sample stock for a logged-in visitor, the stored samples panel otherwise");
-assert.equal(TRY_BUTTON, "Try these questions in Ask AI");
-assert.ok(TRY_LINE.includes("Hindustan Unilever") && TRY_LINE.includes("change the stock"));
-assert.ok(TRY_LOGGED_OUT.includes("stored sample answers") && TRY_LOGGED_OUT.includes("needs a log-in"));
-assert.equal(TRY_FREE, "With a free account you get 3 live questions a day on any stock.");
-assert.equal(QUESTIONS_TITLE, "The 5 questions");
+// 23 Nov 2026: the long "5 questions with an Ask AI button" card is gone from the Learn tab
+for (const gone of ["learn-try", "openWithStocks", "Try these questions", "The 5 questions", "learn-questions"]) assert.ok(!learn.includes(gone), `removed from Learn: ${gone}`);
+// the Learn tab explains every step AND every field of My rules, with an example
+const dot = (t: string) => t.replace(/\.$/, "");
+for (const d of RULES) {
+  if (d.step === 6) continue;
+  assert.ok((LEARN_FIELDS[d.step + 1] ?? []).some((f) => dot(f.name) === dot(d.label)), `Learn explains the field: ${d.label}`);
+}
+assert.ok(LEARN_FIELDS[5].some((f) => f.name === VOL_LABEL && /calmer/i.test(f.text) && /more active/i.test(f.text)), "Learn explains the price-swings option");
+for (const f of PV_FILTERS) assert.ok(LEARN_FIELDS[7].some((x) => x.name === f.label), `Learn explains the Price and volume field: ${f.label}`);
+for (const [n, list] of Object.entries(LEARN_FIELDS)) for (const f of list) assert.ok(f.text.length > 30 && f.example.length > 20, `step ${n}: ${f.name} has a text and an example`);
+assert.ok(learn.includes("LEARN_FIELDS[s.n]") && learn.includes("Each field in this step"), "the Learn tab shows the fields");
 const tabs = strip(read("components/app/stock-check/LabTabs.tsx"));
 assert.ok(tabs.includes('role="tablist"') && tabs.includes("LEARN_TAB") && tabs.includes("RULES_TAB") && tabs.includes("#my-rules"), "two tabs, Learn and My rules");
 const page = strip(read("app/(app)/shortlist-lab/page.tsx"));
 assert.ok(/export const revalidate = \d+/.test(page) && !/\b(cookies|headers)\(\)|searchParams|await |fetch\(/.test(page), "/shortlist-lab is static");
-assert.ok(page.includes("<LabTabs />") && PART2_INTRO.includes("A to Z") && PART2_TITLE === "Build Your Shortlist", "the second tab is the shortlist ladder, A to Z");
+assert.ok(page.includes("<LabTabs />") && tabs.includes("<ShortlistLadder />") && !tabs.includes("PART2"), "the second tab is the shortlist ladder, with no long intro above it");
 assert.ok(existsSync(new URL("../src/app/(app)/shortlist-lab/page.tsx", import.meta.url)) && !existsSync(new URL("../src/app/(app)/stock-check/page.tsx", import.meta.url)), "the page lives at /shortlist-lab");
 
 // 4. wording guard on every sentence of the Learn tab
 const all = [
-  LEARN_INTRO, TRY_LINE, TRY_LOGGED_OUT, TRY_FREE, findLine(["Overview"]), READY_LINE, PART2_INTRO,
+  LEARN_INTRO, findLine(["Overview"]), READY_LINE,
+  ...Object.values(LEARN_FIELDS).flat().flatMap((f) => [f.name, f.text, f.example]),
   ...LEARN_STEPS.flatMap((s) => [s.name, s.line, s.look, s.means, s.example.q, s.example.a]),
   ...Object.values(ASK_QUESTIONS),
   learn.replace(/data-testid="[^"]*"/g, ""),

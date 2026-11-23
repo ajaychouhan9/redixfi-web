@@ -11,10 +11,10 @@ import { searchResearch } from "@/lib/api/endpoints";
 import { AddToRuleButton } from "@/components/app/ask/AddToRuleButton";
 import { canSaveAnswer } from "@/lib/rule-answers";
 import {
-  ASK_GROUP_TITLE, GROUP_ALL_NOTE, GROUP_CANCEL, GROUP_KEYS, GROUP_RUN, askRemaining, groupFailedLine, groupNotEnough, groupNotRunLine, groupProgress, groupQuestion, groupQuestionAll,
+  ASK_GROUP_TITLE, GROUP_ALL_NOTE, GROUP_SAVED_NOTE, GROUP_SAVE_BUTTON, GROUP_SAVE_FAILED, GROUP_SAVE_NAME_LABEL, GROUP_SAVE_NAME_PLACEHOLDER, groupSavedCount, GROUP_CANCEL, GROUP_KEYS, GROUP_RUN, askRemaining, groupFailedLine, groupNotEnough, groupNotRunLine, groupProgress, groupQuestion, groupQuestionAll,
   groupRunFewer, groupUses,
 } from "@/lib/ask-group";
-import { askRedixfi, getAskConversations, getAskHistory, getAskSuggestions, getUsage, updateAskContext } from "@/lib/api/mutations";
+import { askRedixfi, getAskConversations, getAskHistory, getAskSuggestions, getUsage, saveRuleAnswer, updateAskContext } from "@/lib/api/mutations";
 import { getCurrentSymbol, onCurrentSymbolChange } from "@/lib/current-symbol";
 import { shouldStartFreshOnReopen } from "@/lib/ask-panel/freshStartRule";
 import { mayLoadPageConversation } from "@/lib/ask-panel/conversationSelectionRule";
@@ -250,7 +250,7 @@ function StockGroupBlock({ symbols, focus, onFocus, onQuestion, onRemove }: {
 
 export function AskRedixFi() {
   const { user, loading: authLoading, getToken } = useAuth();
-  const { open, setOpen, mode, setMode, pendingQuestion, pendingSymbol, clearPendingQuestion, pendingStocks, clearPendingStocks } = useAskPanel();
+  const { open, setOpen, mode, setMode, pendingQuestion, pendingSymbol, clearPendingQuestion, pendingStocks, pendingFromLab, getLabLink, clearPendingStocks } = useAskPanel();
   const pathname = usePathname();
   // UI polish batch, Item 4 — LOCKED DECISION. `closedAtPathRef` records
   // which route the panel was on the last time the user explicitly closed
@@ -266,6 +266,9 @@ export function AskRedixFi() {
   // A question for 2 to 8 stocks waiting for the person to confirm the number of questions it will use, and the progress while it runs.
   const [groupPlan, setGroupPlan] = useState<{ key: string | null; text: string; symbols: string[] } | null>(null);
   const [groupRun, setGroupRun] = useState<{ done: number; total: number } | null>(null);
+  // The stocks came from the Shortlist Lab, so their answers may be saved to a rule's result; the name typed for a rule that is not saved yet.
+  const [groupFromLab, setGroupFromLab] = useState(false);
+  const [groupSaveName, setGroupSaveName] = useState("");
   const [pageSymbol, setPageSymbol] = useState<string | null>(null);
   const [chatContext, setChatContext] = useState<AskChatContext | null>(null);
   const [results, setResults] = useState<ResearchSearchRow[]>([]);
@@ -692,7 +695,7 @@ export function AskRedixFi() {
           const r = await askRedixfi(token, { page_context_symbol: null, chat_context_symbol: sym, question, conversation_id: null, selected_symbol: null });
           const wrongStock = !!r.resolved_symbol && r.resolved_symbol.toUpperCase() !== sym.toUpperCase();
           if (wrongStock || r.mode === "clarify" || (r.choices && r.choices.length > 0) || !r.answer?.trim()) failed.push(sym);
-          else parts.push({ symbol: sym, text: r.answer, table: r.table, sourceCitations: r.source_citations, scope: r.scope ?? null });
+          else parts.push({ symbol: sym, text: r.answer, table: r.table, sourceCitations: r.source_citations, scope: r.scope ?? null, conversationId: r.conversation_id ?? null });
         } catch (e) {
           if (e instanceof ApiError && e.status === 429) {
             setLimit(e.detail as AskLimitDetail);
@@ -704,12 +707,50 @@ export function AskRedixFi() {
       if (parts.length === 0 && failed.length + notRun.length > 0) {
         setMessages((prev) => [...prev, { role: "ai", text: failed.length ? groupFailedLine(failed) : groupNotRunLine(notRun), error: true }]);
       } else {
-        setMessages((prev) => [...prev, { role: "ai", text: "", group: { parts, failed, notRun } }]);
+        // answers for stocks ticked on the Shortlist Lab: attach them to the open rule's latest saved result, or offer to save the result first
+        const link = groupFromLab && parts.length > 0 ? getLabLink() : null;
+        const auto = !!link && !!link.ruleId && link.hasResult;
+        const lab = link ? { key: `g${Date.now()}`, state: (auto ? "saving" : "pending") as "saving" | "pending", saved: 0, ruleNeedsName: !link.ruleId } : undefined;
+        setMessages((prev) => [...prev, { role: "ai", text: "", group: { parts, failed, notRun, lab } }]);
+        if (lab && auto) void saveGroupToResult(lab.key, parts);
       }
     } finally {
       setGroupRun(null);
       setBusy(false);
       refreshUsage();
+    }
+  }
+
+  function patchLab(key: string, patch: Partial<NonNullable<NonNullable<AskRenderableMessage["group"]>["lab"]>>) {
+    setMessages((prev) => prev.map((m) => (m.group?.lab?.key === key ? { ...m, group: { ...m.group, lab: { ...m.group.lab, ...patch } } } : m)) as typeof prev);
+  }
+  /** Attach each stock's answer to the Lab's rule result (saving the result, and the rule under `name`, first when there is none yet). */
+  async function saveGroupToResult(key: string, parts: NonNullable<AskRenderableMessage["group"]>["parts"], name?: string) {
+    patchLab(key, { state: "saving" });
+    try {
+      const link = getLabLink();
+      const token = await getToken();
+      if (!link || !token) throw new Error("none");
+      let ruleId = link.ruleId;
+      let runId: string | null = null;
+      if (!link.hasResult || !ruleId) {
+        const out = await link.saveResult(name);
+        ruleId = out.ruleId;
+        runId = out.runId;
+      }
+      let ok = 0;
+      for (const pt of parts) {
+        if (!pt.conversationId || !ruleId) continue;
+        try {
+          await saveRuleAnswer(token, ruleId, { conversation_id: pt.conversationId, answer_text: pt.text, symbol: pt.symbol, run_id: runId });
+          ok += 1;
+        } catch {
+          /* the others are still tried; the count shows how many were saved */
+        }
+      }
+      patchLab(key, { state: ok > 0 ? "saved" : "failed", saved: ok });
+    } catch {
+      patchLab(key, { state: "failed" });
     }
   }
 
@@ -808,6 +849,7 @@ export function AskRedixFi() {
     if (open && pendingStocks && user) {
       startNewConversation();
       setStockGroup(pendingStocks);
+      setGroupFromLab(pendingFromLab);
       setGroupFocus(pendingStocks[0] ?? null);
       clearPendingStocks();
     }
@@ -1105,7 +1147,7 @@ export function AskRedixFi() {
                         {m.role === "ai" && m.group ? (
                           <div className="space-y-3" data-testid="ask-group-reply">
                             {m.group.parts.map((pt) => (
-                              <div key={pt.symbol} data-testid={`ask-group-part-${pt.symbol}`}>
+                              <div key={pt.symbol} className="rounded-lg border border-border p-3" data-testid={`ask-group-part-${pt.symbol}`}>
                                 <p className="mb-1 text-sm font-semibold">{pt.symbol}</p>
                                 <MarkdownAnswer text={pt.text} />
                                 {pt.sourceCitations && <SourcesSection citations={pt.sourceCitations} />}
@@ -1113,6 +1155,24 @@ export function AskRedixFi() {
                             ))}
                             {m.group.failed.length > 0 && <p className="text-xs text-foreground-muted" data-testid="ask-group-failed">{groupFailedLine(m.group.failed)}</p>}
                             {m.group.notRun.length > 0 && <p className="text-xs text-foreground-muted" data-testid="ask-group-notrun">{groupNotRunLine(m.group.notRun)}</p>}
+                            {m.group.lab && (
+                              <div className="space-y-2 text-xs" data-testid="ask-group-lab">
+                                {m.group.lab.state === "saved" && <p className="font-medium text-foreground" role="status" data-testid="ask-group-saved">{m.group.lab.saved === m.group.parts.length ? GROUP_SAVED_NOTE : groupSavedCount(m.group.lab.saved)}</p>}
+                                {m.group.lab.state === "saving" && <p className="text-foreground-muted" role="status" data-testid="ask-group-saving">Saving to your result…</p>}
+                                {(m.group.lab.state === "pending" || m.group.lab.state === "failed") && (
+                                  <div className="space-y-2">
+                                    {m.group.lab.state === "failed" && <p className="text-foreground-muted" role="status" data-testid="ask-group-save-failed">{GROUP_SAVE_FAILED}</p>}
+                                    {m.group.lab.ruleNeedsName && (
+                                      <div>
+                                        <label htmlFor="ask-group-save-name" className="block font-medium text-foreground">{GROUP_SAVE_NAME_LABEL}</label>
+                                        <input id="ask-group-save-name" value={groupSaveName} onChange={(e) => setGroupSaveName(e.target.value)} maxLength={60} placeholder={GROUP_SAVE_NAME_PLACEHOLDER} className="mt-1 h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm placeholder:text-foreground-faint" data-testid="ask-group-save-name" />
+                                      </div>
+                                    )}
+                                    <button type="button" onClick={() => void saveGroupToResult(m.group!.lab!.key, m.group!.parts, groupSaveName)} className="min-h-[44px] rounded-lg bg-accent px-4 text-sm font-semibold text-accent-foreground" data-testid="ask-group-save">{GROUP_SAVE_BUTTON}</button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ) : m.role === "ai" ? <MarkdownAnswer text={m.text} /> : m.text}
                         {m.webSourced && (

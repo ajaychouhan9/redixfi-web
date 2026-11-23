@@ -19,7 +19,7 @@ assert.equal(ANSWERS_TITLE(3), "Saved answers (3)");
 assert.equal(ANSWER_AS_OF("2026-11-19"), "Answer as of 2026-11-19");
 assert.equal(ANSWER_AS_OF(null), "Answer as of date not available");
 assert.equal(ANSWERS_NOTE(40), "Up to 40 answers can be saved to one rule.");
-assert.ok(ANSWERS_EMPTY.includes("Add to my rule"));
+assert.ok(ANSWERS_EMPTY.includes("Ask AI") && ANSWERS_EMPTY.includes("saved to your result"));
 const ok = { role: "ai", text: "Points: pledge 0.54%.", quotaUnchanged: false };
 assert.equal(canSaveAnswer(ok, "c1"), true);
 assert.equal(canSaveAnswer(ok, null), false, "no conversation, nothing to copy from");
@@ -51,10 +51,10 @@ assert.ok(EXPORT_LEAD.includes("each with its date and sources"));
 assert.ok(EXPORT_FREE_NOTE.includes("one example company, no real data"));
 const rr = strip(read("components/app/stock-check/RuleReport.tsx"));
 const sr = strip(read("components/app/stock-check/SavedResults.tsx"));
-assert.ok(sr.includes("isPaidEntitled(user)") && /paid \? \([\s\S]*?saved-result-pdf[\s\S]*?saved-result-csv[\s\S]*?\) : \([\s\S]*?saved-result-sample/.test(sr), "paid: report PDF and CSV on each saved result; Free: the sample link only");
+assert.ok(sr.includes("isPaidEntitled(user)") && /paid \? \([\s\S]*?saved-result-pdf[\s\S]*?saved-result-csv[\s\S]*?\) : \([\s\S]*?saved-result-sample/.test(sr) && sr.includes("StockPdfButton"), "paid: full report PDF, CSV and a PDF for one stock; Free: the sample link only");
 assert.ok(!rr.includes("rule-export-pdf") && !rr.includes("downloadRuleExport"), "the older per-rule export buttons are gone");
 assert.ok(sr.includes("href={SAMPLE_PDF_PATH}") && sr.includes('target="_blank"') && !/downloadRunReport[\s\S]{0,40}SAMPLE/.test(sr), "the sample is a stored file opened in a new tab, not an API call");
-assert.ok(strip(read("components/app/stock-check/MyRulesCard.tsx")).includes("<RuleReport rule={s}"), "export and saved answers are under each saved rule");
+assert.ok(strip(read("components/app/stock-check/MyRulesParts.tsx")).includes("<RuleReport rule={s}"), "export and saved answers are under each saved rule");
 // the stored sample files: fixed, one example company, no user data
 for (const [path, head] of [["public/samples/rule-report-sample.pdf", "%PDF-"], ["public/samples/rule-report-sample.csv", ""]] as const) {
   assert.ok(existsSync(new URL(`../${path}`, import.meta.url)), `${path} exists`);

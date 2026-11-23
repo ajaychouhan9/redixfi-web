@@ -10,17 +10,31 @@ export const SEO_TITLE = "Shortlist Lab: set your rules, read the result | Redix
 export const MENU_LABEL = "Shortlist Lab";
 export const HOME_BUTTON = "New to stocks? Learn the 5 questions";
 export const LADDER_TITLE = "Build Your Shortlist";
-export const LADDER_INTRO = "Set the rules that matter to you, one step at a time. The bar that stays on screen shows how many stocks are left after your rules.";
 export const CLEAR_ALL = "Clear all";
 export const FILL_BUTTON = "Fill typical values";
 export const BLANK_LINE = "Leave a field blank to ignore it.";
-export const FILL_NOTE = "Typical numbers from published methods. Change any of them. A field with no published number is left blank.";
 export const PAST_LINE = "Filters use past reported numbers. They do not tell what happens next.";
 export const RESULTS_TITLE = "Your shortlist";
-export const RESULTS_LEAD = "Stocks that match your rule today, listed A to Z unless you choose a column to sort by. We do not rank them.";
 export const SHOW_BUTTON = "Show stocks that meet my rule";
-export const PRICE_NOTE = "A good company can still be priced high.";
-export const COMPARE_NOTE = "Compare a company with others of its own kind.";
+export const NO_FILTER_LINE = "No filter applied. Fill at least one field.";
+export const ABOUT_MATCH = (n: number): string => `About ${n.toLocaleString("en-IN")} ${n === 1 ? "stock matches" : "stocks match"} so far`;
+export const SECTION_CREATE = "Create rule";
+export const SECTION_SAVED = "Saved rules";
+export const SECTION_RESULTS = "Results";
+export const BACK_TO_STEPS = "Back to the steps";
+export const NEXT_STEP = (n: number): string => `Next: Step ${n}`;
+export const STEPS_TITLE = "The 7 steps";
+export const STEP_NOT_SET = "Not set";
+export const stepSetText = (n: number): string => (n > 0 ? `✓ ${n} set` : STEP_NOT_SET);
+/** The price-swings option of step 5 (a clear name and plain words). The stored values are unchanged: a rule saved with "calmer" or "more active" opens the same way. */
+export const VOL_LABEL = "Day-to-day price swings";
+export const VOL_LINE = "How much the closing price moved from one day to the next over the last 21 trading days, compared with other stocks.";
+export const VOL_OPTIONS: readonly (readonly ["" | "calmer" | "active", string])[] = [
+  ["", "Not used"],
+  ["calmer", "Calmer: swung less than most stocks"],
+  ["active", "More active: swung more than most stocks"],
+];
+export const volNumLabel = (v: "" | "calmer" | "active"): string => (v === "calmer" ? "Swung more than at most" : "Swung more than at least");
 export const COUNTS_NOTE = "Counts come from last night's figures. The final list may differ by a few stocks.";
 export const NUMBERS_AS_OF = (date: string) => `Numbers as of ${date}`;
 
@@ -34,10 +48,10 @@ export const DEBT_NOTE = "Debt to equity does not suit banks and finance compani
 export const DEBT_WHY =
   "Debt to equity compares what a company owes with what its owners put in. For a company that makes or sells things, debt pays for plants and stock, so a high ratio says something. A bank or a finance company takes in deposits or borrows, and lends the money out. Owing a lot is how that business works, so the ratio is high by design and cannot be compared with a maker of goods. Other measures are used for them.";
 
-/** Example values for the rules: what many people use. Examples only, not recommendations. */
+/** Example values for the rules, shown as a short grey "e.g." line and as the grey text of an empty box. Examples only. */
 export const EXAMPLES: Record<string, { value: string; text: string }> = {
   mcMin: { value: "500", text: "500 (₹ crore)" },
-  profitYears: { value: "5", text: "5 of 5 years" },
+  profitYears: { value: "5", text: "5 (every one of the last 5 years)" },
   sales3: { value: "10", text: "10 (% a year)" },
   profit3: { value: "10", text: "10 (% a year)" },
   salesQ: { value: "10", text: "10 (%)" },
@@ -46,11 +60,15 @@ export const EXAMPLES: Record<string, { value: string; text: string }> = {
   roce: { value: "15", text: "15 (%)" },
   de: { value: "1", text: "1 (times)" },
   pledge: { value: "10", text: "10 (%)" },
-  volRatio: { value: "1.5", text: "1.5 (times)" },
+  volNum: { value: "25", text: "25 (%) for calmer, 75 (%) for more active" },
+  volRatio: { value: "1.5", text: "1.5 times" },
   delivery: { value: "50", text: "50 (%)" },
-  pe: { value: "25", text: "25 (times)" },
+  pe: { value: "25", text: "25 times" },
+  chgMin: { value: "10", text: "10 (%) over 3 months" },
+  near52: { value: "10", text: "10 (%)" },
+  volDay: { value: "1.5", text: "1.5 times" },
 };
-export const exampleLine = (text: string): string => `Example: many people use ${text}. Set your own.`;
+export const exampleLine = (text: string): string => `e.g. ${text}`;
 
 export const GROWTH_LABEL = "Sales and profit both higher than the year before, 3 years in a row.";
 export const GROWTH_HINT = "Compares rupee figures from annual results, not percentages. A move from a loss to a profit counts as higher. Needs 4 years of annual figures.";
@@ -328,7 +346,7 @@ export function describeRules(r: Rules): string[] {
     if (d.op === "gt0" || d.op === "flag") out.push(d.label.replace(/\.$/, ""));
     else out.push(`${d.label} ${num(r[d.key] as string)}${d.unit ? ` ${d.unit}` : ""}`);
   }
-  if (volOn(r)) out.push(`Price movement: ${r.vol === "calmer" ? "calmer, more volatile than at most" : "more active, more volatile than at least"} ${num(r.volNum)}% of stocks`);
+  if (volOn(r)) out.push(`Day-to-day price swings: ${r.vol === "calmer" ? "calmer, swung more than at most" : "more active, swung more than at least"} ${num(r.volNum)}% of stocks`);
   if (chgOn(r)) out.push(`Price change over ${r.chgMonths} ${r.chgMonths === "1" ? "month" : "months"} at least ${num(r.chgMin)}%`);
   if (avgOn(r)) out.push(`Price above its ${r.avgDays}-day average`);
   return out;
@@ -345,26 +363,25 @@ export interface StepDef {
   title: string;
   /** One plain line under the name (the same as on the Learn tab). */
   line: string;
-  why: string;
 }
 export const STEPS: StepDef[] = [
-  { n: 0, title: "Size and trading", line: "How big the company is and how much of its stock changes hands.", why: "Very small companies can be hard to trade at the price you see, and their numbers can jump around. A minimum market value leaves out the smallest ones. Market value describes size, not quality." },
-  { n: 1, title: "Earnings", line: "Whether the company made a profit, and whether its sales and profit grew.", why: "A company that makes a profit year after year has more room to pay its costs, repay loans and keep running. These rules look at the latest quarter, the last five years and growth over three years. A profit in the past does not promise one in the future." },
-  { n: 2, title: "Returns", line: "How much profit the company made for the money put into it.", why: "Return on equity asks how much profit a company earned for each ₹100 its owners have in it. ROCE asks how much operating profit it earned for each ₹100 put into the business. " + COMPARE_NOTE },
-  { n: 3, title: "Debt and pledge", line: "How much the company owes, and how much of the promoters' shares are pledged to lenders.", why: "Debt has to be paid back whatever the company earns. Debt to equity compares what it owes with what its owners put in. Promoter pledge shows how much of the promoters' holding is pledged to lenders as security." },
-  { n: 4, title: "Price movement", line: "How much the price moved lately, and how much was traded.", why: "Two neutral options: calmer means the price has moved less than most stocks lately, more active means it has moved more. Bigger swings can go either way. Volume vs usual and delivery % describe how much trading there was and how much of it ended in delivery." },
-  { n: 5, title: "Price you pay", line: "How the price compares with the profit per share.", why: "P/E is the price divided by the profit per share over the last 12 months. " + PRICE_NOTE + " A low P/E does not make a company a good one." },
-  { n: 6, title: "Price and volume", line: "How the price has moved over past months, and how much was traded on the latest day.", why: "These four filters describe the past: how far the price moved over 1, 3 or 6 months, how close it is to its 52-week high, whether it is above its 50-day or 200-day average, and how the latest day's volume compares with the usual. They show what already happened. They do not say what happens next." },
+  { n: 0, title: "Size and trading", line: "How big the company is and how much of its stock changes hands." },
+  { n: 1, title: "Earnings", line: "Whether the company made a profit, and whether its sales and profit grew." },
+  { n: 2, title: "Returns", line: "How much profit the company made for the money put into it." },
+  { n: 3, title: "Debt and pledge", line: "How much the company owes, and how much of the promoters' shares are pledged to lenders." },
+  { n: 4, title: "Price movement", line: "How much the price moved lately, and how much was traded." },
+  { n: 5, title: "Price you pay", line: "How the price compares with the profit per share." },
+  { n: 6, title: "Price and volume", line: "How the price has moved over past months, and how much was traded on the latest day." },
 ];
 
-/** The four "Price and volume" filters: a short label, what each one tells you (a fact about past prices or volume) and what it does not tell you. */
+/** The four "Price and volume" filters: a plain label, one plain line and an example for the field, and (folded away) what it tells you and what it does not tell you. Past prices and volume only. */
 export const PV_FILTERS = [
-  { id: "chg", label: "Price change over 1, 3 or 6 months", tells: "How far the price moved over that time, from past closing prices.", not: "It is not a prediction and not advice." },
-  { id: "near52", label: "Price near its 52-week high", tells: "How close the latest price is to the highest price of the last 52 weeks.", not: "It is not a prediction and not advice." },
-  { id: "avg", label: "Price above its 50-day or 200-day average", tells: "Whether the latest closing price is above the average of the last 50 or 200 closing prices.", not: "It is not a prediction and not advice." },
-  { id: "volDay", label: "Latest day's volume against its 20-day average", tells: "How many shares traded on the latest trading day, compared with the average of the 20 days before it.", not: "It is not a prediction and not advice." },
+  { id: "chg", label: "Price change over a past period", line: "Choose 1, 3 or 6 months, then the least change in the price you want.", example: "e.g. 3 months, at least 10 %", tells: "How far the price moved over that time, from past closing prices.", not: "It is not a prediction and not advice." },
+  { id: "near52", label: "Price close to its 52-week high", line: "How far the price may be below the highest price of the last 52 weeks.", example: "e.g. within 10 %", tells: "How close the latest price is to the highest price of the last 52 weeks.", not: "It is not a prediction and not advice." },
+  { id: "avg", label: "Price above its average price", line: "Choose the average of the last 50 or the last 200 closing prices. The latest price must be above it.", example: "e.g. the 200-day average", tells: "Whether the latest closing price is above the average of the last 50 or 200 closing prices.", not: "It is not a prediction and not advice." },
+  { id: "volDay", label: "Shares traded on the latest day", line: "How many times the usual number of shares changed hands on the latest day. Usual means the average of the 20 days before.", example: "e.g. at least 1.5 times", tells: "How many shares traded on the latest trading day, compared with the average of the 20 days before it.", not: "It is not a prediction and not advice." },
 ] as const;
-export const PV_MATCH_NOTE = "Results are stocks that match your rule today.";
+export const PV_FOLD = "What this tells you and what it does not";
 export const PV_AS_OF = (d: string): string => `Prices as of ${d}`;
 // ---- the shortlist ------------------------------------------------------------------------------------------------------------------------
 export const SORT_CHOICES: { value: string; label: string; order: "asc" | "desc" }[] = [
@@ -395,7 +412,7 @@ export function cardValues(r: Rules, row: Record<string, unknown>): { label: str
   if (num(r.roce) !== undefined) add("ROCE", f1(n("roce"), "%"));
   if (num(r.de) !== undefined) add("Debt to equity", f1(n("de")));
   if (num(r.pledge) !== undefined) add("Promoter pledge", f1(n("pledge_pct"), "%"));
-  if (volOn(r)) add("More volatile than", f1(n("vol_pct_more"), "% of stocks"));
+  if (volOn(r)) add("Swung more than", f1(n("vol_pct_more"), "% of stocks"));
   if (num(r.volRatio) !== undefined) add("Volume vs usual", f1(n("volume_ratio_5d"), "x"));
   if (num(r.delivery) !== undefined) add("Delivery", f1(n("delivery_pct"), "%"));
   if (num(r.pe) !== undefined) add("P/E", f1(n("pe")));
@@ -414,3 +431,11 @@ export const rulesSetCount = (r: Rules): number => describeRules(r).length;
 
 /** "Fill typical values": every field with a published typical number is filled; a field with none stays blank. Returns new rules (the sort and everything else are not touched). */
 export const typicalRules = (): Rules => ({ ...COMMON_RULES });
+
+/** How many rules are set in one step (0 to 6), for the "N set" mark on the step list. */
+export function stepSetCount(r: Rules, step: number): number {
+  let n = RULES.filter((d) => d.step === step && isOn(r, d)).length;
+  if (step === 4 && volOn(r)) n += 1;
+  if (step === 6) n += (chgOn(r) ? 1 : 0) + (avgOn(r) ? 1 : 0);
+  return n;
+}
