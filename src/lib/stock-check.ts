@@ -12,6 +12,17 @@ export const HOME_BUTTON = "New to stocks? Learn the 5 questions";
 export const LADDER_TITLE = "Build Your Shortlist";
 export const CLEAR_ALL = "Clear all";
 export const FILL_BUTTON = "Fill typical values";
+export const FILL_NOTE = "Typical numbers from published methods. Change any of them. A field with no published number is left blank.";
+export const SECTION_RULES = "Rules";
+export const CREATE_NEW_RULE = "Create new rule";
+export const BACK_TO_RULES = "Back to my rules";
+export const VIEW_STOCKS = "View stocks";
+export const RULES_LIST_NONE = "You have no saved rule yet. Press Create new rule.";
+export const EARLIER_VALUES_LINE = "Your saved results were made with the earlier values. They stay as they were.";
+export const AFTER_STEP = (left: number, removed: number): string => `After this step: ${left.toLocaleString("en-IN")} left. This step removed ${removed.toLocaleString("en-IN")}.`;
+export const REMOVED_DEPENDS = "The removed number depends on the steps before it.";
+/** One step row: how many rules are set and how many stocks are left after the step (counted in step order). The count shows only once something is filled. */
+export const stepRowText = (set: number, left: number | null): string => `${set > 0 ? `✓ ${set} set` : "Not set"}${left === null ? "" : ` · ${left.toLocaleString("en-IN")} left`}`;
 export const BLANK_LINE = "Leave a field blank to ignore it.";
 export const PAST_LINE = "Filters use past reported numbers. They do not tell what happens next.";
 export const RESULTS_TITLE = "Your shortlist";
@@ -134,13 +145,18 @@ export const EMPTY_RULES: Rules = {
   roe: "", roce: "", de: "", pledge: "", vol: "", volNum: "", volRatio: "", delivery: "", pe: "",
   chgMonths: "", chgMin: "", near52: "", avgDays: "", volDay: "",
 };
-/** Typical values (editable) for "Fill typical values": the example values shown under each input for steps 1, 2, 3, 4 and 6. Step 5 (price behaviour: volume vs usual, delivery, calmer / more active) and step 7 (Price and volume) are left blank: no published number is on file for them, and the volume and delivery ones depend on one day of trading. */
+/** Typical values (editable) for "Fill typical values". Only a field with a published number is filled (sources are in the release report, not on screen):
+ *  steps 1 to 4 and 6 use the example numbers; step 5 fills Delivery (50 %, a cut-off used by published delivery screens) and leaves "Volume vs usual" and "Day-to-day price swings" blank;
+ *  step 7 fills "within 25 % of the 52-week high", "above the 200-day average" (Minervini Trend Template) and "volume at least 1.5 times its 20-day average" (a published volume-spike number);
+ *  the price change over 1, 3 or 6 months is left blank. */
 export const COMMON_RULES: Rules = {
   ...EMPTY_RULES,
   profitQ: true,
   mcMin: EXAMPLES.mcMin.value, profitYears: EXAMPLES.profitYears.value, sales3: EXAMPLES.sales3.value, profit3: EXAMPLES.profit3.value,
   salesQ: EXAMPLES.salesQ.value, profitQg: EXAMPLES.profitQg.value, roe: EXAMPLES.roe.value, roce: EXAMPLES.roce.value, de: EXAMPLES.de.value,
   pledge: EXAMPLES.pledge.value, pe: EXAMPLES.pe.value,
+  delivery: "50",
+  near52: "25", avgDays: "200", volDay: "1.5",
 };
 
 export interface RuleDef {
@@ -379,7 +395,7 @@ export const PV_FILTERS = [
   { id: "chg", label: "Price change over a past period", line: "Choose 1, 3 or 6 months, then the least change in the price you want.", example: "e.g. 3 months, at least 10 %", tells: "How far the price moved over that time, from past closing prices.", not: "It is not a prediction and not advice." },
   { id: "near52", label: "Price close to its 52-week high", line: "How far the price may be below the highest price of the last 52 weeks.", example: "e.g. within 10 %", tells: "How close the latest price is to the highest price of the last 52 weeks.", not: "It is not a prediction and not advice." },
   { id: "avg", label: "Price above its average price", line: "Choose the average of the last 50 or the last 200 closing prices. The latest price must be above it.", example: "e.g. the 200-day average", tells: "Whether the latest closing price is above the average of the last 50 or 200 closing prices.", not: "It is not a prediction and not advice." },
-  { id: "volDay", label: "Shares traded on the latest day", line: "How many times the usual number of shares changed hands on the latest day. Usual means the average of the 20 days before.", example: "e.g. at least 1.5 times", tells: "How many shares traded on the latest trading day, compared with the average of the 20 days before it.", not: "It is not a prediction and not advice." },
+  { id: "volDay", label: "Shares traded on the latest day", line: "How many times its 20-day average volume was traded on the latest day. The average is of the 20 days before.", example: "e.g. at least 1.5 times its 20-day average", tells: "How many shares traded on the latest trading day, compared with the average of the 20 days before it.", not: "It is not a prediction and not advice." },
 ] as const;
 export const PV_FOLD = "What this tells you and what it does not";
 export const PV_AS_OF = (d: string): string => `Prices as of ${d}`;

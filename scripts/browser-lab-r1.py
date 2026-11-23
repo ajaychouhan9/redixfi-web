@@ -1,4 +1,4 @@
-"""Browser checks for Shortlist Lab release 1 (21 Nov 2026): name and address, menus, Learn tab, My rules tab names (23 Nov 2026: three pages and a step list), themes, phone tables.
+"""Browser checks for Shortlist Lab release 1 (21 Nov 2026): name and address, menus, Learn tab, My rules tab names (23 Nov 2026: Rules and Results tabs, a step list), themes, phone tables.
 Real pages and real data (the site is built locally and talks to the live API read-only; nothing is written).
 
   python scripts/browser-lab-r1.py <site url> [shots dir]
@@ -90,12 +90,15 @@ with sync_playwright() as p:
             page.goto(SITE + "/shortlist-lab", wait_until="networkidle", timeout=90000)
             page.click("[data-testid=lab-tab-rules]")
             check(f"{tag}: the My rules tab puts #my-rules in the address", page.evaluate("location.hash") == "#my-rules")
+            page.wait_for_selector("[data-testid=create-new-rule]", timeout=60000)
+            check(f"{tag}: the Rules page opens with a Create new rule button", page.locator("[data-testid=create-new-rule]").inner_text().strip() == "Create new rule")
+            page.locator("[data-testid=create-new-rule]").click()
             page.wait_for_selector("[data-testid=ladder-step-0]", timeout=60000)
             heads = [page.locator(f"[data-testid=ladder-step-{i}] [data-testid=ladder-step-name]").inner_text().strip() for i in range(7)]
             check(f"{tag}: My rules shows the same seven names as Steps 1 to 7, as a numbered list", heads == [f"{i + 1}. {n}" for i, n in enumerate(STEP_NAMES)], str(heads))
-            secs = [page.locator(f"[data-testid=rules-sec-{k}]").inner_text().strip() for k in ("create", "saved", "results")]
-            check(f"{tag}: three sections: Create rule, Saved rules, Results", secs == ["Create rule", "Saved rules", "Results"], str(secs))
-            check(f"{tag}: no stock count before a field is filled, one Show button", page.locator("[data-testid=ladder-left]").count() == 0 and page.get_by_role("button", name="Show stocks that meet my rule").count() == 1)
+            secs = [page.locator(f"[data-testid=rules-sec-{k}]").inner_text().strip() for k in ("rules", "results")]
+            check(f"{tag}: two top tabs: Rules and Results", secs == ["Rules", "Results"], str(secs))
+            check(f"{tag}: no stock count before a field is filled, one Show button", page.locator("[data-testid=ladder-left]").count() == 0 and page.get_by_role("button", name="Show stocks that meet my rule").count() == 1 and page.locator("[data-testid=rule-result-button]").count() == 1)
             check(f"{tag}: no sideways scroll (My rules)", no_sideways(page))
             shot(page, f"rules-{width}-{theme}")
             ctx.close()

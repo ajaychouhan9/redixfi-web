@@ -11,7 +11,7 @@ import { searchResearch } from "@/lib/api/endpoints";
 import { AddToRuleButton } from "@/components/app/ask/AddToRuleButton";
 import { canSaveAnswer } from "@/lib/rule-answers";
 import {
-  ASK_GROUP_TITLE, GROUP_ALL_NOTE, GROUP_SAVED_NOTE, GROUP_SAVE_BUTTON, GROUP_SAVE_FAILED, GROUP_SAVE_NAME_LABEL, GROUP_SAVE_NAME_PLACEHOLDER, groupSavedCount, GROUP_CANCEL, GROUP_KEYS, GROUP_RUN, askRemaining, groupFailedLine, groupNotEnough, groupNotRunLine, groupProgress, groupQuestion, groupQuestionAll,
+  ASK_GROUP_TITLE, GROUP_ALL_NOTE, GROUP_SAVED_NOTE, GROUP_SAVE_BUTTON, GROUP_SAVE_FAILED, GROUP_SAVE_NAME_LABEL, GROUP_SAVE_NAME_PLACEHOLDER, groupSavedCount, GROUP_CANCEL, GROUP_KEYS, GROUP_RUN, ASK_AGAIN_LABEL, ALL_ANSWERED, alreadyAnswered, askRemaining, groupFailedLine, groupNotEnough, groupNotRunLine, groupProgress, groupQuestion, groupQuestionAll,
   groupRunFewer, groupUses,
 } from "@/lib/ask-group";
 import { askRedixfi, getAskConversations, getAskHistory, getAskSuggestions, getUsage, saveRuleAnswer, updateAskContext } from "@/lib/api/mutations";
@@ -264,7 +264,7 @@ export function AskRedixFi() {
   const [stockGroup, setStockGroup] = useState<string[] | null>(null);
   const [groupFocus, setGroupFocus] = useState<string | null>(null);
   // A question for 2 to 8 stocks waiting for the person to confirm the number of questions it will use, and the progress while it runs.
-  const [groupPlan, setGroupPlan] = useState<{ key: string | null; text: string; symbols: string[] } | null>(null);
+  const [groupPlan, setGroupPlan] = useState<{ key: string | null; text: string; symbols: string[]; skip: string[]; again: boolean } | null>(null);
   const [groupRun, setGroupRun] = useState<{ done: number; total: number } | null>(null);
   // The stocks came from the Shortlist Lab, so their answers may be saved to a rule's result; the name typed for a rule that is not saved yet.
   const [groupFromLab, setGroupFromLab] = useState(false);
@@ -654,7 +654,10 @@ export function AskRedixFi() {
     // let the keyboard close first, so the sheet has settled before the person taps Run it, a fewer-stocks button or Cancel
     if (typeof document !== "undefined") (document.activeElement as HTMLElement | null)?.blur?.();
     setLimit(null);
-    setGroupPlan({ key, text, symbols: [...stockGroup] });
+    // a question and stock pair that already has an answer on the result is not asked again, and not charged, unless the person chooses to
+    const link = groupFromLab ? getLabLink() : null;
+    const skip = key && link ? stockGroup.filter((s) => link.answeredKeys(s).includes(key)) : [];
+    setGroupPlan({ key, text, symbols: [...stockGroup], skip, again: false });
     refreshUsage();
   }
   /** The Send box and the Enter key: with 2 to 8 stocks in the session, a typed question is asked for every stock the same way. */
@@ -732,7 +735,7 @@ export function AskRedixFi() {
       const token = await getToken();
       if (!link || !token) throw new Error("none");
       let ruleId = link.ruleId;
-      let runId: string | null = null;
+      let runId: string | null = link.hasResult ? link.runId : null;
       if (!link.hasResult || !ruleId) {
         const out = await link.saveResult(name);
         ruleId = out.ruleId;
@@ -749,6 +752,7 @@ export function AskRedixFi() {
         }
       }
       patchLab(key, { state: ok > 0 ? "saved" : "failed", saved: ok });
+      if (ok > 0) getLabLink()?.refreshAnswers();
     } catch {
       patchLab(key, { state: "failed" });
     }
@@ -1293,17 +1297,25 @@ export function AskRedixFi() {
                   </p>
                 )}
                 {groupPlan && !busy && (() => {
-                  const n = groupPlan.symbols.length;
+                  const toAsk = groupPlan.again ? groupPlan.symbols : groupPlan.symbols.filter((s) => !groupPlan.skip.includes(s));
+                  const n = toAsk.length;
                   const left = askRemaining(usage);
                   const enough = left === null || left >= n;
                   return (
                     <div className="rounded-xl border border-accent bg-surface-raised p-3 text-sm" role="group" aria-label="Confirm the question for all stocks" data-testid="ask-group-confirm">
-                      <p className="font-medium" data-testid="ask-group-uses">{groupUses(n, left)}</p>
+                      {groupPlan.skip.length > 0 && <p className="mb-1 text-xs text-foreground-muted" data-testid="ask-group-skipped">{alreadyAnswered(groupPlan.skip)}</p>}
+                      {groupPlan.skip.length > 0 && (
+                        <label className="mb-2 flex min-h-[44px] items-center gap-2 text-sm" data-testid="ask-group-again">
+                          <input type="checkbox" checked={groupPlan.again} onChange={(e) => setGroupPlan({ ...groupPlan, again: e.target.checked })} className="h-5 w-5 shrink-0" />
+                          <span>{ASK_AGAIN_LABEL}</span>
+                        </label>
+                      )}
+                      {n === 0 ? <p className="font-medium" data-testid="ask-group-allanswered">{ALL_ANSWERED}</p> : <p className="font-medium" data-testid="ask-group-uses">{groupUses(n, left)}</p>}
                       {!enough && <p className="mt-1 text-xs text-foreground-muted" data-testid="ask-group-notenough">{groupNotEnough(n, left as number)}</p>}
                       <div className="mt-2 flex flex-wrap gap-2">
-                        {enough && <button type="button" onClick={() => void runGroup(groupPlan.symbols)} className="min-h-[44px] rounded-lg bg-accent px-4 text-sm font-semibold text-accent-foreground" data-testid="ask-group-run">{GROUP_RUN}</button>}
+                        {enough && n > 0 && <button type="button" onClick={() => void runGroup(toAsk)} className="min-h-[44px] rounded-lg bg-accent px-4 text-sm font-semibold text-accent-foreground" data-testid="ask-group-run">{GROUP_RUN}</button>}
                         {!enough && (left as number) > 0 && (
-                          <button type="button" onClick={() => void runGroup(groupPlan.symbols.slice(0, left as number))} className="min-h-[44px] rounded-lg bg-accent px-4 text-sm font-semibold text-accent-foreground" data-testid="ask-group-fewer">{groupRunFewer(left as number)}</button>
+                          <button type="button" onClick={() => void runGroup(toAsk.slice(0, left as number))} className="min-h-[44px] rounded-lg bg-accent px-4 text-sm font-semibold text-accent-foreground" data-testid="ask-group-fewer">{groupRunFewer(left as number)}</button>
                         )}
                         <button type="button" onClick={() => setGroupPlan(null)} className="min-h-[44px] rounded-lg border border-border px-4 text-sm font-medium" data-testid="ask-group-cancel">{GROUP_CANCEL}</button>
                       </div>

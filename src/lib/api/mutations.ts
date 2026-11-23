@@ -527,6 +527,11 @@ export interface RuleRunSaved {
   limit: number;
   run?: { id: string; run_date: string; count: number; as_of: string | null };
   replaced_same_day?: boolean;
+  updated_same_day?: boolean;
+  /** More saved results than the plan keeps (after a downgrade): nothing was saved and nothing was deleted. */
+  blocked?: boolean;
+  count?: number;
+  message?: string;
   dropped?: { id: string; run_date: string } | null;
   diff?: { since: string; added: string[]; dropped: string[] } | null;
 }

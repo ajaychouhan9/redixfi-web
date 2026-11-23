@@ -2,13 +2,14 @@
 // The pipeline answers a question well for ONE company (the other four become a plain side-by-side card when several are named), so a group question is asked for each
 // stock on its own and the answers are put together in one reply.
 import { ASK_QUESTIONS } from "@/lib/read-company";
+import { ASK_NONE, ASK_STATUS, ASK_STATUS_OTHER } from "@/lib/saved-results";
 
 export const ASK_GROUP_MAX = 8; // the existing lookup cap (settings.ASK_LOOKUP_MAX_STOCKS)
 export const ASK_GROUP_TITLE = "Ask AI about these stocks";
-export const ASK_GROUP_LEAD = "Tick up to 8 stocks on your list, then press Ask AI. A new Ask AI session opens with those stocks and the five questions ready. Nothing is sent until you press Send.";
+export const ASK_GROUP_LEAD = "Tick up to 8 stocks, then press Ask AI. Nothing is sent until you press Send.";
 export const ASK_ALL_LABEL = "Ask all 5";
 // "Read your shortlist with AI" (21 Nov 2026): a block of its own after the list, not a step.
-export const ASK_BLOCK_TITLE = "Read your shortlist with AI";
+export const ASK_BLOCK_TITLE = "Ask AI";
 export const ASK_BLOCK_ASK = "\"Ask AI\" is one question in chat.";
 export const ASK_BLOCK_ASK_ALL = "\"Ask all 5\" makes a saved report for each ticked stock and uses questions from your plan.";
 export const askAllUses = (stocks: number, questions: number): string =>
@@ -81,3 +82,43 @@ export const GROUP_SAVE_NAME_LABEL = "Name this rule";
 export const GROUP_SAVE_NAME_PLACEHOLDER = "e.g. My first rule";
 export const GROUP_SAVE_FAILED = "The answers could not be saved to your result right now. They are still shown here.";
 export const groupSavedCount = (n: number): string => `${GROUP_SAVED_NOTE} (${n} ${n === 1 ? "answer" : "answers"}).`;
+
+// 23 Nov 2026: a question and stock pair that already has an answer is not asked again (and not charged) unless the person chooses to.
+export const ASK_AGAIN_LABEL = "Ask again for the stocks that already have an answer. This uses questions.";
+export const alreadyAnswered = (symbols: string[]): string => `Already answered, so not asked again and not charged: ${joinNames(symbols)}.`;
+export const ALL_ANSWERED = "Every stock here already has an answer to this question. Nothing will be used unless you ask again.";
+/** The question text of an answer, matched to one of the five questions for that stock; null for a typed question. */
+export function questionKeyOf(question: string, symbol: string): string | null {
+  const norm = (t: string) => t.replace(/\s+/g, " ").trim().toLowerCase();
+  const q = norm(question);
+  for (const key of GROUP_KEYS) {
+    const t = groupQuestion(key, [symbol], symbol);
+    if (t && norm(t) === q) return key;
+  }
+  return null;
+}
+/** The five questions already answered for one stock (distinct), from the answers saved on a result. */
+export function answeredKeys(answers: { symbol: string | null; question: string | null }[], symbol: string): string[] {
+  const keys = new Set<string>();
+  for (const a of answers) {
+    if (a.symbol !== symbol) continue;
+    const k = questionKeyOf(a.question ?? "", symbol);
+    if (k) keys.add(k);
+  }
+  return [...keys];
+}
+/** How many answers (of any question) are saved for one stock. */
+export const answerCountFor = (answers: { symbol: string | null }[], symbol: string): number => answers.filter((a) => a.symbol === symbol).length;
+
+/** The Ask AI status of one stock on a result: "3 of 5 answered", "2 answers" (typed questions) or "Not asked". */
+export function askStatusText(answers: { symbol: string | null; question: string | null }[] | null, symbol: string): string {
+  if (!answers) return ASK_NONE;
+  const k = answeredKeys(answers, symbol).length;
+  if (k > 0) return ASK_STATUS(k);
+  const n = answerCountFor(answers, symbol);
+  return n > 0 ? ASK_STATUS_OTHER(n) : ASK_NONE;
+}
+/** The first 8 stocks of a list (in list order) that have no answer at all yet, for "Tick next 8 not yet asked". */
+export function nextNotAsked(symbols: string[], answers: { symbol: string | null }[] | null, max = ASK_GROUP_MAX): string[] {
+  return symbols.filter((sym) => !answers || answerCountFor(answers, sym) === 0).slice(0, max);
+}

@@ -63,7 +63,7 @@ assert.ok(validLadderData(data) && !validLadderData({ ...data, version: 2 }) && 
 assert.equal(countAfter(data, EMPTY_RULES, 6), 5, "no rules: every stock");
 assert.equal(countAfter(data, { ...EMPTY_RULES, mcMin: "1000" }, 0), 4, "size rule");
 assert.equal(countAfter(data, { ...EMPTY_RULES, mcMin: "1000" }, 1) , 4);
-const common: Rules = { ...COMMON_RULES };
+const common: Rules = { ...COMMON_RULES, delivery: "", near52: "", avgDays: "", volDay: "" };
 assert.deepEqual(countsByStep(data, common), [5, 3, 2, 1, 1, 1, 1], "the count after each step only gets smaller");
 assert.ok(countsByStep(data, common).every((n, i, a) => i === 0 || n <= a[i - 1]));
 assert.equal(countAfter(data, { ...EMPTY_RULES, profitYears: "5" }, 0), 5, "a rule from a later step does not count in an earlier step");
@@ -99,10 +99,12 @@ assert.deepEqual(
 );
 for (const d of RULES.filter((r) => r.op !== "gt0" && r.op !== "flag" && r.step < 6)) {
   assert.ok(EXAMPLES[d.key], `${d.key} has an example`);
-  if (d.step === 4) assert.equal(COMMON_RULES[d.key], "", `${d.key}: Start with common rules leaves Step 4 on No rule (the example stays as the placeholder)`);
+  if (d.step === 4) assert.equal(COMMON_RULES[d.key], d.key === "delivery" ? "50" : "", `${d.key}: step 5 only fills the field that has a published number`);
   else assert.equal(COMMON_RULES[d.key], EXAMPLES[d.key].value, `${d.key} common value equals its example`);
 }
-assert.ok(COMMON_RULES.vol === "" && COMMON_RULES.volNum === "" && COMMON_RULES.volRatio === "" && COMMON_RULES.delivery === "", "Step 4 is not prefilled");
+assert.ok(COMMON_RULES.vol === "" && COMMON_RULES.volNum === "" && COMMON_RULES.volRatio === "", "Step 5: volume vs usual and the price-swings option have no published number and stay blank");
+assert.equal(COMMON_RULES.delivery, "50", "Step 5: delivery 50 % is the one published number");
+assert.ok(COMMON_RULES.near52 === "25" && COMMON_RULES.avgDays === "200" && COMMON_RULES.volDay === "1.5" && COMMON_RULES.chgMonths === "" && COMMON_RULES.chgMin === "", "Step 7: 25 % of the 52-week high, above the 200-day average, volume 1.5 times its 20-day average; the 1, 3, 6 month change stays blank");
 assert.equal(COUNTS_NOTE, "Counts come from last night's figures. The final list may differ by a few stocks.");
 assert.equal(exampleLine(EXAMPLES.volRatio.text), "e.g. 1.5 times");
 assert.equal(exampleLine(EXAMPLES.roce.text), "e.g. 15 (%)");
@@ -129,11 +131,11 @@ assert.ok(ladder.includes("NO_ROCE_LINE(gap.noFigure)") && ladder.includes("NO_R
 // ---- 5. the ladder: steps, buttons, no ranking, no fake filter
 assert.deepEqual(STEPS.map((s) => s.title), ["Size and trading", "Earnings", "Returns", "Debt and pledge", "Price movement", "Price you pay", "Price and volume"]);
 assert.ok(STEPS.every((s) => !("why" in s)), "no long why-this-rule text on the rules page (the Learn tab explains)");
-for (const gone of ["Set the rules that matter to you", "The bar that stays on screen", "Why this rule", "Typical numbers from published methods", "With no rules set, every stock is listed"]) assert.ok(!ladder.includes(gone) && !read("lib/stock-check.ts").includes(gone), `removed from the rules page: ${gone}`);
+for (const gone of ["Set the rules that matter to you", "The bar that stays on screen", "Why this rule", "With no rules set, every stock is listed"]) assert.ok(!ladder.includes(gone) && !read("lib/stock-check.ts").includes(gone), `removed from the rules page: ${gone}`);
 assert.ok(ladder.includes("BLANK_LINE") && ladder.includes("PAST_LINE"), "the two lines that stay");
 assert.ok(ladder.includes("typicalRules()") && ladder.includes("ladder-fill") && ladder.includes("ladder-bar") && ladder.includes("ladder-left") && ladder.includes("ABOUT_MATCH(left)"));
 assert.ok(!/\bfetch\(/.test(ladder) && ladder.includes("getLadderData()") && (ladder.match(/getSignals\(/g) ?? []).length === 1, "one figures file and one list call (the saved result is made by the server)");
-assert.ok(ladder.includes("Add to watchlist") && ladder.includes("Read this company") && ladder.includes("RESULTS_TITLE") && ladder.includes('value: "name"') === false);
+assert.ok(ladder.includes("Add to watchlist") && ladder.includes("Read this company") && ladder.includes('value: "name"') === false);
 assert.ok(ladder.includes("NUMBERS_AS_OF(asOf)"), "numbers as of <date>");
 assert.equal(read("lib/stock-check.ts").includes("sort: \"composite"), false);
 assert.ok(/Name, A to Z/.test(read("lib/stock-check.ts")) && ladder.includes("SORT_CHOICES[0]"), "A to Z unless the user chooses a column");
@@ -195,7 +197,7 @@ assert.ok(explorer.includes('placeholder="1.5"') && explorer.includes('<Example 
 assert.ok(!/href=\{askHref/.test(ladder) && ladder.includes("openWithStocks(selected, { fromLab: true })") && !ladder.includes("ladder-step-6") && !ladder.includes("STEP6"), "Step 6 is gone; Ask AI opens a new session with the ticked stocks");
 const readCo = read("components/app/stock-check/LearnTab.tsx");
 assert.ok(!readCo.includes("askHref") && !readCo.includes("openWithStocks"), "the Learn tab no longer has an Ask AI button card");
-assert.ok(ladder.includes('data-testid="ladder-bar-show"') && (ladder.match(/SHOW_BUTTON\}/g) ?? []).length === 1 && !ladder.includes('data-testid="ladder-show"'), "ONE Show button, inside the sticky bar");
+assert.ok(ladder.includes('data-testid="rule-result-button"') && (ladder.match(/data-testid="rule-result-button"/g) ?? []).length === 1 && ladder.includes("resultLabel={viewMode ? VIEW_STOCKS : SHOW_BUTTON}") && !ladder.includes("ladder-bar-show") && !ladder.includes("sticky top-"), "ONE result button, in the bottom block, and no sticky Show bar");
 const samplePanel = read("components/app/ask/SamplePanel.tsx");
 assert.ok(samplePanel.includes("sampleIdFor(q, samples.answers, ALIASES)") && samplePanel.includes("LOGIN_FOR_OWN"), "the panel answers the sample questions and asks for a log-in for anything else");
 const aliases = { [ASK_QUESTIONS.points]: "points", [ASK_QUESTIONS.financials]: "numbers", [ASK_QUESTIONS.management]: "management" };
@@ -232,7 +234,7 @@ assert.deepEqual(toParams({ ...EMPTY_RULES, profitYears: "10", de: "-5", roe: "a
 assert.equal(countAfter(data, { ...EMPTY_RULES, profitYears: "10", de: "-5", roe: "abc" }, 5), 5, "an unusable value does not filter the count");
 assert.ok(ladder.includes("ruleProblem(d, rules[d.key] as string)") && ladder.includes('data-testid="problem-volNum"'), "the problem line is shown");
 
-assert.ok(/ladder-bar[\s\S]*ladder-bar-show[\s\S]*ladder-left[\s\S]*ladder-counts-note/.test(ladder) && ladder.includes("filled && ("), "the count and its note appear only once a field is filled, beside the one button");
+assert.ok(/filled && \([\s\S]*?ladder-bar[\s\S]*?ladder-left[\s\S]*?ladder-counts-note/.test(ladder), "the plain count bar appears only once a field is filled");
 assert.ok(ladder.includes('set({ vol: v, volNum: v === "" ? "" : v === "calmer" ? "25" : "75" })') && !ladder.includes("rules.volNum ||"), "switching between Calmer and More active resets the cut-off to that option's default (25 / 75)");
 assert.ok(ctx.includes('matchMedia("(min-width: 1024px)")') && ctx.includes("if (!e.matches) setOpen(false)"), "the panel closes when the window goes from wide (docked) to narrow (drawer)");
 console.log("stock check tests: ok");

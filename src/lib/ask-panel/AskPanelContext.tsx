@@ -27,8 +27,14 @@ export interface LabLink {
   ruleName: string | null;
   /** The open saved rule already has a saved result to attach answers to. */
   hasResult: boolean;
+  /** The result the answers are attached to (the one the ticked stocks belong to), when there is one. */
+  runId: string | null;
   /** Save the result (and the rule too, under `name`, when the rule is not saved yet). Returns the rule and the result the answers belong to. */
   saveResult: (name?: string) => Promise<{ ruleId: string; runId: string }>;
+  /** The five questions (keys) already answered for one stock on the result the answers go to. Empty when there is no saved result yet. */
+  answeredKeys: (symbol: string) => string[];
+  /** Read the answers of that result again (after new answers were saved), so the stock rows and the count are up to date. */
+  refreshAnswers: () => void;
 }
 
 interface AskPanelContextValue {

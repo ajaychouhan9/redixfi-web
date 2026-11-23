@@ -8,8 +8,8 @@ import {
   BLANK_LINE, CLEAR_ALL, COMMON_RULES, EMPTY_RULES, FILL_BUTTON, SHOW_BUTTON, hasAnyRule, toParams, typicalRules, validValue, RULES, countAfter, countsByStep,
   type LadderData, type Rules,
 } from "../src/lib/stock-check.ts";
-import { ASK_BLOCK_ASK, ASK_BLOCK_ASK_ALL, ASK_BLOCK_TITLE, GROUP_ALL_NOTE, askAllUses } from "../src/lib/ask-group.ts";
-import { DROP_WARNING, REPORT_LEAD, RESULT_EARLIER, RESULT_LIMIT_LINE, RESULT_SINCE } from "../src/lib/saved-results.ts";
+import { ASK_BLOCK_TITLE, GROUP_ALL_NOTE, askAllUses } from "../src/lib/ask-group.ts";
+import { DROP_WARNING_DATE, REPORT_LEAD, RESULT_EARLIER, RESULT_LIMIT_LINE, RESULT_SINCE } from "../src/lib/saved-results.ts";
 import { LIMIT_REACHED } from "../src/lib/my-rules.ts";
 import { IN_RUN_TITLE, ADD_FROM_WATCHLIST, bannerLine } from "../src/lib/fullcheck-copy.ts";
 
@@ -42,8 +42,7 @@ for (const f of ["components/app/stock/StockTabs.tsx", "components/app/stock-che
 }
 assert.ok(read("components/app/stock/StockTabs.tsx").includes("sticky-tabs -mx-4 overflow-x-auto"), "horizontal tab scrolling is kept");
 const ladder = strip(read("components/app/stock-check/ShortlistLadder.tsx"));
-assert.ok(ladder.includes("top-[var(--tabs-h)]") && ladder.includes("var(--header-height,0px)+var(--tabs-h)"), "the slim bar stacks under the tabs");
-assert.ok(!ladder.includes("IntersectionObserver") && !ladder.includes("barHidden"), "the bar stays: one button, always in reach");
+assert.ok(!ladder.includes("top-[var(--tabs-h)]") && !ladder.includes("sticky top-") && !ladder.includes("IntersectionObserver"), "no sticky Show bar anywhere: nothing overlaps the Results page");
 
 // ---- A6 / A7: Ask AI
 const ask = strip(read("components/app/ask/AskRedixFi.tsx"));
@@ -81,38 +80,37 @@ assert.equal(SHOW_BUTTON, "Show stocks that meet my rule");
 const parts = strip(read("components/app/stock-check/MyRulesParts.tsx"));
 assert.ok(parts.includes("FILL_BUTTON") && parts.includes("CLEAR_ALL") && ladder.includes("BLANK_LINE") && ladder.includes("typicalRules()"), "the page has the button, Clear all and the blank line");
 assert.ok(!ladder.includes("CommonValuesCard") && !readFileSyncExists("components/app/stock-check/CommonValuesCard.tsx"), "the Common starting values card is gone");
-assert.ok(!/Show \$\{left|Show \$\{?left/.test(ladder) && ladder.includes("SHOW_BUTTON}"), "the show button has no number on it");
+assert.ok(!/Show \$\{left|Show \$\{?left/.test(ladder) && ladder.includes("SHOW_BUTTON"), "the show button has no number on it");
 assert.ok(ladder.includes("data-testid=\"ladder-counts-note\"") && ladder.includes("COUNTS_NOTE") && ladder.includes("ABOUT_MATCH(left)"), "the About N stocks count and its note stay (shown only once a field is filled)");
 {
   const typical = typicalRules();
   assert.deepEqual(typical, COMMON_RULES);
-  for (const k of ["chgMonths", "chgMin", "near52", "avgDays", "volDay", "volRatio", "delivery", "vol", "volNum"] as const) assert.equal(typical[k], "", `${k}: no published number, left blank`);
+  for (const k of ["chgMonths", "chgMin", "volRatio", "vol", "volNum"] as const) assert.equal(typical[k], "", `${k}: no published number, left blank`);
+  assert.deepEqual([typical.delivery, typical.near52, typical.avgDays, typical.volDay], ["50", "25", "200", "1.5"]);
   const copyAll = (FILL_BUTTON + BLANK_LINE + CLEAR_ALL + SHOW_BUTTON + ladder).replace(/className="[^"]*"/g, "").replace(/className=\{`[^`]*`\}/g, "");
   assert.ok(!/\b(standard|recommended|best)\b/i.test(copyAll), "never standard, recommended or best");
 }
 // the AI block is its own block after the list, not a step
 const ask2 = strip(read("components/app/stock-check/AskAboutStocks.tsx"));
-assert.equal(ASK_BLOCK_TITLE, "Read your shortlist with AI");
-assert.equal(ASK_BLOCK_ASK, "\"Ask AI\" is one question in chat.");
-assert.ok(ASK_BLOCK_ASK_ALL.startsWith("\"Ask all 5\" makes a saved report for each ticked stock") && ASK_BLOCK_ASK_ALL.includes("uses questions from your plan"));
+assert.equal(ASK_BLOCK_TITLE, "Ask AI");
 assert.equal(askAllUses(3, 7), "Ask all 5 for 3 stocks uses 7 questions from your plan. Nothing is used until you confirm.");
 assert.ok(ask2.includes("router.push(`/full-check?run=") && ask2.includes("started=1"), "opens the Full check page by itself");
-assert.ok(ladder.indexOf("<AskAboutStocks") > ladder.indexOf("<ResultsByRule") && ladder.indexOf("<ResultsByRule") > ladder.indexOf('data-testid="ladder-cards"'), "the AI block comes last, after the list and the results");
+assert.ok(ladder.includes("<AskAboutStocks") && ladder.includes("renderAsk={(slot) => askCard(") && ladder.indexOf('askCard("live", liveSaved)') > ladder.indexOf('data-testid="ladder-cards"'), "the Ask AI card is inside each result card, after the stocks; no separate card at the bottom");
 assert.ok(!ladder.includes("ladder-step-6"), "not a step");
 
 // ---- saved results
 assert.ok(ladder.includes("saveRuleRun(") && ladder.includes("DROP_CONFIRM") && ladder.includes("data-testid=\"run-drop-ask\"") && ladder.includes("confirmDrop") === false || ladder.includes("true)"), "a warning comes before the oldest result is dropped");
-assert.ok(DROP_WARNING(10, "1 Nov 2026").includes("removes the oldest (1 Nov 2026)"));
+assert.ok(DROP_WARNING_DATE(10, "1 Nov 2026").includes("removes the oldest result (1 Nov 2026)") && DROP_WARNING_DATE(10, "1 Nov 2026").includes("Ask AI answers saved with it"));
 assert.equal(RESULT_LIMIT_LINE(1, 1), "Your plan keeps 1 saved result for each rule. You have 1.");
 assert.equal(RESULT_SINCE("19 Nov 2026", 3, 2), "Since 19 Nov 2026: 3 added, 2 dropped.");
 assert.ok(RESULT_EARLIER.includes("earlier values") === false && RESULT_EARLIER.includes("earlier values") === false || RESULT_EARLIER.toLowerCase().includes("earlier values"), "earlier values shown");
-assert.ok(REPORT_LEAD.includes("up to 8") && REPORT_LEAD.includes("Not asked yet"));
+assert.ok(REPORT_LEAD.includes("up to 8"));
 assert.ok(LIMIT_REACHED(1).includes("Delete the saved rule") && LIMIT_REACHED(1).includes("update it with Save"), "Free: delete or update the old rule");
 const myrules = strip(read("components/app/stock-check/MyRulesParts.tsx"));
-for (const a of ["saved-open", "saved-delete", "save-rules-button", "save-new-button", "saved-run-again"]) assert.ok(myrules.includes(a), `rule actions are in the My rules card: ${a}`);
+for (const a of ["saved-rule", "rule-delete", "save-rules-button", "replace-new", "create-new-rule"]) assert.ok(myrules.includes(a), `rule actions are on the Rules page: ${a}`);
 for (const f of ["components/app/stock-check/SavedResults.tsx", "components/app/stock-check/AskAboutStocks.tsx"]) {
   const t = strip(read(f));
-  for (const a of ["saved-open", "save-rules-button", "save-new-button", "saved-run-again"]) assert.ok(!t.includes(a), `${f} has no rule action ${a}`);
+  for (const a of ["save-rules-button", "replace-new", "create-new-rule"]) assert.ok(!t.includes(a), `${f} has no rule action ${a}`);
 }
 
 // ---- plan limits on Pricing

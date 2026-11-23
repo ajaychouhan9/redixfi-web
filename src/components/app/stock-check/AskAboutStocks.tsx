@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { ApiError } from "@/lib/api/client";
 import { estimateFullCheck, startFullCheck, type FullCheckEstimate } from "@/lib/api/fullcheck";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { ASK_ALL_LABEL, ASK_BLOCK_ASK, ASK_BLOCK_ASK_ALL, ASK_BLOCK_TITLE, ASK_GROUP_LEAD, ASK_GROUP_MAX, askAllUses } from "@/lib/ask-group";
+import { ASK_ALL_LABEL, ASK_BLOCK_TITLE, ASK_GROUP_LEAD, ASK_GROUP_MAX, askAllUses } from "@/lib/ask-group";
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 import { costLine } from "@/lib/fullcheck-copy";
 import { signupHref } from "@/lib/nav-items";
@@ -33,6 +33,7 @@ export function AskAboutStocks({ selected, onRemove, onClear, ruleId, runId }: P
   const { user, getToken } = useAuth();
   const { openWithStocks } = useAskPanel();
   const router = useRouter();
+  const uid = useId();
   const [estimate, setEstimate] = useState<FullCheckEstimate | null>(null);
   const [preview, setPreview] = useState<FullCheckEstimate | null>(null);
   const [locked, setLocked] = useState<string | null>(null);
@@ -101,13 +102,8 @@ export function AskAboutStocks({ selected, onRemove, onClear, ruleId, runId }: P
   }
 
   return (
-    <section id="ask-about" className="space-y-3 rounded-xl border border-border bg-surface p-4" aria-labelledby="ask-about-title" data-testid="ask-about">
-      <h3 id="ask-about-title" className="text-base font-semibold">{ASK_BLOCK_TITLE}</h3>
-      <p className="text-sm text-foreground-muted" data-testid="ask-block-explain">
-        <span className="font-medium text-foreground">{ASK_BLOCK_ASK}</span>
-        {" "}
-        <span className="font-medium text-foreground">{ASK_BLOCK_ASK_ALL}</span>
-      </p>
+    <section className="space-y-3 rounded-xl border border-border bg-surface-raised p-3" aria-labelledby={`${uid}-title`} data-testid="ask-about">
+      <h3 id={`${uid}-title`} className="text-base font-semibold">{ASK_BLOCK_TITLE}</h3>
       {!user ? (
         <>
           <p className="text-sm text-foreground-muted">

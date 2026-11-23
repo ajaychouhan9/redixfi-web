@@ -82,7 +82,8 @@ assert.equal(cardValues(withRules({ avgDays: "50" }), { sma50_above: null })[0].
 // ---- Fill typical values: only numbers from published methods; the four new fields have none, so they stay blank
 const typical = typicalRules();
 assert.deepEqual(typical, COMMON_RULES);
-for (const k of ["chgMonths", "chgMin", "near52", "avgDays", "volDay"] as const) assert.equal(typical[k], "", `${k} stays blank`);
+for (const k of ["chgMonths", "chgMin"] as const) assert.equal(typical[k], "", `${k} stays blank: no published number`);
+assert.deepEqual([typical.near52, typical.avgDays, typical.volDay], ["25", "200", "1.5"], "step 7: within 25 % of the 52-week high, above the 200-day average, volume 1.5 times its 20-day average");
 assert.equal(typical.roe, "15");
 
 // ---- the step: seventh, named, with plain copy
