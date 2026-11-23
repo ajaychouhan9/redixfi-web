@@ -42,8 +42,8 @@ for (const f of ["components/app/stock/StockTabs.tsx", "components/app/stock-che
 }
 assert.ok(read("components/app/stock/StockTabs.tsx").includes("sticky-tabs -mx-4 overflow-x-auto"), "horizontal tab scrolling is kept");
 const ladder = strip(read("components/app/stock-check/ShortlistLadder.tsx"));
-assert.ok(ladder.includes("top-[var(--tabs-h)]") && ladder.includes("var(--header-height,0px)+var(--tabs-h)"), "the stocks-left bar stacks under the tabs");
-assert.ok(ladder.includes('"ladder-results-section", "ask-about"') && ladder.includes("IntersectionObserver") && ladder.includes("opacity-0"), "and steps aside at the results and the AI block");
+assert.ok(ladder.includes("top-[var(--tabs-h)]") && ladder.includes("var(--header-height,0px)+var(--tabs-h)"), "the slim bar stacks under the tabs");
+assert.ok(!ladder.includes("IntersectionObserver") && !ladder.includes("barHidden"), "the bar stays: one button, always in reach");
 
 // ---- A6 / A7: Ask AI
 const ask = strip(read("components/app/ask/AskRedixFi.tsx"));
@@ -64,9 +64,9 @@ const r = withRules({ mcMin: "500", roe: "15", de: "1", pe: "25" });
 assert.deepEqual(toParams(r), { market_cap_min: 500, roe_min: 15, de_max: 1, pe_max: 25 });
 assert.deepEqual(toParams(withRules({ roe: "  " })), {}, "a blank box is never applied");
 assert.ok(hasAnyRule(r) && !hasAnyRule(EMPTY_RULES) && !hasAnyRule(withRules({ roe: " " })));
-const everything = [ladder, strip(read("lib/stock-check.ts")), strip(read("lib/my-rules.ts")), strip(read("components/app/stock-check/MyRulesCard.tsx")), strip(read("components/app/stock-check/SavedResults.tsx")), strip(read("lib/api/mutations.ts"))].join("\n");
+const everything = [ladder, strip(read("lib/stock-check.ts")), strip(read("lib/my-rules.ts")), strip(read("components/app/stock-check/MyRulesParts.tsx")), strip(read("components/app/stock-check/SavedResults.tsx")), strip(read("lib/api/mutations.ts"))].join("\n");
 assert.ok(!/skipped|Skip|SKIP|applySkips|filtersLine|filtersSet|step-switch|of \d filters set/.test(everything.replace(/skipped\?: boolean/g, "")), "no Use / Skip anywhere in the ladder, My rules, saved results or the API client");
-assert.ok(!read("components/app/stock-check/ShortlistLadder.tsx").includes("filters set") && !read("components/app/stock-check/MyRulesCard.tsx").includes("filters set"), "no N of M filters set line");
+assert.ok(!read("components/app/stock-check/ShortlistLadder.tsx").includes("filters set") && !read("components/app/stock-check/MyRulesParts.tsx").includes("filters set"), "no N of M filters set line");
 // the counts follow the rules that have a value
 const data: LadderData = { version: 1, as_of: "2026-11-20", fund_quarter_end: null, built_at: "x", cols: ["mc", "roe", "de", "pe"], rows: [[600, 20, 0.5, 20], [600, 10, 0.5, 20], [100, 20, 0.5, 20]] };
 assert.equal(countAfter(data, withRules({ mcMin: "500", roe: "15" }), 6), 1);
@@ -78,10 +78,11 @@ assert.equal(FILL_BUTTON, "Fill typical values");
 assert.equal(CLEAR_ALL, "Clear all");
 assert.equal(BLANK_LINE, "Leave a field blank to ignore it.");
 assert.equal(SHOW_BUTTON, "Show stocks that meet my rule");
-assert.ok(ladder.includes("FILL_BUTTON") && ladder.includes("CLEAR_ALL") && ladder.includes("BLANK_LINE") && ladder.includes("typicalRules()"), "the ladder has the button, Clear all and the blank line");
+const parts = strip(read("components/app/stock-check/MyRulesParts.tsx"));
+assert.ok(parts.includes("FILL_BUTTON") && parts.includes("CLEAR_ALL") && ladder.includes("BLANK_LINE") && ladder.includes("typicalRules()"), "the page has the button, Clear all and the blank line");
 assert.ok(!ladder.includes("CommonValuesCard") && !readFileSyncExists("components/app/stock-check/CommonValuesCard.tsx"), "the Common starting values card is gone");
-assert.ok(!/Show \$\{left|Show \$\{?left/.test(ladder) && ladder.includes("{SHOW_BUTTON}"), "the show button has no number on it");
-assert.ok(ladder.includes("data-testid=\"ladder-counts-note\"") && ladder.includes("COUNTS_NOTE") && ladder.includes("stocks left") || ladder.includes("stock\" : \"stocks\"} left"), "the stocks left count and its note stay");
+assert.ok(!/Show \$\{left|Show \$\{?left/.test(ladder) && ladder.includes("SHOW_BUTTON}"), "the show button has no number on it");
+assert.ok(ladder.includes("data-testid=\"ladder-counts-note\"") && ladder.includes("COUNTS_NOTE") && ladder.includes("ABOUT_MATCH(left)"), "the About N stocks count and its note stay (shown only once a field is filled)");
 {
   const typical = typicalRules();
   assert.deepEqual(typical, COMMON_RULES);
@@ -96,7 +97,7 @@ assert.equal(ASK_BLOCK_ASK, "\"Ask AI\" is one question in chat.");
 assert.ok(ASK_BLOCK_ASK_ALL.startsWith("\"Ask all 5\" makes a saved report for each ticked stock") && ASK_BLOCK_ASK_ALL.includes("uses questions from your plan"));
 assert.equal(askAllUses(3, 7), "Ask all 5 for 3 stocks uses 7 questions from your plan. Nothing is used until you confirm.");
 assert.ok(ask2.includes("router.push(`/full-check?run=") && ask2.includes("started=1"), "opens the Full check page by itself");
-assert.ok(ladder.indexOf("<AskAboutStocks") > ladder.indexOf("<SavedResults") && ladder.indexOf("<SavedResults") > ladder.indexOf('data-testid="ladder-cards"'), "the AI block comes last, after the list and the results");
+assert.ok(ladder.indexOf("<AskAboutStocks") > ladder.indexOf("<ResultsByRule") && ladder.indexOf("<ResultsByRule") > ladder.indexOf('data-testid="ladder-cards"'), "the AI block comes last, after the list and the results");
 assert.ok(!ladder.includes("ladder-step-6"), "not a step");
 
 // ---- saved results
@@ -107,7 +108,7 @@ assert.equal(RESULT_SINCE("19 Nov 2026", 3, 2), "Since 19 Nov 2026: 3 added, 2 d
 assert.ok(RESULT_EARLIER.includes("earlier values") === false && RESULT_EARLIER.includes("earlier values") === false || RESULT_EARLIER.toLowerCase().includes("earlier values"), "earlier values shown");
 assert.ok(REPORT_LEAD.includes("up to 8") && REPORT_LEAD.includes("Not asked yet"));
 assert.ok(LIMIT_REACHED(1).includes("Delete the saved rule") && LIMIT_REACHED(1).includes("update it with Save"), "Free: delete or update the old rule");
-const myrules = strip(read("components/app/stock-check/MyRulesCard.tsx"));
+const myrules = strip(read("components/app/stock-check/MyRulesParts.tsx"));
 for (const a of ["saved-open", "saved-delete", "save-rules-button", "save-new-button", "saved-run-again"]) assert.ok(myrules.includes(a), `rule actions are in the My rules card: ${a}`);
 for (const f of ["components/app/stock-check/SavedResults.tsx", "components/app/stock-check/AskAboutStocks.tsx"]) {
   const t = strip(read(f));

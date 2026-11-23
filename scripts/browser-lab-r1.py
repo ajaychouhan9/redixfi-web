@@ -1,4 +1,4 @@
-"""Browser checks for Shortlist Lab release 1 (21 Nov 2026): name and address, menus, Learn tab, My rules tab names, themes, phone tables.
+"""Browser checks for Shortlist Lab release 1 (21 Nov 2026): name and address, menus, Learn tab, My rules tab names (23 Nov 2026: three pages and a step list), themes, phone tables.
 Real pages and real data (the site is built locally and talks to the live API read-only; nothing is written).
 
   python scripts/browser-lab-r1.py <site url> [shots dir]
@@ -84,25 +84,18 @@ with sync_playwright() as p:
             check(f"{tag}: every example shown in full, no toggle", page.locator("[data-testid=learn-example]").count() == 7 and page.get_by_text("Show the reading").count() == 0 and page.get_by_text("My notes").count() == 0)
             check(f"{tag}: no sample card, no points-to-watch or news buttons", page.get_by_text("Try it on a sample stock").count() == 0 and page.get_by_text("Open Points to watch").count() == 0 and page.get_by_text("Open News").count() == 0)
             check(f"{tag}: find-in-Screener line on each step", page.locator("[data-testid=learn-find-line]").count() == 7 and "Find any stock in Screener, open its page and look in the Overview tab." in page.locator("[data-testid=learn-find-line]").first.inner_text() and page.locator("[data-testid=learn-find-line] a").count() == 7)
-            check(f"{tag}: one Try button", page.locator("[data-testid=learn-try-button]").count() == 1 and page.inner_text("[data-testid=learn-try-button]").strip() == "Try these questions in Ask AI")
-            check(f"{tag}: logged-out line shown", "needs a log-in" in page.inner_text("[data-testid=learn-try-loggedout]"))
+            check(f"{tag}: no long 5-questions card or Ask AI button on Learn; every step lists its fields", page.locator("[data-testid=learn-try-button]").count() == 0 and page.locator("[data-testid=learn-try]").count() == 0 and page.locator("[data-testid=learn-fields]").count() == 7)
             shot(page, f"learn-{width}-{theme}")
-            # logged-out button opens the stored-samples panel
-            page.click("[data-testid=learn-try-button]")
-            page.wait_for_timeout(600)
-            check(f"{tag}: the button opens the Ask panel (stored samples)", page.locator("[data-testid=sample-turn-login], [data-testid=ask-preview], [role=dialog]").count() > 0)
-            page.keyboard.press("Escape")
             # My rules tab
             page.goto(SITE + "/shortlist-lab", wait_until="networkidle", timeout=90000)
             page.click("[data-testid=lab-tab-rules]")
             check(f"{tag}: the My rules tab puts #my-rules in the address", page.evaluate("location.hash") == "#my-rules")
             page.wait_for_selector("[data-testid=ladder-step-0]", timeout=60000)
-            heads = [page.locator(f"[data-testid=ladder-step-{i}] button span").first.inner_text().split("\n")[0] for i in range(7)]
-            check(f"{tag}: My rules shows the same seven names as Steps 1 to 7", heads == [f"Step {i + 1}. {n}" for i, n in enumerate(STEP_NAMES)], str(heads))
-            check(f"{tag}: one plain line under each step name", page.locator("[data-testid=ladder-step-line]").count() == 7)
-            page.wait_for_function("document.querySelector('[data-testid=ladder-count-0]') && document.querySelector('[data-testid=ladder-count-0]').textContent.includes('left')", timeout=60000)
-            c0 = page.inner_text("[data-testid=ladder-count-0]")
-            check(f"{tag}: live counts from the real figures file ({c0})", "left" in c0)
+            heads = [page.locator(f"[data-testid=ladder-step-{i}] [data-testid=ladder-step-name]").inner_text().strip() for i in range(7)]
+            check(f"{tag}: My rules shows the same seven names as Steps 1 to 7, as a numbered list", heads == [f"{i + 1}. {n}" for i, n in enumerate(STEP_NAMES)], str(heads))
+            secs = [page.locator(f"[data-testid=rules-sec-{k}]").inner_text().strip() for k in ("create", "saved", "results")]
+            check(f"{tag}: three sections: Create rule, Saved rules, Results", secs == ["Create rule", "Saved rules", "Results"], str(secs))
+            check(f"{tag}: no stock count before a field is filled, one Show button", page.locator("[data-testid=ladder-left]").count() == 0 and page.get_by_role("button", name="Show stocks that meet my rule").count() == 1)
             check(f"{tag}: no sideways scroll (My rules)", no_sideways(page))
             shot(page, f"rules-{width}-{theme}")
             ctx.close()

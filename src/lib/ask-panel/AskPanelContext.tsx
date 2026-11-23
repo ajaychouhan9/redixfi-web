@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ASK_PANEL_MODE_STORAGE_KEY,
   DEFAULT_ASK_PANEL_MODE,
@@ -21,6 +21,16 @@ import {
  * `expanded` full-overlay mode (and its Maximize/Minimize toggle) is gone;
  * this context only tracks whether the panel is open.
  */
+/** What the Shortlist Lab lets Ask AI do with answers for the stocks ticked there (23 Nov 2026): attach them to the open rule's latest saved result, or save the result first. */
+export interface LabLink {
+  ruleId: string | null;
+  ruleName: string | null;
+  /** The open saved rule already has a saved result to attach answers to. */
+  hasResult: boolean;
+  /** Save the result (and the rule too, under `name`, when the rule is not saved yet). Returns the rule and the result the answers belong to. */
+  saveResult: (name?: string) => Promise<{ ruleId: string; runId: string }>;
+}
+
 interface AskPanelContextValue {
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -31,8 +41,13 @@ interface AskPanelContextValue {
   /** Open the panel with a question already typed in the input (not sent; the person presses Send). */
   openWithQuestion: (question: string, symbol?: string) => void;
   /** Open a NEW session about these stocks (up to the lookup cap): the stocks are shown in the panel and the five questions are offered as suggestions. Nothing is sent. */
-  openWithStocks: (symbols: string[]) => void;
+  openWithStocks: (symbols: string[], opts?: { fromLab?: boolean }) => void;
   pendingStocks: string[] | null;
+  /** The pending stocks were ticked on the Shortlist Lab page, so their answers may be saved to a rule's result. */
+  pendingFromLab: boolean;
+  /** The Shortlist Lab page registers (and on leaving removes) a way to read its current rule and result. */
+  setLabLink: (get: (() => LabLink | null) | null) => void;
+  getLabLink: () => LabLink | null;
   clearPendingStocks: () => void;
   /** The company the question is about, when it was opened from a page that is not a stock page. */
   pendingSymbol: string | null;
@@ -48,6 +63,8 @@ export function AskPanelProvider({ children }: { children: ReactNode }) {
   const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
   const [pendingSymbol, setPendingSymbol] = useState<string | null>(null);
   const [pendingStocks, setPendingStocks] = useState<string[] | null>(null);
+  const [pendingFromLab, setPendingFromLab] = useState(false);
+  const labRef = useRef<(() => LabLink | null) | null>(null);
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
       setModeState(restoreAskPanelMode(window.localStorage.getItem(ASK_PANEL_MODE_STORAGE_KEY)));
@@ -79,18 +96,23 @@ export function AskPanelProvider({ children }: { children: ReactNode }) {
     setPendingQuestion(null);
     setPendingSymbol(null);
   };
-  const openWithStocks = (symbols: string[]) => {
+  const setLabLink = (get: (() => LabLink | null) | null) => {
+    labRef.current = get;
+  };
+  const getLabLink = (): LabLink | null => (labRef.current ? labRef.current() : null);
+  const openWithStocks = (symbols: string[], opts?: { fromLab?: boolean }) => {
     const list = Array.from(new Set(symbols.map((s) => s.trim().toUpperCase()).filter(Boolean)));
     if (!list.length) return;
     setPendingStocks(list);
+    setPendingFromLab(!!opts?.fromLab);
     setPendingQuestion(null);
     setPendingSymbol(null);
     setOpen(true);
   };
   const clearPendingStocks = () => setPendingStocks(null);
   const value = useMemo(
-    () => ({ open, setOpen, openPanel, mode, setMode, openWithQuestion, pendingQuestion, pendingSymbol, clearPendingQuestion, openWithStocks, pendingStocks, clearPendingStocks }),
-    [open, mode, pendingQuestion, pendingSymbol, pendingStocks],
+    () => ({ open, setOpen, openPanel, mode, setMode, openWithQuestion, pendingQuestion, pendingSymbol, clearPendingQuestion, openWithStocks, pendingStocks, pendingFromLab, setLabLink, getLabLink, clearPendingStocks }),
+    [open, mode, pendingQuestion, pendingSymbol, pendingStocks, pendingFromLab],
   );
   return <AskPanelContext.Provider value={value}>{children}</AskPanelContext.Provider>;
 }

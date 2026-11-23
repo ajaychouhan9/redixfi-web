@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import {
-  COMMON_RULES, EMPTY_RULES, PV_FILTERS, PV_MATCH_NOTE, RULES, STEPS, avgOn, cardValues, chgOn, countAfter, countsByStep, describeRules, fromParams, hasAnyRule, ruleProblem, sameRules,
+  COMMON_RULES, EMPTY_RULES, PV_FILTERS, RULES, STEPS, avgOn, cardValues, chgOn, countAfter, countsByStep, describeRules, fromParams, hasAnyRule, ruleProblem, sameRules,
   toParams, typicalRules, validValue, type LadderData, type Rules,
 } from "../src/lib/stock-check.ts";
 
@@ -88,20 +88,20 @@ assert.equal(typical.roe, "15");
 // ---- the step: seventh, named, with plain copy
 assert.equal(STEPS.length, 7);
 assert.equal(STEPS[6].title, "Price and volume");
-assert.ok(STEPS[6].why.includes("They do not say what happens next.") && STEPS[6].line.length < 120);
+assert.ok(STEPS[6].line.length < 120);
 assert.equal(PV_FILTERS.length, 4);
 for (const f of PV_FILTERS) {
-  assert.ok(f.label.length < 70 && f.tells.length > 20 && f.tells.length < 150, `${f.id}: a short plain label and one short line on what it tells you`);
+  assert.ok(f.label.length < 70 && f.line.length > 20 && f.line.length < 200 && f.example.startsWith("e.g. ") && f.tells.length > 20 && f.tells.length < 150, `${f.id}: a short plain label, one plain line, an example, and (folded away) what it tells you`);
   assert.equal(f.not, "It is not a prediction and not advice.", `${f.id}: what it does not tell you`);
 }
-assert.equal(PV_MATCH_NOTE, "Results are stocks that match your rule today.");
 
 // ---- wording: no indicator names, none of the owner's banned words, no forecast wording, in everything a person reads about the four filters
 const ladder = strip(read("components/app/stock-check/ShortlistLadder.tsx"));
 const pvSource = ladder.slice(ladder.indexOf("function PvBlock"), ladder.indexOf("function StepBody"));
-const copy = [PV_FILTERS.map((f) => `${f.label} ${f.tells} ${f.not}`).join(" "), STEPS[6].line, STEPS[6].why, PV_MATCH_NOTE, pvSource.replace(/e.target.value/g, "").replace(/className="[^"]*"/g, "").replace(/data-testid=\{?[^ >]*/g, "")].join("\n");
+const copy = [PV_FILTERS.map((f) => `${f.label} ${f.tells} ${f.not}`).join(" "), STEPS[6].line, PV_FILTERS.map((f) => `${f.line} ${f.example}`).join(" "), pvSource.replace(/e.target.value/g, "").replace(/className="[^"]*"/g, "").replace(/data-testid=\{?[^ >]*/g, "")].join("\n");
 const BANNED = /\b(buy|buying|sell|selling|targets?|picks?|bullish|bearish|strong|breakout|top|best|RSI|MACD|momentum|oversold|overbought|avoid|candidates?|safe|verdict|rating|recommend(ed)?|standard)\b/gi;
 assert.deepEqual(copy.match(BANNED) ?? [], [], "banned words in the Price and volume copy");
+assert.ok(pvSource.includes("<details") && pvSource.includes("What it tells you:") && pvSource.includes("What it does not tell you:"), "the two ideas are folded away under each field");
 assert.ok(!/\b(will rise|will fall|will go up|will go down|going to|expected to)\b/i.test(copy), "no forecast wording");
 // only 1, 3 and 6 months can be chosen
 assert.deepEqual([...pvSource.matchAll(/<option value="(\d*)"/g)].map((m) => m[1]), ["", "1", "3", "6", "", "50", "200"], "the options are the periods 1, 3, 6 months and the averages 50, 200 days");

@@ -1,6 +1,10 @@
 // Saved results of a saved rule (Shortlist Lab, 21 Nov 2026). Copy and tiny pure helpers; facts only.
 export const RESULTS_TITLE = (rule: string): string => `Saved results for "${rule}"`;
-export const RESULTS_NONE = "No result is saved yet. A result is saved each time you press Show stocks while this rule is open.";
+export const RESULTS_NONE = "No result is saved for this rule yet. Press Show stocks that meet my rule, then Save this result.";
+export const RESULT_GROUPS_NONE = "You have no saved rule yet. Show your stocks, then press Save this result.";
+export const RESULT_GROUP_COUNT = "Results";
+export const RESULT_ANSWERS_TITLE = (n: number): string => `Ask AI answers (${n})`;
+export const RESULT_ANSWERS_NONE = "No answer is saved with this result yet. Ask AI about the ticked stocks and the answers are saved here.";
 export const RESULT_LIMIT_LINE = (limit: number, have: number): string => `Your plan keeps ${limit} saved ${limit === 1 ? "result" : "results"} for each rule. You have ${have}.`;
 export const RESULT_COUNT_LINE = (day: string, count: number, asOf: string | null): string =>
   `${day} · ${count.toLocaleString("en-IN")} ${count === 1 ? "stock" : "stocks"}${asOf ? ` · figures as of ${asOf}` : ""}`;
@@ -10,10 +14,11 @@ export const RESULT_SINCE = (since: string, added: number, dropped: number): str
 export const RESULT_VIEW = "View stocks";
 export const RESULT_HIDE = "Hide stocks";
 export const RESULT_DELETE = "Delete this result";
-export const REPORT_PDF = "Download report (PDF)";
-export const REPORT_CSV = "Download report (CSV)";
+export const REPORT_PDF = "Download full report";
+export const REPORT_STOCK_PDF = "Download PDF";
+export const REPORT_CSV = "Download CSV";
 export const REPORT_FAILED = "The report could not be made right now. Please try again in a moment.";
-export const REPORT_LEAD = "The report covers the stocks you ticked (up to 8): the rule, the stocks, and each stock's five answers with sources and dates. A stock with no answers shows \"Not asked yet\".";
+export const REPORT_LEAD = "The full report has a summary page, then one page for each stock you ticked (up to 8) with its figures and its five answers. A question not asked shows \"Not asked yet\".";
 export const REPORT_FREE = "Free accounts can open a sample report to see the format.";
 export const DROP_WARNING = (limit: number, oldest: string): string =>
   `Your plan keeps ${limit} saved ${limit === 1 ? "result" : "results"} for each rule. Saving this one removes the oldest (${oldest}) and the answers saved with it.`;

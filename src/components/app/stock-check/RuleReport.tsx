@@ -14,7 +14,7 @@ const btn = "min-h-[44px] rounded-lg border border-border px-3 text-sm font-medi
 
 const cell = (v: unknown): string => (v === null || v === undefined || v === "" ? "No figure" : typeof v === "number" ? v.toLocaleString("en-IN", { maximumFractionDigits: 2 }) : String(v));
 
-function AnswerItem({ a, onRemove }: { a: RuleAnswer; onRemove: (id: string) => void }) {
+export function AnswerItem({ a, onRemove, readOnly = false }: { a: RuleAnswer; onRemove: (id: string) => void; readOnly?: boolean }) {
   const src = answerSources(a);
   return (
     <li className="rounded-lg border border-border bg-surface-raised p-3 text-sm" data-testid="rule-answer">
@@ -36,7 +36,7 @@ function AnswerItem({ a, onRemove }: { a: RuleAnswer; onRemove: (id: string) => 
         </div>
       )}
       {src && <p className="mt-1 text-xs text-foreground-faint" data-testid="rule-answer-sources">Sources: {src}</p>}
-      <button type="button" onClick={() => onRemove(a.id)} className={`${btn} mt-2 text-foreground-muted`} data-testid="rule-answer-remove">{REMOVE_ANSWER}</button>
+      {!readOnly && <button type="button" onClick={() => onRemove(a.id)} className={`${btn} mt-2 text-foreground-muted`} data-testid="rule-answer-remove">{REMOVE_ANSWER}</button>}
     </li>
   );
 }

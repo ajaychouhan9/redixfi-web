@@ -73,3 +73,11 @@ export function toggleSelected(current: string[], symbol: string, max = ASK_GROU
   if (current.length >= max) return { list: current, capped: true };
   return { list: [...current, symbol], capped: false };
 }
+
+// 23 Nov 2026: answers for the stocks ticked on the Shortlist Lab are attached to the open rule's latest saved result.
+export const GROUP_SAVED_NOTE = "Saved to your result";
+export const GROUP_SAVE_BUTTON = "Save result with answers";
+export const GROUP_SAVE_NAME_LABEL = "Name this rule";
+export const GROUP_SAVE_NAME_PLACEHOLDER = "e.g. My first rule";
+export const GROUP_SAVE_FAILED = "The answers could not be saved to your result right now. They are still shown here.";
+export const groupSavedCount = (n: number): string => `${GROUP_SAVED_NOTE} (${n} ${n === 1 ? "answer" : "answers"}).`;

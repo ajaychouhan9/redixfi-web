@@ -136,7 +136,7 @@ export function AskAboutStocks({ selected, onRemove, onClear, ruleId, runId }: P
             <p className="text-sm text-foreground-muted" data-testid="ask-all-uses">{askAllUses(selected.length, preview.total)}</p>
           )}
           <div className="flex flex-wrap gap-2">
-            <button type="button" disabled={selected.length === 0} onClick={() => openWithStocks(selected)} className="min-h-[44px] rounded-lg bg-accent px-5 text-sm font-semibold text-accent-foreground disabled:opacity-50" data-testid="ask-ai-button">
+            <button type="button" disabled={selected.length === 0} onClick={() => openWithStocks(selected, { fromLab: true })} className="min-h-[44px] rounded-lg bg-accent px-5 text-sm font-semibold text-accent-foreground disabled:opacity-50" data-testid="ask-ai-button">
               Ask AI
             </button>
             <button type="button" disabled={selected.length === 0 || busy} onClick={() => void askAll()} className={btn} data-testid="ask-all-button">

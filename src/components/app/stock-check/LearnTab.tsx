@@ -1,40 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
 
 import { LoggedOutPreview } from "@/components/app/stock-check/LoggedOutPreview";
-import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
-import { useAuth } from "@/lib/auth/AuthContext";
-import { findLine, FIVE_QUESTIONS, READY_LINE, LEARN_INTRO, LEARN_STEPS, QUESTIONS_TITLE, STEP_WORD, TRY_BUTTON, TRY_FREE, TRY_LINE, TRY_LOGGED_OUT } from "@/lib/learn";
-import { SAMPLE_SYMBOL } from "@/lib/read-company";
+import { findLine, LEARN_FIELDS, READY_LINE, LEARN_INTRO, LEARN_STEPS, STEP_WORD } from "@/lib/learn";
 
 /** The Learn tab: seven steps with every example reading shown in full, then one button into Ask AI. Nothing runs on load. */
 export function LearnTab({ onOpenRules }: { onOpenRules?: () => void }) {
-  const { user } = useAuth();
-  const { openPanel, openWithStocks } = useAskPanel();
-  const free = !!user && user.tier === "free" && !user.is_pro_trial;
   return (
     <div className="space-y-6" data-testid="learn-tab">
       <p className="text-sm leading-relaxed text-foreground-muted" data-testid="read-intro">{LEARN_INTRO}</p>
-
-      <section className="rounded-2xl border border-border bg-surface-raised p-4" aria-labelledby="learn-try" data-testid="learn-try">
-        <h2 id="learn-try" className="text-base font-semibold">{QUESTIONS_TITLE}</h2>
-        <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-foreground-muted" data-testid="learn-questions">
-          {FIVE_QUESTIONS.map((q) => <li key={q}>{q}</li>)}
-        </ol>
-        <button
-          type="button"
-          onClick={() => (user ? openWithStocks([SAMPLE_SYMBOL]) : openPanel())}
-          className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-accent px-5 text-sm font-semibold text-accent-foreground"
-          data-testid="learn-try-button"
-        >
-          <Sparkles size={15} aria-hidden /> {TRY_BUTTON}
-        </button>
-        <p className="mt-2 text-xs text-foreground-muted" data-testid="learn-try-line">{TRY_LINE}</p>
-        {!user && <p className="mt-1 text-xs text-foreground-muted" data-testid="learn-try-loggedout">{TRY_LOGGED_OUT}</p>}
-        {free && <p className="mt-1 text-xs text-foreground-muted" data-testid="learn-try-free">{TRY_FREE}</p>}
-      </section>
 
       <LoggedOutPreview />
 
@@ -52,6 +27,16 @@ export function LearnTab({ onOpenRules }: { onOpenRules?: () => void }) {
                 <p className="text-sm font-medium">{s.example.q}</p>
                 <p className="mt-1 text-sm leading-relaxed text-foreground-muted">{s.example.a}</p>
               </div>
+              <h3 className="mt-4 text-sm font-semibold">Each field in this step</h3>
+              <ul className="mt-2 space-y-3" data-testid="learn-fields">
+                {(LEARN_FIELDS[s.n] ?? []).map((f) => (
+                  <li key={f.name} className="rounded-lg border border-border px-3 py-2" data-testid="learn-field">
+                    <p className="text-sm font-medium">{f.name}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-foreground-muted">{f.text}</p>
+                    <p className="mt-1 text-xs text-foreground-faint">Example: {f.example}</p>
+                  </li>
+                ))}
+              </ul>
               <p className="mt-3 text-xs text-foreground-muted" data-testid="learn-find-line">
                 {findLine(s.tabs).split("Screener")[0]}
                 <Link href="/signals" className="font-medium text-accent hover:underline">Screener</Link>
