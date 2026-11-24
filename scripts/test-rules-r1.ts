@@ -74,6 +74,7 @@ assert.equal(fmtDay(null), null);
 assert.equal(fmtDay("garbage"), null);
 assert.equal(savedLine({ updated_at: "2026-11-20T08:15:00Z", created_at: "2026-11-01", stock_count: 52 }), "Saved 20 Nov 2026 · 52 stocks when saved");
 assert.equal(savedLine({ updated_at: null, created_at: "2026-11-01T00:00:00Z", stock_count: 1 }), "Saved 1 Nov 2026 · 1 stock when saved");
+assert.equal(savedLine({ updated_at: "2026-11-20T08:15:00Z", created_at: "2026-11-01", stock_count: 0 }), "Saved 20 Nov 2026", "a stored 0 is not shown as 0 stocks");
 assert.equal(savedLine({ created_at: "2026-11-01", stock_count: null }), "Saved 1 Nov 2026");
 assert.equal(snapshotLine({ snapshot: null }), null);
 assert.equal(snapshotLine({ snapshot: { at: "2026-11-20T08:00:00Z", as_of: "2026-11-19", count: 1234 } }), "Stock list saved as of 19 Nov 2026: 1,234 stocks");

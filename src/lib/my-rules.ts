@@ -59,7 +59,8 @@ export function savedLine(s: { updated_at?: string | null; created_at?: string |
   const when = fmtDay(s.updated_at ?? s.created_at);
   const parts: string[] = [];
   if (when) parts.push(`Saved ${when}`);
-  if (typeof s.stock_count === "number") parts.push(`${stocksText(s.stock_count)} when saved`);
+  // a stored 0 means the count was not known when the rule was saved (the figures file had not loaded), so it is not shown as "0 stocks"
+  if (typeof s.stock_count === "number" && s.stock_count > 0) parts.push(`${stocksText(s.stock_count)} when saved`);
   return parts.join(" · ");
 }
 
