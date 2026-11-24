@@ -505,6 +505,8 @@ export interface MyScreen {
   snapshot?: { at: string | null; as_of: string | null; count: number } | null;
   /** How many Ask AI answers are saved to this rule (release 2). */
   answers?: number;
+  /** 25 Nov 2026: the newest saved result of this rule (its count and the date of its figures), for the one line under the rule's name. */
+  latest_run?: { id: string; run_date: string; count: number; as_of: string | null } | null;
 }
 
 /** A saved result ("run") of a saved rule. */
@@ -519,6 +521,24 @@ export interface RuleRun {
   added: number | null;
   dropped: number | null;
   since: string | null;
+  /** 25 Nov 2026: of the (stock, question) pairs asked on this result, how many have an answer, and the ones that have none with a plain reason. */
+  answered?: number;
+  asked?: number;
+  unanswered?: { symbol: string; question: string; reason: string }[];
+  /** What the last finished report on this result reused and added. */
+  last_report?: { reused: number; new_answers: number; failed: number } | null;
+}
+export interface RunChanges {
+  since: string;
+  since_as_of: string | null;
+  figures_as_of: string | null;
+  added_count: number;
+  dropped_count: number;
+  added: { symbol: string; company: string; lines: string[] }[];
+  dropped: { symbol: string; company: string; lines: string[] }[];
+  more_added: number;
+  more_dropped: number;
+  values_changed: boolean;
 }
 export interface RuleRunSaved {
   saved: boolean;
@@ -635,6 +655,10 @@ export async function listRuleRuns(token: string, ruleId: string): Promise<{ run
 export async function getRuleRun(token: string, ruleId: string, runId: string) {
   const env = await apiGet<{ run: { id: string; run_date: string; count: number; as_of: string | null }; columns: string[][]; stocks: { symbol: string; company: string; values: string[] }[]; diff: { since: string; added: string[]; dropped: string[] } | null }>(runPath(ruleId, runId), { token });
   return env.data;
+}
+export async function getRunChanges(token: string, ruleId: string, runId: string): Promise<RunChanges | null> {
+  const env = await apiGet<{ changes: RunChanges | null }>(`${runPath(ruleId, runId)}/changes`, { token });
+  return env.data.changes;
 }
 export async function deleteRuleRun(token: string, ruleId: string, runId: string): Promise<void> {
   await apiMutate<{ deleted: boolean }>(runPath(ruleId, runId), "DELETE", undefined, { token });

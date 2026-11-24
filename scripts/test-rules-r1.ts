@@ -20,7 +20,7 @@ const g = RULES.find((r) => r.key === "growthUp")!;
 assert.deepEqual({ step: g.step, col: g.col, op: g.op, param: g.param }, { step: 1, col: "gs", op: "flag", param: "growth_up_3y" });
 for (const k of ["profitYears", "sales3", "profit3", "salesQ", "profitQg", "profitQ"]) assert.ok(RULES.some((r) => r.key === k), `${k} is still there`);
 assert.equal(COMMON_RULES.growthUp, false, "Start with common rules does not tick the new box (existing common rules unchanged)");
-assert.deepEqual(toParams({ ...COMMON_RULES, delivery: "", near52: "", avgDays: "", volDay: "" }), { market_cap_min: 500, eps_positive: true, profit_years_min: 5, sales_cagr_3y_min: 10, profit_cagr_3y_min: 10, sales_growth_min: 10, profit_growth_min: 10, roe_min: 15, roce_min: 15, de_max: 1, pledge_max: 10, pe_max: 25 });
+assert.deepEqual(toParams({ ...COMMON_RULES, delivery: "", near52: "", avgDays: "", volDay: "" }), { market_cap_min: 500, eps_positive: true, profit_years_min: 5, sales_cagr_3y_min: 10, profit_cagr_3y_min: 10, sales_growth_min: 10, profit_growth_min: 25, roe_min: 15, roce_min: 15, de_max: 1.5, pledge_max: 10, pe_max: 30 });
 
 const COLS = ["mc", "eps", "py", "sgq", "pgq", "sg3", "pg3", "roe", "roce", "rna", "de", "pl", "vol", "vr", "dl", "pe", "gs", "h52", "r1", "r3", "r6", "a50", "a200", "vd"];
 const row = (o: Record<string, number | null>): (number | null)[] => COLS.map((c) => (c in o ? o[c] : null));

@@ -20,9 +20,9 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\
 assert.equal(FILL_NOTE, "Typical numbers from published methods. Change any of them. A field with no published number is left blank.");
 const t = typicalRules();
 assert.deepEqual(t, COMMON_RULES);
-assert.deepEqual([t.near52, t.avgDays, t.volDay], ["25", "200", "1.5"], "step 7: 25 % of the 52-week high, 200-day average, volume 1.5 times its 20-day average");
+assert.deepEqual([t.near52, t.avgDays, t.volDay], ["25", "200", ""], "step 7 (25 Nov 2026): 25 % of the 52-week high, 200-day average; the latest-day volume stays blank");
 assert.deepEqual([t.chgMonths, t.chgMin], ["", ""], "the 1, 3, 6 month change stays blank");
-assert.equal(t.delivery, "50", "step 5: delivery is filled");
+assert.equal(t.delivery, "40", "step 5: delivery is filled");
 assert.deepEqual([t.volRatio, t.vol, t.volNum], ["", "", ""], "step 5: volume vs usual and the price-swings option stay blank");
 const ladder = strip(read("components/app/stock-check/ShortlistLadder.tsx"));
 const parts = strip(read("components/app/stock-check/MyRulesParts.tsx"));

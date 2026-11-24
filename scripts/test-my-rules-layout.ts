@@ -44,8 +44,8 @@ const sr = strip(read("components/app/stock-check/SavedResults.tsx"));
 // ---- 5. ONE result button; the sticky Show bar is gone; no count until a field is filled; nothing listed with nothing filled
 assert.equal(SHOW_BUTTON, "Show stocks that meet my rule");
 // [24 Nov 2026 flow changed] assert.ok(ladder.includes("resultLabel={viewMode ? VIEW_STOCKS : SHOW_BUTTON}") && !ladder.includes("ladder-bar-show") && !ladder.includes("sticky top-"), "one result button; nothing sticky");
-assert.equal(ABOUT_MATCH(2306), "About 2,306 stocks match so far");
-assert.equal(ABOUT_MATCH(1), "About 1 stock matches so far");
+assert.equal(ABOUT_MATCH(2306), "2,306 stocks match your rule");
+assert.equal(ABOUT_MATCH(1), "1 stock matches your rule");
 assert.equal(NO_FILTER_LINE, "No filter applied. Fill at least one field.");
 assert.ok(/\{filled && \(\s*<div[^>]*ladder-bar/.test(ladder) && ladder.includes("const filled = hasAnyRule(rules)"), "the count bar is drawn only when at least one field is filled");
 // [24 Nov 2026 flow changed] assert.ok(/function show\([\s\S]*?if \(!hasAnyRule\(useRules\)\) \{\s*setNoFilter\(true\);\s*return;/.test(ladder), "Show with nothing filled lists nothing and says so");

@@ -7,7 +7,7 @@ export const RESULT_ANSWERS_TITLE = (n: number): string => `Ask AI answers (${n}
 export const RESULT_ANSWERS_NONE = "No answers saved yet.";
 export const RESULT_LIMIT_LINE = (limit: number, have: number): string => `Your plan keeps ${limit} saved ${limit === 1 ? "result" : "results"} for each rule. You have ${have}.`;
 export const RESULT_COUNT_LINE = (day: string, count: number, asOf: string | null): string =>
-  `${day} · ${count.toLocaleString("en-IN")} ${count === 1 ? "stock" : "stocks"}${asOf ? ` · figures as of ${asOf}` : ""}`;
+  `${day} · ${count.toLocaleString("en-IN")} ${count === 1 ? "stock" : "stocks"}${asOf ? ` · Figures as of ${asOf}` : ""}`;
 export const RESULT_EARLIER = "Run with earlier values: the rule has changed since.";
 export const RESULT_SINCE = (since: string, added: number, dropped: number): string =>
   `Since ${since}: ${added.toLocaleString("en-IN")} added, ${dropped.toLocaleString("en-IN")} dropped.`;

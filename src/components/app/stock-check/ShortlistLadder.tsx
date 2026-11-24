@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
 import { getLadderData, getSignals } from "@/lib/api/endpoints";
-import { getRuleRun, listRuleRuns, saveRuleRun, saveRuleWithResult, type MyScreen, type RuleRunSaved } from "@/lib/api/mutations";
+import { getRuleRun, listRuleRuns, saveRuleRun, saveRuleWithResult, type MyScreen, type RuleRun, type RuleRunSaved } from "@/lib/api/mutations";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { displayName } from "@/lib/company-name";
 import { signupHref } from "@/lib/nav-items";
@@ -14,17 +14,19 @@ import {
   REMOVED_DEPENDS, SECTION_RESULTS, SECTION_RULES, VIEW_STOCKS, exampleLine, ruleProblem, COUNTS_NOTE, EMPTY_RULES, NO_GROWTH_LINE, NO_ROCE_LINE, PAST_LINE,
   PV_FILTERS, PV_FOLD, RULES, SHOW_BUTTON, STEPS, STEPS_TITLE, VOL_LABEL, VOL_LINE, VOL_OPTIONS, volNumLabel, stepRowText, stepSetCount,
   countsByStep, fromParams, growthGap, hasAnyRule, roceGap, sameRules, toParams, typicalRules, validLadderData, volOn, chgOn, num, rulesUpTo,
+  FILL_COUNT, mostRemovedStep, rulesSetCount, splitCounts,
   type LadderData, type RuleDef, type Rules,
 } from "@/lib/stock-check";
 import { OVER_LIMIT_LINE } from "@/lib/saved-results";
-import { fmtDay, stocksText, type ActiveRule } from "@/lib/my-rules";
+import { defaultRuleName, fmtDay, stocksText, type ActiveRule } from "@/lib/my-rules";
 import {
-  BACK_BUTTON, CREATE_REPORT, EDIT_RULE, NAMES_TITLE_AFTER, NAMES_TITLE_LIVE, NO_SAVED_RESULT, READONLY_LINE, RESULTS_LOGGED_OUT, SEE_IN_RESULTS,
+  BACK_BUTTON, CREATE_REPORT, DAILY_LINE, DAILY_LINE_PRICE, EDIT_RULE, FIGURES_AS_OF, NAMES_TITLE_AFTER, NAMES_TITLE_LIVE, NAME_NEEDED, NO_MATCH_LINE, NO_MATCH_OPEN, NO_SAVED_RESULT, READONLY_LINE,
+  RESULTS_LOGGED_OUT, RULE_REPORTS_TITLE, SEE_IN_RESULTS, STEADY_LINE,
 } from "@/lib/report-flow";
-import { ResultsShelf } from "@/components/app/stock-check/SavedResults";
+import { CompareBlock, ResultsTab, RuleReports } from "@/components/app/stock-check/SavedResults";
 import { ReportSheet, type EnsureOut } from "@/components/app/stock-check/ReportSheet";
 import { NAMES_PAGE, StockNames, staticLoader, type NameItem, type NamesLoader } from "@/components/app/stock-check/StockNames";
-import { FillRow, RuleBottomBlock, RulesListPage, useSavedRules } from "@/components/app/stock-check/MyRulesParts";
+import { FillRow, NameBox, RuleBottomBlock, RulesListPage, useSavedRules } from "@/components/app/stock-check/MyRulesParts";
 import { RulesApplied } from "@/components/app/stock-check/RulesApplied";
 
 const fmtDate = fmtDay;
@@ -224,10 +226,11 @@ function StepBody({ step, rules, set, data }: { step: number; rules: Rules; set:
 
 type Section = "rules" | "results";
 /** The latest saved result of the open rule (its count and date are what the one-line summary shows). */
-interface Latest {
-  id: string;
-  count: number;
-  run_date: string;
+type Latest = RuleRun;
+
+/** One quiet line: which steps can change the list every day. */
+function DailyNote({ testId = "ladder-daily-line" }: { testId?: string }) {
+  return <p className="text-xs text-foreground-muted" data-testid={testId}>{DAILY_LINE} {DAILY_LINE_PRICE}</p>;
 }
 
 /** "Build Your Shortlist" (My rules tab): two top tabs, Rules and Results. The Rules tab lists the saved rules and holds the rule page (read-only for an opened saved rule until "Edit rule");
@@ -254,6 +257,13 @@ export function ShortlistLadder() {
   const [sheet, setSheet] = useState<"live" | "saved" | null>(null);
   const [rulesKey, setRulesKey] = useState(0);
   const [resultsKey, setResultsKey] = useState(0);
+  // the rule's name (the box is above the steps) and the plain message when it is blank
+  const [name, setName] = useState("");
+  const [nameMsg, setNameMsg] = useState<string | null>(null);
+  const nameRef = useRef<HTMLInputElement | null>(null);
+  const [fillLine, setFillLine] = useState<string | null>(null);
+  // the rule whose reports are open on the Results tab (null: the list of rules)
+  const [resultsRuleId, setResultsRuleId] = useState<string | null>(null);
   const topRef = useRef<HTMLDivElement | null>(null);
   const savedState = useSavedRules(rulesKey);
 
@@ -275,6 +285,9 @@ export function ShortlistLadder() {
   const counts = useMemo(() => (data ? countsByStep(data, rules) : null), [data, rules]);
   const left = counts ? counts[6] : null;
   const universe = data ? data.rows.length : null;
+  const split = useMemo(() => (data && filled ? splitCounts(data, rules) : null), [data, rules, filled]);
+  const noMatchStep = useMemo(() => (data && filled && left === 0 ? mostRemovedStep(data, rules) : null), [data, rules, filled, left]);
+  const figuresDate = data?.as_of ? fmtDate(data.as_of) ?? data.as_of : null;
   const set = (patch: Partial<Rules>) => {
     setRules((r) => ({ ...r, ...patch }));
     setNotice(null);
@@ -284,7 +297,25 @@ export function ShortlistLadder() {
   const goSection = (s: Section) => {
     setSection(s);
     setStepOpen(null);
+    if (s === "results") setResultsRuleId(null);
     scrollTop();
+  };
+  /** Take the person to one rule's reports (the Results tab, that rule open). */
+  const goReports = (ruleId: string) => {
+    setResultsRuleId(ruleId);
+    setSection("results");
+    setStepOpen(null);
+    setRulesKey((k) => k + 1);
+    setResultsKey((k) => k + 1);
+    window.setTimeout(scrollTop, 0);
+  };
+  /** A logged-in person cannot show, save or report a rule with no name: the plain message appears beside the name box. */
+  const requireName = (): boolean => {
+    if (!user || name.trim()) return true;
+    setNameMsg(NAME_NEEDED);
+    nameRef.current?.focus();
+    nameRef.current?.scrollIntoView({ block: "center" });
+    return false;
   };
   const readOnly = !!active && !editing;
   const changed = !!active && !sameRules(rules, active.base);
@@ -302,7 +333,7 @@ export function ShortlistLadder() {
         const token = await getToken();
         if (!token) return;
         const r = await listRuleRuns(token, active.id);
-        if (live) setLatest(r.runs.length ? { id: r.runs[0].id, count: r.runs[0].count, run_date: r.runs[0].run_date } : null);
+        if (live) setLatest(r.runs.length ? r.runs[0] : null);
       } catch {
         if (live) setLatest(undefined);
       }
@@ -343,6 +374,7 @@ export function ShortlistLadder() {
 
   /** The one result button on an edited or new rule: list the names of the stocks that meet the rule today (nothing is saved). */
   function onResult() {
+    if (!requireName()) return;
     if (!hasAnyRule(rules)) {
       setNoFilter(true);
       return;
@@ -354,6 +386,9 @@ export function ShortlistLadder() {
 
   function createRule() {
     setRules(EMPTY_RULES);
+    setName(defaultRuleName());
+    setNameMsg(null);
+    setFillLine(null);
     setActive(null);
     setEditing(true);
     setNotice(null);
@@ -369,6 +404,9 @@ export function ShortlistLadder() {
   function openRule(s: MyScreen) {
     const r = fromParams(s.params);
     setRules(r);
+    setName(s.name);
+    setNameMsg(null);
+    setFillLine(null);
     setActive({ id: s.id, name: s.name, base: r });
     setEditing(false);
     setNotice(null);
@@ -431,9 +469,9 @@ export function ShortlistLadder() {
   /** The names card for an edited or new rule: after one step, or after every step, with Create report under it. */
   const namesCard = (upTo: number, title: string, withReport: boolean) => (
     <div className="space-y-2" data-testid="live-names">
-      <StockNames title={title} loadKey={loadKey(upTo)} loader={liveLoader(upTo)} testId="live-names-card" maxItems={nameLimit} maxNote={capNote} />
+      <StockNames title={title} loadKey={loadKey(upTo)} loader={liveLoader(upTo)} testId="live-names-card" maxItems={nameLimit} maxNote={capNote} asOf={figuresDate} />
       {withReport && user && sheet !== "live" && (
-        <button type="button" onClick={() => setSheet("live")} className="min-h-[44px] rounded-lg bg-accent px-4 text-sm font-semibold text-accent-foreground" data-testid="create-report">{CREATE_REPORT}</button>
+        <button type="button" onClick={() => { if (requireName()) setSheet("live"); }} className="min-h-[44px] rounded-lg bg-accent px-4 text-sm font-semibold text-accent-foreground" data-testid="create-report">{CREATE_REPORT}</button>
       )}
       {withReport && !user && (
         <p className="text-sm text-foreground-muted" data-testid="create-report-loggedout">
@@ -446,11 +484,15 @@ export function ShortlistLadder() {
           forResult={null}
           ensure={ensure}
           needsName={!active}
+          name={name}
+          onNameMissing={() => void requireName()}
+          asOf={figuresDate}
           loader={liveLoader(6)}
           loadKey={loadKey(6)}
           total={left}
           onClose={() => setSheet(null)}
           onDone={() => setResultsKey((k) => k + 1)}
+          onStarted={(ref) => goReports(ref.ruleId)}
         />
       )}
     </div>
@@ -479,10 +521,13 @@ export function ShortlistLadder() {
           setRulesKey((k) => k + 1);
         }}
         earlierLine={active && latest ? EARLIER_VALUES_LINE : null}
+        name={name}
+        onNameMissing={() => void requireName()}
       />
     );
   }
 
+  const ruleOpen = active ? savedState.saved.find((x) => x.id === active.id) ?? null : null;
   const summaryLine = active ? (latest ? READONLY_LINE(active.name, latest.count, fmtDate(latest.run_date) ?? latest.run_date) : latest === null ? `${active.name} · ${NO_SAVED_RESULT}` : active.name) : "";
 
   return (
@@ -513,7 +558,10 @@ export function ShortlistLadder() {
         <div className="space-y-3" data-testid="section-readonly">
           <button type="button" onClick={backToList} className="min-h-[44px] rounded-lg border border-border px-4 text-sm font-medium hover:border-accent" data-testid="back-to-rules">{BACK_BUTTON}</button>
           <p className="break-words text-base font-semibold" data-testid="open-rule-line">{summaryLine}</p>
+          {latest && (latest.as_of || latest.run_date) && <p className="text-xs text-foreground-muted" data-testid="open-rule-asof">{FIGURES_AS_OF(fmtDate(latest.as_of) ?? fmtDate(latest.run_date) ?? "")}</p>}
+          {latest && <CompareBlock ruleId={active.id} run={latest} />}
           <RulesApplied rules={rules} />
+          <DailyNote testId="readonly-daily-line" />
           <div className="flex flex-wrap gap-2" data-testid="readonly-buttons">
             <button type="button" onClick={() => { setEditing(true); setReadOpen(false); setSheet(null); }} className="min-h-[44px] rounded-lg border border-accent px-4 text-sm font-semibold text-accent hover:bg-accent/10" data-testid="edit-rule">{EDIT_RULE}</button>
             <button type="button" onClick={() => void openRead()} className="min-h-[44px] rounded-lg bg-accent px-4 text-sm font-semibold text-accent-foreground" data-testid="rule-result-button">{VIEW_STOCKS}</button>
@@ -524,11 +572,11 @@ export function ShortlistLadder() {
               {latestStocks === null ? (
                 <p className="text-sm text-foreground-muted">Loading…</p>
               ) : (
-                <StockNames title={`${stocksText(latest.count)} · ${fmtDate(latest.run_date) ?? latest.run_date}`} loadKey={latest.id} loader={staticLoader(latestStocks)} testId="read-names" />
+                <StockNames title={`${stocksText(latest.count)} · ${fmtDate(latest.run_date) ?? latest.run_date}`} loadKey={latest.id} loader={staticLoader(latestStocks)} testId="read-names" asOf={fmtDate(latest.as_of) ?? fmtDate(latest.run_date)} />
               )}
               <div className="flex flex-wrap items-center gap-3">
                 {user && sheet !== "saved" && <button type="button" onClick={() => setSheet("saved")} className="min-h-[44px] rounded-lg border border-accent px-4 text-sm font-semibold text-accent hover:bg-accent/10" data-testid="create-report">{CREATE_REPORT}</button>}
-                <button type="button" onClick={() => goSection("results")} className="min-h-[44px] text-sm font-medium text-accent underline" data-testid="see-in-results">{SEE_IN_RESULTS}</button>
+                <button type="button" onClick={() => goReports(active.id)} className="min-h-[44px] text-sm font-medium text-accent underline" data-testid="see-in-results">{SEE_IN_RESULTS}</button>
               </div>
               {sheet === "saved" && latestStocks && (
                 <ReportSheet
@@ -536,14 +584,23 @@ export function ShortlistLadder() {
                   forResult={{ ruleId: active.id, runId: latest.id }}
                   ensure={async () => ({ kind: "saved", ruleId: active.id, runId: latest.id })}
                   needsName={false}
+                  existing={(latest.answers ?? 0) > 0}
+                  asOf={fmtDate(latest.as_of) ?? fmtDate(latest.run_date)}
                   loader={staticLoader(latestStocks)}
                   loadKey={latest.id}
                   total={latestStocks.length}
                   onClose={() => setSheet(null)}
                   onDone={() => setResultsKey((k) => k + 1)}
+                  onStarted={(ref) => goReports(ref.ruleId)}
                 />
               )}
             </div>
+          )}
+          {user && ruleOpen && (
+            <section className="space-y-2 border-t border-border pt-3" aria-labelledby="rule-reports-heading" data-testid="rule-reports-section">
+              <h3 id="rule-reports-heading" className="text-base font-semibold">{RULE_REPORTS_TITLE}</h3>
+              <RuleReports rule={ruleOpen} refreshKey={resultsKey} onChanged={() => setResultsKey((k) => k + 1)} />
+            </section>
           )}
         </div>
       )}
@@ -551,19 +608,29 @@ export function ShortlistLadder() {
       {section === "rules" && page === "edit" && !readOnly && (
         <div className="space-y-3" data-testid="section-create">
           <button type="button" onClick={backToList} className="min-h-[44px] rounded-lg border border-border px-4 text-sm font-medium hover:border-accent" data-testid="back-to-rules">{BACK_BUTTON}</button>
-          {active && <h3 className="break-words text-base font-semibold" data-testid="open-rule-name">{active.name}</h3>}
+          {user && <NameBox name={name} setName={(v) => { setName(v); setNameMsg(null); }} message={nameMsg} inputRef={nameRef} />}
           {filled && (
-            <div className="rounded-xl border border-border bg-surface-raised px-3 py-2" data-testid="ladder-bar" aria-live="polite">
+            <div className="space-y-1 rounded-xl border border-border bg-surface-raised px-3 py-2" data-testid="ladder-bar" aria-live="polite">
               <p className="text-sm font-medium" data-testid="ladder-left">
                 {left === null ? (dataError ? "Counts are not available right now" : "Loading the counts…") : ABOUT_MATCH(left)}
               </p>
+              {left === 0 && noMatchStep !== null && (
+                <p className="text-sm" data-testid="ladder-nomatch">
+                  {NO_MATCH_LINE(noMatchStep + 1)}{" "}
+                  <button type="button" onClick={() => { setStepOpen(noMatchStep); scrollTop(); }} className="font-medium text-accent underline" data-testid="ladder-nomatch-open">{NO_MATCH_OPEN(noMatchStep + 1)}</button>
+                </p>
+              )}
+              {split && split.hasDaily && left !== null && <p className="text-xs text-foreground-muted" data-testid="ladder-split">{STEADY_LINE(split.steady, split.all)}</p>}
+              {left !== null && figuresDate && <p className="text-xs text-foreground-muted" data-testid="ladder-figures-asof">{FIGURES_AS_OF(figuresDate)}</p>}
               {left !== null && <p className="text-xs text-foreground-muted" data-testid="ladder-counts-note">{COUNTS_NOTE}</p>}
             </div>
           )}
+          <DailyNote />
           {notice && <p className="text-sm text-foreground-muted" role="status" data-testid="ladder-notice">{notice}</p>}
           <FillRow
-            onFill={() => { setRules(typicalRules()); setNotice(null); setNoFilter(false); setNames(null); }}
-            onClear={() => { setRules(EMPTY_RULES); setNotice(null); setNoFilter(false); setNames(null); }}
+            onFill={() => { const t = typicalRules(); setRules(t); setFillLine(FILL_COUNT(rulesSetCount(t))); setNotice(null); setNoFilter(false); setNames(null); }}
+            onClear={() => { setRules(EMPTY_RULES); setFillLine(null); setNotice(null); setNoFilter(false); setNames(null); }}
+            filledLine={fillLine}
           />
           <p className="text-sm font-medium" data-testid="ladder-blank-line">{BLANK_LINE}</p>
           <p className="text-xs text-foreground-muted" data-testid="ladder-past">{PAST_LINE}</p>
@@ -603,7 +670,7 @@ export function ShortlistLadder() {
                   <div className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm" data-testid="step-after">
                     <p className="font-medium" data-testid="step-after-line">{AFTER_STEP(leftAfter(stepDef.n) as number, removedBy(stepDef.n) as number)}</p>
                     <p className="text-xs text-foreground-muted" data-testid="step-after-note">{REMOVED_DEPENDS}</p>
-                    <button type="button" onClick={() => setNames(names?.kind === "step" && names.n === stepDef.n ? null : { kind: "step", n: stepDef.n })} aria-expanded={names?.kind === "step" && names.n === stepDef.n} className="mt-2 min-h-[44px] rounded-lg border border-border px-4 text-sm font-medium hover:border-accent" data-testid="step-view-stocks">{VIEW_STOCKS}</button>
+                    <button type="button" onClick={() => { if (names?.kind === "step" && names.n === stepDef.n) setNames(null); else if (requireName()) setNames({ kind: "step", n: stepDef.n }); }} aria-expanded={names?.kind === "step" && names.n === stepDef.n} className="mt-2 min-h-[44px] rounded-lg border border-border px-4 text-sm font-medium hover:border-accent" data-testid="step-view-stocks">{VIEW_STOCKS}</button>
                   </div>
                 )}
                 {names?.kind === "step" && names.n === stepDef.n && namesCard(stepDef.n, NAMES_TITLE_AFTER(stepDef.n + 1), false)}
@@ -625,7 +692,7 @@ export function ShortlistLadder() {
       {section === "results" && (
         <div className="space-y-4" data-testid="section-results">
           {user ? (
-            <ResultsShelf rules={savedState.saved} refreshKey={resultsKey} onChanged={() => setResultsKey((k) => k + 1)} />
+            <ResultsTab rules={savedState.saved} refreshKey={resultsKey} onChanged={() => setResultsKey((k) => k + 1)} openRuleId={resultsRuleId} setOpenRuleId={setResultsRuleId} />
           ) : (
             <p className="text-sm text-foreground-muted" data-testid="results-loggedout">
               {RESULTS_LOGGED_OUT}{" "}
