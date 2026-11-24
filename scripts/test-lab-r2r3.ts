@@ -86,7 +86,7 @@ assert.ok(ladder.includes("data-testid=\"ladder-counts-note\"") && ladder.includ
   const typical = typicalRules();
   assert.deepEqual(typical, COMMON_RULES);
   for (const k of ["chgMonths", "chgMin", "volRatio", "vol", "volNum"] as const) assert.equal(typical[k], "", `${k}: no published number, left blank`);
-  assert.deepEqual([typical.delivery, typical.near52, typical.avgDays, typical.volDay], ["50", "25", "200", "1.5"]);
+  assert.deepEqual([typical.delivery, typical.near52, typical.avgDays, typical.volDay], ["40", "25", "200", ""], "25 Nov 2026: delivery 40, within 25 % of the 52-week high, above the 200-day average; the latest-day volume stays blank");
   const copyAll = (FILL_BUTTON + BLANK_LINE + CLEAR_ALL + SHOW_BUTTON + ladder).replace(/className="[^"]*"/g, "").replace(/className=\{`[^`]*`\}/g, "");
   assert.ok(!/\b(standard|recommended|best)\b/i.test(copyAll), "never standard, recommended or best");
 }

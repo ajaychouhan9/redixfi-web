@@ -28,7 +28,7 @@ export const PAST_LINE = "Filters use past reported numbers. They do not tell wh
 export const RESULTS_TITLE = "Your shortlist";
 export const SHOW_BUTTON = "Show stocks that meet my rule";
 export const NO_FILTER_LINE = "No filter applied. Fill at least one field.";
-export const ABOUT_MATCH = (n: number): string => `About ${n.toLocaleString("en-IN")} ${n === 1 ? "stock matches" : "stocks match"} so far`;
+export const ABOUT_MATCH = (n: number): string => `${n.toLocaleString("en-IN")} ${n === 1 ? "stock matches" : "stocks match"} your rule`;
 export const SECTION_CREATE = "Create rule";
 export const SECTION_SAVED = "Saved rules";
 export const SECTION_RESULTS = "Results";
@@ -145,19 +145,26 @@ export const EMPTY_RULES: Rules = {
   roe: "", roce: "", de: "", pledge: "", vol: "", volNum: "", volRatio: "", delivery: "", pe: "",
   chgMonths: "", chgMin: "", near52: "", avgDays: "", volDay: "",
 };
-/** Typical values (editable) for "Fill typical values". Only a field with a published number is filled (sources are in the release report, not on screen):
- *  steps 1 to 4 and 6 use the example numbers; step 5 fills Delivery (50 %, a cut-off used by published delivery screens) and leaves "Volume vs usual" and "Day-to-day price swings" blank;
- *  step 7 fills "within 25 % of the 52-week high", "above the 200-day average" (Minervini Trend Template) and "volume at least 1.5 times its 20-day average" (a published volume-spike number);
- *  the price change over 1, 3 or 6 months is left blank. */
+/** Typical values (editable) for "Fill typical values" (25 Nov 2026). The SET was chosen as a whole, not field by field: every number is inside the range commonly published for that
+ *  measure, and on each of the last 20 trading days the set returned 5 to 10 stocks (the test and its table are in api/docs/TYPICAL_VALUES_20261125.md; it is approximate for the
+ *  earnings and returns steps, which use today's figures). The numbers are fixed for everyone and are not re-tuned each day. They are the same as TYPICAL in
+ *  api/app/core/typical_values.py: change both together.
+ *  Filled: step 1 market value 500; step 2 profit in the latest quarter, 5 of 5 profit years, sales and profit growth 10, quarter sales growth 10, quarter profit growth 25;
+ *  step 3 ROE 15, ROCE 15; step 4 debt to equity 1.5, pledge 10; step 5 delivery 40; step 6 P/E 30; step 7 within 25 % of the 52-week high, above the 200-day average.
+ *  Left blank (no published number gave a balanced list with it, or there is no published number): sales and profit higher 3 years in a row, volume vs usual, day-to-day price swings,
+ *  price change over 1, 3 or 6 months, and the latest day's volume (a spike of 1.4 times or more left 0 to 8 stocks and the 20-day average was 5 to 10 on no day). */
 export const COMMON_RULES: Rules = {
   ...EMPTY_RULES,
   profitQ: true,
-  mcMin: EXAMPLES.mcMin.value, profitYears: EXAMPLES.profitYears.value, sales3: EXAMPLES.sales3.value, profit3: EXAMPLES.profit3.value,
-  salesQ: EXAMPLES.salesQ.value, profitQg: EXAMPLES.profitQg.value, roe: EXAMPLES.roe.value, roce: EXAMPLES.roce.value, de: EXAMPLES.de.value,
-  pledge: EXAMPLES.pledge.value, pe: EXAMPLES.pe.value,
-  delivery: "50",
-  near52: "25", avgDays: "200", volDay: "1.5",
+  mcMin: "500", profitYears: "5", sales3: "10", profit3: "10", salesQ: "10", profitQg: "25",
+  roe: "15", roce: "15", de: "1.5", pledge: "10",
+  delivery: "40", pe: "30",
+  near52: "25", avgDays: "200",
 };
+/** How many fields My rules has in all (17 number or yes boxes, day-to-day price swings, price change, price above an average) and how many the typical set fills. */
+export const TOTAL_FIELDS = 20;
+export const FILL_COUNT = (n: number, m: number = TOTAL_FIELDS): string => `Filled ${n} of ${m} fields`;
+export const FILL_BLANK_NOTE = "The rest have no published number that keeps the list balanced, so they stay blank. Fill them yourself if you want them.";
 
 export interface RuleDef {
   key: keyof Rules;
@@ -224,10 +231,12 @@ export const avgOn = (r: Rules): boolean => r.avgDays === "50" || r.avgDays === 
 export const volOn = (r: Rules): boolean => r.vol !== "" && num(r.volNum) !== undefined && (num(r.volNum) as number) >= 0 && (num(r.volNum) as number) <= 100;
 
 type Test = { col: string; ok: (v: number) => boolean };
-export function activeTests(r: Rules, upToStep: number): Test[] {
+/** The steps that can change the list every day (price, volume and delivery): steps 5 and 7, numbered 4 and 6 here. The others change only when new results come out. */
+export const DAILY_STEPS: readonly number[] = [4, 6];
+export function activeTests(r: Rules, upToStep: number, skipSteps: readonly number[] = []): Test[] {
   const out: Test[] = [];
   for (const d of RULES) {
-    if (d.step > upToStep || !isOn(r, d)) continue;
+    if (d.step > upToStep || skipSteps.includes(d.step) || !isOn(r, d)) continue;
     if (d.op === "gt0") out.push({ col: d.col, ok: (v) => v > 0 });
     else if (d.op === "flag") out.push({ col: d.col, ok: (v) => v === 1 });
     else {
@@ -235,11 +244,11 @@ export function activeTests(r: Rules, upToStep: number): Test[] {
       out.push({ col: d.col, ok: d.op === "min" ? (v) => v >= n : (v) => v <= n });
     }
   }
-  if (upToStep >= 4 && volOn(r)) {
+  if (upToStep >= 4 && !skipSteps.includes(4) && volOn(r)) {
     const n = num(r.volNum) as number;
     out.push({ col: "vol", ok: r.vol === "calmer" ? (v) => v <= n : (v) => v >= n });
   }
-  if (upToStep >= 6) {
+  if (upToStep >= 6 && !skipSteps.includes(6)) {
     if (chgOn(r)) out.push({ col: `r${r.chgMonths}`, ok: (v) => v >= (num(r.chgMin) as number) });
     if (avgOn(r)) out.push({ col: `a${r.avgDays}`, ok: (v) => v === 1 });
   }
@@ -255,9 +264,9 @@ function indexOf(data: LadderData): Record<string, number> {
 }
 
 /** How many stocks pass every rule set in steps 0..upToStep. A stock with no figure for a rule that is on does not pass it, as on the server. */
-export function countAfter(data: LadderData, r: Rules, upToStep: number): number {
+export function countAfter(data: LadderData, r: Rules, upToStep: number, skipSteps: readonly number[] = []): number {
   const idx = indexOf(data);
-  const tests = activeTests(r, upToStep).map((t) => ({ i: idx[t.col], ok: t.ok }));
+  const tests = activeTests(r, upToStep, skipSteps).map((t) => ({ i: idx[t.col], ok: t.ok }));
   if (tests.some((t) => t.i === undefined)) return 0;
   let n = 0;
   for (const row of data.rows) {
@@ -277,6 +286,31 @@ export function countAfter(data: LadderData, r: Rules, upToStep: number): number
 /** Counts after steps 0..6 (the last one is the count after every rule). */
 export function countsByStep(data: LadderData, r: Rules): number[] {
   return [0, 1, 2, 3, 4, 5, 6].map((s) => countAfter(data, r, s));
+}
+
+/** Two counts: stocks that pass the steady steps (every step but 5 and 7), and stocks that also pass the daily steps (5 and 7). `hasDaily` is false when steps 5 and 7 have no rule set. */
+export function splitCounts(data: LadderData, r: Rules): { steady: number; all: number; hasDaily: boolean } {
+  const hasDaily = DAILY_STEPS.some((s) => stepSetCount(r, s) > 0);
+  return { steady: countAfter(data, r, 6, DAILY_STEPS), all: countAfter(data, r, 6), hasDaily };
+}
+
+/** When no stock matches: the step that removed the most stocks (the earliest one if two removed the same), counted in step order. Null when no step removed any. Steps are numbered 0 to 6. */
+export function mostRemovedStep(data: LadderData, r: Rules): number | null {
+  const counts = countsByStep(data, r);
+  let found: number | null = null;
+  let mostRemoved = 0;
+  let before = data.rows.length;
+  for (let s = 0; s <= 6; s += 1) {
+    if (stepSetCount(r, s) > 0) {
+      const removed = before - counts[s];
+      if (removed > mostRemoved) {
+        mostRemoved = removed;
+        found = s;
+      }
+    }
+    before = counts[s];
+  }
+  return found;
 }
 
 /** Stocks with no ROCE figure among those meeting every other rule that is on (the "left out of this filter" line), and how many of those are banks, insurers or finance companies. */

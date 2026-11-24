@@ -27,6 +27,9 @@ export interface ReportJob {
   total: number;
   done: number;
   failed: number;
+  /** 25 Nov 2026: answers this result already had (not asked, not charged) and answers this report made. */
+  reused?: number;
+  new_answers?: number;
   progress_pct: number;
 }
 export interface ReportBody {

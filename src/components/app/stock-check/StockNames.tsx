@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { NAMES_MORE, NAMES_NONE, NAMES_NONE_LEFT, NAMES_SEARCH } from "@/lib/report-flow";
+import { FIGURES_AS_OF, NAMES_MORE, NAMES_NONE, NAMES_NONE_LEFT, NAMES_SEARCH } from "@/lib/report-flow";
 
 export interface NameItem {
   symbol: string;
@@ -33,11 +33,13 @@ interface Props {
   /** Show no more than this many names; the note is then shown instead of Show more (a logged-out visitor sees the first page only). */
   maxItems?: number;
   maxNote?: React.ReactNode;
+  /** The date of the figures behind the list ("Figures as of 23 Nov 2026"); every stock list shows it. */
+  asOf?: string | null;
   children?: React.ReactNode;
 }
 
 /** Names only (no figures), a search box and "Show more". The lists can have hundreds of stocks, so 30 are shown at a time. */
-export function StockNames({ title, loadKey, loader, testId = "stock-names", selected, onToggle, maxItems, maxNote, children }: Props) {
+export function StockNames({ title, loadKey, loader, testId = "stock-names", selected, onToggle, maxItems, maxNote, asOf, children }: Props) {
   const [q, setQ] = useState("");
   const [items, setItems] = useState<NameItem[]>([]);
   const [total, setTotal] = useState<number | null>(null);
@@ -79,6 +81,7 @@ export function StockNames({ title, loadKey, loader, testId = "stock-names", sel
       <p className="text-sm font-medium" data-testid={`${testId}-count`} aria-live="polite">
         {total === null ? (error ? "The list could not be loaded right now. Please try again." : "Loading…") : `${total.toLocaleString("en-IN")} ${total === 1 ? "stock" : "stocks"}`}
       </p>
+      {asOf && <p className="text-xs text-foreground-muted" data-testid={`${testId}-asof`}>{FIGURES_AS_OF(asOf)}</p>}
       {children}
       <label htmlFor={`${testId}-search`} className="sr-only">{NAMES_SEARCH}</label>
       <input id={`${testId}-search`} value={q} onChange={(e) => setQ(e.target.value)} placeholder={NAMES_SEARCH} className="h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm placeholder:text-foreground-faint sm:max-w-sm" data-testid={`${testId}-search`} />

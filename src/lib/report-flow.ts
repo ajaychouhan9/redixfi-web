@@ -79,6 +79,41 @@ export function questionsFor(keys: string[], custom: string[]): number {
   return keys.length + custom.length;
 }
 
+// ---- 25 Nov 2026: rule name, balanced typical values, clear updates, reports inside each rule --------------------------------------
+export const NAME_LABEL = "Name your rule (required)";
+export const NAME_NEEDED = "Give your rule a name to continue.";
+export const FIGURES_AS_OF = (date: string): string => `Figures as of ${date}`;
+export const DAILY_LINE = "Steps 5 and 7 can change the list every day. The other steps change only when new results come out.";
+export const DAILY_LINE_PRICE = "Market value (step 1) and P/E (step 6) also move a little with the price.";
+export const NO_MATCH_LINE = (step: number): string => `No stocks match. Step ${step} removed the most. Try loosening it.`;
+export const NO_MATCH_OPEN = (step: number): string => `Open step ${step}`;
+export const STEADY_LINE = (steady: number, all: number): string =>
+  `${steady.toLocaleString("en-IN")} ${steady === 1 ? "stock passes" : "stocks pass"} the steady steps. ${all.toLocaleString("en-IN")} also ${all === 1 ? "passes" : "pass"} the daily steps.`;
+export const COMPARE_LINE = (added: number, dropped: number): string => `Compared with your last result: ${added.toLocaleString("en-IN")} added, ${dropped.toLocaleString("en-IN")} dropped`;
+export const COMPARE_SHOW = "Show the changes";
+export const COMPARE_HIDE = "Hide the changes";
+export const COMPARE_ADDED = "Added";
+export const COMPARE_DROPPED = "Dropped";
+export const COMPARE_NONE = "No stock was added or dropped.";
+export const COMPARE_VALUES_CHANGED = "The rule's numbers were changed between these two results, so some changes come from that.";
+export const COMPARE_MORE = (n: number): string => `And ${n.toLocaleString("en-IN")} more not listed here.`;
+export const COMPARE_LOADING = "Loading the changes…";
+export const COMPARE_FAILED = "The changes could not be loaded right now.";
+export const UPDATE_REPORT = "Update report";
+export const SAVED_ANSWERS_LINE = (have: number, total: number, fresh: number): string =>
+  fresh === 0
+    ? `All ${total} answers are already saved. Nothing new will be asked and no questions are used.`
+    : `${have} of ${total} answers are already saved. Only ${fresh} new ${fresh === 1 ? "question" : "questions"} will be asked and ${fresh === 1 ? "it uses" : "they use"} ${fresh} ${fresh === 1 ? "question" : "questions"}.`;
+export const REUSED_LINE = (reused: number, fresh: number): string => `${reused} ${reused === 1 ? "answer" : "answers"} reused, ${fresh} new ${fresh === 1 ? "answer" : "answers"}.`;
+export const ANSWERED_OF = (n: number, m: number): string => `${n} of ${m} answered`;
+export const NOT_CHARGED = "The question was not charged.";
+export const UNANSWERED_TITLE = "Not answered";
+export const RULE_REPORTS_TITLE = "Reports";
+export const REPORTS_FOR = (name: string): string => `Reports for ${name}`;
+export const RESULTS_RULES_LEAD = "Choose a rule to see its reports.";
+export const BACK_TO_RULES_LIST = "Back to all rules";
+export const NO_RULES_FOR_REPORTS = "You have no saved rule yet. Create a rule, then a report, and it will be listed here.";
+
 /** The one line at the top of an opened saved rule: its name, how many stocks its latest saved result has, and the date of that result. */
 export const READONLY_LINE = (name: string, count: number, date: string): string => `${name} · ${stocksText(count)} · ${date}`;
 export const RESULTS_LOGGED_OUT = "Log in to create reports and keep them here.";

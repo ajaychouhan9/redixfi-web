@@ -5,6 +5,11 @@ import type { Rules } from "@/lib/stock-check";
 export const MY_RULES_TITLE = "My rules";
 export const MY_RULES_LEAD = "Open a rule you saved, or set the steps below and save them under a name. Each time you press Show stocks that meet my rule on a saved rule, the result is saved with it.";
 export const NAME_PLACEHOLDER = "Name these rules";
+/** A new rule starts with "My rule" and today's date (India date), for example "My rule 24 Nov". The person can change it. */
+export function defaultRuleName(now: Date = new Date()): string {
+  const ist = new Date(now.getTime() + 330 * 60000);
+  return `My rule ${ist.getUTCDate()} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][ist.getUTCMonth()]}`;
+}
 export const SNAPSHOT_LABEL = "Also save today's stock list (a dated copy)";
 export const SNAPSHOT_HELP = "The rules are always saved. With the list, you can open the rule later and see the stocks as they were on that date.";
 export const SAVE_BUTTON = "Save";
@@ -55,12 +60,19 @@ export function fmtDay(iso: string | null | undefined): string | null {
 export const stocksText = (n: number): string => `${n.toLocaleString("en-IN")} ${n === 1 ? "stock" : "stocks"}`;
 
 /** One line under a saved rule's name: the date it was saved and how many stocks met it then. */
-export function savedLine(s: { updated_at?: string | null; created_at?: string | null; stock_count?: number | null }): string {
+export function savedLine(s: { updated_at?: string | null; created_at?: string | null; stock_count?: number | null; latest_run?: { count: number; as_of: string | null; run_date: string } | null }): string {
   const when = fmtDay(s.updated_at ?? s.created_at);
   const parts: string[] = [];
   if (when) parts.push(`Saved ${when}`);
-  // a stored 0 means the count was not known when the rule was saved (the figures file had not loaded), so it is not shown as "0 stocks"
-  if (typeof s.stock_count === "number" && s.stock_count > 0) parts.push(`${stocksText(s.stock_count)} when saved`);
+  if (s.latest_run) {
+    // the newest saved result carries its own count and the date of its figures
+    parts.push(stocksText(s.latest_run.count));
+    const asOf = fmtDay(s.latest_run.as_of) ?? fmtDay(s.latest_run.run_date);
+    if (asOf) parts.push(`Figures as of ${asOf}`);
+  } else if (typeof s.stock_count === "number" && s.stock_count > 0) {
+    // a stored 0 means the count was not known when the rule was saved (the figures file had not loaded), so it is not shown as "0 stocks"
+    parts.push(`${stocksText(s.stock_count)} when saved`);
+  }
   return parts.join(" · ");
 }
 

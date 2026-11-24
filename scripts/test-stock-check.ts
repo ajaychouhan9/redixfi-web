@@ -63,7 +63,8 @@ assert.ok(validLadderData(data) && !validLadderData({ ...data, version: 2 }) && 
 assert.equal(countAfter(data, EMPTY_RULES, 6), 5, "no rules: every stock");
 assert.equal(countAfter(data, { ...EMPTY_RULES, mcMin: "1000" }, 0), 4, "size rule");
 assert.equal(countAfter(data, { ...EMPTY_RULES, mcMin: "1000" }, 1) , 4);
-const common: Rules = { ...COMMON_RULES, delivery: "", near52: "", avgDays: "", volDay: "" };
+// a fixed sample rule (the numbers the typical set used before 25 Nov 2026) so the small fixture above keeps its counts; the typical set itself is checked further down
+const common: Rules = { ...EMPTY_RULES, profitQ: true, mcMin: "500", profitYears: "5", sales3: "10", profit3: "10", salesQ: "10", profitQg: "10", roe: "15", roce: "15", de: "1", pledge: "10", pe: "25" };
 assert.deepEqual(countsByStep(data, common), [5, 3, 2, 1, 1, 1, 1], "the count after each step only gets smaller");
 assert.ok(countsByStep(data, common).every((n, i, a) => i === 0 || n <= a[i - 1]));
 assert.equal(countAfter(data, { ...EMPTY_RULES, profitYears: "5" }, 0), 5, "a rule from a later step does not count in an earlier step");
@@ -94,17 +95,12 @@ assert.ok(RULES.every((r) => r.param && r.col), "every rule has a server filter 
 assert.ok(COMMON_RULES.vol === "" && COMMON_RULES.volNum === "", "calmer / more active is a choice and is not pre-set");
 assert.deepEqual(
   { mc: COMMON_RULES.mcMin, py: COMMON_RULES.profitYears, s3: COMMON_RULES.sales3, p3: COMMON_RULES.profit3, sq: COMMON_RULES.salesQ, pq: COMMON_RULES.profitQg, roe: COMMON_RULES.roe, roce: COMMON_RULES.roce, de: COMMON_RULES.de, pl: COMMON_RULES.pledge, pe: COMMON_RULES.pe },
-  { mc: "500", py: "5", s3: "10", p3: "10", sq: "10", pq: "10", roe: "15", roce: "15", de: "1", pl: "10", pe: "25" },
-  "Start with common rules fills the example values",
+  { mc: "500", py: "5", s3: "10", p3: "10", sq: "10", pq: "25", roe: "15", roce: "15", de: "1.5", pl: "10", pe: "30" },
+  "Fill typical values: the set chosen on the 20-day test (25 Nov 2026)",
 );
-for (const d of RULES.filter((r) => r.op !== "gt0" && r.op !== "flag" && r.step < 6)) {
-  assert.ok(EXAMPLES[d.key], `${d.key} has an example`);
-  if (d.step === 4) assert.equal(COMMON_RULES[d.key], d.key === "delivery" ? "50" : "", `${d.key}: step 5 only fills the field that has a published number`);
-  else assert.equal(COMMON_RULES[d.key], EXAMPLES[d.key].value, `${d.key} common value equals its example`);
-}
-assert.ok(COMMON_RULES.vol === "" && COMMON_RULES.volNum === "" && COMMON_RULES.volRatio === "", "Step 5: volume vs usual and the price-swings option have no published number and stay blank");
-assert.equal(COMMON_RULES.delivery, "50", "Step 5: delivery 50 % is the one published number");
-assert.ok(COMMON_RULES.near52 === "25" && COMMON_RULES.avgDays === "200" && COMMON_RULES.volDay === "1.5" && COMMON_RULES.chgMonths === "" && COMMON_RULES.chgMin === "", "Step 7: 25 % of the 52-week high, above the 200-day average, volume 1.5 times its 20-day average; the 1, 3, 6 month change stays blank");
+assert.ok(COMMON_RULES.vol === "" && COMMON_RULES.volNum === "" && COMMON_RULES.volRatio === "", "Step 5: volume vs usual and the price-swings option stay blank");
+assert.equal(COMMON_RULES.delivery, "40", "Step 5: delivery 40 %");
+assert.ok(COMMON_RULES.near52 === "25" && COMMON_RULES.avgDays === "200" && COMMON_RULES.volDay === "" && COMMON_RULES.chgMonths === "" && COMMON_RULES.chgMin === "", "Step 7: within 25 % of the 52-week high, above the 200-day average; the latest-day volume and the 1, 3, 6 month change stay blank"); 
 assert.equal(COUNTS_NOTE, "Counts come from last night's figures. The final list may differ by a few stocks.");
 assert.equal(exampleLine(EXAMPLES.volRatio.text), "e.g. 1.5 times");
 assert.equal(exampleLine(EXAMPLES.roce.text), "e.g. 15 (%)");

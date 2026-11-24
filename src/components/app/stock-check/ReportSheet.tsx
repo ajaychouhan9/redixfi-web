@@ -11,10 +11,10 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { fmtDay } from "@/lib/my-rules";
 import { ASK_QUESTIONS } from "@/lib/read-company";
 import {
-  ADDON_LINE, ADDON_LINK, ALREADY_ANSWERED_LINE, BUILDING, BUILDING_LEAVE, BUILD_DONE, BUILD_FAILED_SOME, CREATE_REPORT, CREATE_WITHOUT_AI, CUSTOMISE, CUSTOM_ADD, CUSTOM_ADD_BUTTON,
+  ADDON_LINE, ADDON_LINK, BUILDING, BUILDING_LEAVE, BUILD_DONE, BUILD_FAILED_SOME, CREATE_REPORT, CREATE_WITHOUT_AI, CUSTOMISE, CUSTOM_ADD, CUSTOM_ADD_BUTTON,
   CUSTOM_CHECKING, CUSTOM_CHECK_NOTE, CUSTOM_PLACEHOLDER, CUSTOM_REMOVE, CUSTOM_TOTAL, FREE_UPGRADE_QUESTIONS, FREE_UPGRADE_REPORT, OFFER_FITS, POOL_EMPTY, REPORT_LIMIT_LINE,
   SEE_PRICING, SHEET_FREE_ONE, SHEET_NO_QUESTIONS, SHEET_NO_STOCKS, SHEET_QUESTIONS, SHEET_STOCKS, SHEET_TICK_UP_TO, SHEET_TITLE, USES_MONTH, USES_TODAY, offerLabel,
-  toggleStock, withinLimits,
+  toggleStock, withinLimits, NAME_NEEDED, REUSED_LINE, SAVED_ANSWERS_LINE, UPDATE_REPORT,
 } from "@/lib/report-flow";
 import { PlanLimitDialog, type Drops } from "@/components/app/stock-check/PlanLimitDialog";
 import { StockNames, type NamesLoader } from "@/components/app/stock-check/StockNames";
@@ -56,6 +56,16 @@ interface Props {
   forResult: { ruleId: string; runId: string } | null;
   ensure: (name: string | undefined, confirmDrop: boolean) => Promise<EnsureOut>;
   needsName: boolean;
+  /** The rule's name, typed in the box at the top of the rule page. Needed when the rule is not saved yet. */
+  name?: string;
+  /** Called when the name is blank (the page shows the plain message beside the name box). */
+  onNameMissing?: () => void;
+  /** This result already has a report: the button says Update report. */
+  existing?: boolean;
+  /** The date of the figures behind the list ("Figures as of ..."). */
+  asOf?: string | null;
+  /** The report started (the job is queued): the page takes the person to the rule's reports. */
+  onStarted?: (ref: { ruleId: string; runId: string }) => void;
   loader: NamesLoader;
   loadKey: string;
   total: number | null;
@@ -66,7 +76,7 @@ interface Props {
 }
 
 /** "Create report": the stocks (up to 10), the 5 questions, what it uses and what is left, then Create report or Create without AI. */
-export function ReportSheet({ ruleName, forResult, ensure, needsName, loader, loadKey, total: totalProp, initialStocks, onClose, onDone }: Props) {
+export function ReportSheet({ ruleName, forResult, ensure, needsName, name = "", onNameMissing, existing = false, asOf = null, onStarted, loader, loadKey, total: totalProp, initialStocks, onClose, onDone }: Props) {
   const { getToken, user } = useAuth();
   const [usage, setUsage] = useState<AskUsageInfo | null>(null);
   const [stocks, setStocks] = useState<string[]>(initialStocks ?? []);
@@ -76,7 +86,6 @@ export function ReportSheet({ ruleName, forResult, ensure, needsName, loader, lo
   const [custom1Msg, setCustom1Msg] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [customise, setCustomise] = useState(false);
-  const [name, setName] = useState("");
   const [capNote, setCapNote] = useState(false);
   const [est, setEst] = useState<ReportEstimate | null>(null);
   const [drops, setDrops] = useState<Drops | null>(null);
@@ -88,6 +97,14 @@ export function ReportSheet({ ruleName, forResult, ensure, needsName, loader, lo
   const [doneNote, setDoneNote] = useState<string | null>(null);
   const [runRef, setRunRef] = useState<{ ruleId: string; runId: string } | null>(forResult);
   const autoSelected = useRef(false);
+  // the build keeps running on the server when the person leaves; this page stops asking once it is gone
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -198,6 +215,7 @@ export function ReportSheet({ ruleName, forResult, ensure, needsName, loader, lo
     let cur = j;
     for (let i = 0; i < 600 && cur.status !== "done"; i += 1) {
       await new Promise((r) => window.setTimeout(r, 3000));
+      if (!alive.current) return;
       try {
         const token = await getToken();
         if (!token) return;
@@ -208,7 +226,8 @@ export function ReportSheet({ ruleName, forResult, ensure, needsName, loader, lo
       }
     }
     if (cur.status === "done") {
-      setDoneNote(cur.failed > 0 ? `${BUILD_DONE} ${BUILD_FAILED_SOME(cur.failed)}` : BUILD_DONE);
+      const counts = (cur.reused ?? 0) + (cur.new_answers ?? 0) > 0 ? ` ${REUSED_LINE(cur.reused ?? 0, cur.new_answers ?? 0)}` : "";
+      setDoneNote(cur.failed > 0 ? `${BUILD_DONE}${counts} ${BUILD_FAILED_SOME(cur.failed)}` : `${BUILD_DONE}${counts}`);
       onDone();
     }
   }, [getToken, onDone]);
@@ -218,7 +237,11 @@ export function ReportSheet({ ruleName, forResult, ensure, needsName, loader, lo
     setErrPlan(null);
     if (stocks.length === 0) return setMsg(SHEET_NO_STOCKS);
     if (ai && per === 0) return setMsg(SHEET_NO_QUESTIONS);
-    if (needsName && !runRef && !name.trim()) return setMsg("Give your rule a name first.");
+    if (needsName && !runRef && !name.trim()) {
+      if (onNameMissing) onNameMissing();
+      else setMsg(NAME_NEEDED);
+      return;
+    }
     setBusy(true);
     try {
       let ref = runRef;
@@ -244,6 +267,7 @@ export function ReportSheet({ ruleName, forResult, ensure, needsName, loader, lo
       setJob(out.job);
       onDone();
       void poll(ref, out.job);
+      onStarted?.(ref);
     } catch (e) {
       const d = e instanceof ApiError ? (e.detail as Record<string, unknown> | string | undefined) : undefined;
       if (d && typeof d === "object" && typeof d.message === "string") {
@@ -256,14 +280,15 @@ export function ReportSheet({ ruleName, forResult, ensure, needsName, loader, lo
     }
   }
 
+  const isUpdate = existing || (est?.already_answered ?? 0) > 0;
   const emptyPool = left !== null && available === 0;
   const resetDate = left?.resets ? fmtDay(left.resets) ?? left.resets : null;
   const building = job && job.status !== "done";
 
   return (
-    <section className="space-y-3 rounded-xl border border-accent bg-surface p-4" aria-label={SHEET_TITLE} data-testid="report-sheet">
+    <section className="space-y-3 rounded-xl border border-accent bg-surface p-4" aria-label={isUpdate ? UPDATE_REPORT : SHEET_TITLE} data-testid="report-sheet">
       <div className="flex items-start justify-between gap-2">
-        <h4 className="text-base font-semibold">{SHEET_TITLE}{ruleName ? `: ${ruleName}` : ""}</h4>
+        <h4 className="text-base font-semibold">{isUpdate ? UPDATE_REPORT : SHEET_TITLE}{ruleName ? `: ${ruleName}` : ""}</h4>
         <button type="button" onClick={onClose} className="min-h-[44px] px-2 text-sm text-foreground-muted underline" data-testid="report-sheet-close">Close</button>
       </div>
 
@@ -281,7 +306,7 @@ export function ReportSheet({ ruleName, forResult, ensure, needsName, loader, lo
             <p className="text-sm font-medium">{SHEET_STOCKS}</p>
             {free && <p className="text-xs text-foreground-muted" data-testid="report-free-one">{SHEET_FREE_ONE}</p>}
             {total !== null && total > maxStocks ? (
-              <StockNames title={SHEET_TICK_UP_TO(maxStocks)} loadKey={loadKey} loader={loader} testId="report-names" selected={stocks} onToggle={toggle} />
+              <StockNames title={SHEET_TICK_UP_TO(maxStocks)} loadKey={loadKey} loader={loader} testId="report-names" selected={stocks} onToggle={toggle} asOf={asOf} />
             ) : (
               <p className="text-sm text-foreground-muted" data-testid="report-stocks-line">{stocks.length === 0 ? SHEET_NO_STOCKS : stocks.join(", ")}</p>
             )}
@@ -331,16 +356,11 @@ export function ReportSheet({ ruleName, forResult, ensure, needsName, loader, lo
             <p className="mt-1 text-xs text-foreground-muted" data-testid="report-total-line">{CUSTOM_TOTAL(stocks.length, per)}. {REPORT_LIMIT_LINE}</p>
           </div>
 
-          {needsName && !runRef && (
-            <div>
-              <label htmlFor="report-name" className="block text-sm font-medium">Name this rule</label>
-              <input id="report-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} className="mt-1 h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm sm:max-w-sm" data-testid="report-name" />
-            </div>
-          )}
-
           {usesLine && <p className="text-sm font-medium" data-testid="report-uses">{usesLine}</p>}
           {left && left.addon > 0 && <p className="text-xs text-foreground-muted" data-testid="report-addon-line">{ADDON_LINE(left.addon, Math.min(addonUsed, left.addon))}</p>}
-          {est && (est.already_answered ?? 0) > 0 && <p className="text-xs text-foreground-muted" data-testid="report-already">{ALREADY_ANSWERED_LINE(est.already_answered as number)}</p>}
+          {est && (est.already_answered ?? 0) > 0 && typeof est.total_pairs === "number" && (
+            <p className="text-sm font-medium" data-testid="report-already">{SAVED_ANSWERS_LINE(est.already_answered as number, est.total_pairs, est.uses ?? Math.max(0, est.total_pairs - (est.already_answered as number)))}</p>
+          )}
           {est?.free_one_stock && <p className="text-sm" data-testid="report-free-upgrade">{FREE_UPGRADE_REPORT} <Link href="/pricing" className="font-medium text-accent hover:underline">{SEE_PRICING}</Link></p>}
           {emptyPool && (
             <p className="text-sm" role="status" data-testid="report-pool-empty">
@@ -382,7 +402,7 @@ export function ReportSheet({ ruleName, forResult, ensure, needsName, loader, lo
           {msg && <p className="text-sm" role="status" data-testid="report-msg">{msg}</p>}
           {!user ? null : (
             <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={() => void go(true)} disabled={busy || !within || stocks.length === 0 || per === 0 || !enough || !!est?.free_one_stock} className={primary} data-testid="report-create">{busy ? "Working…" : CREATE_REPORT}</button>
+              <button type="button" onClick={() => void go(true)} disabled={busy || !within || stocks.length === 0 || per === 0 || !enough || !!est?.free_one_stock} className={primary} data-testid="report-create">{busy ? "Working…" : isUpdate ? UPDATE_REPORT : CREATE_REPORT}</button>
               <button type="button" onClick={() => void go(false)} disabled={busy || stocks.length === 0} className={btn} data-testid="report-create-no-ai">{CREATE_WITHOUT_AI}</button>
               <button type="button" onClick={() => setCustomise((c) => !c)} aria-expanded={customise} className={btn} data-testid="report-customise">{CUSTOMISE}</button>
             </div>

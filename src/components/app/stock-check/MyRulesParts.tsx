@@ -9,12 +9,13 @@ import { createMyScreen, deleteMyScreen, listMyScreens, listRuleRuns, replaceMyS
 import { useAuth } from "@/lib/auth/AuthContext";
 import { signupHref } from "@/lib/nav-items";
 import {
-  DELETE_BUTTON, LIMIT_REACHED, LOGGED_OUT_LINE, NAME_PLACEHOLDER, PLAN_LINE, REPLACE_OLD, REPLACE_QUESTION,
+  DELETE_BUTTON, LIMIT_REACHED, LOGGED_OUT_LINE, PLAN_LINE, REPLACE_OLD, REPLACE_QUESTION,
   RULES_SET_LINE, SAVE_AS_NEW_RULE, SAVE_BUTTON, copyName, saveAction, savedLine,
   type ActiveRule,
 } from "@/lib/my-rules";
 import { DELETE_RULE_CONFIRM, DELETE_RULE_KEEP, DELETE_RULE_WARN } from "@/lib/saved-results";
-import { CLEAR_ALL, CREATE_NEW_RULE, FILL_BUTTON, FILL_NOTE, RULES_LIST_NONE, fromParams, hasAnyRule, rulesSetCount, sameRules, toParams, type Rules } from "@/lib/stock-check";
+import { NAME_LABEL } from "@/lib/report-flow";
+import { CLEAR_ALL, CREATE_NEW_RULE, FILL_BLANK_NOTE, FILL_BUTTON, FILL_NOTE, RULES_LIST_NONE, fromParams, hasAnyRule, rulesSetCount, sameRules, toParams, type Rules } from "@/lib/stock-check";
 import { DialogDownloads } from "@/components/app/stock-check/SavedResults";
 
 const btn = "min-h-[44px] rounded-lg border border-border px-3 text-sm font-medium hover:border-accent";
@@ -49,8 +50,29 @@ interface SavedState {
   reload: () => Promise<void>;
 }
 
-/** Fill typical values and Clear all, above the steps, with the one-line note about where the numbers come from. */
-export function FillRow({ onFill, onClear }: { onFill: () => void; onClear: () => void }) {
+/** The rule name box, at the top of the rule page: clearly marked as required, filled in for a new rule ("My rule 24 Nov"), and the plain message when it is blank. */
+export function NameBox({ name, setName, message, inputRef }: { name: string; setName: (v: string) => void; message: string | null; inputRef: React.RefObject<HTMLInputElement | null> }) {
+  return (
+    <div className="space-y-1" data-testid="rule-name-box">
+      <label htmlFor="save-name" className="block text-sm font-semibold" data-testid="save-name-label">{NAME_LABEL}</label>
+      <input
+        id="save-name"
+        ref={inputRef}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        maxLength={60}
+        aria-required="true"
+        aria-invalid={message ? "true" : "false"}
+        className={`h-11 w-full rounded-lg border bg-surface px-3 text-sm placeholder:text-foreground-faint sm:max-w-sm ${message ? "border-accent" : "border-border"}`}
+        data-testid="save-name"
+      />
+      {message && <p className="text-sm font-medium" role="status" data-testid="save-name-message">{message}</p>}
+    </div>
+  );
+}
+
+/** Fill typical values and Clear all, above the steps, with the one-line note about where the numbers come from and, after Fill, how many fields were filled. */
+export function FillRow({ onFill, onClear, filledLine }: { onFill: () => void; onClear: () => void; filledLine?: string | null }) {
   return (
     <div className="space-y-1" data-testid="ladder-fill-row">
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
@@ -58,6 +80,11 @@ export function FillRow({ onFill, onClear }: { onFill: () => void; onClear: () =
         <button type="button" onClick={onClear} className="min-h-[44px] text-sm text-foreground-muted underline underline-offset-2 hover:text-foreground" data-testid="ladder-clear">{CLEAR_ALL}</button>
       </div>
       <p className="text-xs text-foreground-muted" data-testid="ladder-fill-note">{FILL_NOTE}</p>
+      {filledLine && (
+        <p className="text-xs text-foreground-muted" role="status" data-testid="ladder-fill-count">
+          <span className="font-medium text-foreground">{filledLine}.</span> {FILL_BLANK_NOTE}
+        </p>
+      )}
     </div>
   );
 }
@@ -77,25 +104,26 @@ interface BottomProps extends SavedState {
   onDeleted: () => void;
   /** A line said once, above the buttons (the opened rule has saved results made with the earlier values). */
   earlierLine: string | null;
+  /** The rule's name (the box is at the top of the page) and what to do when it is blank. */
+  name: string;
+  onNameMissing: () => void;
 }
 
 /** The bottom block of the rule page (after the steps, and at the end of step 7): the rule name box, Save, Delete (saved rules only) and ONE result button. */
-export function RuleBottomBlock({ rules, sort, left, saved, limit, reload, active, setActive, resultLabel, onResult, busy, noFilter, onDeleted, earlierLine }: BottomProps) {
+export function RuleBottomBlock({ rules, sort, left, saved, limit, reload, active, setActive, resultLabel, onResult, busy, noFilter, onDeleted, earlierLine, name, onNameMissing }: BottomProps) {
   const { user, getToken } = useAuth();
-  const [name, setName] = useState("");
   const [asking, setAsking] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<{ runs: RuleRun[] } | null>(null);
 
-  // the name box follows the opened rule
+  // a different rule was opened: the questions and messages start again
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setName(active ? active.name : "");
     setAsking(false);
     setDeleting(null);
     setMsg(null);
-  }, [active?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [active?.id]);
 
   const anyRule = hasAnyRule(rules);
   const changed = !!active && !sameRules(rules, active.base);
@@ -104,7 +132,7 @@ export function RuleBottomBlock({ rules, sort, left, saved, limit, reload, activ
     setMsg(null);
     setAsking(false);
     if (!anyRule) return setMsg("Set at least one rule first.");
-    if (mode === "new" && !wantedName.trim()) return setMsg("Give your rules a name first.");
+    if (!wantedName.trim()) return onNameMissing();
     if (mode === "new" && limit !== null && saved.length >= limit) return setMsg(LIMIT_REACHED(limit));
     setSaving(true);
     try {
@@ -121,7 +149,6 @@ export function RuleBottomBlock({ rules, sort, left, saved, limit, reload, activ
         setMsg(`Saved "${out.name}".`);
       }
       setActive({ id: out.id, name: out.name, base: rules });
-      setName(out.name);
       await reload();
     } catch (e) {
       setMsg(e instanceof ApiError && e.message ? e.message : e instanceof Error && e.message ? e.message : "The rules could not be saved right now.");
@@ -131,6 +158,7 @@ export function RuleBottomBlock({ rules, sort, left, saved, limit, reload, activ
   }
   function onSave() {
     setMsg(null);
+    if (!name.trim()) return onNameMissing();
     if (!anyRule) return setMsg("Set at least one rule first.");
     const action = saveAction(!!active, changed);
     if (action === "ask") return setAsking(true);
@@ -168,8 +196,6 @@ export function RuleBottomBlock({ rules, sort, left, saved, limit, reload, activ
       {earlierLine && <p className="text-sm text-foreground-muted" data-testid="earlier-values-line">{earlierLine}</p>}
       {user && (
         <>
-          <label htmlFor="save-name" className="sr-only">Name for these rules</label>
-          <input id="save-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} placeholder={NAME_PLACEHOLDER} className="h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm placeholder:text-foreground-faint" data-testid="save-name" />
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={onSave} disabled={saving} className="min-h-[44px] rounded-lg border border-accent px-4 text-sm font-semibold text-accent hover:bg-accent/10 disabled:opacity-60" data-testid="save-rules-button">{SAVE_BUTTON}</button>
             {active && <button type="button" onClick={() => void askDelete()} className={`${btn} text-foreground-muted`} data-testid="rule-delete">{DELETE_BUTTON}</button>}
