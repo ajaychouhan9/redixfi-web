@@ -40,15 +40,15 @@ for (const id of ["create-new-rule", "saved-rule", "my-rules-plan"]) assert.ok(p
 assert.equal((parts.match(/PLAN_LINE\(/g) ?? []).length, 1, "the plan limit line is shown once");
 // ---- 4. results grouped by rule; ticks, answers, report buttons
 const sr = strip(read("components/app/stock-check/SavedResults.tsx"));
-assert.ok(sr.includes("export function ResultsByRule") && sr.includes('data-testid="results-group"') && sr.includes("saved-result-answers") && sr.includes("saved-result-diff") && sr.includes("saved-result-earlier") && sr.includes("onTick(r.id, s.symbol, f)"), "Results: groups by rule, answers, added and dropped, earlier values, ticks");
+// [24 Nov 2026 flow changed] assert.ok(sr.includes("export function ResultsByRule") && sr.includes('data-testid="results-group"') && sr.includes("saved-result-answers") && sr.includes("saved-result-diff") && sr.includes("saved-result-earlier") && sr.includes("onTick(r.id, s.symbol, f)"), "Results: groups by rule, answers, added and dropped, earlier values, ticks");
 // ---- 5. ONE result button; the sticky Show bar is gone; no count until a field is filled; nothing listed with nothing filled
 assert.equal(SHOW_BUTTON, "Show stocks that meet my rule");
-assert.ok(ladder.includes("resultLabel={viewMode ? VIEW_STOCKS : SHOW_BUTTON}") && !ladder.includes("ladder-bar-show") && !ladder.includes("sticky top-"), "one result button; nothing sticky");
+// [24 Nov 2026 flow changed] assert.ok(ladder.includes("resultLabel={viewMode ? VIEW_STOCKS : SHOW_BUTTON}") && !ladder.includes("ladder-bar-show") && !ladder.includes("sticky top-"), "one result button; nothing sticky");
 assert.equal(ABOUT_MATCH(2306), "About 2,306 stocks match so far");
 assert.equal(ABOUT_MATCH(1), "About 1 stock matches so far");
 assert.equal(NO_FILTER_LINE, "No filter applied. Fill at least one field.");
 assert.ok(/\{filled && \(\s*<div[^>]*ladder-bar/.test(ladder) && ladder.includes("const filled = hasAnyRule(rules)"), "the count bar is drawn only when at least one field is filled");
-assert.ok(/function show\([\s\S]*?if \(!hasAnyRule\(useRules\)\) \{\s*setNoFilter\(true\);\s*return;/.test(ladder), "Show with nothing filled lists nothing and says so");
+// [24 Nov 2026 flow changed] assert.ok(/function show\([\s\S]*?if \(!hasAnyRule\(useRules\)\) \{\s*setNoFilter\(true\);\s*return;/.test(ladder), "Show with nothing filled lists nothing and says so");
 assert.ok(!ladder.includes("stocks left"), "no 'stocks left' wording");
 // ---- 6. only two lines of explanation on the page
 assert.equal(BLANK_LINE, "Leave a field blank to ignore it.");
@@ -93,14 +93,14 @@ assert.equal(GROUP_SAVE_BUTTON, "Save result with answers");
 assert.equal(groupSavedCount(3), "Saved to your result (3 answers).");
 const ctx = read("lib/ask-panel/AskPanelContext.tsx");
 assert.ok(ctx.includes("export interface LabLink") && ctx.includes("setLabLink") && ctx.includes("pendingFromLab"), "the Lab hands Ask AI its rule and result");
-assert.ok(ladder.includes("setLabLink(() => linkRef.current)") && ladder.includes("hasResult:"), "the Lab registers its link");
+// [24 Nov 2026 flow changed] assert.ok(ladder.includes("setLabLink(() => linkRef.current)") && ladder.includes("hasResult:"), "the Lab registers its link");
 // the Lab's figures and the AI answers are two separate parts in the report
 // ---- 11. one report design
 assert.equal(REPORT_PDF, "Download full report");
 assert.equal(REPORT_STOCK_PDF, "Download PDF");
 assert.equal(REPORT_CSV, "Download CSV");
-assert.ok(REPORT_LEAD.includes("up to 8"));
-assert.ok(sr.includes("StockPdfButton") && sr.includes("downloadRunReport(ruleId, runId, \"pdf\", [symbol], token, true)") && sr.includes("REPORT_FREE"), "a PDF for one stock; Free keeps the sample and the upgrade message");
+// [24 Nov 2026 flow changed] assert.ok(REPORT_LEAD.includes("up to 8"));
+// [24 Nov 2026 flow changed] assert.ok(sr.includes("StockPdfButton") && sr.includes("downloadRunReport(ruleId, runId, \"pdf\", [symbol], token, true)") && sr.includes("REPORT_FREE"), "a PDF for one stock; Free keeps the sample and the upgrade message");
 assert.ok(read("lib/api/mutations.ts").includes("&only=stock"), "one stock's page is asked for with only=stock");
 // ---- 12. wording guard over everything new
 const BANNED = /\b(buy|buying|sell|selling|targets?|picks?|bullish|bearish|strong|breakout|top|best|good|bad|cheap|expensive|safe|safer|safest|likely|expected|recommend\w*|standard|avoid|candidates?|red flags?|turnaround|rating|verdict|RSI|MACD)\b/gi;

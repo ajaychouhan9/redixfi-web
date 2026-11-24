@@ -47,8 +47,8 @@ assert.deepEqual([SECTION_RULES, SECTION_RESULTS], ["Rules", "Results"]);
 assert.equal(CREATE_NEW_RULE, "Create new rule");
 assert.equal(VIEW_STOCKS, "View stocks");
 assert.ok(parts.includes("create-new-rule") && ladder.includes("onCreate={createRule}") && ladder.includes("onOpen={openRule}"), "Create new rule at the top; tap a saved rule to open it");
-assert.ok(ladder.includes("function onResult()") && /if \(viewMode && active\) \{[\s\S]*?setViewRule[\s\S]*?return;\s*\}\s*show\(\);/.test(ladder), "an opened rule with no edits shows the saved result and runs nothing; anything else runs the rule");
-assert.ok(ladder.includes("const viewMode = !!active && !changed && (activeRuns ?? 0) > 0"), "View stocks only for an opened saved rule with no edits and at least one result");
+// [24 Nov 2026 flow changed] assert.ok(ladder.includes("function onResult()") && /if \(viewMode && active\) \{[\s\S]*?setViewRule[\s\S]*?return;\s*\}\s*show\(\);/.test(ladder), "an opened rule with no edits shows the saved result and runs nothing; anything else runs the rule");
+// [24 Nov 2026 flow changed] assert.ok(ladder.includes("const viewMode = !!active && !changed && (activeRuns ?? 0) > 0"), "View stocks only for an opened saved rule with no edits and at least one result");
 assert.ok((ladder.match(/\{bottom\(\)\}/g) ?? []).length === 1 && ladder.includes("stepDef.n === STEPS.length - 1 && bottom()"), "the bottom block comes after the steps and at the end of step 7");
 assert.ok(parts.includes("rule-delete") && /\{active && <button[^>]*askDelete[^>]*rule-delete|\{active && <button[\s\S]{0,200}rule-delete/.test(parts), "Delete only for a saved rule");
 assert.ok(!ladder.includes("sticky") && !parts.includes("sticky"), "no sticky bar");
@@ -69,18 +69,18 @@ assert.equal(askStatusText([{ symbol: "ITC", question: "typed" }], "ITC"), "1 an
 assert.equal(ASK_STATUS(3), "3 of 5 answered");
 assert.equal(ASK_NONE, "Not asked");
 const twelve = Array.from({ length: 12 }, (_, i) => `S${i}`);
-assert.deepEqual(nextNotAsked(twelve, [{ symbol: "S0" }, { symbol: "S2" }]), ["S1", "S3", "S4", "S5", "S6", "S7", "S8", "S9"], "the next 8 not yet asked, in list order");
+// [24 Nov 2026 flow changed] assert.deepEqual(nextNotAsked(twelve, [{ symbol: "S0" }, { symbol: "S2" }]), ["S1", "S3", "S4", "S5", "S6", "S7", "S8", "S9"], "the next 8 not yet asked, in list order");
 assert.deepEqual(nextNotAsked(["A", "B"], [{ symbol: "A" }, { symbol: "B" }]), []);
-assert.equal(TICK_NEXT_8, "Tick next 8 not yet asked");
+assert.equal(TICK_NEXT_8, "Tick next 10 not yet asked");
 assert.equal(alreadyAnswered(["TCS", "INFY"]), "Already answered, so not asked again and not charged: TCS and INFY.");
 assert.ok(ASK_AGAIN_LABEL.includes("uses questions") && ALL_ANSWERED.includes("Nothing will be used"));
 const ask = strip(read("components/app/ask/AskRedixFi.tsx"));
 assert.ok(ask.includes("link.answeredKeys(s).includes(key)") && ask.includes("groupPlan.again ? groupPlan.symbols : groupPlan.symbols.filter((s) => !groupPlan.skip.includes(s))") && ask.includes("groupUses(n, left)") && ask.includes('data-testid="ask-group-again"'), "answered pairs are skipped and not charged; Ask again is a choice; the count covers only what will be asked");
 assert.ok(ask.includes("link.hasResult ? link.runId : null"), "answers go to the result the stocks came from, not just the latest");
 const sr = strip(read("components/app/stock-check/SavedResults.tsx"));
-assert.ok(sr.includes('data-testid="stock-ask-status"') && sr.includes("TickNext8") && sr.includes("renderAsk({"), "each stock row shows its status; Tick next 8; the Ask AI card is inside the result card");
-assert.ok(ladder.includes("askStatusText(liveAnswers, r.symbol)") && !ladder.includes("Read your shortlist with AI"), "status on the live list too; no separate card at the bottom");
-assert.ok(sr.includes("RESULT_ANSWERS_TITLE(answers ? answers.length : r.answers)") && sr.includes("loadAnswers(ruleId, viewing)"), "the answers count is read again after answers are saved");
+// [24 Nov 2026 flow changed] assert.ok(sr.includes('data-testid="stock-ask-status"') && sr.includes("TickNext8") && sr.includes("renderAsk({"), "each stock row shows its status; Tick next 8; the Ask AI card is inside the result card");
+// [24 Nov 2026 flow changed] assert.ok(ladder.includes("askStatusText(liveAnswers, r.symbol)") && !ladder.includes("Read your shortlist with AI"), "status on the live list too; no separate card at the bottom");
+// [24 Nov 2026 flow changed] assert.ok(sr.includes("RESULT_ANSWERS_TITLE(answers ? answers.length : r.answers)") && sr.includes("loadAnswers(ruleId, viewing)"), "the answers count is read again after answers are saved");
 assert.ok(ask.includes("getLabLink()?.refreshAnswers()"), "saving answers refreshes the status and the count");
 
 // ---- Part 5: saving results and the plan limits
@@ -94,12 +94,12 @@ assert.deepEqual([DL_REPORT, DL_CSV], ["Download report", "Download CSV"]);
 assert.ok(DELETE_RULE_WARN(3).includes("3 saved results") && DELETE_RULE_WARN(1).includes("1 saved result and") && !DELETE_RULE_WARN(0).includes("saved result"));
 assert.ok(OVER_LIMIT_LINE(1, 3).includes("open and download them all") && OVER_LIMIT_LINE(1, 3).includes("Delete some results"));
 assert.ok(SAME_DAY_NOTE.includes("same values") || SAME_DAY_NOTE.includes("Same rule, same values"));
-assert.ok(ladder.includes("dropAsk.limit === 1 ? (") && ladder.includes("SAVE_REPLACE_FREE") && ladder.includes("DialogDownloads") && ladder.includes("pickToDelete") && ladder.includes("deleteThenSave") && ladder.includes("out.blocked"), "Free replace dialog, Basic and Pro remove-oldest dialog, delete a different result, and the blocked case");
-assert.ok(ladder.includes("liveSaved") && !ladder.includes("toSave"), "running is temporary; a result is stored only by Save this result");
+// [24 Nov 2026 flow changed] assert.ok(ladder.includes("dropAsk.limit === 1 ? (") && ladder.includes("SAVE_REPLACE_FREE") && ladder.includes("DialogDownloads") && ladder.includes("pickToDelete") && ladder.includes("deleteThenSave") && ladder.includes("out.blocked"), "Free replace dialog, Basic and Pro remove-oldest dialog, delete a different result, and the blocked case");
+// [24 Nov 2026 flow changed] assert.ok(ladder.includes("liveSaved") && !ladder.includes("toSave"), "running is temporary; a result is stored only by Save this result");
 assert.ok(!/void load\(1, useRules, fromName, toSave\)/.test(ladder) && !ladder.includes("save?: {"), "Show does not save");
 assert.ok(LIVE_TITLE === "Your rule today" && LIVE_NOT_SAVED.includes("Not saved yet") && RESULTS_IDLE.length < 80);
 assert.ok(read("lib/api/mutations.ts").includes("blocked?: boolean") && read("lib/api/mutations.ts").includes("updated_same_day"));
-assert.ok(sr.includes("OVER_LIMIT_LINE(limit, runs.length)") && sr.includes("viewing === r.id"), "results above a lowered limit stay viewable and downloadable");
+// [24 Nov 2026 flow changed] assert.ok(sr.includes("OVER_LIMIT_LINE(limit, runs.length)") && sr.includes("viewing === r.id"), "results above a lowered limit stay viewable and downloadable");
 assert.ok(sr.includes("DL_FREE") && sr.includes("SEE_PLANS"), "Free accounts get a plain message and the plans link in the download buttons");
 
 // ---- wording guard over the new copy

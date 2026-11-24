@@ -1,22 +1,25 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 
 import { ApiError } from "@/lib/api/client";
-import { deleteRuleRun, downloadRunReport, getRuleRun, listRuleRuns, type MyScreen, type RuleAnswer, type RuleRun } from "@/lib/api/mutations";
-import { ASK_GROUP_MAX, askStatusText, nextNotAsked } from "@/lib/ask-group";
+import { deleteRuleRun, downloadRunReport, getRuleRun, listRuleRuns, type MyScreen, type RuleRun } from "@/lib/api/mutations";
+import { reportOnScreen, reportsActive, type OnScreenReport, type ReportJob } from "@/lib/api/report";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { isPaidEntitled } from "@/lib/entitlements";
 import { fmtDay } from "@/lib/my-rules";
+import {
+  ADD_AI_LEAD, ADD_AI_MORE, BUILDING, BUILDING_LEAVE, DOWNLOAD, FREE_UPGRADE_DOWNLOAD, OPEN_ON_SCREEN, OPEN_REPORT, SEE_PRICING, SHELF_DELETE, SHELF_DELETE_CONFIRM, SHELF_DELETE_NOTE,
+  SHELF_KEEP, SHELF_NONE, SHELF_STOCKS_LINE, SHELF_TITLE,
+} from "@/lib/report-flow";
 import { SAMPLE_PDF_PATH, SAMPLE_REPORT } from "@/lib/rule-answers";
 import {
-  REPORT_CSV, REPORT_FAILED, REPORT_FREE, REPORT_LEAD, REPORT_PDF, REPORT_STOCK_PDF, RESULTS_NONE, RESULT_ANSWERS_NONE, RESULT_ANSWERS_TITLE, RESULT_COUNT_LINE, RESULT_DELETE,
-  RESULT_EARLIER, RESULT_GROUPS_NONE, RESULT_GROUP_COUNT, RESULT_HIDE, RESULT_LIMIT_LINE, RESULT_SINCE, RESULT_VIEW,
-  DL_CSV, DL_FREE, DL_REPORT, OVER_LIMIT_LINE, SAVED_RESULT_HINT, SEE_PLANS, TICK_NEXT_8, TICK_NEXT_NONE,
+  DL_CSV, DL_FREE, DL_REPORT, OVER_LIMIT_LINE, REPORT_CSV, REPORT_FAILED, RESULT_COUNT_LINE, RESULT_EARLIER, RESULT_GROUP_COUNT, RESULT_GROUPS_NONE, RESULT_LIMIT_LINE, SEE_PLANS,
 } from "@/lib/saved-results";
-import { AnswerItem } from "@/components/app/stock-check/RuleReport";
+import { ReportSheet, type EnsureOut } from "@/components/app/stock-check/ReportSheet";
+import { staticLoader, type NameItem } from "@/components/app/stock-check/StockNames";
 
 const btn = "min-h-[44px] rounded-lg border border-border px-3 text-sm font-medium hover:border-accent disabled:opacity-60";
 
@@ -35,74 +38,6 @@ function failText(e: unknown): string {
   const d = e instanceof ApiError ? (e.detail as { message?: string } | string | undefined) : undefined;
   if (typeof d === "string" && d) return d;
   return (d && typeof d === "object" && d.message) || REPORT_FAILED;
-}
-
-/** "Download full report" (PDF) and "Download CSV" for one saved result (paid plans and the Pro trial); Free accounts get the stored sample. The report covers the ticked stocks (up to 8). */
-export function ReportDownload({ ruleId, runId, selected }: { ruleId: string; runId: string; selected: string[] }) {
-  const { user, getToken } = useAuth();
-  const paid = isPaidEntitled(user);
-  const [busy, setBusy] = useState<string | null>(null);
-  const [msg, setMsg] = useState<string | null>(null);
-  async function report(kind: "pdf" | "csv") {
-    setBusy(kind);
-    setMsg(null);
-    try {
-      const token = await getToken();
-      if (!token) throw new Error("login");
-      const { blob, filename } = await downloadRunReport(ruleId, runId, kind, selected, token);
-      saveBlob(blob, filename ?? `redixfi-rule-report.${kind}`);
-    } catch (e) {
-      setMsg(failText(e));
-    } finally {
-      setBusy(null);
-    }
-  }
-  return (
-    <>
-      {paid ? (
-        <>
-          <button type="button" onClick={() => void report("pdf")} disabled={busy !== null} className={btn} data-testid="saved-result-pdf">{busy === "pdf" ? "Preparing…" : REPORT_PDF}</button>
-          <button type="button" onClick={() => void report("csv")} disabled={busy !== null} className={btn} data-testid="saved-result-csv">{busy === "csv" ? "Preparing…" : REPORT_CSV}</button>
-        </>
-      ) : (
-        <>
-          <a href={SAMPLE_PDF_PATH} target="_blank" rel="noopener noreferrer" className={`${btn} inline-flex items-center`} data-testid="saved-result-sample">{SAMPLE_REPORT}</a>
-          <span className="basis-full text-xs text-foreground-muted" data-testid="saved-result-free-note">{REPORT_FREE}</span>
-        </>
-      )}
-      {msg && <span className="basis-full text-sm text-foreground-muted" role="status" data-testid="saved-results-msg">{msg}</span>}
-    </>
-  );
-}
-
-/** "Download PDF" on one stock: the page of that one stock only (its figures and its five answers, or "Not asked yet"). Paid plans only. */
-export function StockPdfButton({ ruleId, runId, symbol }: { ruleId: string; runId: string; symbol: string }) {
-  const { user, getToken } = useAuth();
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
-  if (!isPaidEntitled(user)) return null;
-  async function go() {
-    setBusy(true);
-    setMsg(null);
-    try {
-      const token = await getToken();
-      if (!token) throw new Error("login");
-      const { blob, filename } = await downloadRunReport(ruleId, runId, "pdf", [symbol], token, true);
-      saveBlob(blob, filename ?? `redixfi-${symbol.toLowerCase()}.pdf`);
-    } catch (e) {
-      setMsg(failText(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <>
-      <button type="button" onClick={() => void go()} disabled={busy} className="inline-flex min-h-[44px] items-center rounded-lg border border-border px-4 text-sm font-medium hover:border-accent disabled:opacity-60" data-testid="stock-pdf" aria-label={`${REPORT_STOCK_PDF} for ${symbol}`}>
-        {busy ? "Preparing…" : REPORT_STOCK_PDF}
-      </button>
-      {msg && <span className="basis-full text-xs text-foreground-muted" role="status" data-testid="stock-pdf-msg">{msg}</span>}
-    </>
-  );
 }
 
 /** "Download report" and "Download CSV" for one result, used in the warnings before a result is replaced, removed or deleted with its rule. Free accounts get the plain message and the plans link. */
@@ -139,261 +74,277 @@ export function DialogDownloads({ ruleId, runId }: { ruleId: string; runId: stri
   );
 }
 
-/** The button that ticks the next 8 stocks not yet asked (only for lists longer than 8). */
-export function TickNext8({ symbols, answers, onSet }: { symbols: string[]; answers: RuleAnswer[] | null; onSet: (list: string[]) => void }) {
+/** The report of one result read on screen (every plan; Free cannot download). */
+function OnScreen({ ruleId, runId }: { ruleId: string; runId: string }) {
+  const { getToken } = useAuth();
+  const [rep, setRep] = useState<OnScreenReport | null>(null);
   const [none, setNone] = useState(false);
-  if (symbols.length <= ASK_GROUP_MAX) return null;
+  useEffect(() => {
+    (async () => {
+      try {
+        const token = await getToken();
+        if (!token) return;
+        const r = await reportOnScreen(token, ruleId, runId);
+        setRep(r.report);
+        setNone(r.answered_stocks === 0);
+      } catch {
+        setNone(true);
+      }
+    })();
+  }, [getToken, ruleId, runId]);
+  if (none) return <p className="mt-2 text-sm text-foreground-muted" data-testid="onscreen-none">This report has no AI answers yet.</p>;
+  if (!rep) return <p className="mt-2 text-sm text-foreground-muted">Loading…</p>;
   return (
-    <div className="flex flex-wrap items-center gap-2" data-testid="tick-next-8-wrap">
-      <button
-        type="button"
-        onClick={() => {
-          const next = nextNotAsked(symbols, answers);
-          setNone(next.length === 0);
-          if (next.length) onSet(next);
-        }}
-        className={btn}
-        data-testid="tick-next-8"
-      >
-        {TICK_NEXT_8}
-      </button>
-      {none && <span className="text-xs text-foreground-muted" role="status" data-testid="tick-next-none">{TICK_NEXT_NONE}</span>}
+    <div className="mt-2 space-y-3" data-testid="onscreen-report">
+      {rep.chosen.map((c) => (
+        <section key={c.symbol} className="rounded-lg border border-border p-3" data-testid="onscreen-stock">
+          <h5 className="text-sm font-semibold">{c.symbol}{c.company ? ` · ${c.company}` : ""}</h5>
+          <ul className="mt-2 space-y-3">
+            {c.slots.map((s) => (
+              <li key={s.question} className="text-sm">
+                <p className="font-medium">{s.question}</p>
+                {s.asked ? (
+                  <>
+                    <p className="text-xs text-foreground-muted">Answer as of {s.date || "date not available"}</p>
+                    <p className="mt-1 whitespace-pre-wrap">{s.text}</p>
+                    {s.sources.length > 0 && <p className="mt-1 text-xs text-foreground-muted">Sources: {s.sources.map((x) => x.label).filter(Boolean).join("; ")}</p>}
+                  </>
+                ) : (
+                  <p className="text-xs text-foreground-muted">Not asked yet</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
     </div>
   );
 }
 
-export interface AskSlot {
-  ruleId: string;
-  ruleName: string;
-  runId: string;
-  symbols: string[];
-}
-export interface ResultFocus {
-  ruleId: string;
-  ruleName: string;
-  runId: string;
-}
-
-interface Props {
-  ruleId: string;
-  ruleName: string;
-  /** Changes when a result was saved, so the list is read again. */
+interface ShelfProps {
+  rules: MyScreen[];
   refreshKey: number;
-  /** The stocks ticked in the card named `owner` (the run id), up to 8. */
-  selectedFor: (owner: string) => string[];
-  onTick: (owner: string, symbol: string, f: ResultFocus) => void;
-  onSetSelected: (owner: string, list: string[], f: ResultFocus) => void;
-  /** The Ask AI card shown inside an opened result. */
-  renderAsk: (slot: AskSlot) => ReactNode;
-  answersByRun: Record<string, RuleAnswer[]>;
-  loadAnswers: (ruleId: string, runId: string) => void;
-  /** Open the newest result of this rule by itself when this number changes (the "View stocks" button on the rule page). */
-  viewNonce: number;
-  /** Called when the list is read, so the rule page knows how many results the rule has. */
-  onCount?: (ruleId: string, n: number) => void;
+  /** A report finished or was added to: the shelf and the rule page read again. */
+  onChanged: () => void;
 }
 
-/** The results saved for one saved rule, newest first: date, number of stocks, figures date, "earlier values", what was added and dropped since the result before,
- *  the stocks with their Ask AI status, the Ask AI card, the answers and the reports. */
-export function SavedResults({ ruleId, ruleName, refreshKey, selectedFor, onTick, onSetSelected, renderAsk, answersByRun, loadAnswers, viewNonce, onCount }: Props) {
+/** One saved report on the shelf: its date, stocks and answers; Open PDF, Download, Add AI for more stocks, Delete. Free accounts read it on screen. */
+function ShelfCard({ rule, run, building, onChanged }: { rule: MyScreen; run: RuleRun; building: ReportJob | null; onChanged: () => void }) {
   const { user, getToken } = useAuth();
   const paid = isPaidEntitled(user);
-  const [runs, setRuns] = useState<RuleRun[] | null>(null);
-  const [limit, setLimit] = useState<number | null>(null);
-  const [viewing, setViewing] = useState<string | null>(null);
-  const [stocksByRun, setStocksByRun] = useState<Record<string, { symbol: string; company: string }[]>>({});
+  const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState(false);
+  const [screen, setScreen] = useState(false);
+  const [adding, setAdding] = useState<NameItem[] | null>(null);
 
-  const load = useCallback(async () => {
-    try {
-      const token = await getToken();
-      if (!token) return;
-      const r = await listRuleRuns(token, ruleId);
-      setRuns(r.runs);
-      setLimit(r.limit);
-      onCount?.(ruleId, r.runs.length);
-    } catch {
-      setMsg("The saved results could not be loaded right now.");
-    }
-  }, [getToken, ruleId, onCount]);
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void load();
-  }, [ruleId, refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const open = useCallback(async (id: string) => {
+  async function fetchReport(kind: "pdf" | "csv") {
+    const token = await getToken();
+    if (!token) throw new Error("login");
+    return downloadRunReport(rule.id, run.id, kind, [], token);
+  }
+  async function openPdf() {
+    setBusy("open");
     setMsg(null);
+    const w = window.open("", "_blank");
     try {
-      const token = await getToken();
-      if (!token) return;
-      const d = await getRuleRun(token, ruleId, id);
-      setStocksByRun((m) => ({ ...m, [id]: d.stocks.map((s) => ({ symbol: s.symbol, company: s.company })) }));
-      setViewing(id);
-      loadAnswers(ruleId, id);
-    } catch {
-      setMsg("That result could not be opened right now.");
-    }
-  }, [getToken, ruleId, loadAnswers]);
-  // "View stocks" on the rule page opens the newest result
-  const consumed = useRef(0);
-  useEffect(() => {
-    if (viewNonce > 0 && consumed.current !== viewNonce && runs && runs.length) {
-      consumed.current = viewNonce;
-      void open(runs[0].id);
-    }
-  }, [viewNonce, runs?.length]); // eslint-disable-line react-hooks/exhaustive-deps
-  // an open result reads its answers again when a result was saved or answers were added
-  useEffect(() => {
-    if (viewing) loadAnswers(ruleId, viewing);
-  }, [refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  async function remove(id: string) {
-    setConfirmDelete(null);
-    try {
-      const token = await getToken();
-      if (!token) return;
-      await deleteRuleRun(token, ruleId, id);
-      if (viewing === id) setViewing(null);
-      await load();
-    } catch {
-      setMsg("That result could not be removed right now.");
+      const { blob } = await fetchReport("pdf");
+      const url = URL.createObjectURL(blob);
+      if (w) w.location.href = url;
+      else saveBlob(blob, "redixfi-report.pdf");
+    } catch (e) {
+      w?.close();
+      setMsg(failText(e));
+    } finally {
+      setBusy(null);
     }
   }
+  async function download(kind: "pdf" | "csv") {
+    setBusy(kind);
+    setMsg(null);
+    try {
+      const { blob, filename } = await fetchReport(kind);
+      saveBlob(blob, filename ?? `redixfi-report.${kind}`);
+    } catch (e) {
+      setMsg(failText(e));
+    } finally {
+      setBusy(null);
+    }
+  }
+  async function remove() {
+    setConfirm(false);
+    try {
+      const token = await getToken();
+      if (!token) return;
+      await deleteRuleRun(token, rule.id, run.id);
+      onChanged();
+    } catch {
+      setMsg("That report could not be removed right now.");
+    }
+  }
+  async function openAdd() {
+    try {
+      const token = await getToken();
+      if (!token) return;
+      const d = await getRuleRun(token, rule.id, run.id);
+      setAdding(d.stocks.map((s) => ({ symbol: s.symbol, company: s.company })));
+    } catch {
+      setMsg("That report could not be opened right now.");
+    }
+  }
+  const ensure = useCallback(async (): Promise<EnsureOut> => ({ kind: "saved", ruleId: rule.id, runId: run.id }), [rule.id, run.id]);
+
+  return (
+    <li className="rounded-lg border border-border px-3 py-2 text-sm" data-testid="saved-result" data-run={run.id}>
+      <p className="font-medium" data-testid="saved-result-line">{RESULT_COUNT_LINE(fmtDay(run.run_date) ?? run.run_date, run.count, fmtDay(run.as_of))}</p>
+      <p className="text-xs text-foreground-muted" data-testid="saved-result-answers-line">{SHELF_STOCKS_LINE(run.count, run.answers)}</p>
+      {run.earlier_values && <p className="text-xs text-foreground-muted" data-testid="saved-result-earlier">{RESULT_EARLIER}</p>}
+      {building && (
+        <div className="mt-1" data-testid="saved-result-building" aria-live="polite">
+          <p className="text-xs font-medium">{BUILDING(building.done, building.total)}</p>
+          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-border"><div className="h-full bg-accent" style={{ width: `${building.progress_pct}%` }} /></div>
+          <p className="mt-1 text-xs text-foreground-muted">{BUILDING_LEAVE}</p>
+        </div>
+      )}
+      <div className="mt-2 flex flex-wrap gap-2">
+        {paid ? (
+          <>
+            <button type="button" onClick={() => void openPdf()} disabled={busy !== null} className={btn} data-testid="shelf-open-pdf">{busy === "open" ? "Preparing…" : OPEN_REPORT}</button>
+            <button type="button" onClick={() => void download("pdf")} disabled={busy !== null} className={btn} data-testid="shelf-download">{busy === "pdf" ? "Preparing…" : DOWNLOAD}</button>
+            <button type="button" onClick={() => void download("csv")} disabled={busy !== null} className={btn} data-testid="shelf-download-csv">{busy === "csv" ? "Preparing…" : REPORT_CSV}</button>
+          </>
+        ) : (
+          <button type="button" onClick={() => setScreen((s) => !s)} aria-expanded={screen} className={btn} data-testid="shelf-open-screen">{OPEN_ON_SCREEN}</button>
+        )}
+        <button type="button" onClick={() => void openAdd()} disabled={!!building} className={btn} data-testid="shelf-add-ai">{ADD_AI_MORE}</button>
+        {confirm ? (
+          <>
+            <button type="button" onClick={() => void remove()} className={`${btn} border-accent`} data-testid="saved-result-delete-confirm">{SHELF_DELETE_CONFIRM}</button>
+            <button type="button" onClick={() => setConfirm(false)} className={btn}>{SHELF_KEEP}</button>
+          </>
+        ) : (
+          <button type="button" onClick={() => setConfirm(true)} className={`${btn} text-foreground-muted`} data-testid="saved-result-delete">{SHELF_DELETE}</button>
+        )}
+      </div>
+      {!paid && (
+        <p className="mt-1 text-xs text-foreground-muted" data-testid="shelf-free-note">
+          {FREE_UPGRADE_DOWNLOAD} <Link href="/pricing" className="font-medium text-accent hover:underline" data-testid="upgrade-link">{SEE_PRICING}</Link>{" "}
+          <a href={SAMPLE_PDF_PATH} target="_blank" rel="noopener noreferrer" className="font-medium text-accent hover:underline" data-testid="saved-result-sample">{SAMPLE_REPORT}</a>
+        </p>
+      )}
+      {confirm && <p className="mt-1 text-xs text-foreground-muted" data-testid="saved-result-delete-note">{SHELF_DELETE_NOTE}</p>}
+      {screen && !paid && <OnScreen ruleId={rule.id} runId={run.id} />}
+      {adding && (
+        <div className="mt-2 space-y-2" data-testid="shelf-add-sheet">
+          <p className="text-xs text-foreground-muted">{ADD_AI_LEAD}</p>
+          <ReportSheet
+            ruleName={rule.name}
+            forResult={{ ruleId: rule.id, runId: run.id }}
+            ensure={ensure}
+            needsName={false}
+            loader={staticLoader(adding)}
+            loadKey={run.id}
+            total={adding.length}
+            onClose={() => setAdding(null)}
+            onDone={onChanged}
+          />
+        </div>
+      )}
+      {msg && <p className="mt-1 text-sm text-foreground-muted" role="status" data-testid="saved-results-msg">{msg}</p>}
+    </li>
+  );
+}
+
+function RuleShelf({ rule, refreshKey, jobs, onChanged }: { rule: MyScreen; refreshKey: number; jobs: ReportJob[]; onChanged: () => void }) {
+  const { getToken } = useAuth();
+  const [runs, setRuns] = useState<RuleRun[] | null>(null);
+  const [limit, setLimit] = useState<number | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        const token = await getToken();
+        if (!token) return;
+        const r = await listRuleRuns(token, rule.id);
+        setRuns(r.runs);
+        setLimit(r.limit);
+      } catch {
+        setMsg("The saved reports could not be loaded right now.");
+      }
+    })();
+  }, [rule.id, refreshKey, getToken, jobs.length]);
   if (runs === null) return msg ? <p className="text-sm text-foreground-muted" role="status">{msg}</p> : null;
   const over = limit !== null && runs.length > limit;
   return (
-    <section className="space-y-3" aria-label={`Saved results for ${ruleName}`} data-testid="saved-results">
+    <section className="space-y-2" aria-label={`Saved reports for ${rule.name}`} data-testid="saved-results">
       <p className="text-xs text-foreground-muted" data-testid="saved-results-limit">{limit !== null ? RESULT_LIMIT_LINE(limit, runs.length) : ""}</p>
       {over && limit !== null && <p className="text-sm text-foreground-muted" role="status" data-testid="saved-results-over">{OVER_LIMIT_LINE(limit, runs.length)}</p>}
-      {runs.length === 0 && <p className="text-sm text-foreground-muted" data-testid="saved-results-none">{RESULTS_NONE}</p>}
+      {runs.length === 0 && <p className="text-sm text-foreground-muted" data-testid="saved-results-none">{SHELF_NONE}</p>}
       <ul className="space-y-2">
-        {runs.map((r) => {
-          const stocks = stocksByRun[r.id] ?? [];
-          const answers = answersByRun[r.id] ?? null;
-          const f = { ruleId, ruleName, runId: r.id };
-          const sel = selectedFor(r.id);
+        {runs.map((r) => (
+          <ShelfCard key={r.id} rule={rule} run={r} building={jobs.find((j) => j.run_id === r.id) ?? null} onChanged={onChanged} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** The Results page: a shelf of saved reports, grouped by rule and date. Reports still building show a progress bar and appear here when ready. */
+export function ResultsShelf({ rules, refreshKey, onChanged }: ShelfProps) {
+  const { getToken } = useAuth();
+  const [openIds, setOpenIds] = useState<string[]>([]);
+  const [jobs, setJobs] = useState<ReportJob[]>([]);
+  // reports still building: read every few seconds while there are any
+  useEffect(() => {
+    let live = true;
+    let timer = 0;
+    async function tick() {
+      try {
+        const token = await getToken();
+        if (!token) return;
+        const j = await reportsActive(token);
+        if (!live) return;
+        setJobs((prev) => {
+          if (prev.length > 0 && j.length < prev.length) onChanged();
+          return j;
+        });
+        timer = window.setTimeout(tick, j.length ? 4000 : 15000);
+      } catch {
+        if (live) timer = window.setTimeout(tick, 20000);
+      }
+    }
+    void tick();
+    return () => {
+      live = false;
+      window.clearTimeout(timer);
+    };
+  }, [getToken, refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const toggle = (id: string) => setOpenIds((l) => (l.includes(id) ? l.filter((x) => x !== id) : [...l, id]));
+  return (
+    <section className="space-y-2" aria-labelledby="saved-results-title" data-testid="saved-results-by-rule">
+      <h3 id="saved-results-title" className="text-base font-semibold" data-testid="shelf-title">{SHELF_TITLE}</h3>
+      {rules.length === 0 && <p className="text-sm text-foreground-muted" data-testid="saved-results-groups-none">{RESULT_GROUPS_NONE}</p>}
+      <ul className="space-y-2">
+        {rules.map((r) => {
+          const building = jobs.some((j) => j.rule_id === r.id);
+          const open = openIds.includes(r.id) || building;
           return (
-            <li key={r.id} className={`rounded-lg border px-3 py-2 text-sm ${viewing === r.id ? "border-accent" : "border-border"}`} data-testid="saved-result" data-run={r.id}>
-              <p className="font-medium" data-testid="saved-result-line">{RESULT_COUNT_LINE(fmtDay(r.run_date) ?? r.run_date, r.count, fmtDay(r.as_of))}</p>
-              {r.earlier_values && <p className="text-xs text-foreground-muted" data-testid="saved-result-earlier">{RESULT_EARLIER}</p>}
-              {r.added !== null && r.dropped !== null && <p className="text-xs text-foreground-muted" data-testid="saved-result-diff">{RESULT_SINCE(fmtDay(r.since) ?? "", r.added, r.dropped)}</p>}
-              <div className="mt-2 flex flex-wrap gap-2">
-                <button type="button" onClick={() => (viewing === r.id ? setViewing(null) : void open(r.id))} aria-expanded={viewing === r.id} className={btn} data-testid="saved-result-view">{viewing === r.id ? RESULT_HIDE : RESULT_VIEW}</button>
-                <ReportDownload ruleId={ruleId} runId={r.id} selected={sel} />
-                {confirmDelete === r.id ? (
-                  <>
-                    <button type="button" onClick={() => void remove(r.id)} className={`${btn} border-accent`} data-testid="saved-result-delete-confirm">{RESULT_DELETE}</button>
-                    <button type="button" onClick={() => setConfirmDelete(null)} className={btn}>Keep it</button>
-                  </>
-                ) : (
-                  <button type="button" onClick={() => setConfirmDelete(r.id)} className={`${btn} text-foreground-muted`} data-testid="saved-result-delete">Delete</button>
-                )}
-              </div>
-              {confirmDelete === r.id && <p className="mt-1 text-xs text-foreground-muted" data-testid="saved-result-delete-note">The Ask AI answers saved with this result are deleted too.</p>}
-              {viewing === r.id && (
-                <div className="mt-2 space-y-3" data-testid="saved-result-stocks">
-                  <div className="space-y-2">
-                    <p className="text-xs text-foreground-muted">{SAVED_RESULT_HINT}</p>
-                    <TickNext8 symbols={stocks.map((s) => s.symbol)} answers={answers} onSet={(l) => onSetSelected(r.id, l, f)} />
-                    <ul className="max-h-72 divide-y divide-border overflow-y-auto rounded-lg border border-border">
-                      {stocks.map((s) => (
-                        <li key={s.symbol} className="flex flex-wrap items-center gap-x-2 px-3" data-testid="result-stock">
-                          <label className="flex min-h-[44px] min-w-0 flex-1 items-center gap-2 text-sm">
-                            <input type="checkbox" checked={sel.includes(s.symbol)} onChange={() => onTick(r.id, s.symbol, f)} className="h-5 w-5 shrink-0" aria-label={`Select ${s.symbol}`} />
-                            <span className="font-medium">{s.symbol}</span>
-                            <span className="min-w-0 truncate text-foreground-muted">{s.company}</span>
-                          </label>
-                          <span className="text-xs text-foreground-muted" data-testid="stock-ask-status">{askStatusText(answers, s.symbol)}</span>
-                          {paid && <StockPdfButton ruleId={ruleId} runId={r.id} symbol={s.symbol} />}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  {renderAsk({ ruleId, ruleName, runId: r.id, symbols: stocks.map((s) => s.symbol) })}
-                  <div data-testid="saved-result-answers">
-                    <p className="flex items-center gap-1 text-sm font-semibold"><ChevronDown size={14} aria-hidden /> {RESULT_ANSWERS_TITLE(answers ? answers.length : r.answers)}</p>
-                    {answers && answers.length === 0 && <p className="mt-1 text-xs text-foreground-muted" data-testid="saved-result-answers-none">{RESULT_ANSWERS_NONE}</p>}
-                    {answers && answers.length > 0 && (
-                      <ul className="mt-2 space-y-2">
-                        {answers.map((a) => (
-                          <AnswerItem key={a.id} a={a} onRemove={() => undefined} readOnly />
-                        ))}
-                      </ul>
-                    )}
-                  </div>
+            <li key={r.id} className="rounded-xl border border-border bg-surface" data-testid="results-group" data-rule={r.id}>
+              <button type="button" onClick={() => toggle(r.id)} aria-expanded={open} className="flex min-h-[48px] w-full items-center justify-between gap-3 px-4 py-2 text-left" data-testid="results-group-toggle">
+                <span className="min-w-0 break-words text-sm font-semibold">{r.name}</span>
+                <span className="flex shrink-0 items-center gap-2 text-xs text-foreground-muted">
+                  {RESULT_GROUP_COUNT}
+                  <ChevronDown size={14} className={open ? "rotate-180" : ""} aria-hidden />
+                </span>
+              </button>
+              {open && (
+                <div className="border-t border-border px-4 pb-4 pt-3">
+                  <RuleShelf rule={r} refreshKey={refreshKey} jobs={jobs.filter((j) => j.rule_id === r.id)} onChanged={onChanged} />
                 </div>
               )}
             </li>
           );
         })}
-      </ul>
-      <p className="text-xs text-foreground-muted" data-testid="saved-results-report-note">{paid ? REPORT_LEAD : REPORT_FREE}</p>
-      {msg && <p className="text-sm text-foreground-muted" role="status" data-testid="saved-results-msg">{msg}</p>}
-    </section>
-  );
-}
-
-interface GroupsProps {
-  rules: MyScreen[];
-  /** The rule page's open rule (its group starts opened) and the "View stocks" request. */
-  activeId: string | null;
-  viewRule: { ruleId: string; nonce: number } | null;
-  refreshKey: number;
-  selectedFor: (owner: string) => string[];
-  onTick: Props["onTick"];
-  onSetSelected: Props["onSetSelected"];
-  renderAsk: Props["renderAsk"];
-  answersByRun: Record<string, RuleAnswer[]>;
-  loadAnswers: (ruleId: string, runId: string) => void;
-  onCount?: Props["onCount"];
-}
-
-/** The saved results of every saved rule, grouped by rule (newest result first inside each, with its date). The rule being viewed starts opened. */
-export function ResultsByRule({ rules, activeId, viewRule, refreshKey, selectedFor, onTick, onSetSelected, renderAsk, answersByRun, loadAnswers, onCount }: GroupsProps) {
-  const [openIds, setOpenIds] = useState<string[]>([]);
-  const startId = viewRule?.ruleId ?? activeId;
-  const isOpen = (id: string) => openIds.includes(id) || (startId === id && !openIds.includes(`-${id}`));
-  function toggle(id: string) {
-    setOpenIds((l) => {
-      const open = isOpen(id);
-      const cleaned = l.filter((x) => x !== id && x !== `-${id}`);
-      return open ? [...cleaned, `-${id}`] : [...cleaned, id];
-    });
-  }
-  return (
-    <section className="space-y-2" aria-labelledby="saved-results-title" data-testid="saved-results-by-rule">
-      <h3 id="saved-results-title" className="text-base font-semibold">Saved results</h3>
-      {rules.length === 0 && <p className="text-sm text-foreground-muted" data-testid="saved-results-groups-none">{RESULT_GROUPS_NONE}</p>}
-      <ul className="space-y-2">
-        {rules.map((r) => (
-          <li key={r.id} className="rounded-xl border border-border bg-surface" data-testid="results-group" data-rule={r.id}>
-            <button type="button" onClick={() => toggle(r.id)} aria-expanded={isOpen(r.id)} className="flex min-h-[48px] w-full items-center justify-between gap-3 px-4 py-2 text-left" data-testid="results-group-toggle">
-              <span className="min-w-0 break-words text-sm font-semibold">{r.name}</span>
-              <span className="flex shrink-0 items-center gap-2 text-xs text-foreground-muted">
-                {RESULT_GROUP_COUNT}
-                <ChevronDown size={14} className={isOpen(r.id) ? "rotate-180" : ""} aria-hidden />
-              </span>
-            </button>
-            {isOpen(r.id) && (
-              <div className="border-t border-border px-4 pb-4 pt-3">
-                <SavedResults
-                  ruleId={r.id}
-                  ruleName={r.name}
-                  refreshKey={refreshKey}
-                  selectedFor={selectedFor}
-                  onTick={onTick}
-                  onSetSelected={onSetSelected}
-                  renderAsk={renderAsk}
-                  answersByRun={answersByRun}
-                  loadAnswers={loadAnswers}
-                  viewNonce={viewRule && viewRule.ruleId === r.id ? viewRule.nonce : 0}
-                  onCount={onCount}
-                />
-              </div>
-            )}
-          </li>
-        ))}
       </ul>
     </section>
   );

@@ -282,7 +282,7 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
             ))}
           </tbody>
         </table>
-        <p className="px-3 py-2 text-xs text-foreground-faint">Every higher plan includes everything the plan below it has. A 5-day Pro trial is free once per account, with no payment details.</p>
+        <p className="px-3 py-2 text-xs text-foreground-faint">Every higher plan includes everything the plan below it has. A 5-day Pro trial is free once per account, with no payment details. During the trial you get 25 questions a day, shared by chat and reports.</p>
       </div>
 
       <div className="mt-6" id="ask-topup" data-testid="pricing-topup">

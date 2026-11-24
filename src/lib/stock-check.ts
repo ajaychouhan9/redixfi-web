@@ -6,7 +6,7 @@ import type { SharedScreenParams } from "@/lib/api/types";
 
 export const PAGE_TITLE = "Shortlist Lab";
 export const PAGE_SUBTITLE = "Set your rules. Read the result.";
-export const SEO_TITLE = "Shortlist Lab: set your rules, read the result | RedixFi";
+export const SEO_TITLE = "Shortlist Lab: set your rules, read the result";
 export const MENU_LABEL = "Shortlist Lab";
 export const HOME_BUTTON = "New to stocks? Learn the 5 questions";
 export const LADDER_TITLE = "Build Your Shortlist";
@@ -454,4 +454,26 @@ export function stepSetCount(r: Rules, step: number): number {
   if (step === 4 && volOn(r)) n += 1;
   if (step === 6) n += (chgOn(r) ? 1 : 0) + (avgOn(r) ? 1 : 0);
   return n;
+}
+
+
+/** The rules with every step after `n` blanked, so a list built from them is the stocks left after step n (0 to 6). */
+export function rulesUpTo(r: Rules, n: number): Rules {
+  const out: Rules = { ...r };
+  for (const d of RULES) {
+    if (d.step > n) (out as unknown as Record<string, unknown>)[d.key] = (EMPTY_RULES as unknown as Record<string, unknown>)[d.key];
+  }
+  if (n < 4) {
+    out.vol = "";
+    out.volNum = "";
+    out.volRatio = "";
+  }
+  if (n < 6) {
+    out.chgMonths = "";
+    out.chgMin = "";
+    out.avgDays = "";
+    out.near52 = "";
+    out.volDay = "";
+  }
+  return out;
 }

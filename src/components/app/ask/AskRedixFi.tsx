@@ -22,6 +22,7 @@ import { restoreAskMessages, type AskRenderableMessage } from "@/lib/ask-panel/h
 import { ASK_PANEL_WIDTHS, type AskPanelMode } from "@/lib/ask-panel/panelMode";
 import { AddToShortlistButton } from "@/components/app/ask/AddToShortlistButton";
 import { FREE_ASK_LINE, daysAvailableNote } from "@/lib/ask-panel/howToAsk";
+import { fmtDay } from "@/lib/my-rules";
 import { displayName } from "@/lib/company-name";
 import { useMobileViewport } from "@/lib/ask-panel/useMobileViewport";
 import { resolveVisibleChatSymbol } from "@/lib/ask-panel/contextHeader";
@@ -207,9 +208,15 @@ function AskQuota({ usage, detailed = false }: { usage: AskUsageInfo | null; det
   }
 
   const dailyRemaining = Math.max(0, (usage.daily_limit ?? 0) - (usage.daily_used ?? 0));
+  const poolLeft = typeof usage.chat_limit === "number" ? Math.max(0, usage.chat_limit - (usage.chat_used ?? 0)) : null;
   return (
     <div className={detailed ? "space-y-3" : "space-y-2"}>
       <QuotaBar label="Today" remaining={dailyRemaining} limit={usage.daily_limit} />
+      {poolLeft !== null && (
+        <p className="text-[11.5px] text-foreground-faint" data-testid="chat-pool-line">
+          Chat questions this month: {poolLeft} left of {usage.chat_limit}.{usage.resets_on ? ` They reset on ${fmtDay(usage.resets_on) ?? usage.resets_on}.` : ""}
+        </p>
+      )}
     </div>
   );
 }
@@ -263,7 +270,7 @@ export function AskRedixFi() {
   // Stocks picked from a Stock Check shortlist ("Ask AI about these stocks"): shown at the top of a new session with the five questions as suggestions.
   const [stockGroup, setStockGroup] = useState<string[] | null>(null);
   const [groupFocus, setGroupFocus] = useState<string | null>(null);
-  // A question for 2 to 8 stocks waiting for the person to confirm the number of questions it will use, and the progress while it runs.
+  // A question for 2 to 10 stocks waiting for the person to confirm the number of questions it will use, and the progress while it runs.
   const [groupPlan, setGroupPlan] = useState<{ key: string | null; text: string; symbols: string[]; skip: string[]; again: boolean } | null>(null);
   const [groupRun, setGroupRun] = useState<{ done: number; total: number } | null>(null);
   // The stocks came from the Shortlist Lab, so their answers may be saved to a rule's result; the name typed for a rule that is not saved yet.
@@ -647,7 +654,7 @@ export function AskRedixFi() {
     );
   }
 
-  // ---- one question for 2 to 8 stocks (22 Nov 2026) ----------------------------------------------------------------------------------------------
+  // ---- one question for 2 to 10 stocks (22 Nov 2026) ----------------------------------------------------------------------------------------------
   /** Ask to confirm first: "This will use N questions. You have M left." Nothing is sent until the person confirms. */
   function planGroup(key: string | null, text: string) {
     if (!stockGroup || stockGroup.length < 2 || busy) return;
@@ -660,7 +667,7 @@ export function AskRedixFi() {
     setGroupPlan({ key, text, symbols: [...stockGroup], skip, again: false });
     refreshUsage();
   }
-  /** The Send box and the Enter key: with 2 to 8 stocks in the session, a typed question is asked for every stock the same way. */
+  /** The Send box and the Enter key: with 2 to 10 stocks in the session, a typed question is asked for every stock the same way. */
   function submit(text: string) {
     if (!text.trim() || busy || authLoading) return;
     if (stockGroup && stockGroup.length >= 2) {
@@ -1348,7 +1355,7 @@ export function AskRedixFi() {
                     onKeyDown={(e) => e.key === "Enter" && submit(input)}
                     onFocus={() => setInputFocused(true)}
                     onBlur={() => setInputFocused(false)}
-                    placeholder={authLoading ? "Loading your account…" : "Ask about a stock, a sector, or up to 8 stocks"}
+                    placeholder={authLoading ? "Loading your account…" : "Ask about a stock, a sector, or up to 10 stocks"}
                     disabled={busy || authLoading}
                     className="flex-1 rounded-lg border border-border bg-hover px-3 py-2 text-sm outline-none disabled:opacity-60"
                   />

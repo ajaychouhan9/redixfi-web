@@ -639,7 +639,7 @@ export async function getRuleRun(token: string, ruleId: string, runId: string) {
 export async function deleteRuleRun(token: string, ruleId: string, runId: string): Promise<void> {
   await apiMutate<{ deleted: boolean }>(runPath(ruleId, runId), "DELETE", undefined, { token });
 }
-/** The combined report of one result (paid plans and the Pro trial). `symbols` are the chosen stocks (up to 8). */
+/** The combined report of one result (paid plans and the Pro trial). `symbols` are the chosen stocks (up to 10). */
 export const downloadRunReport = (ruleId: string, runId: string, kind: "pdf" | "csv", symbols: string[], token: string, onlyStock = false) =>
   apiGetBlob(`${runPath(ruleId, runId)}/report.${kind}${symbols.length ? `?symbols=${encodeURIComponent(symbols.join(","))}${onlyStock ? "&only=stock" : ""}` : ""}`, { token });
 

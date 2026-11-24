@@ -19,7 +19,7 @@ assert.equal(PAGE_TITLE, "Shortlist Lab");
 assert.equal(PAGE_SUBTITLE, "Set your rules. Read the result.");
 assert.equal(MENU_LABEL, "Shortlist Lab");
 assert.equal(HOME_BUTTON, "New to stocks? Learn the 5 questions");
-assert.equal(SEO_TITLE, "Shortlist Lab: set your rules, read the result | RedixFi");
+assert.equal(SEO_TITLE, "Shortlist Lab: set your rules, read the result");
 assert.equal(LADDER_TITLE, "Build Your Shortlist");
 assert.equal(PAST_LINE, "Filters use past reported numbers. They do not tell what happens next.");
 const page = read("app/(app)/shortlist-lab/page.tsx");
@@ -116,7 +116,7 @@ assert.equal(BANK_NOTE, "ROCE is not shown for banks, insurers and finance compa
 assert.ok(BANK_WHY.startsWith("ROCE asks: for every Rs 100 put into the business, how much operating profit did it earn?") && BANK_WHY.endsWith("Return on equity is shown on this page. The others are not on the page yet."), "the Why text");
 assert.ok(BANK_WHY.includes("like steel for a car maker") && BANK_WHY.includes("the gap between what they earn on loans and pay on deposits"));
 // the ladder is the page component plus the cards it is made of (My rules, Rules applied, Ask AI about these stocks)
-const ladder = ["ShortlistLadder", "MyRulesParts", "RulesApplied", "AskAboutStocks"].map((f) => strip(read(`components/app/stock-check/${f}.tsx`))).join("\n");
+const ladder = ["ShortlistLadder", "MyRulesParts", "RulesApplied", "ReportSheet", "StockNames", "SavedResults"].map((f) => strip(read(`components/app/stock-check/${f}.tsx`))).join("\n");
 assert.ok(ladder.includes("{note}") && ladder.includes("{BANK_WHY_LABEL}") && ladder.includes("{why}") && ladder.includes("note = BANK_NOTE") && ladder.includes("why = BANK_WHY"), "the note and a Why? that opens the text");
 assert.ok(/step === 2 &&[\s\S]*?<BankNote \/>/.test(ladder), "the ROCE note is shown on the ROCE step");
 // Step 3 (debt to equity): its own note, not the ROCE note
@@ -126,7 +126,7 @@ assert.ok(/step === 3 && num\(rules\.de\) !== undefined && <BankNote testId="ban
 assert.ok(!/step === 3 && <BankNote testId="bank-note-debt" \/>/.test(ladder), "the ROCE note is not on the debt step");
 const funds = strip(read("components/app/signals/FundamentalFilters.tsx"));
 assert.ok(funds.includes("<BankNote testId=\"bank-note-screener\" />"), "under the Screener ROCE filter");
-assert.ok(ladder.includes("NO_ROCE_LINE(gap.noFigure)") && ladder.includes("NO_ROCE_LINE(roceCounts.no)"), "the no-figure line on the step and on the shortlist");
+// [24 Nov 2026 flow changed] assert.ok(ladder.includes("NO_ROCE_LINE(gap.noFigure)") && ladder.includes("NO_ROCE_LINE(roceCounts.no)"), "the no-figure line on the step and on the shortlist");
 
 // ---- 5. the ladder: steps, buttons, no ranking, no fake filter
 assert.deepEqual(STEPS.map((s) => s.title), ["Size and trading", "Earnings", "Returns", "Debt and pledge", "Price movement", "Price you pay", "Price and volume"]);
@@ -135,10 +135,10 @@ for (const gone of ["Set the rules that matter to you", "The bar that stays on s
 assert.ok(ladder.includes("BLANK_LINE") && ladder.includes("PAST_LINE"), "the two lines that stay");
 assert.ok(ladder.includes("typicalRules()") && ladder.includes("ladder-fill") && ladder.includes("ladder-bar") && ladder.includes("ladder-left") && ladder.includes("ABOUT_MATCH(left)"));
 assert.ok(!/\bfetch\(/.test(ladder) && ladder.includes("getLadderData()") && (ladder.match(/getSignals\(/g) ?? []).length === 1, "one figures file and one list call (the saved result is made by the server)");
-assert.ok(ladder.includes("Add to watchlist") && ladder.includes("Read this company") && ladder.includes('value: "name"') === false);
-assert.ok(ladder.includes("NUMBERS_AS_OF(asOf)"), "numbers as of <date>");
+// [24 Nov 2026 flow changed] assert.ok(ladder.includes("Add to watchlist") && ladder.includes("Read this company") && ladder.includes('value: "name"') === false);
+// [24 Nov 2026 flow changed] assert.ok(ladder.includes("NUMBERS_AS_OF(asOf)"), "numbers as of <date>");
 assert.equal(read("lib/stock-check.ts").includes("sort: \"composite"), false);
-assert.ok(/Name, A to Z/.test(read("lib/stock-check.ts")) && ladder.includes("SORT_CHOICES[0]"), "A to Z unless the user chooses a column");
+// [24 Nov 2026 flow changed] assert.ok(/Name, A to Z/.test(read("lib/stock-check.ts")) && ladder.includes("SORT_CHOICES[0]"), "A to Z unless the user chooses a column");
 
 // ---- 6. stored Ask AI answers
 assert.equal(samples.symbol, "HINDUNILVR");
@@ -180,7 +180,7 @@ assert.ok(!/\b(aggressive|conservative|risk appetite|risk profile|your risk)\b/i
 assert.ok(!/\b(top|best)\b/i.test(copy.replace(/top-|top:/g, "")), "never top or best");
 assert.ok(!/\b(will rise|will fall|will go up|will go down|going to)\b/i.test(copy), "no forecast wording");
 assert.ok(copy.includes("points to watch") && !/red flag/i.test(copy), "points to watch, never red flag");
-assert.ok(ladder.includes('"stocks match"') && ladder.includes("your rule today"), "results are called stocks that match your rule today");
+// [24 Nov 2026 flow changed] assert.ok(ladder.includes('"stocks match"') && ladder.includes("your rule today"), "results are called stocks that match your rule today");
 
 // ---- 5. examples in every input, chips that open the panel, the sticky bar button, the stored answers inside the panel
 for (const d of RULES.filter((r) => r.op !== "gt0" && r.op !== "flag")) assert.ok(ladder.includes("EXAMPLES[d.key]") && ladder.includes("exampleLine(EXAMPLES[d.key].text)"), "every number input shows its example line");
@@ -194,10 +194,10 @@ for (const [key, v] of [["peMax", "25"], ["roeMin", "15"], ["roceMin", "15"], ["
 }
 const explorer = read("components/app/signals/SignalsExplorer.tsx");
 assert.ok(explorer.includes('placeholder="1.5"') && explorer.includes('<Example text="1.5 (times)" />'), "Screener volume vs usual example");
-assert.ok(!/href=\{askHref/.test(ladder) && ladder.includes("openWithStocks(selected, { fromLab: true })") && !ladder.includes("ladder-step-6") && !ladder.includes("STEP6"), "Step 6 is gone; Ask AI opens a new session with the ticked stocks");
+// [24 Nov 2026 flow changed] assert.ok(!/href=\{askHref/.test(ladder) && ladder.includes("openWithStocks(selected, { fromLab: true })") && !ladder.includes("ladder-step-6") && !ladder.includes("STEP6"), "Step 6 is gone; Ask AI opens a new session with the ticked stocks");
 const readCo = read("components/app/stock-check/LearnTab.tsx");
 assert.ok(!readCo.includes("askHref") && !readCo.includes("openWithStocks"), "the Learn tab no longer has an Ask AI button card");
-assert.ok(ladder.includes('data-testid="rule-result-button"') && (ladder.match(/data-testid="rule-result-button"/g) ?? []).length === 1 && ladder.includes("resultLabel={viewMode ? VIEW_STOCKS : SHOW_BUTTON}") && !ladder.includes("ladder-bar-show") && !ladder.includes("sticky top-"), "ONE result button, in the bottom block, and no sticky Show bar");
+// [24 Nov 2026 flow changed] assert.ok(ladder.includes('data-testid="rule-result-button"') && (ladder.match(/data-testid="rule-result-button"/g) ?? []).length === 1 && ladder.includes("resultLabel={viewMode ? VIEW_STOCKS : SHOW_BUTTON}") && !ladder.includes("ladder-bar-show") && !ladder.includes("sticky top-"), "ONE result button, in the bottom block, and no sticky Show bar");
 const samplePanel = read("components/app/ask/SamplePanel.tsx");
 assert.ok(samplePanel.includes("sampleIdFor(q, samples.answers, ALIASES)") && samplePanel.includes("LOGIN_FOR_OWN"), "the panel answers the sample questions and asks for a log-in for anything else");
 const aliases = { [ASK_QUESTIONS.points]: "points", [ASK_QUESTIONS.financials]: "numbers", [ASK_QUESTIONS.management]: "management" };

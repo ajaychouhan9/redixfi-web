@@ -18,7 +18,7 @@ export const REPORT_PDF = "Download full report";
 export const REPORT_STOCK_PDF = "Download PDF";
 export const REPORT_CSV = "Download CSV";
 export const REPORT_FAILED = "The report could not be made right now. Please try again in a moment.";
-export const REPORT_LEAD = "The full report covers the ticked stocks (up to 8).";
+export const REPORT_LEAD = "The full report covers the ticked stocks (up to 10).";
 export const REPORT_FREE = "Free accounts can open a sample report to see the format.";
 export const DROP_WARNING = (limit: number, oldest: string): string =>
   `Your plan keeps ${limit} saved ${limit === 1 ? "result" : "results"} for each rule. Saving this one removes the oldest (${oldest}) and the answers saved with it.`;
@@ -54,7 +54,7 @@ export const LIVE_NOT_SAVED = "Not saved yet. Press Save this result to keep it.
 export const ASK_STATUS = (k: number): string => `${k} of 5 answered`;
 export const ASK_STATUS_OTHER = (k: number): string => `${k} ${k === 1 ? "answer" : "answers"}`;
 export const ASK_NONE = "Not asked";
-export const TICK_NEXT_8 = "Tick next 8 not yet asked";
+export const TICK_NEXT_8 = "Tick next 10 not yet asked";
 export const TICK_NEXT_NONE = "Every stock here has been asked.";
-export const SAVED_RESULT_HINT = "Tick up to 8 stocks to ask about them or put them in the report.";
+export const SAVED_RESULT_HINT = "Tick up to 10 stocks to ask about them or put them in the report.";
 export const RESULTS_IDLE = "No list shown yet. Use the button on your rule page.";

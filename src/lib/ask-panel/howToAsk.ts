@@ -10,7 +10,7 @@ export const LOOKUP_MAX_STOCKS = 8;
 export const LOOKUP_LIMIT_NOTE = `Name up to ${LOOKUP_MAX_STOCKS} stocks in one question.`;
 
 /** What a Free account gets (21 Nov 2026): one shared count for the day, on any stock. */
-export const FREE_ASK_LINE = "Free accounts get 3 live questions a day on any stock.";
+export const FREE_ASK_LINE = "Free accounts get 5 questions a day, shared by chat and reports.";
 export const CHIP_COST_LINE = "Each answer uses 1 question. If we cannot answer, nothing is used.";
 
 export interface HowToAskGroup {

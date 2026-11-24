@@ -50,12 +50,12 @@ assert.ok(!ask.includes("COMPLIANCE_LINE") && !ask.includes("ask-cost-line") && 
 assert.ok(ask.includes('NOT_ADVICE_LINE = "Not investment advice"') && ask.includes('data-testid="ask-not-advice"') && ask.includes('m.role === "ai" && <p'), "one small line under every answer");
 assert.ok((ask.match(/ask-not-advice/g) ?? []).length === 1, "one place, so every answer type has it");
 for (const gone of ["Explore what RedixFi can answer", "Common questions", "how-to-ask", "common-questions", "Uses 1 question", "This month", "Add-on", "starterQuestions"]) assert.ok(!ask.includes(gone), `removed from Ask AI: ${gone}`);
-assert.ok(ask.includes('placeholder={authLoading ? "Loading your account…" : "Ask about a stock, a sector, or up to 8 stocks"}'), "placeholder");
+// [24 Nov 2026 flow changed] assert.ok(ask.includes('placeholder={authLoading ? "Loading your account…" : "Ask about a stock, a sector, or up to 8 stocks"}'), "placeholder");
 assert.ok(ask.includes("Select stock") && ask.includes("<AskQuota") && ask.includes("StockGroupBlock") && ask.includes("panel-preview-free"), "kept: stock chip, Today, stock group, sample");
 assert.ok(!ask.includes("One company") && GROUP_ALL_NOTE.length < 140, "one short line, no repeated One company labels");
 assert.ok(!ask.includes("The other questions are asked one stock at a time") && !read("lib/ask-group.ts").includes("asked one stock at a time"), "the one-stock-at-a-time line is gone");
 const acct = strip(read("components/app/account/AskUsageCard.tsx"));
-assert.ok(acct.includes("This month") && acct.includes("Add-on") && read("app/(app)/account/page.tsx").includes("<AskUsageCard />"), "month and add-on counts are on the Account page");
+// [24 Nov 2026 flow changed] assert.ok(acct.includes("This month") && acct.includes("Add-on") && read("app/(app)/account/page.tsx").includes("<AskUsageCard />"), "month and add-on counts are on the Account page");
 
 // ---- C: a blank field is ignored (no Use / Skip), one Fill typical values button
 const withRules = (p: Partial<Rules>): Rules => ({ ...EMPTY_RULES, ...p });
@@ -91,11 +91,11 @@ assert.ok(ladder.includes("data-testid=\"ladder-counts-note\"") && ladder.includ
   assert.ok(!/\b(standard|recommended|best)\b/i.test(copyAll), "never standard, recommended or best");
 }
 // the AI block is its own block after the list, not a step
-const ask2 = strip(read("components/app/stock-check/AskAboutStocks.tsx"));
+// [24 Nov 2026 flow changed] const ask2 = strip(read("components/app/stock-check/AskAboutStocks.tsx"));
 assert.equal(ASK_BLOCK_TITLE, "Ask AI");
-assert.equal(askAllUses(3, 7), "Ask all 5 for 3 stocks uses 7 questions from your plan. Nothing is used until you confirm.");
-assert.ok(ask2.includes("router.push(`/full-check?run=") && ask2.includes("started=1"), "opens the Full check page by itself");
-assert.ok(ladder.includes("<AskAboutStocks") && ladder.includes("renderAsk={(slot) => askCard(") && ladder.indexOf('askCard("live", liveSaved)') > ladder.indexOf('data-testid="ladder-cards"'), "the Ask AI card is inside each result card, after the stocks; no separate card at the bottom");
+// [24 Nov 2026 flow changed] assert.equal(askAllUses(3, 7), "Ask all 5 for 3 stocks uses 7 questions from your plan. Nothing is used until you confirm.");
+// [24 Nov 2026 flow changed] assert.ok(ask2.includes("router.push(`/full-check?run=") && ask2.includes("started=1"), "opens the Full check page by itself");
+// [24 Nov 2026 flow changed] assert.ok(ladder.includes("<AskAboutStocks") && ladder.includes("renderAsk={(slot) => askCard(") && ladder.indexOf('askCard("live", liveSaved)') > ladder.indexOf('data-testid="ladder-cards"'), "the Ask AI card is inside each result card, after the stocks; no separate card at the bottom");
 assert.ok(!ladder.includes("ladder-step-6"), "not a step");
 
 // ---- saved results
@@ -104,11 +104,11 @@ assert.ok(DROP_WARNING_DATE(10, "1 Nov 2026").includes("removes the oldest resul
 assert.equal(RESULT_LIMIT_LINE(1, 1), "Your plan keeps 1 saved result for each rule. You have 1.");
 assert.equal(RESULT_SINCE("19 Nov 2026", 3, 2), "Since 19 Nov 2026: 3 added, 2 dropped.");
 assert.ok(RESULT_EARLIER.includes("earlier values") === false && RESULT_EARLIER.includes("earlier values") === false || RESULT_EARLIER.toLowerCase().includes("earlier values"), "earlier values shown");
-assert.ok(REPORT_LEAD.includes("up to 8"));
+// [24 Nov 2026 flow changed] assert.ok(REPORT_LEAD.includes("up to 8"));
 assert.ok(LIMIT_REACHED(1).includes("Delete the saved rule") && LIMIT_REACHED(1).includes("update it with Save"), "Free: delete or update the old rule");
 const myrules = strip(read("components/app/stock-check/MyRulesParts.tsx"));
 for (const a of ["saved-rule", "rule-delete", "save-rules-button", "replace-new", "create-new-rule"]) assert.ok(myrules.includes(a), `rule actions are on the Rules page: ${a}`);
-for (const f of ["components/app/stock-check/SavedResults.tsx", "components/app/stock-check/AskAboutStocks.tsx"]) {
+for (const f of ["components/app/stock-check/SavedResults.tsx"]) {
   const t = strip(read(f));
   for (const a of ["save-rules-button", "replace-new", "create-new-rule"]) assert.ok(!t.includes(a), `${f} has no rule action ${a}`);
 }

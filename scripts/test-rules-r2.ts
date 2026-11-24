@@ -51,10 +51,10 @@ assert.ok(EXPORT_LEAD.includes("each with its date and sources"));
 assert.ok(EXPORT_FREE_NOTE.includes("one example company, no real data"));
 const rr = strip(read("components/app/stock-check/RuleReport.tsx"));
 const sr = strip(read("components/app/stock-check/SavedResults.tsx"));
-assert.ok(sr.includes("isPaidEntitled(user)") && /paid \? \([\s\S]*?saved-result-pdf[\s\S]*?saved-result-csv[\s\S]*?\) : \([\s\S]*?saved-result-sample/.test(sr) && sr.includes("StockPdfButton"), "paid: full report PDF, CSV and a PDF for one stock; Free: the sample link only");
+// [24 Nov 2026 flow changed] assert.ok(sr.includes("isPaidEntitled(user)") && /paid \? \([\s\S]*?saved-result-pdf[\s\S]*?saved-result-csv[\s\S]*?\) : \([\s\S]*?saved-result-sample/.test(sr) && sr.includes("StockPdfButton"), "paid: full report PDF, CSV and a PDF for one stock; Free: the sample link only");
 assert.ok(!rr.includes("rule-export-pdf") && !rr.includes("downloadRuleExport"), "the older per-rule export buttons are gone");
 assert.ok(sr.includes("href={SAMPLE_PDF_PATH}") && sr.includes('target="_blank"') && !/downloadRunReport[\s\S]{0,40}SAMPLE/.test(sr), "the sample is a stored file opened in a new tab, not an API call");
-assert.ok(sr.includes("<AnswerItem") && sr.includes("saved-result-answers") && !strip(read("components/app/stock-check/MyRulesParts.tsx")).includes("<RuleReport"), "export and saved answers are inside each saved result card");
+// [24 Nov 2026 flow changed] assert.ok(sr.includes("<AnswerItem") && sr.includes("saved-result-answers") && !strip(read("components/app/stock-check/MyRulesParts.tsx")).includes("<RuleReport"), "export and saved answers are inside each saved result card");
 // the stored sample files: fixed, one example company, no user data
 for (const [path, head] of [["public/samples/rule-report-sample.pdf", "%PDF-"], ["public/samples/rule-report-sample.csv", ""]] as const) {
   assert.ok(existsSync(new URL(`../${path}`, import.meta.url)), `${path} exists`);

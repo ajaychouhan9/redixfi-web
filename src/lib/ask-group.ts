@@ -4,9 +4,9 @@
 import { ASK_QUESTIONS } from "@/lib/read-company";
 import { ASK_NONE, ASK_STATUS, ASK_STATUS_OTHER } from "@/lib/saved-results";
 
-export const ASK_GROUP_MAX = 8; // the existing lookup cap (settings.ASK_LOOKUP_MAX_STOCKS)
+export const ASK_GROUP_MAX = 10; // 24 Nov 2026: up to 10 stocks (was 8); a report holds up to 10 stocks too
 export const ASK_GROUP_TITLE = "Ask AI about these stocks";
-export const ASK_GROUP_LEAD = "Tick up to 8 stocks, then press Ask AI. Nothing is sent until you press Send.";
+export const ASK_GROUP_LEAD = "Tick up to 10 stocks, then press Ask AI. Nothing is sent until you press Send.";
 export const ASK_ALL_LABEL = "Ask all 5";
 // "Read your shortlist with AI" (21 Nov 2026): a block of its own after the list, not a step.
 export const ASK_BLOCK_TITLE = "Ask AI";
@@ -16,7 +16,7 @@ export const askAllUses = (stocks: number, questions: number): string =>
   `Ask all 5 for ${stocks} ${stocks === 1 ? "stock" : "stocks"} uses ${questions} ${questions === 1 ? "question" : "questions"} from your plan. Nothing is used until you confirm.`;
 export const ASK_ALL_LEAD = "Runs the full check on every ticked stock: points to watch, what management said, three years of numbers and holdings, with sources.";
 
-// 22 Nov 2026: with 2 to 8 stocks, any of the five questions (or a typed one) is asked for every stock, one after another, and shown as ONE reply, stock by stock in the order
+// 22 Nov 2026: with 2 to 10 stocks, any of the five questions (or a typed one) is asked for every stock, one after another, and shown as ONE reply, stock by stock in the order
 // selected. Each stock counts as one question. The number is shown first and confirmed; if it is more than what is left, the person is offered fewer stocks.
 export const GROUP_ALL_NOTE = "Each question is asked for every stock here and shown as one reply, in the order selected. Each stock counts as one question.";
 export const groupUses = (n: number, left: number | null): string =>
