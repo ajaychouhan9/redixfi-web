@@ -4,6 +4,7 @@ import { getSevenDayReview } from "@/lib/api/endpoints";
 import { retryTransientPublicGet } from "@/lib/api/retry-public-upstream";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { weekPath } from "@/lib/seo/weekly";
+import { SHARE_IMAGE } from "@/lib/seo/share-image";
 
 export const revalidate = 900;
 
@@ -15,7 +16,8 @@ export const metadata: Metadata = {
   title: { absolute: TITLE },
   description: DESCRIPTION,
   alternates: { canonical: "/weekly" },
-  openGraph: { title: TITLE, description: DESCRIPTION, type: "website" },
+  openGraph: { title: TITLE, description: DESCRIPTION, type: "website", images: [SHARE_IMAGE] },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: [SHARE_IMAGE.url] },
 };
 
 export default async function WeeklyArchivePage() {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { TopMovers } from "@/components/app/market/TopMovers";
+import { SHARE_IMAGE } from "@/lib/seo/share-image";
 
 const TITLE = "Top Gainers and Losers on the NSE: the five largest price rises and falls | RedixFi";
 const DESCRIPTION = "The five largest price rises and the five largest price falls among liquid NSE stocks, with the date of the figures. Not a forecast or a recommendation.";
@@ -12,7 +13,8 @@ export const metadata: Metadata = {
   title: { absolute: TITLE },
   description: DESCRIPTION,
   alternates: { canonical: "/gainers-losers" },
-  openGraph: { title: TITLE, description: DESCRIPTION, type: "website", url: "https://www.redixfi.com/gainers-losers" },
+  openGraph: { title: TITLE, description: DESCRIPTION, type: "website", url: "https://www.redixfi.com/gainers-losers", images: [SHARE_IMAGE] },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: [SHARE_IMAGE.url] },
 };
 
 export default function GainersLosersPage() {

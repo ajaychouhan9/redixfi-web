@@ -2,21 +2,24 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { COMMON_QUESTION_GROUPS, COMMON_QUESTION_NOTE } from "@/lib/common-questions";
+import { SHARE_IMAGE } from "@/lib/seo/share-image";
 
 // The page makes no request of its own; a refresh window keeps the cached copy from outliving a deploy (a fully static page is sent with a one-year cache lifetime).
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "How RedixFi measures its readings",
+  title: "How the readings are measured",   // the site title adds the brand once
   description:
     "What each measured reading on a RedixFi stock page is (trend, sector rank, delivery, volume, RSI, put-call ratio, promoter pledge, FII flow), where the data comes from, how often it updates and what it does not tell you.",
   alternates: { canonical: "/how-it-works" },
   openGraph: {
-    title: "How RedixFi measures its readings",
+    title: "How the readings are measured · RedixFi",
     description:
       "Each measured reading on a stock page, where its data comes from, how often it updates and the limits.",
     type: "website",
+    images: [SHARE_IMAGE],
   },
+  twitter: { card: "summary_large_image", title: "How the readings are measured · RedixFi", images: [SHARE_IMAGE.url] },
 };
 
 const INPUT_GROUPS = [

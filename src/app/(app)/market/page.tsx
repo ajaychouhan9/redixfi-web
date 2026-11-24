@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { MarketOverviewCards } from "@/components/app/market/MarketOverviewCards";
+import { SHARE_IMAGE } from "@/lib/seo/share-image";
 
 const TITLE = "Market Overview: intraday movers, market pulse, market activity and top gainers and losers | RedixFi";
 const DESCRIPTION =
@@ -13,7 +14,8 @@ export const metadata: Metadata = {
   title: { absolute: TITLE },
   description: DESCRIPTION,
   alternates: { canonical: "/market" },
-  openGraph: { title: TITLE, description: DESCRIPTION, type: "website", url: "https://www.redixfi.com/market" },
+  openGraph: { title: TITLE, description: DESCRIPTION, type: "website", url: "https://www.redixfi.com/market", images: [SHARE_IMAGE] },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: [SHARE_IMAGE.url] },
 };
 
 /** Static shell: the four cards are fixed text; only the small date tags are read in the browser. */

@@ -92,6 +92,11 @@ assert.deepEqual(PLAN_MATRIX.filter((r) => /Ask AI/.test(r.feature)).map((r) => 
 assert.ok(!SEO_TITLE.includes("RedixFi"), "the brand is added once, by the site title template");
 const page = read("app/(app)/shortlist-lab/page.tsx");
 assert.ok(page.includes("images: [SHARE_IMAGE]") && page.includes("twitter:") && page.includes("images: [SHARE_IMAGE.url]"), "og:image and twitter:image on /shortlist-lab");
+for (const f of ["app/(app)/market/page.tsx", "app/(app)/intraday/page.tsx", "app/(app)/pulse/page.tsx", "app/(app)/gainers-losers/page.tsx", "app/(app)/volatility/page.tsx", "app/(app)/how-it-works/page.tsx", "app/(seo)/weekly/page.tsx"]) {
+  const src = read(f);
+  assert.ok(src.includes("images: [SHARE_IMAGE]") && src.includes("images: [SHARE_IMAGE.url]"), `${f}: og:image and twitter:image`);
+}
+assert.ok(read("app/(app)/how-it-works/page.tsx").includes('title: "How the readings are measured",'), "the brand is not repeated in the How it works title");
 const sitemap = read("app/sitemap.xml/route.ts");
 assert.ok(sitemap.includes('"/shortlist-lab"') && !sitemap.includes('"/stock-check"') && !sitemap.includes('"/start"'), "sitemap lists /shortlist-lab only");
 

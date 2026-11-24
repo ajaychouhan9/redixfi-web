@@ -5,6 +5,7 @@ import { VolatilityBoard } from "@/components/app/volatility/VolatilityBoard";
 import { getVolatilityBoard } from "@/lib/api/endpoints";
 import { formatShortDate } from "@/lib/format";
 import type { VolatilityBoard as Board } from "@/lib/api/types";
+import { SHARE_IMAGE } from "@/lib/seo/share-image";
 
 // Rendered on request: the page depends on a live upstream, and a failed request during a build must never
 // fail the deploy (same approach as the Track Record page). The data changes once per trading day.
@@ -18,7 +19,8 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: { canonical: "/volatility" },
-  openGraph: { title: TITLE, description: DESCRIPTION, type: "website" },
+  openGraph: { title: TITLE, description: DESCRIPTION, type: "website", images: [SHARE_IMAGE] },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: [SHARE_IMAGE.url] },
 };
 
 async function load(which: "top" | "bottom"): Promise<Board | null> {

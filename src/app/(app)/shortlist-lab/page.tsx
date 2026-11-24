@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 
 import { LabTabs } from "@/components/app/stock-check/LabTabs";
+import { SHARE_IMAGE } from "@/lib/seo/share-image";
 import { PAGE_SUBTITLE, PAGE_TITLE, SEO_TITLE } from "@/lib/stock-check";
 
 // The page makes no request of its own; a refresh window keeps the cached copy from outliving a deploy (a fully static page is sent with a one-year cache lifetime).
 export const revalidate = 3600;
-
-const SHARE_IMAGE = { url: "/branding/redixfi-full-logo.png", width: 2172, height: 724, alt: "RedixFi — Market. Simplified." };
 
 const DESCRIPTION =
   "Learn seven steps and five questions, then set your own rules and read the result. Facts from filings and the exchange. Not advice.";

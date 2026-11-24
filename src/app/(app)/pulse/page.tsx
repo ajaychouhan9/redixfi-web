@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { PulseTab } from "@/components/app/market/PulseTab";
+import { SHARE_IMAGE } from "@/lib/seo/share-image";
 
 const TITLE = "Market Pulse: Nifty 50, Bank Nifty and how many NSE stocks rose or fell | RedixFi";
 const DESCRIPTION = "The Nifty 50 and Bank Nifty levels, how many stocks rose and fell, and the Market Pulse card, each with its date. Not a forecast or a recommendation.";
@@ -12,7 +13,8 @@ export const metadata: Metadata = {
   title: { absolute: TITLE },
   description: DESCRIPTION,
   alternates: { canonical: "/pulse" },
-  openGraph: { title: TITLE, description: DESCRIPTION, type: "website", url: "https://www.redixfi.com/pulse" },
+  openGraph: { title: TITLE, description: DESCRIPTION, type: "website", url: "https://www.redixfi.com/pulse", images: [SHARE_IMAGE] },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: [SHARE_IMAGE.url] },
 };
 
 export default function PulsePage() {

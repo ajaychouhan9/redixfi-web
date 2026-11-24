@@ -4,6 +4,7 @@ import { IntradayTabs } from "@/components/app/intraday/tabs/IntradayTabs";
 import { getIntradayTab } from "@/lib/api/endpoints";
 import { retryTransientPublicGet } from "@/lib/api/retry-public-upstream";
 import type { IntradayTabData, IntradayTabId } from "@/lib/api/types";
+import { SHARE_IMAGE } from "@/lib/seo/share-image";
 import {
   INTRADAY_H1,
   INTRADAY_PATH,
@@ -30,8 +31,8 @@ export async function generateMetadata({ searchParams }: { searchParams: SP }): 
     description: INTRADAY_SEO_DESCRIPTION,
     alternates: { canonical: INTRADAY_PATH },
     robots: withQuery ? { index: false, follow: true } : { index: true, follow: true },
-    openGraph: { title: INTRADAY_SEO_TITLE, description: INTRADAY_SEO_DESCRIPTION, type: "website", url: `${SITE_URL}${INTRADAY_PATH}` },
-    twitter: { card: "summary", title: INTRADAY_SEO_TITLE, description: INTRADAY_SEO_DESCRIPTION },
+    openGraph: { title: INTRADAY_SEO_TITLE, description: INTRADAY_SEO_DESCRIPTION, type: "website", url: `${SITE_URL}${INTRADAY_PATH}`, images: [SHARE_IMAGE] },
+    twitter: { card: "summary_large_image", title: INTRADAY_SEO_TITLE, description: INTRADAY_SEO_DESCRIPTION, images: [SHARE_IMAGE.url] },
   };
 }
 
