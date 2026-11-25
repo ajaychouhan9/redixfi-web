@@ -15,12 +15,14 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\
 // ---- Part 1: the rule name
 assert.equal(RF.NAME_LABEL, "Name your rule (required)");
 assert.equal(RF.NAME_NEEDED, "Give your rule a name to continue.");
-assert.equal(defaultRuleName(new Date("2026-11-24T10:00:00Z")), "My rule 24 Nov");
-assert.equal(defaultRuleName(new Date("2026-11-23T20:00:00Z")), "My rule 24 Nov", "the India date, not the browser's: 01:30 on 24 Nov in India");
-assert.equal(defaultRuleName(new Date("2026-12-31T19:00:00Z")), "My rule 1 Jan");
+assert.equal(defaultRuleName([]), "My rule 1");
+assert.equal(defaultRuleName(["My rule 1"]), "My rule 2");
+assert.equal(defaultRuleName(["My rule 1", "My rule 2", "Growth"]), "My rule 3");
+assert.equal(defaultRuleName(["my rule 5", "Other"]), "My rule 6", "one more than the highest number used");
+assert.equal(defaultRuleName(["My rule 25 Nov"]), "My rule 1", "an old dated name is not a number");
 const ladder = strip(read("components/app/stock-check/ShortlistLadder.tsx"));
 const parts = strip(read("components/app/stock-check/MyRulesParts.tsx"));
-assert.ok(ladder.includes("setName(defaultRuleName())"), "a new rule starts with My rule and today's date");
+assert.ok(ladder.includes("setName(defaultRuleName(savedState.saved.map((x) => x.name)))"), "a new rule starts as My rule 1, 2, 3 and so on");
 assert.ok(parts.includes("NAME_LABEL") && parts.includes('aria-required="true"') && parts.includes("save-name-message"), "the box is marked required and shows the message");
 const need = (ladder.match(/requireName\(\)/g) ?? []).length;
 assert.ok(need >= 4, "Show stocks, View stocks (a step), Create report and the sheet itself check the name");
