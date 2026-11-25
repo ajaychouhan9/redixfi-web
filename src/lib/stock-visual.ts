@@ -259,9 +259,17 @@ export function holdSentence(pts: HoldPoint[], field: "promoter" | "fii" | "mf",
 }
 
 // ---------- short reads ----------
+/** "During the earnings conference call held on 27 Jul 2026, Bharat Electronics reported ..." loses its lead-in clause (the filing date is shown beside the block), so the bullet starts with the fact. */
+function dropCallLeadIn(sentence: string): string {
+  const m = /^During the [^,]{0,70}\b(?:call|meeting)\b[^,]{0,40}?\b20\d\d,\s+(\S.*)$/i.exec(sentence);
+  if (!m) return sentence;
+  const rest = m[1];
+  return rest.charAt(0).toUpperCase() + rest.slice(1);
+}
+
 /** At most `max` short bullets (each up to `words` words) taken from a text. Cut-off pieces are dropped, never shown; a long sentence is cut at a clause, never on a joining word. */
 export function shortBullets(text: string | null | undefined, max = 3, words = 15): { shown: string[]; rest: string[] } {
-  const all = splitSentences(text).map(stripListMarker).filter((s) => !isFragment(s)).map((s) => clipSentence(s, words));
+  const all = splitSentences(text).map(stripListMarker).map(dropCallLeadIn).filter((s) => !isFragment(s)).map((s) => clipSentence(s, words));
   return { shown: all.slice(0, max), rest: all.slice(max) };
 }
 
