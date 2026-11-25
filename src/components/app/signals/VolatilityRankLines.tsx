@@ -16,7 +16,7 @@ export function VolatilityRankLines({ data }: { data: VolatilityResponse }) {
         More volatile than <span className="font-medium tabular-nums text-foreground">{moreVolatileThanPct(data.vol_rank, data.ranked_of)}%</span> of ranked stocks
       </p>
       {data.std_21 != null && (
-        <p className="mt-0.5 text-[11px] text-foreground-faint">
+        <p className="mt-0.5 text-[12px] text-foreground-faint">
           Daily moves over the last 21 sessions varied by {data.std_21.toFixed(2)}% (standard deviation).
         </p>
       )}

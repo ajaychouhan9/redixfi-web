@@ -37,7 +37,8 @@ export function RedixFiLogo({
 }) {
   const height = size ?? (variant === "symbol" ? 24 : variant === "full" ? 40 : 32);
   const width = Math.round((height * ICON_W) / ICON_H);
-  const icon = <Image src={ICON_SRC} alt="RedixFi" width={width} height={height} priority />;
+  // With the wordmark text beside it the icon is decorative (alt ""), so the name is read once, not twice. The icon alone keeps the name.
+  const icon = <Image src={ICON_SRC} alt={variant === "symbol" ? "RedixFi" : ""} width={width} height={height} priority />;
 
   if (variant === "symbol") {
     return <span className={className}>{icon}</span>;

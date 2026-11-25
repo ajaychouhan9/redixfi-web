@@ -24,17 +24,17 @@ export function MarketStatusStrip({ overview, session, marketState }: { overview
             <span className="text-foreground-muted">NIFTY</span>
             <span className="font-mono font-semibold">{overview.nifty.close.toLocaleString("en-IN")}</span>
             <DeltaValue value={overview.nifty.change_pct} kind="pct" />
-            {niftyLabel && <span className="text-[11px] text-foreground-faint" data-testid="market-nifty-basis">{niftyLabel}</span>}
+            {niftyLabel && <span className="text-[12px] text-foreground-faint" data-testid="market-nifty-basis">{niftyLabel}</span>}
           </span>
         )}
       </div>
       {session?.breadth_line && (
         <p className="mt-1 text-sm text-foreground-muted" data-testid="market-breadth">
           {session.breadth_line}
-          {breadthLabel ? <span className="text-[11px] text-foreground-faint"> · {breadthLabel}</span> : ""}
+          {breadthLabel ? <span className="text-[12px] text-foreground-faint"> · {breadthLabel}</span> : ""}
         </p>
       )}
-      {!overview?.nifty && niftyLabel && <p className="mt-1 text-[11px] text-foreground-faint">{niftyLabel}</p>}
+      {!overview?.nifty && niftyLabel && <p className="mt-1 text-[12px] text-foreground-faint">{niftyLabel}</p>}
     </section>
   );
 }

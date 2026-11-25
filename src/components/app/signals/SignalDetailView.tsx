@@ -140,7 +140,7 @@ export function SignalDetailView({
           <div className="mb-3 rounded-lg bg-surface px-3 py-2 text-sm" data-testid="notable-combination">
             <p className="text-xs font-medium text-foreground-faint">Notable combination</p>
             <p className="mt-0.5 text-foreground">{combination}</p>
-            <p className="mt-1 text-[11px] text-foreground-faint">{asOfClose}</p>
+            <p className="mt-1 text-[12px] text-foreground-faint">{asOfClose}</p>
           </div>
         )}
         <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -256,7 +256,7 @@ export function SignalDetailView({
 }
 
 function Freshness({ asOf }: { asOf?: DataAsOf | null }) {
-  return <p className="mt-1 text-[11px] text-foreground-faint">{formatDataAsOf(asOf)}</p>;
+  return <p className="mt-1 text-[12px] text-foreground-faint">{formatDataAsOf(asOf)}</p>;
 }
 
 function DataRow({ label, children, asOf }: { label: string; children: React.ReactNode; asOf?: DataAsOf | null }) {

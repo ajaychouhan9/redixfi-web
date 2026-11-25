@@ -25,11 +25,11 @@ export function AiDailyBriefCard({ brief }: { brief: DailyBrief | null }) {
     <div
       className="relative overflow-hidden rounded-2xl border"
       style={{
-        background: "linear-gradient(135deg, color-mix(in srgb, var(--surface-raised) 88%, var(--accent) 12%), var(--surface-raised))",
-        borderColor: "color-mix(in srgb, var(--accent) 30%, transparent)",
+        background: "var(--surface-raised)",
+        borderColor: "var(--border)",
       }}
     >
-      <div className="absolute inset-y-0 left-0 w-1" style={{ background: "linear-gradient(180deg, var(--accent), var(--accent-dim))" }} />
+      <div className="absolute inset-y-0 left-0 w-1" style={{ background: "var(--accent)" }} />
       <div className="p-5 pl-6 sm:p-6 sm:pl-7">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
@@ -37,7 +37,7 @@ export function AiDailyBriefCard({ brief }: { brief: DailyBrief | null }) {
               <Sparkles size={14} className="text-accent" />
             </span>
             <div>
-              <div className="font-mono text-[11px] uppercase tracking-widest text-accent">AI Daily Brief</div>
+              <div className="font-mono text-[12px] uppercase tracking-widest text-accent">AI Daily Brief</div>
               {brief && (
                 <div className="font-mono text-[12px] text-foreground-faint" data-testid="brief-session-label">
                   {sessionLabel}
@@ -59,7 +59,7 @@ export function AiDailyBriefCard({ brief }: { brief: DailyBrief | null }) {
                 }}
               />
             )}
-            <span className="rounded-md bg-accent/10 px-2 py-1 font-mono text-[11px] uppercase tracking-wider text-accent-dim">AI-generated</span>
+            <span className="rounded-md bg-accent/10 px-2 py-1 font-mono text-[12px] uppercase tracking-wider text-accent-dim">AI-generated</span>
           </div>
         </div>
         {brief ? (

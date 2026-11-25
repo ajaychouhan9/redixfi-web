@@ -45,11 +45,11 @@ export function VolatilityRankCard({ symbol }: { symbol: string }) {
       {data && !data.locked && !data.eligible && <p className="text-xs text-foreground-muted">{data.note ?? "Volatility has not been measured for this stock yet."}</p>}
       {ranked && data && (
         <>
-          <p className="text-[11px] text-foreground-faint">Data as of {formatShortDate(data.as_of ?? "")}</p>
+          <p className="text-[12px] text-foreground-faint">Data as of {formatShortDate(data.as_of ?? "")}</p>
           <VolatilityRankLines data={data} />
         </>
       )}
-      <p className="text-[11px] text-foreground-faint">
+      <p className="text-[12px] text-foreground-faint">
         Past price movement, not a forecast. Measured market data, not investment advice.{" "}
         <Link href={stockPath("/signals", symbol)} className="text-accent underline decoration-dotted underline-offset-2">
           Open the Volatility card on the Screener page

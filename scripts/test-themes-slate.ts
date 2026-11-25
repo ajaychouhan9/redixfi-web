@@ -26,6 +26,7 @@ for (const th of ["light", "dark", "slate"]) {
     ok(r >= (fg === "accent" && th === "dark" ? 3 : 4.5), `${th} ${fg} on ${bg} ${r.toFixed(2)}:1`);
   }
 }
-ok(["up", "down"].every((k) => block("slate")[k] === block("light")[k]), "slate gain and loss colours equal Light's");
+// 26 Nov 2026: Light now uses #008555 / #d63a40 (4.6:1 on white); on the grey Slate page those fall under 4.5:1, so Slate keeps its own darker pair
+ok(["up", "down"].every((k) => ratio(block("slate")[k], block("slate").background) >= 4.5), "slate gain and loss colours pass 4.5:1 on the Slate page");
 console.log(bad ? `${bad} FAILED` : "ALL OK");
 process.exit(bad ? 1 : 0);

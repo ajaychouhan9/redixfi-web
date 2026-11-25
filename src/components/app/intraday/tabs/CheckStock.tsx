@@ -174,17 +174,17 @@ export function CheckStock({ tab }: { tab: IntradayTabId }) {
                 </dl>
               )}
               {!data.reason && data.available !== false && (
-                <p className="mt-1 text-[11px] text-foreground-faint">
+                <p className="mt-1 text-[12px] text-foreground-faint">
                   {data.as_of_label}
                   {data.source === "last stored bar" && tab === "scan" ? " · from the last stored bar" : ""}
                 </p>
               )}
-              {data.note && !data.reason && data.available !== false && <p className="mt-1 text-[11px] text-foreground-muted">{data.note}</p>}
+              {data.note && !data.reason && data.available !== false && <p className="mt-1 text-[12px] text-foreground-muted">{data.note}</p>}
             </>
           )}
         </div>
       )}
-      <p className="mt-2 text-[11px] text-foreground-faint">One liquid stock at a time. {data?.disclaimer ?? "Past record of measured data. Not a forecast or a recommendation."}</p>
+      <p className="mt-2 text-[12px] text-foreground-faint">One liquid stock at a time. {data?.disclaimer ?? "Past record of measured data. Not a forecast or a recommendation."}</p>
     </section>
   );
 }

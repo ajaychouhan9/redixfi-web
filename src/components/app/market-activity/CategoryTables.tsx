@@ -174,7 +174,7 @@ export function eventName(r: { event_label?: string | null; event_type?: string 
 
 function ScheduledChip() {
   return (
-    <span className="ml-1.5 inline-block rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-accent">
+    <span className="ml-1.5 inline-block rounded-full bg-accent/10 px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-accent">
       Scheduled
     </span>
   );
@@ -306,7 +306,7 @@ export function AllActivityTable({ rows }: { rows: MarketActivityRow[] }) {
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
               <span className="whitespace-nowrap tabular-nums text-foreground-muted">{formatDateSafe(row.date)}</span>
               <SymbolLink symbol={row.symbol} companyName={row.company_name} />
-              <span className="rounded-full bg-neutral-bg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-foreground-muted">
+              <span className="rounded-full bg-neutral-bg px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-foreground-muted">
                 {TYPE_LABEL[row.type]}
               </span>
             </div>

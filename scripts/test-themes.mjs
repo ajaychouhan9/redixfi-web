@@ -44,7 +44,9 @@ assert.ok(ratio(v(P, "--accent-foreground"), v(P, "--accent")) >= 4.5, "light bu
 const L = css.slice(css.indexOf('[data-preview=' + String.fromCharCode(34) + 'light' + String.fromCharCode(34) + '] {'), css.indexOf(String.fromCharCode(10) + '}'));
 assert.ok(ratio(v(L, "--foreground-faint"), v(L, "--background")) >= 4.5, "light faint text on the page background");
 assert.ok(ratio(v(L, "--down"), v(L, "--background")) >= 4.5, "light down colour on the page background");
-assert.ok(P.includes("Georgia") || css.includes("Georgia"), "light has serif headings");
+assert.ok(!P.includes("Georgia") && !css.includes("Georgia"), "26 Nov 2026: no serif headings; one font family");
+assert.ok(layout.includes("Inter") && !layout.includes("IBM_Plex"), "one font family (Inter)");
+assert.equal(v(P, "--background").toLowerCase(), "#ffffff", "Light page is white");
 
 // 3. the picker: three choices, in the dropdown and as a header icon for a visitor
 const toggle = read("components/ui/ThemeToggle.tsx");

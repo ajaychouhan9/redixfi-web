@@ -37,7 +37,7 @@ export function Week52Range({
   const below = last != null ? resolved.belowHighPct : week52.pct_below_52w_high;
   return (
     <div className={className}>
-      <p className="text-[11px] font-medium uppercase tracking-wide text-foreground-faint">52-week range</p>
+      <p className="text-[12px] font-medium uppercase tracking-wide text-foreground-faint">52-week range</p>
       <div className="mt-1.5 h-1.5 w-full rounded-full bg-neutral-bg">
         <div className="h-1.5 rounded-full bg-accent" style={{ width: `${position}%` }} />
       </div>
@@ -52,7 +52,7 @@ export function Week52Range({
             ? "at 52-week high"
             : `${below.toFixed(1)}% below 52-week high`}
       </p>
-      <p className="mt-0.5 text-[10px] text-foreground-faint">
+      <p className="mt-0.5 text-[12px] text-foreground-faint">
         52-week range: {useLive ? liveLabel : `as of ${formatObservationDate(week52.as_of) ?? "date unavailable"} close`}.
       </p>
     </div>

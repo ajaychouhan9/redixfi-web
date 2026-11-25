@@ -83,7 +83,7 @@ function asNumber(value: string): number | undefined {
 
 const control =
   "h-9 w-full rounded-lg border border-border bg-hover px-2 text-xs text-foreground outline-none focus:border-accent/60";
-const label = "flex flex-col gap-1 text-[11px] text-foreground-muted";
+const label = "flex flex-col gap-1 text-[12px] text-foreground-muted";
 
 export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams?: SharedScreenParams }>(function SignalsExplorer(
   { initialParams } = {},
@@ -650,33 +650,33 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
         {activeFilters.length > 0 && (
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
             {activeFilters.map((f) => (
-              <span key={f.key} className="flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-[11px] text-accent">
+              <span key={f.key} className="flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-[12px] text-accent">
                 {f.text}
                 <button type="button" onClick={f.clear} aria-label={`Clear ${f.text}`}><X size={11} /></button>
               </span>
             ))}
-            <button type="button" onClick={clearAll} className="text-[11px] text-foreground-faint underline-offset-2 hover:text-foreground hover:underline">Clear all</button>
+            <button type="button" onClick={clearAll} className="text-[12px] text-foreground-faint underline-offset-2 hover:text-foreground hover:underline">Clear all</button>
           </div>
         )}
 
         {roceNote && fund.roceMin.trim() !== "" && (
-          <p className="mt-2 text-[11px] text-foreground-muted" data-testid="roce-filter-note">{roceNote}</p>
+          <p className="mt-2 text-[12px] text-foreground-muted" data-testid="roce-filter-note">{roceNote}</p>
         )}
-        <p className="mt-3 text-[11px] text-foreground-faint">{DISCLAIMER}</p>
+        <p className="mt-3 text-[12px] text-foreground-faint">{DISCLAIMER}</p>
         {notMatchedCount !== null && notMatchedCount > 0 && (
-          <p className="mt-1 text-[11px] text-foreground-faint">
+          <p className="mt-1 text-[12px] text-foreground-faint">
             {notMatchedCount.toLocaleString("en-IN")} {notMatchedCount === 1 ? "stock is" : "stocks are"} not matched:{" "}
             {recentlyListedCount?.toLocaleString("en-IN") ?? "0"} recently listed,{" "}
             {incompleteHistoryCount?.toLocaleString("en-IN") ?? "0"} with incomplete price history.
           </p>
         )}
         {excludedInMasterCount !== null && excludedInMasterCount > 0 && (
-          <p className="mt-1 text-[11px] text-foreground-faint">
+          <p className="mt-1 text-[12px] text-foreground-faint">
             {excludedInMasterCount.toLocaleString("en-IN")} held, BE/BZ, held for review or limited-data {excludedInMasterCount === 1 ? "stock is" : "stocks are"} excluded from this filter.
           </p>
         )}
         {extrasAsOf && (
-          <p className="mt-1 text-[11px] text-foreground-faint">
+          <p className="mt-1 text-[12px] text-foreground-faint">
             52-week high history and volatility: as of {formatObservationDate(extrasAsOf)} close; the 52-week distance uses the current price while open.
           </p>
         )}
@@ -698,10 +698,10 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
             </button>
             {columnPickerOpen && (
               <div className="fixed inset-x-4 top-24 z-20 max-h-[70vh] overflow-y-auto rounded-lg sm:absolute sm:inset-x-auto sm:left-0 sm:top-full sm:mt-1 sm:w-80 border border-border bg-surface-raised p-3 text-sm shadow-lg" data-testid="columns-panel">
-                <p className="mb-1.5 text-[11px] font-semibold text-foreground-muted">Presets</p>
+                <p className="mb-1.5 text-[12px] font-semibold text-foreground-muted">Presets</p>
                 <div className="mb-2 flex flex-wrap gap-1.5">
                   {PRESETS.map((pr) => (
-                    <button key={pr.id} type="button" onClick={() => setChosen(pr.ids)} className="rounded-full border border-border bg-hover px-2.5 py-1 text-[11px] text-foreground-muted hover:text-foreground">
+                    <button key={pr.id} type="button" onClick={() => setChosen(pr.ids)} className="rounded-full border border-border bg-hover px-2.5 py-1 text-[12px] text-foreground-muted hover:text-foreground">
                       {pr.label}
                     </button>
                   ))}
@@ -711,7 +711,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
                   if (!defs.length) return null;
                   return (
                     <fieldset key={g} className="mb-2">
-                      <legend className="mb-0.5 text-[11px] font-semibold text-foreground-muted">{g}</legend>
+                      <legend className="mb-0.5 text-[12px] font-semibold text-foreground-muted">{g}</legend>
                       {defs.map((c) => {
                         const forced = shown.forced.has(c.id);
                         return (
@@ -723,14 +723,14 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
                               onChange={(e) => setChosen((cur) => sanitizeColumns(e.target.checked ? [...cur, c.id] : cur.filter((x) => x !== c.id)))}
                             />
                             <span>{c.label}</span>
-                            {forced && <span className="text-[10px] text-foreground-faint">(its filter is on)</span>}
+                            {forced && <span className="text-[12px] text-foreground-faint">(its filter is on)</span>}
                           </label>
                         );
                       })}
                     </fieldset>
                   );
                 })}
-                <p className="mt-1 text-[10px] leading-snug text-foreground-faint">Your choice is remembered in this browser and saved with a screen.</p>
+                <p className="mt-1 text-[12px] leading-snug text-foreground-faint">Your choice is remembered in this browser and saved with a screen.</p>
               </div>
             )}
           </div>
@@ -749,8 +749,8 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
         </div>
       </div>
 
-      {exportError && <p className="mb-2 text-[11px] text-down" role="alert">{exportError}</p>}
-      <div className="mb-2 space-y-0.5 text-[11px] leading-snug text-foreground-faint">
+      {exportError && <p className="mb-2 text-[12px] text-down" role="alert">{exportError}</p>}
+      <div className="mb-2 space-y-0.5 text-[12px] leading-snug text-foreground-faint">
         <p>
           <span className="font-medium text-foreground-muted">Price:</span>{" "}
           {labels.priceIsLive ? "today, as of the latest 15-minute bar (delayed)." : labels.priceHeading.replace(/^As of /, "").replace(/ close$/, " close.")}
@@ -762,10 +762,10 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
       </div>
       <div className="overflow-hidden rounded-xl border border-border bg-surface-raised">
         <div className="border-b border-border px-3 py-2.5 md:hidden" data-testid="signal-group-labels">
-          <p className="text-[11px] leading-snug text-foreground-faint">
+          <p className="text-[12px] leading-snug text-foreground-faint">
             <span className="font-medium text-foreground-muted">{labels.priceHeading}:</span> Price
           </p>
-          <p className="mt-0.5 text-[11px] leading-snug text-foreground-faint">
+          <p className="mt-0.5 text-[12px] leading-snug text-foreground-faint">
             <span className="font-medium text-foreground-muted">{labels.readingsHeading}:</span>{" "}
             Delivery, Volume, {labels.priceIsLive ? "From 52-week high (current price)" : "From 52-week high"}, Volatility, State chips
           </p>
@@ -774,14 +774,14 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
           {displayRows.map((row) => <SignalMobileRow key={row.symbol} row={row} priceGroupAsOf={labels.priceAsOf} priceGroupDate={labels.priceDate} extraIds={phoneExtraIds} ctx={colCtx} />)}
         </ul>
         <div className="hidden overflow-x-auto md:block">
-          {shown.ids.length > 5 && <p className="px-3 pt-2 text-[11px] text-foreground-faint">Scroll the table sideways to see all columns.</p>}
+          {shown.ids.length > 5 && <p className="px-3 pt-2 text-[12px] text-foreground-faint">Scroll the table sideways to see all columns.</p>}
           <table className="w-full min-w-[900px] text-sm">
             <thead>
               <tr className="border-b border-border text-left font-mono text-[12px] uppercase tracking-wider text-foreground-faint">
                 <th className="px-4 py-2 align-top">Symbol</th>
                 <th className="border-l border-border px-3 py-2 align-top">
                   Price
-                  <span className="block text-[10px] normal-case tracking-normal text-foreground-muted">{labels.priceHeading}</span>
+                  <span className="block text-[12px] normal-case tracking-normal text-foreground-muted">{labels.priceHeading}</span>
                 </th>
                 {shown.ids.map((id) => {
                   const def = COLUMN_BY_ID[id];
@@ -796,7 +796,7 @@ export const SignalsExplorer = forwardRef<SignalsExplorerHandle, { initialParams
                           <ArrowUpDown size={10} />
                         </button>
                       ) : def.label}
-                      {dated && <span className="block max-w-[10rem] text-[10px] normal-case tracking-normal text-foreground-muted">{dated}</span>}
+                      {dated && <span className="block max-w-[10rem] text-[12px] normal-case tracking-normal text-foreground-muted">{dated}</span>}
                     </th>
                   );
                 })}

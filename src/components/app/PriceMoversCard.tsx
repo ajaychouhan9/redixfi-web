@@ -15,7 +15,7 @@ import type { PriceMoverRow, PriceMovers } from "@/lib/api/types";
 function Rows({ rows, title }: { rows: PriceMoverRow[]; title: string }) {
   return (
     <div className="min-w-0 flex-1">
-      <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">{title}</h3>
+      <h3 className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-foreground-muted">{title}</h3>
       <ul className="space-y-2.5">
         {rows.map((r) => (
           <li key={r.symbol}>
@@ -65,12 +65,12 @@ export function PriceMoversCard({ initial }: { initial: PriceMovers | null }) {
         <p className="text-sm text-foreground-muted">Price movers are not available right now.</p>
       ) : (
         <>
-          <p className="mb-2 text-[11px] text-foreground-faint" data-testid="price-movers-asof">{data.as_of_label} · {data.universe}</p>
+          <p className="mb-2 text-[12px] text-foreground-faint" data-testid="price-movers-asof">{data.as_of_label} · {data.universe}</p>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <Rows rows={data.up} title="Largest price rises" />
             <Rows rows={data.down} title="Largest price falls" />
           </div>
-          <p className="mt-3 text-[11px] text-foreground-faint">{data.note}</p>
+          <p className="mt-3 text-[12px] text-foreground-faint">{data.note}</p>
         </>
       )}
     </Card>

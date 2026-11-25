@@ -9,7 +9,7 @@ import { useEffect } from "react";
  * is fetched and no wording changes. A table with data-no-stack is left alone.
  */
 export function labelTable(table: HTMLTableElement): void {
-  if (table.hasAttribute("data-no-stack")) return;
+  if (table.hasAttribute("data-no-stack") || table.closest("[data-no-stack]")) return;
   const headRow = table.tHead?.rows[table.tHead.rows.length - 1] ?? null;
   const labels: string[] = [];
   if (headRow) {

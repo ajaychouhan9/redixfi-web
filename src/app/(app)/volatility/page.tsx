@@ -46,8 +46,8 @@ export default async function VolatilityPage() {
           How much each stock&apos;s price has moved from one day to the next over the last 21 trading sessions.
           {rankedOf ? ` ${rankedOf.toLocaleString("en-IN")} ${top?.universe_label ?? "ranked stocks"} are ranked.` : ""} Rank 1 is the most volatile.
         </p>
-        {asOf && <p className="mt-1 text-[11px] text-foreground-faint">Data as of {formatShortDate(asOf)}</p>}
-        <p className="mt-1 text-[11px] text-foreground-faint">{disclaimer}</p>
+        {asOf && <p className="mt-1 text-[12px] text-foreground-faint">Data as of {formatShortDate(asOf)}</p>}
+        <p className="mt-1 text-[12px] text-foreground-faint">{disclaimer}</p>
       </header>
 
       <VolatilityBoard initialTop={top} initialBottom={bottom} />

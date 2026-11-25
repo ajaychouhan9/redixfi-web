@@ -71,7 +71,7 @@ export function BottomNav() {
   const ref = useDismiss(accountOpen, () => setAccountOpen(false));
   const active = activeNavId(pathname);
   const cls = (on: boolean) =>
-    clsx("relative flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium", on ? "text-accent-dim" : "text-foreground-faint");
+    clsx("relative flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 text-[12px] font-medium", on ? "text-accent-dim" : "text-foreground-faint");
   return (
     <div ref={ref}>
       {accountOpen && (
@@ -88,7 +88,7 @@ export function BottomNav() {
             return (
               <button key={item.id} type="button" onClick={() => setAccountOpen((o) => !o)} aria-haspopup="menu" aria-expanded={accountOpen} data-testid="bottom-account" className={cls(on)}>
                 {user ? (
-                  <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-accent font-mono text-[9px] font-semibold text-accent-foreground">{initialsFor(user.name, user.email)}</span>
+                  <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-accent font-mono text-[12px] font-semibold text-accent-foreground">{initialsFor(user.name, user.email)}</span>
                 ) : (
                   <Icon size={19} strokeWidth={on ? 2.4 : 2} />
                 )}

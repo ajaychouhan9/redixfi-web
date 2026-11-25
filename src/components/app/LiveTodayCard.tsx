@@ -23,7 +23,7 @@ import type { LiveToday, LiveTodayRow } from "@/lib/api/types";
 function List({ rows, label, tone, closed }: { rows: LiveTodayRow[]; label: string; tone: "up" | "down"; closed: boolean }) {
   return (
     <div className="min-w-0 flex-1">
-      <h3 className={`mb-2 font-mono text-[11px] uppercase tracking-wider ${tone === "up" ? "text-up" : "text-down"}`}>{label}</h3>
+      <h3 className={`mb-2 font-mono text-[12px] uppercase tracking-wider ${tone === "up" ? "text-up" : "text-down"}`}>{label}</h3>
       <ul className="space-y-2.5">
         {rows.map((r) => (
           <li key={r.symbol}>
@@ -32,7 +32,7 @@ function List({ rows, label, tone, closed }: { rows: LiveTodayRow[]; label: stri
                 <span className="truncate font-medium">{r.symbol}</span>
                 <DeltaValue value={r.day_change_pct} kind="pct" className="shrink-0 text-sm" />
               </span>
-              <span className="block text-[10px] text-foreground-faint">
+              <span className="block text-[12px] text-foreground-faint">
                 ₹{r.last_price.toLocaleString("en-IN", { maximumFractionDigits: 2 })} ·{" "}
                 {closed ? formatCloseOrBar(r.as_of) : `${formatTimeIst(r.as_of)} IST`}
               </span>
@@ -75,7 +75,7 @@ export function LiveTodayCard({ initial }: { initial: LiveToday | null }) {
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
           {closed ? <Moon size={14} className="text-accent" aria-hidden /> : <Zap size={14} className="text-accent" aria-hidden />}
           {closed ? "Today’s session · Market closed" : "Today’s session"}
-          <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent">
+          <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[12px] font-medium text-accent">
             {closed ? formatCloseOrBar(data.card_as_of) : `As of ${formatTimeIst(data.card_as_of)} IST (delayed)`}
           </span>
         </span>
@@ -92,7 +92,7 @@ export function LiveTodayCard({ initial }: { initial: LiveToday | null }) {
           {data.volume_multiple ?? 5}x or more of {spikes === 1 ? "its" : "their"} 20-day average volume {closed ? "today" : "so far today"}.
         </p>
       )}
-      <p className="mt-2 text-[11px] leading-snug text-foreground-faint">
+      <p className="mt-2 text-[12px] leading-snug text-foreground-faint">
         {closed ? "Today’s final change" : "Today’s change so far"} against the previous close, from{" "}
         {closed ? "today’s last 15-minute bars" : "the latest 15-minute bars"}.
         {data.liquidity_rule ? ` Listed: ${data.liquidity_rule.charAt(0).toLowerCase()}${data.liquidity_rule.slice(1)}` : ""}{" "}

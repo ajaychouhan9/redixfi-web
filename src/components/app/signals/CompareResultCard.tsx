@@ -69,7 +69,7 @@ export function CompareResultCard({ compare }: { compare: CompareResult }) {
 
           <div className="relative rounded-lg border border-border">
             {more && (
-              <span className="pointer-events-none absolute right-2 top-1 z-20 rounded-full bg-surface-raised px-2 py-0.5 text-[10px] font-medium text-foreground-faint shadow-sm" data-testid="swipe-hint">
+              <span className="pointer-events-none absolute right-2 top-1 z-20 rounded-full bg-surface-raised px-2 py-0.5 text-[12px] font-medium text-foreground-faint shadow-sm" data-testid="swipe-hint">
                 Swipe →
               </span>
             )}

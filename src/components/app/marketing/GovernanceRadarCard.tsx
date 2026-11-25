@@ -22,7 +22,7 @@ export function GovernanceRadarCard() {
           <ShieldAlert size={14} className="text-accent" />
         </span>
         <div>
-          <div className="font-mono text-[11px] uppercase tracking-widest text-accent">{RED_FLAG_RADAR_TITLE}</div>
+          <div className="font-mono text-[12px] uppercase tracking-widest text-accent">{RED_FLAG_RADAR_TITLE}</div>
           <div className="text-xs text-foreground-faint">Filings are reviewed automatically for nine kinds of governance disclosure</div>
         </div>
       </div>

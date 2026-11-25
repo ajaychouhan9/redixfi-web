@@ -72,10 +72,10 @@ function NumberRule({ d, rules, set }: { d: RuleDef; rules: Rules; set: (patch: 
         {d.unit && <span className="text-xs text-foreground-muted">{d.unit}</span>}
       </span>
       {EXAMPLES[d.key] && (
-        <p className="basis-full text-[11px] text-foreground-faint" data-testid={`example-${d.key}`}>{exampleLine(EXAMPLES[d.key].text)}</p>
+        <p className="basis-full text-[12px] text-foreground-faint" data-testid={`example-${d.key}`}>{exampleLine(EXAMPLES[d.key].text)}</p>
       )}
       {ruleProblem(d, rules[d.key] as string) && (
-        <p className="basis-full text-[11px] text-foreground-muted" role="status" data-testid={`problem-${d.key}`}>{ruleProblem(d, rules[d.key] as string)}</p>
+        <p className="basis-full text-[12px] text-foreground-muted" role="status" data-testid={`problem-${d.key}`}>{ruleProblem(d, rules[d.key] as string)}</p>
       )}
     </div>
   );
@@ -90,7 +90,7 @@ function PvBlock({ id, children }: { id: (typeof PV_FILTERS)[number]["id"]; chil
       <p className="text-sm font-medium">{f.label}</p>
       <p className="text-xs text-foreground-muted" data-testid={`pv-${id}-line`}>{f.line}</p>
       <div className="mt-2">{children}</div>
-      <p className="mt-1 text-[11px] text-foreground-faint" data-testid={`pv-${id}-example`}>{exampleLine(f.example.replace(/^e\.g\. /, ""))}</p>
+      <p className="mt-1 text-[12px] text-foreground-faint" data-testid={`pv-${id}-example`}>{exampleLine(f.example.replace(/^e\.g\. /, ""))}</p>
       <details className="mt-2 text-xs text-foreground-muted" data-testid={`pv-${id}-fold`}>
         <summary className="min-h-[32px] cursor-pointer py-1 font-medium text-foreground">{PV_FOLD}</summary>
         <p data-testid={`pv-${id}-tells`}><span className="font-medium text-foreground">What it tells you:</span> {f.tells}</p>
@@ -120,9 +120,9 @@ function PriceVolumeStep({ rules, set }: { rules: Rules; set: (p: Partial<Rules>
           <input id="rule-chgMin" inputMode="decimal" value={rules.chgMin} onChange={(e) => set({ chgMin: e.target.value })} placeholder="e.g. 10" className={field} data-testid="rule-chgMin" />
           <span className="text-xs text-foreground-muted">%</span>
         </div>
-        {rules.chgMin.trim() !== "" && num(rules.chgMin) === undefined && <p className="mt-1 text-[11px] text-foreground-muted" role="status" data-testid="problem-chgMin">Enter a number. This is not used yet.</p>}
-        {rules.chgMin.trim() !== "" && num(rules.chgMin) !== undefined && !chgOn(rules) && rules.chgMonths !== "" && <p className="mt-1 text-[11px] text-foreground-muted" role="status" data-testid="problem-chgMin">Enter a number from -100 to 100,000. This is not used yet.</p>}
-        {chgHalf && <p className="mt-1 text-[11px] text-foreground-muted" role="status" data-testid="problem-chg-pair">Choose both the period and the number. This is not used yet.</p>}
+        {rules.chgMin.trim() !== "" && num(rules.chgMin) === undefined && <p className="mt-1 text-[12px] text-foreground-muted" role="status" data-testid="problem-chgMin">Enter a number. This is not used yet.</p>}
+        {rules.chgMin.trim() !== "" && num(rules.chgMin) !== undefined && !chgOn(rules) && rules.chgMonths !== "" && <p className="mt-1 text-[12px] text-foreground-muted" role="status" data-testid="problem-chgMin">Enter a number from -100 to 100,000. This is not used yet.</p>}
+        {chgHalf && <p className="mt-1 text-[12px] text-foreground-muted" role="status" data-testid="problem-chg-pair">Choose both the period and the number. This is not used yet.</p>}
       </PvBlock>
       <PvBlock id="near52">
         <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -130,7 +130,7 @@ function PriceVolumeStep({ rules, set }: { rules: Rules; set: (p: Partial<Rules>
           <input id="rule-near52" inputMode="decimal" value={rules.near52} onChange={(e) => set({ near52: e.target.value })} placeholder="e.g. 10" className={field} data-testid="rule-near52" />
           <span className="text-xs text-foreground-muted">% below its 52-week high</span>
         </div>
-        {ruleProblem(near, rules.near52) && <p className="mt-1 text-[11px] text-foreground-muted" role="status" data-testid="problem-near52">{ruleProblem(near, rules.near52)}</p>}
+        {ruleProblem(near, rules.near52) && <p className="mt-1 text-[12px] text-foreground-muted" role="status" data-testid="problem-near52">{ruleProblem(near, rules.near52)}</p>}
       </PvBlock>
       <PvBlock id="avg">
         <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -148,7 +148,7 @@ function PriceVolumeStep({ rules, set }: { rules: Rules; set: (p: Partial<Rules>
           <input id="rule-volDay" inputMode="decimal" value={rules.volDay} onChange={(e) => set({ volDay: e.target.value })} placeholder="e.g. 1.5" className={field} data-testid="rule-volDay" />
           <span className="text-xs text-foreground-muted">times its 20-day average volume</span>
         </div>
-        {ruleProblem(vday, rules.volDay) && <p className="mt-1 text-[11px] text-foreground-muted" role="status" data-testid="problem-volDay">{ruleProblem(vday, rules.volDay)}</p>}
+        {ruleProblem(vday, rules.volDay) && <p className="mt-1 text-[12px] text-foreground-muted" role="status" data-testid="problem-volDay">{ruleProblem(vday, rules.volDay)}</p>}
       </PvBlock>
     </div>
   );
@@ -200,11 +200,11 @@ function StepBody({ step, rules, set, data }: { step: number; rules: Rules; set:
               <input id="rule-volNum" inputMode="decimal" value={rules.volNum} onChange={(e) => set({ volNum: e.target.value })} placeholder="e.g. 25" className={field} data-testid="rule-volNum" />
               <span className="text-xs text-foreground-muted">% of stocks</span>
               {rules.volNum.trim() !== "" && !volOn(rules) && (
-                <p className="basis-full text-[11px] text-foreground-muted" role="status" data-testid="problem-volNum">Enter a number from 0 to 100. This is not used yet.</p>
+                <p className="basis-full text-[12px] text-foreground-muted" role="status" data-testid="problem-volNum">Enter a number from 0 to 100. This is not used yet.</p>
               )}
             </div>
           )}
-          <p className="text-[11px] text-foreground-faint" data-testid="example-volNum">{exampleLine(EXAMPLES.volNum.text)}</p>
+          <p className="text-[12px] text-foreground-faint" data-testid="example-volNum">{exampleLine(EXAMPLES.volNum.text)}</p>
         </div>
       )}
       {step === 2 && (

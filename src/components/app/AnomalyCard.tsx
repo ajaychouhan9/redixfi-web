@@ -61,7 +61,7 @@ function AnomalyGroup({ label, rows, type, direction }: { label: string; rows: A
           <li key={r.symbol}>
             <Link href={stockPath("/signals", r.symbol)} className="block text-sm hover:text-accent">
               <span className="font-medium">{r.symbol}</span>
-              {fact && <span className="block text-[11px] leading-snug text-foreground-faint">{fact}</span>}
+              {fact && <span className="block text-[12px] leading-snug text-foreground-faint">{fact}</span>}
             </Link>
           </li>
           );

@@ -14,7 +14,7 @@ import { stockPath } from "@/lib/seo/stock-symbol";
 function Rows({ rows, title }: { rows: PriceMoverRow[]; title: string }) {
   return (
     <div className="min-w-0 flex-1">
-      <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">{title}</h2>
+      <h2 className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-foreground-muted">{title}</h2>
       <ul className="divide-y divide-border rounded-xl border border-border">
         {rows.map((r) => (
           <li key={r.symbol}>

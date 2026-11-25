@@ -71,12 +71,12 @@ export function EventRiskCard({
         <div className="space-y-3">
           {[...groups.entries()].slice(0, 4).map(([category, rows]) => (
             <div key={category}>
-              <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">{category}</h3>
+              <h3 className="mb-1 text-[12px] font-semibold uppercase tracking-wider text-foreground-muted">{category}</h3>
               <ul className="space-y-1.5">
                 {rows.slice(0, 2).map((n) => (
                   <li key={n.uuid} className="text-sm">
                     <a href={n.url} target="_blank" rel="noopener noreferrer" className="hover:text-accent">{n.headline}</a>
-                    <span className="block text-[11px] text-foreground-faint">{formatShortDate(n.published_at)} · {sourceName(n.source)}</span>
+                    <span className="block text-[12px] text-foreground-faint">{formatShortDate(n.published_at)} · {sourceName(n.source)}</span>
                   </li>
                 ))}
               </ul>

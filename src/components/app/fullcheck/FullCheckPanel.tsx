@@ -40,7 +40,7 @@ function SectionBlock({ s }: { s: FullCheckSection }) {
       <p className={`mt-1 whitespace-pre-line text-[13px] ${s.status === "ok" ? "text-foreground-muted" : "text-foreground-faint"}`}>{s.answer}</p>
       {s.table && s.table.rows.length > 0 && (
         <div className="mt-2 max-w-full overflow-x-auto rounded-lg border border-border">
-          <table className="w-max min-w-full text-[12.5px]">
+          <table className="w-max min-w-full text-[13px]">
             <thead>
               <tr className="border-b border-border text-left text-foreground-faint">
                 {s.table.columns.map((c) => <th key={c.key} className="whitespace-nowrap px-3 py-1.5">{c.label}</th>)}
@@ -57,7 +57,7 @@ function SectionBlock({ s }: { s: FullCheckSection }) {
         </div>
       )}
       {s.sources.length > 0 && (
-        <p className="mt-1 text-[11.5px] text-foreground-faint">
+        <p className="mt-1 text-[12px] text-foreground-faint">
           Sources: {s.sources.map((x) => `${x.label ?? ""}${x.detail ? ` (${x.detail})` : ""}`).join("; ")}
         </p>
       )}
@@ -97,7 +97,7 @@ function ReportCard({ runId, report, getToken }: { runId: string; report: FullCh
         </div>
       </div>
       {err && <p className="mt-2 text-xs text-amber">{err}</p>}
-      <p className="mt-1 text-[11.5px] text-foreground-faint">
+      <p className="mt-1 text-[12px] text-foreground-faint">
         Source dates: concall {report.source_dates.concall ?? "none stored"}; annual report {report.source_dates.annual_report ?? "none stored"}; statements fetched {report.source_dates.statements ?? "none stored"}; promoter pledge {report.source_dates.pledge ?? "none stored"}.
       </p>
       <SectionBlock s={report.sections[0]} />
@@ -106,7 +106,7 @@ function ReportCard({ runId, report, getToken }: { runId: string; report: FullCh
         {n.available ? (
           <>
             <div className="mt-2 max-w-full overflow-x-auto rounded-lg border border-border">
-              <table className="w-max min-w-full text-[12.5px]">
+              <table className="w-max min-w-full text-[13px]">
                 <thead>
                   <tr className="border-b border-border text-left text-foreground-faint">
                     {n.columns.map((c) => <th key={c.key} className="whitespace-nowrap px-3 py-1.5">{c.label}</th>)}
@@ -121,8 +121,8 @@ function ReportCard({ runId, report, getToken }: { runId: string; report: FullCh
                 </tbody>
               </table>
             </div>
-            {n.notes.map((t) => <p key={t} className="mt-1 text-[11.5px] text-foreground-faint">{t}</p>)}
-            <p className="mt-1 text-[11.5px] text-foreground-faint">Statements fetched {n.as_of ?? "(date not available)"}.</p>
+            {n.notes.map((t) => <p key={t} className="mt-1 text-[12px] text-foreground-faint">{t}</p>)}
+            <p className="mt-1 text-[12px] text-foreground-faint">Statements fetched {n.as_of ?? "(date not available)"}.</p>
           </>
         ) : (
           <p className="mt-1 text-[13px] text-foreground-faint">No annual statements are stored for this company.</p>
@@ -141,7 +141,7 @@ function ReportCard({ runId, report, getToken }: { runId: string; report: FullCh
           ))}
         </ul>
       </div>
-      <p className="mt-3 text-[11.5px] text-foreground-faint">{report.footer}</p>
+      <p className="mt-3 text-[12px] text-foreground-faint">{report.footer}</p>
     </article>
   );
 }
@@ -310,7 +310,7 @@ export function FullCheckPanel() {
                 return (
                   <li key={sy} className="flex items-center overflow-hidden rounded-full border border-border text-xs">
                     <span className="px-3 py-2 font-mono font-medium">{sy}</span>
-                    {est && <span className="text-[11px] text-foreground-faint">{est.cost}{est.cached ? " (stored)" : ""}</span>}
+                    {est && <span className="text-[12px] text-foreground-faint">{est.cost}{est.cached ? " (stored)" : ""}</span>}
                     <button type="button" onClick={() => setPicked((p) => p.filter((x) => x !== sy))} aria-label={`Remove ${sy}`} className="min-h-[36px] px-2 text-foreground-muted hover:text-foreground">×</button>
                   </li>
                 );

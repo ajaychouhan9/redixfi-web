@@ -14,6 +14,7 @@ import { BRIEF_NOT_ADVICE, shownBullets, updatedLine } from "@/lib/home-brief";
  */
 export function HomeBrief() {
   const [brief, setBrief] = useState<HomeBriefData | null | undefined>(undefined);
+  const [more, setMore] = useState(false);
   useEffect(() => {
     let cancelled = false;
     getHomeBrief({ revalidate: 300 })
@@ -26,6 +27,8 @@ export function HomeBrief() {
 
   const bullets = shownBullets(brief?.bullets);
   const updated = updatedLine(brief?.updated_label, brief?.updated_at);
+  // 26 Nov 2026: with no brief stored (or the read failed) the card is hidden; no empty box and no stuck placeholder.
+  if (brief !== undefined && bullets.length === 0) return null;
   return (
     <section className="min-w-0 max-w-full rounded-2xl border border-border bg-surface-raised p-4 sm:p-5" aria-labelledby="home-brief-title" data-testid="home-brief">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
@@ -33,7 +36,7 @@ export function HomeBrief() {
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/15">
             <Sparkles size={14} className="text-accent" aria-hidden />
           </span>
-          <h2 id="home-brief-title" className="font-mono text-[11px] uppercase tracking-widest text-accent">AI brief</h2>
+          <h2 id="home-brief-title" className="font-mono text-[12px] uppercase tracking-widest text-accent">AI brief</h2>
         </div>
         {updated && <span className="font-mono text-[12px] text-foreground-faint" data-testid="home-brief-updated">{updated}</span>}
       </div>
@@ -44,13 +47,17 @@ export function HomeBrief() {
           ))}
         </div>
       )}
-      {brief !== undefined && bullets.length === 0 && <p className="text-sm text-foreground-muted" data-testid="home-brief-empty">Today&apos;s brief is being prepared. It is written four times a day.</p>}
       {bullets.length > 0 && (
         <ul className="list-disc space-y-1.5 break-words pl-5 text-[15px] leading-[1.6] marker:text-accent-dim [overflow-wrap:anywhere]" data-testid="home-brief-bullets">
-          {bullets.map((b, i) => (
-            <li key={i}>{b}</li>
+          {(more ? bullets : bullets.slice(0, 3)).map((b, i) => (
+            <li key={i} className={more ? "" : "line-clamp-2"}>{b}</li>
           ))}
         </ul>
+      )}
+      {bullets.length > 0 && (
+        <button type="button" onClick={() => setMore((m) => !m)} aria-expanded={more} className="mt-1 flex min-h-[44px] items-center text-[13px] font-medium text-accent" data-testid="home-brief-more">
+          {more ? "Show less" : "Read more"}
+        </button>
       )}
       <p className="mt-3 text-xs text-foreground-muted">{BRIEF_NOT_ADVICE}</p>
     </section>

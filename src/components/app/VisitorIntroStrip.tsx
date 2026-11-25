@@ -41,7 +41,7 @@ export function VisitorIntroStrip() {
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-surface-raised">
       <div className="px-5 py-8 sm:px-8 sm:py-10">
-        <div className="font-mono text-[11px] uppercase tracking-widest text-accent">RedixFi — Market. Simplified.</div>
+        <div className="font-mono text-[12px] uppercase tracking-widest text-accent">RedixFi — Market. Simplified.</div>
         {/* Conversion copy (16 Nov 2026). "governance disclosures" is the product's term; the wording guard bans the old
             "red flags" label in displayed text. The one sub-line replaces the former disclaimer box; the full disclaimer
             stays in the footer and on /more/disclaimer. */}

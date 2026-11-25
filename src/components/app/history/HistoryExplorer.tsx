@@ -474,12 +474,12 @@ export function HistoryExplorer() {
                       <input type="checkbox" className="mt-0.5 h-5 w-5" checked={signals.includes(r.key)} onChange={() => toggleSignal(r.key)} />
                       <span>
                         {r.label}
-                        <span className="block text-[11px] leading-snug text-foreground-muted">{r.rule}</span>
+                        <span className="block text-[12px] leading-snug text-foreground-muted">{r.rule}</span>
                       </span>
                     </label>
                   ))}
                 </div>
-                <p className="mt-1.5 text-[11px] text-foreground-muted" data-testid="history-building">
+                <p className="mt-1.5 text-[12px] text-foreground-muted" data-testid="history-building">
                   {HISTORY_BUILDING}
                 </p>
                 {signals.length >= 2 && (

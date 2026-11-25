@@ -84,7 +84,7 @@ export function MarkdownAnswer({ text }: { text: string }) {
           return (
             <div
               key={i}
-              // Was `text-[12.5px]` — SMALLER than the 15px body text
+              // Was `text-[13px]` — SMALLER than the 15px body text
               // (`text-sm`, see AskRedixFi.tsx), the opposite of the
               // intended hierarchy. `text-base` (16px) matches the exact
               // precedent already set for "this needs to stand out"

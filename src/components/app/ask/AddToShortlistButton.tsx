@@ -29,7 +29,7 @@ export function AddToShortlistButton({ symbol, getToken }: { symbol: string; get
       onClick={add}
       disabled={state === "adding" || state === "added"}
       aria-label={`${label}: ${symbol}`}
-      className="whitespace-nowrap rounded-md border border-border bg-hover px-2 py-1 text-[11.5px] font-medium text-foreground-muted transition-colors hover:border-accent hover:text-foreground disabled:opacity-60"
+      className="whitespace-nowrap rounded-md border border-border bg-hover px-2 py-1 text-[12px] font-medium text-foreground-muted transition-colors hover:border-accent hover:text-foreground disabled:opacity-60"
       data-testid="add-to-shortlist"
     >
       {label}

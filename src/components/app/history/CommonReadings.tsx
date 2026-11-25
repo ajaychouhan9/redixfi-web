@@ -43,7 +43,7 @@ function RowCard({ r }: { r: CommonRow }) {
           {r.reading} <span className="font-normal text-foreground-muted">· session {offLabel(r.offset)}</span>
         </p>
         {r.stood_out && (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-accent bg-accent/15 px-2 py-0.5 text-[11px] font-semibold text-foreground">
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-accent bg-accent/15 px-2 py-0.5 text-[12px] font-semibold text-foreground">
             <Check className="h-3 w-3" aria-hidden /> {BADGE}
           </span>
         )}
@@ -66,7 +66,7 @@ function RowTable({ rows }: { rows: CommonRow[] }) {
     <div className="hidden sm:block">
       <table className="w-full text-left text-[13px]" data-testid="common-table">
         <thead>
-          <tr className="border-b border-border text-[11px] font-semibold uppercase text-foreground-muted">
+          <tr className="border-b border-border text-[12px] font-semibold uppercase text-foreground-muted">
             <th className="py-2 pr-3">{COL_READING}</th>
             <th className="py-2 pr-3">{COL_SESSION}</th>
             <th className="py-2 pr-3">{COL_PRESENT}</th>
@@ -85,7 +85,7 @@ function RowTable({ rows }: { rows: CommonRow[] }) {
               <td className="py-2 pr-3 tabular-nums">{r.enough ? diffText(r.diff_pp) : "Fewer than 30 days"}</td>
               <td className="py-2">
                 {r.stood_out && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-accent bg-accent/15 px-2 py-0.5 text-[11px] font-semibold">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-accent bg-accent/15 px-2 py-0.5 text-[12px] font-semibold">
                     <Check className="h-3 w-3" aria-hidden /> {BADGE}
                   </span>
                 )}
@@ -155,7 +155,7 @@ export function CommonReadings({ mode, body, days, moveAny }: { mode: "stockwise
           {!busy && (open && res ? <ChevronUp className="ml-1.5 inline h-4 w-4 align-[-3px]" aria-hidden /> : <ChevronDown className="ml-1.5 inline h-4 w-4 align-[-3px]" aria-hidden />)}
         </button>
         <p id="common-sub" className="min-w-0 flex-1 text-sm text-foreground-muted sm:text-xs">
-          <span className="mb-0.5 block text-[11px] font-semibold uppercase tracking-wide text-foreground-faint">{COMMON_SUBLABEL}</span>
+          <span className="mb-0.5 block text-[12px] font-semibold uppercase tracking-wide text-foreground-faint">{COMMON_SUBLABEL}</span>
           {COMMON_SUB}
         </p>
       </div>
@@ -190,7 +190,7 @@ export function CommonReadings({ mode, body, days, moveAny }: { mode: "stockwise
           </p>
           <p className="text-xs text-foreground-muted" data-testid="common-stood-out-note">{res.fixed?.stood_out_note}</p>
           <p className="text-xs text-foreground-muted">{res.fixed?.before_only}</p>
-          <p className="text-[11px] text-foreground-muted" data-testid="common-legend">{LEGEND}</p>
+          <p className="text-[12px] text-foreground-muted" data-testid="common-legend">{LEGEND}</p>
           <RowTable rows={res.rows} />
           <ul className="space-y-1.5 sm:hidden" data-testid="common-cards">
             {res.rows.map((r) => (
@@ -214,7 +214,7 @@ export function CommonReadings({ mode, body, days, moveAny }: { mode: "stockwise
               )}
             </dl>
             {res.market_wide && (
-              <p className="mt-1 text-[11px] text-foreground-muted">
+              <p className="mt-1 text-[12px] text-foreground-muted">
                 A market-wide day is one on which at least {res.market_wide.share_pct}% of the ranked stocks moved by the same size.
               </p>
             )}
@@ -228,7 +228,7 @@ export function CommonReadings({ mode, body, days, moveAny }: { mode: "stockwise
                 ))}
               </dl>
             )}
-            {res.results_dates && <p className="mt-2 text-[11px] text-foreground-muted">{res.results_dates}</p>}
+            {res.results_dates && <p className="mt-2 text-[12px] text-foreground-muted">{res.results_dates}</p>}
           </div>
           <div className="space-y-1">
             <p className="text-xs font-medium text-foreground-muted">{tidyApiLine(res.fixed?.caution)}</p>

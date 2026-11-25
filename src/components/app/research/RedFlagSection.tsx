@@ -43,9 +43,9 @@ function CategoryBlock({ group }: { group: RedFlagCategoryGroup }) {
   return (
     <div className="border-t border-border pt-3 first:border-t-0 first:pt-0">
       <div className="mb-2 flex flex-wrap items-center gap-2">
-        <span className="text-[11px] font-medium uppercase tracking-wide text-foreground-faint">Disclosure type</span>
+        <span className="text-[12px] font-medium uppercase tracking-wide text-foreground-faint">Disclosure type</span>
         <h3 className="text-sm font-semibold text-foreground">{RED_FLAG_CATEGORY_LABELS[group.category] ?? group.category_label}</h3>
-        <span className="rounded-full bg-neutral-bg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-foreground-muted">
+        <span className="rounded-full bg-neutral-bg px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-foreground-muted">
           {group.occurrence_count} occurrence{group.occurrence_count === 1 ? "" : "s"}
         </span>
       </div>
@@ -70,7 +70,7 @@ function CategoryBlock({ group }: { group: RedFlagCategoryGroup }) {
                 </span>
                 <span className="text-foreground-faint">{occurrenceDateLabel(occ.fiscal_year, occ.filing_date)}</span>
                 {occ.quality_note && (
-                  <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-foreground-faint">{occ.quality_note}</span>
+                  <span className="rounded-full border border-border px-2 py-0.5 text-[12px] text-foreground-faint">{occ.quality_note}</span>
                 )}
                 {occ.chunk_count > 1 && (
                   <span className="text-foreground-faint">· {occ.chunk_count} passages</span>

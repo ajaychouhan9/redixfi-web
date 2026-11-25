@@ -329,7 +329,7 @@ export function PromoCodeAdminView() {
             </div>
             <div className="flex flex-col gap-2.5 rounded-lg border border-border bg-surface p-2.5">
               <div>
-                <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-foreground-faint">Subscription</p>
+                <p className="mb-1 text-[12px] font-medium uppercase tracking-wide text-foreground-faint">Subscription</p>
                 <div className="flex flex-col gap-1.5">
                   {SUBSCRIPTION_APPLIES_TO_OPTIONS.map((o) => (
                     <label key={o.value} className="flex items-center gap-2 text-sm">
@@ -340,7 +340,7 @@ export function PromoCodeAdminView() {
                 </div>
               </div>
               <div>
-                <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-foreground-faint">Addon</p>
+                <p className="mb-1 text-[12px] font-medium uppercase tracking-wide text-foreground-faint">Addon</p>
                 <div className="flex flex-col gap-1.5">
                   {ADDON_APPLIES_TO_OPTIONS.map((o) => (
                     <label key={o.value} className="flex items-center gap-2 text-sm">
@@ -435,7 +435,7 @@ export function PromoCodeAdminView() {
       >
         <div className="overflow-x-auto">
           <table className="w-full min-w-[820px] text-sm">
-            {/* Font-size audit (2026-08-11): was text-[11px], bumped to
+            {/* Font-size audit (2026-08-11): was text-[12px], bumped to
                 text-[13px] per the task's 13px "secondary labels" floor. */}
             <thead>
               <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wide text-foreground-faint">

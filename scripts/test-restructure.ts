@@ -205,7 +205,7 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\
   assert.equal(updatedLine(null, null), null);
   const b = strip(read("components/app/home/HomeBrief.tsx"));
   assert.ok(b.includes("shownBullets(brief?.bullets)") && b.includes("getHomeBrief") && b.includes(BRIEF_NOT_ADVICE.slice(0, 20)) || b.includes("BRIEF_NOT_ADVICE"), "reads the stored brief through the guard and carries the not-advice line");
-  assert.ok(b.includes("home-brief-updated") && b.includes("being prepared"), "Updated line; honest empty state");
+  assert.ok(b.includes("home-brief-updated") && b.includes("return null"), "Updated line; no brief means the card is hidden (26 Nov 2026)");
   const ep = strip(read("lib/api/endpoints.ts"));
   assert.ok(ep.includes('"/brief/home"') && /@auth public[^\n]*\n[^\n]*getHomeBrief|@auth public[\s\S]{0,300}getHomeBrief/.test(read("lib/api/endpoints.ts")), "public GET /brief/home, read-only");
 }

@@ -6,7 +6,7 @@ import type { CorporateActionNote as Note } from "@/lib/api/types";
 export function CorporateActionNote({ info, className }: { info?: Note | null; className?: string }) {
   if (!info?.note) return null;
   return (
-    <p className={className ?? "mt-1 text-[11px] text-foreground-muted"} role="note">
+    <p className={className ?? "mt-1 text-[12px] text-foreground-muted"} role="note">
       {info.note}
     </p>
   );

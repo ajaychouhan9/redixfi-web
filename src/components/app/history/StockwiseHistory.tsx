@@ -130,7 +130,7 @@ function BlockCard({ b }: { b: SessionBlock }) {
         {b.offset === 0 ? " · the move" : ""}
       </span>
       {b.status === "ok" && (
-        <span className="text-[11px] text-foreground-muted">
+        <span className="text-[12px] text-foreground-muted">
           {b.weekday?.slice(0, 3)} {fmtShort(b.date)}
         </span>
       )}
@@ -184,12 +184,12 @@ export function DayTable({ d, showStock, name }: { d: StockwiseDay; showStock: b
   return (
     <li className={`${INNER} space-y-2`} data-testid="sw-day">
       <DayHeading d={d} showStock={showStock} name={name} />
-      <table className="w-full table-fixed border-collapse text-[11px] sm:text-[12px]" data-testid="sw-daytable">
+      <table className="w-full table-fixed border-collapse text-[12px] sm:text-[12px]" data-testid="sw-daytable">
         <caption className="sr-only">
           {d.symbol} {d.weekday} {d.date}: readings by session
         </caption>
         <thead>
-          <tr className="border-b border-border text-[10px] font-semibold uppercase leading-tight text-foreground-muted">
+          <tr className="border-b border-border text-[12px] font-semibold uppercase leading-tight text-foreground-muted">
             <th scope="col" className="w-[18%] py-1.5 pr-1 text-left">Session</th>
             <th scope="col" className="w-[16%] py-1.5 pr-1 text-right">Change</th>
             <th scope="col" className="w-[19%] py-1.5 pr-1 text-right">Trend (10d)</th>
@@ -205,9 +205,9 @@ export function DayTable({ d, showStock, name }: { d: StockwiseDay; showStock: b
             const first = (
               <th scope="row" className={`py-1.5 pr-1 text-left align-top font-medium ${isDay ? "border-l-2 border-accent pl-1" : ""}`}>
                 <span className="block">{offLabel(b.offset)}</span>
-                {isDay && <span className="block text-[10px] font-semibold uppercase text-foreground">the move</span>}
+                {isDay && <span className="block text-[12px] font-semibold uppercase text-foreground">the move</span>}
                 {b.status === "ok" && (
-                  <span className="block text-[10px] font-normal text-foreground-muted">
+                  <span className="block text-[12px] font-normal text-foreground-muted">
                     {b.weekday?.slice(0, 3)} {fmtDM(b.date)}
                   </span>
                 )}
