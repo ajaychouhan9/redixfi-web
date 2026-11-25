@@ -9,6 +9,7 @@ import { CompareIndicator } from "@/components/app/CompareIndicator";
 import { ReportActions } from "@/components/app/report/ReportActions";
 import { WatchlistButton } from "@/components/app/WatchlistButton";
 import { StockExcelButton } from "@/components/app/stock/StockExcelButton";
+import { InlineSignup } from "@/components/app/InlineSignup";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { signupHref } from "@/lib/nav-items";
 
@@ -37,6 +38,7 @@ export function StockActions({ symbol, companyName }: { symbol: string; companyN
       <CompareIndicator symbol={symbol} companyName={companyName} />
       <StockExcelButton symbol={symbol} />
       <ReportActions symbol={symbol} />
+      <InlineSignup className="basis-full" text="Sign up free to save this stock, set alerts and export." />
     </div>
   );
 }

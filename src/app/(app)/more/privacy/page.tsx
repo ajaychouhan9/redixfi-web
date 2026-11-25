@@ -55,7 +55,8 @@ export default function PrivacyPage() {
                 <li><strong className="text-foreground">Zoho Mail</strong>: sending alert and digest emails and receiving messages sent to support.</li>
                 <li><strong className="text-foreground">OpenAI</strong>: the AI model that receives the text of a question you ask in Ask AI, and the data needed to answer it, in order to write the answer. Please do not put personal details in a question.</li>
                 <li><strong className="text-foreground">Telegram</strong>: delivering alerts, only if you link your Telegram account.</li>
-                <li><strong className="text-foreground">Vercel</strong>: hosting and delivering the website, and its privacy-friendly page-count analytics, which do not use cookies and do not follow you across sites.</li>
+                <li><strong className="text-foreground">Cloudflare</strong>: delivering the website and its Web Analytics page counts, which do not use cookies and do not follow you across sites.</li>
+                <li><strong className="text-foreground">Microsoft Clarity</strong>: recordings and heat maps of how visitors use our pages (where they tap and scroll), so we can find what is confusing. Everything typed into a box is hidden from the recording, and the pages that show your own account are hidden as a whole.</li>
                 <li><strong className="text-foreground">Our servers and database</strong>, where the service runs and your records are stored in India or in the cloud region we choose.</li>
               </ul>
               <p>We do not sell your personal data and we do not use it for advertising.</p>
@@ -64,7 +65,12 @@ export default function PrivacyPage() {
         },
         {
           heading: "Cookies and analytics",
-          body: <p>RedixFi stores your sign-in on your device so you stay signed in, and a few settings (for example a theme choice). We count page views and a few actions, such as clicking the trial button, with Vercel Web Analytics, which does not set cookies and does not identify you personally. We do not use advertising cookies.</p>,
+          body: (
+            <>
+              <p>RedixFi stores your sign-in on your device so you stay signed in, and a few settings (for example a theme choice). We do not use advertising cookies.</p>
+              <p>To learn why visitors do or do not sign up, we use three kinds of analytics. (1) Our own page and step counts: which kind of page was opened, whether the Start free button, the sign-up form or the Pricing page was opened, and the UTM tag of the link you came from. They are stored with a random browser id kept on your device (no name, no email) and are removed after 400 days. (2) Cloudflare Web Analytics, which counts page views without cookies. (3) Microsoft Clarity, which records anonymised sessions and heat maps and may set its own cookies (names starting with _cl). Text you type into any box is never recorded. You can stop all three by blocking scripts and local storage in your browser, or by writing to us to ask that your browser id be deleted.</p>
+            </>
+          ),
         },
         {
           heading: "How long we keep it",

@@ -13,8 +13,9 @@ import { track } from "@/lib/analytics";
 import { BASIC_FEATURES, PRO_FEATURES, PLAN_MATRIX } from "@/data/plan-features";
 import type { BillingPlan, MeProfile, PromoValidation } from "@/lib/api/types";
 import { FeedbackBox } from "@/components/app/FeedbackBox";
+import { ExitSurvey } from "@/components/app/TrialGuides";
 
-const ANNUAL_SAVINGS_NOTE = "Save vs paying monthly for a year";
+const ANNUAL_SAVINGS_NOTE = "Yearly costs less than 12 monthly payments";
 
 // Plan ids whose BILLING PERIOD is annual — a naming-convention check
 // (deliberately not a live GET /billing/plans lookup, see below) used
@@ -31,13 +32,15 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
   const { user, getToken, updateCachedUser } = useAuth();
   const [profile, setProfile] = useState<MeProfile | null>(null);
   const [plans] = useState(initialPlans);
-  const [period, setPeriod] = useState<"monthly" | "annual">("monthly");
+  const [period, setPeriod] = useState<"monthly" | "annual">("annual"); // yearly is shown first (26 Nov 2026)
   // Keyed by plan id — validated INDEPENDENTLY per plan (never one plan's
   // result reused for another) — see the promo-preview-mismatch bug fix
   // this pattern originated from.
   const [promoInput, setPromoInput] = useState("");
   const [promoResults, setPromoResults] = useState<Record<string, PromoValidation>>({});
   const [promoChecking, setPromoChecking] = useState(false);
+  // checkout closed without paying: ask the one question "What stopped you?"
+  const [checkoutClosed, setCheckoutClosed] = useState(false);
   const promoApplied = Object.values(promoResults).some((r) => r.valid);
 
   async function reload() {
@@ -86,8 +89,8 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
 
   const basicMonthly = plans.find((p) => p.plan === "basic_249");
   const proMonthly = plans.find((p) => p.plan === "pro_399");
-  const basicAnnual = plans.find((p) => p.plan === "basic_annual_2399");
-  const proAnnual = plans.find((p) => p.plan === "pro_annual_3999");
+  const basicAnnual = plans.find((p) => p.plan === "basic_annual_1499");
+  const proAnnual = plans.find((p) => p.plan === "pro_annual_2499");
 
   const basicPlan = period === "monthly" ? basicMonthly : basicAnnual;
   const proPlan = period === "monthly" ? proMonthly : proAnnual;
@@ -172,7 +175,7 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
           onClick={() => setPeriod("annual")}
           className={`rounded-md px-3 py-1.5 font-medium ${period === "annual" ? "bg-accent text-accent-foreground" : "text-foreground-muted"}`}
         >
-          Annual
+          Yearly
         </button>
       </div>
 
@@ -221,6 +224,7 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
             notice={cardNotice(running, basicPlan.plan)}
             buttonLabel={cardButtonLabel(running, basicPlan.plan)}
             onPurchased={reload}
+            onCheckoutClosed={() => setCheckoutClosed(true)}
           />
         )}
         {proPlan && (
@@ -238,9 +242,12 @@ export function CheckoutView({ initialPlans }: { initialPlans: BillingPlan[] }) 
             notice={cardNotice(running, proPlan.plan)}
             buttonLabel={cardButtonLabel(running, proPlan.plan)}
             onPurchased={reload}
+            onCheckoutClosed={() => setCheckoutClosed(true)}
           />
         )}
       </div>
+
+      {checkoutClosed && <ExitSurvey forceOpen source="checkout_closed" />}
 
       <div className="mt-8 overflow-x-auto rounded-xl border border-border bg-surface-raised md:overflow-visible" data-testid="plan-matrix">
         <div className="md:hidden" data-testid="plan-matrix-cards">

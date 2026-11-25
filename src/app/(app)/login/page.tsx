@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { Card } from "@/components/ui/Card";
 import { RedixFiLogo } from "@/components/brand/RedixFiLogo";
 import { track } from "@/lib/analytics";
+import { GoogleOneTap } from "@/components/app/GoogleOneTap";
 
 /**
  * TASK 19 — Auth redesign. Google Sign-In (primary) + email/password
@@ -57,7 +58,8 @@ export default function LoginPage() {
   const { loginWithFirebaseToken } = useAuth();
 
   const [mode, setMode] = useState<Mode>("signin");
-  // The sign-up box is unticked by default; creating an account (and Google while on the sign-up form) needs it ticked.
+  // One screen (26 Nov 2026). Google and one-tap accept the Terms and the Privacy Policy by continuing (the note under the buttons links both). Making an account
+  // with an email and a password keeps the unticked box, as before.
   const [agree, setAgree] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -89,6 +91,11 @@ export default function LoginPage() {
     }
   }, []);
 
+  // opening this page is the "sign-up started" step of the funnel
+  useEffect(() => {
+    track("signup_started");
+  }, []);
+
   function switchMode(next: Mode) {
     setMode(next);
     setError(null);
@@ -97,12 +104,21 @@ export default function LoginPage() {
 
   async function finishLogin(idToken: string, acceptTermsNow = false) {
     await loginWithFirebaseToken(idToken, acceptTermsNow);
-    if (acceptTermsNow) {
-      track("signup_completed");
-    }
-    // back to the page the visitor came from when it was a same-site path (for example the stock they were opening)
+    // land on the page the visitor came from (the stock they were looking at), else the last stock page they opened, else the account page
     const next = new URLSearchParams(window.location.search).get("next");
-    router.push(next && next.startsWith("/") && !next.startsWith("//") ? next : "/account");
+    let last: string | null = null;
+    try {
+      last = window.sessionStorage.getItem("redixfi:last-stock");
+    } catch {
+      /* none */
+    }
+    const target = next && next.startsWith("/") && !next.startsWith("//") ? next : last && /^[A-Za-z0-9&_-]{1,20}$/.test(last) ? `/stocks/${last}` : "/account";
+    try {
+      window.localStorage.setItem("redixfi:welcome", "1"); // the three-step guide shows once, on the first page after sign-up
+    } catch {
+      /* no storage: no guide */
+    }
+    router.push(target);
   }
 
   async function signInWithGoogle() {
@@ -115,7 +131,22 @@ export default function LoginPage() {
       provider.setCustomParameters({ prompt: "select_account" });
       const result = await signInWithPopup(auth, provider);
       const idToken = await result.user.getIdToken();
-      await finishLogin(idToken, mode === "signup" && agree);
+      await finishLogin(idToken, true);
+    } catch (e) {
+      setError(describeAuthError(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Google one-tap: the browser's own "Continue as <name>" card. The Google credential is exchanged for a Firebase sign-in, then the same login as the button. */
+  async function signInWithGoogleCredential(credential: string) {
+    setError(null);
+    setBusy(true);
+    try {
+      const { GoogleAuthProvider, signInWithCredential } = await import("firebase/auth");
+      const result = await signInWithCredential(getFirebaseAuth(), GoogleAuthProvider.credential(credential));
+      await finishLogin(await result.user.getIdToken(), true);
     } catch (e) {
       setError(describeAuthError(e));
     } finally {
@@ -145,7 +176,7 @@ export default function LoginPage() {
       const { signInWithEmailAndPassword } = await import("firebase/auth");
       const cred = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await cred.user.getIdToken();
-      await finishLogin(idToken);
+      await finishLogin(idToken, true);
     } catch (e) {
       setError(describeAuthError(e));
     } finally {
@@ -177,7 +208,7 @@ export default function LoginPage() {
     try {
       const cred = await confirmation.confirm(otp);
       const idToken = await cred.user.getIdToken();
-      await finishLogin(idToken);
+      await finishLogin(idToken, true);
     } catch (e) {
       setError(describeAuthError(e));
     } finally {
@@ -193,25 +224,16 @@ export default function LoginPage() {
       <h1 className="mb-4 text-xl font-semibold">{mode === "signup" ? "Create your account" : "Log in"}</h1>
       <p className="mb-4 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-foreground">
         <span className="font-semibold">{trialDays}-day free Pro trial. No payment details needed.</span>{" "}
-        It starts once you have accepted the Terms and the Privacy Policy, once per account.
+        It starts as soon as you sign in, once per account.
       </p>
+      <GoogleOneTap onCredential={signInWithGoogleCredential} />
       <Card>
         <div className="space-y-4">
-          {mode === "signup" && (
-            <label className="flex items-start gap-2 text-sm" data-testid="signup-consent">
-              <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>
-                I agree to the{" "}
-                <Link href="/more/terms" target="_blank" className="text-accent underline">Terms</Link> and the{" "}
-                <Link href="/more/privacy" target="_blank" className="text-accent underline">Privacy Policy</Link>
-              </span>
-            </label>
-          )}
           {/* Primary: Google Sign-In — most visible option, per the task doc. */}
           <button
             onClick={signInWithGoogle}
-            disabled={busy || (mode === "signup" && !agree)}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm font-medium disabled:opacity-50"
+            disabled={busy}
+            className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-2.5 text-[15px] font-bold disabled:opacity-50"
           >
             <GoogleIcon />
             Continue with Google
@@ -247,6 +269,12 @@ export default function LoginPage() {
                 />
               </label>
             )}
+            {mode === "signup" && (
+              <label className="flex items-start gap-2 text-sm" data-testid="signup-consent-box">
+                <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>I agree to the Terms and the Privacy Policy</span>
+              </label>
+            )}
             <button
               onClick={submitEmailForm}
               disabled={busy || !email || (mode !== "reset" && !password) || (mode === "signup" && !agree)}
@@ -255,6 +283,12 @@ export default function LoginPage() {
               {mode === "signup" ? "Create account" : mode === "reset" ? "Send reset link" : "Log in"}
             </button>
           </div>
+
+          <p className="text-center text-[12px] text-foreground-muted" data-testid="signup-consent">
+            By continuing with Google you agree to the{" "}
+            <Link href="/more/terms" target="_blank" className="text-accent underline">Terms</Link> and the{" "}
+            <Link href="/more/privacy" target="_blank" className="text-accent underline">Privacy Policy</Link>.
+          </p>
 
           <div className="flex items-center justify-between text-xs">
             {mode === "signin" && (

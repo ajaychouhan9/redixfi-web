@@ -42,6 +42,7 @@ export function PlanCard({
   notice,
   buttonLabel,
   onPurchased,
+  onCheckoutClosed,
 }: {
   plan: BillingPlan;
   highlighted?: boolean;
@@ -69,6 +70,8 @@ export function PlanCard({
   /** Replaces "Subscribe", for example "Renew" in the last days of the running plan. */
   buttonLabel?: string;
   onPurchased?: () => void;
+  /** Called when the checkout window is closed without paying. */
+  onCheckoutClosed?: () => void;
 }) {
   const { user, getToken } = useAuth();
   const router = useRouter();
@@ -121,6 +124,7 @@ export function PlanCard({
         name: "RedixFi",
         description: PLAN_LABEL[plan.plan] ?? plan.plan,
         theme: { color: "#2f5ce0" },
+        modal: { ondismiss: () => onCheckoutClosed?.() },
         handler: async (resp) => {
           const token2 = await getToken();
           if (!token2) return;
@@ -185,6 +189,9 @@ export function PlanCard({
         ₹{plan.amount_rupees.toLocaleString("en-IN")}
         <span className="text-sm font-normal text-foreground-muted">/{plan.period_days >= 300 ? "yr" : "mo"}</span>
       </p>
+      {plan.period_days >= 300 && (
+        <p className="mt-0.5 text-[15px] font-bold" data-testid="per-month-note">≈ ₹{Math.round(plan.amount_rupees / 12).toLocaleString("en-IN")}/month, billed yearly</p>
+      )}
       {savingsNote && <p className="mt-0.5 text-xs font-medium text-up">{savingsNote}</p>}
 
       <ul className="mt-4 space-y-1.5 text-sm">

@@ -1,3 +1,4 @@
+import { SiteInsights } from "@/components/app/SiteInsights";
 import { TableStacker } from "@/components/layout/TableStacker";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
@@ -80,6 +81,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <PwaProvider>{children}</PwaProvider>
               <TableStacker />
               <ConsentGate />
+              <SiteInsights />
             </AskPanelProvider>
           </AuthProvider>
         </ThemeProvider>

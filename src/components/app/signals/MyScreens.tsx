@@ -1,5 +1,6 @@
 "use client";
 
+import { InlineSignup } from "@/components/app/InlineSignup";
 import Link from "next/link";
 import { STANDARD_LINE } from "@/lib/compliance/standard-line";
 import { useCallback, useState } from "react";
@@ -47,7 +48,7 @@ export function MyScreens({ params, onApply }: { params: SharedScreenParams; onA
     }
   }, [getToken]);
 
-  if (!user) return null;
+  if (!user) return <InlineSignup text="Save this screen and open it again later." />;
 
   async function save() {
     setBusy(true);
