@@ -317,10 +317,11 @@ if (oldNameHits.length) {
   console.error("Old tab names or signal-like wording in user-facing files:" + String.fromCharCode(10) + oldNameHits.join(String.fromCharCode(10)));
   process.exit(1);
 }
+// 26 Nov 2026: AnonAsk is drawn only inside the Ask AI panel for a visitor who is not signed in.
 // 2026-11-02: no sign-up call to action may render for a logged-in user. A file that prints one must gate it (GuestOnly) or check the user itself.
 const ctaHits = [];
 const CTA_TEXT = ["Sign up free", "Create a free account", "mode=signup"];
-const CTA_ALLOWED = new Set(["app/(app)/login/page.tsx", "components/app/VisitorIntroStrip.tsx", "lib/nav-items.ts"]);   // nav-items only builds the address; the callers check who is logged in
+const CTA_ALLOWED = new Set(["app/(app)/login/page.tsx", "components/app/ask/AnonAsk.tsx", "components/app/VisitorIntroStrip.tsx", "lib/nav-items.ts"]);   // nav-items only builds the address; the callers check who is logged in
 for (const file of files(ROOT)) {
   const rel = file.slice(ROOT.length).replace(/\\/g, "/");
   if (CTA_ALLOWED.has(rel)) continue;

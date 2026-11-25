@@ -9,6 +9,7 @@ import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 import { ApiError } from "@/lib/api/client";
 import { searchResearch } from "@/lib/api/endpoints";
 import { AddToRuleButton } from "@/components/app/ask/AddToRuleButton";
+import { AnonAsk } from "@/components/app/ask/AnonAsk";
 import { canSaveAnswer, isNumberAnswer } from "@/lib/rule-answers";
 import { formatCell, numericColumn } from "@/lib/ask-table-format";
 import {
@@ -1043,15 +1044,11 @@ export function AskRedixFi() {
             covers the chat only, leaving the header/quota strip visible. */}
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           {!user ? (
-            <div className="space-y-3 px-4 py-6 text-center">
-              <p className="text-sm text-foreground-muted">Log in to ask RedixFi AI questions about any stock, grounded in today&apos;s measured data.</p>
-              <Link
-                href="/login"
-                onClick={close}
-                className="inline-block rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground"
-              >
-                Log in
-              </Link>
+            <div className="space-y-3 py-2 text-center">
+              <AnonAsk symbol={pageSymbol} onNavigate={close} />
+              <p className="text-[13px] text-foreground-muted">Already have an account?{" "}
+                <Link href="/login" onClick={close} className="inline-flex min-h-[44px] items-center font-bold text-accent underline">Log in</Link>
+              </p>
               {open && (
                 <div className="max-h-[55vh] overflow-y-auto border-t border-border pt-3 text-left" data-testid="panel-preview">
                   <SamplePanel typed={pendingQuestion} onTypedUsed={clearPendingQuestion} />

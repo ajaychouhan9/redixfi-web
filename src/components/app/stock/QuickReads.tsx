@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { InlineSignup } from "@/components/app/InlineSignup";
+
 export interface QuickBlock {
   id: string;
   title: string;
@@ -43,6 +45,7 @@ export function QuickReads({ blocks }: { blocks: QuickBlock[] }) {
           <h2 id={`qr-${b.id}`} className="text-lg font-bold">{b.title}</h2>
           {b.note && <p className="mt-1 text-xs text-foreground-muted">{b.note}</p>}
           <BulletList lines={b.lines} />
+          {b.id === "concall" && <InlineSignup text="Join free to read the full concall summary and earlier calls." />}
           <Link href={`#${b.tab}`} className="inline-flex min-h-[44px] items-center text-[13px] font-medium text-accent hover:underline">{b.tabLabel}</Link>
         </section>
       ))}

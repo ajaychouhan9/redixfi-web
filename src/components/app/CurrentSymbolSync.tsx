@@ -10,6 +10,11 @@ import { setCurrentSymbol } from "@/lib/current-symbol";
 export function CurrentSymbolSync({ symbol }: { symbol: string }) {
   useEffect(() => {
     setCurrentSymbol(symbol);
+    try {
+      window.sessionStorage.setItem("redixfi:last-stock", symbol); // where a new sign-up lands after the sign-in
+    } catch {
+      /* no storage: the account page */
+    }
     return () => setCurrentSymbol(null);
   }, [symbol]);
   return null;

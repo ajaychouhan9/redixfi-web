@@ -23,7 +23,8 @@ const legal = read("lib/legal.ts");
 for (const need of ["Ajay Chouhan", "PB-197-SF, BPTP Pride, Sector 77, Faridabad, Haryana 121004", "support@redixfi.com", "Faridabad, Haryana"]) assert.ok(legal.includes(need), `legal.ts: ${need}`);
 // sign-up: an unticked box, required before an account is made
 const login = read("app/(app)/login/page.tsx");
-assert.ok(login.includes('useState(false)') && login.includes("I agree to the") && login.includes('(mode === "signup" && !agree)'), "login: unticked consent box that gates sign-up");
+assert.ok(login.includes('useState(false)') && login.includes("I agree to the") && login.includes('(mode === "signup" && !agree)'), "login: unticked consent box that gates making an account with an email");
+assert.ok(login.includes("By continuing with Google you agree to the") && login.includes("finishLogin(idToken, true)"), "login: Google and one-tap accept by continuing (26 Nov 2026)");
 // the consent step for Google, phone and existing accounts, mounted for every page
 assert.ok(read("components/app/ConsentGate.tsx").includes("terms_accepted !== false"), "ConsentGate: asks only when the server says false");
 assert.ok(read("app/layout.tsx").includes("<ConsentGate />"), "ConsentGate is not mounted");

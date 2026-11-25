@@ -3,6 +3,7 @@ import { MarketRibbon } from "@/components/layout/MarketRibbon";
 import { AiDockShell } from "@/components/layout/AiDockShell";
 import { FooterDisclaimer } from "@/components/layout/FooterDisclaimer";
 import { TrialStatusBar } from "@/components/layout/TrialStatusBar";
+import { ExitSurvey, WelcomeGuide } from "@/components/app/TrialGuides";
 import { ChannelDiscoveryBanner } from "@/components/app/ChannelDiscoveryBanner";
 import { InstallBanner } from "@/components/app/pwa/InstallBanner";
 
@@ -48,6 +49,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <AiDockShell>
         <MarketRibbon />
         <TrialStatusBar />
+        <WelcomeGuide />
+        <ExitSurvey />
         {/* Daily PUBLIC CHANNEL DISCOVERY notification — at most once/day,
             server-decided; renders nothing unless the API says it should
             show today. Not a header/footer/homepage promotion: it is the

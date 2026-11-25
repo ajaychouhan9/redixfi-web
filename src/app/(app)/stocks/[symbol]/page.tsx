@@ -1,3 +1,4 @@
+import { InlineSignup } from "@/components/app/InlineSignup";
 import { humanizeDates } from "@/lib/human-date";
 import { StockSignupOffer } from "@/components/app/StockSignupOffer";
 import { StockTabs } from "@/components/app/stock/StockTabs";
@@ -376,6 +377,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
       ) : (
         <p className="text-sm text-foreground-muted">No concall summary is stored for this stock.</p>
       )}
+      {concalls.length > 0 && <InlineSignup text="Join free to save this stock and see its next concall summary first." />}
     </Section>
   );
 

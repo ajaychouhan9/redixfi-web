@@ -12,6 +12,8 @@ export const SUPPORT_EMAIL = "support@redixfi.com";
 export const PLAN_LABEL: Record<string, string> = {
   basic_249: "Basic",
   pro_399: "Pro",
+  basic_annual_1499: "Basic Yearly",
+  pro_annual_2499: "Pro Yearly",
   basic_annual_2399: "Basic Annual",
   pro_annual_3999: "Pro Annual",
   monthly_249: "Pro",

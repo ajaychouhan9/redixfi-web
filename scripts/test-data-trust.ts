@@ -63,7 +63,7 @@ assert.equal(stripAsOf({ as_of_date: "", market_session: undefined, india_vix: u
 const read = (f: string) => readFileSync(new URL(`../src/${f}`, import.meta.url), "utf8");
 const movers = read("components/app/home/HomeMovers.tsx");
 assert.ok(movers.includes("Gainers") && movers.includes("Losers") && movers.includes("return null") && !movers.includes("Loading"), "tabs, and the card hides with no data");
-assert.ok(read("components/app/home/HomePricingStrip.tsx").includes("Free · Basic ₹249/mo · Pro ₹399/mo") && read("components/app/home/HomeTrialLine.tsx").includes("<HomePricingStrip />"));
+assert.ok(read("components/app/home/HomePricingStrip.tsx").includes("Basic ₹249/mo or ₹1,499/yr · Pro ₹399/mo or ₹2,499/yr") && read("components/app/home/HomeTrialLine.tsx").includes("<HomePricingStrip />"));
 assert.ok(read("components/app/HeroStockSearch.tsx").includes('["BEL", "RELIANCE", "TCS", "HDFCBANK"]'));
 
 // ---- Ask AI window, contrast tokens, stock page
