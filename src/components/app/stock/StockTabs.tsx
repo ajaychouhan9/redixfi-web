@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { DEFAULT_STOCK_TAB, STOCK_TABS, neighbourTab, tabFromHash, tabFromSearch, type StockTabId } from "@/lib/stock-tabs";
+import { REWIND_HINT } from "@/lib/rewind-simple";
 
 /**
  * The tab bar and panels of the stock page (17 Nov 2026). The page around it is static and cached; this is the only client switch.
@@ -65,6 +66,7 @@ export function StockTabs({ panels }: { panels: Partial<Record<StockTabId, React
                 aria-controls={`panel-${t.id}`}
                 tabIndex={on ? 0 : -1}
                 data-testid={`tab-${t.id}`}
+                title={t.id === "rewind" ? REWIND_HINT : undefined}
                 onClick={() => open(t.id, true)}
                 className={`min-h-[44px] whitespace-nowrap border-b-2 px-3 text-sm font-medium transition-colors ${on ? "border-accent text-accent" : "border-transparent text-foreground-muted hover:text-foreground"}`}
               >

@@ -32,6 +32,11 @@ export function canSaveAnswer(m: { role: string; text: string; quotaUnchanged?: 
   return m.role === "ai" && !!conversationId && !!m.text.trim() && !m.error && !m.quotaUnchanged && !(m.choices && m.choices.length > 0);
 }
 
+/** "Add to my rule" belongs under number-based answers (a table, a screener result, a comparison), not under annual-report or concall text. */
+export function isNumberAnswer(m: { table?: { rows?: unknown[] } | null; screen?: { results?: unknown[] } | null; compare?: { symbols?: unknown[] } | null; group?: unknown }): boolean {
+  return !!((m.table?.rows?.length ?? 0) > 0 || (m.screen?.results?.length ?? 0) > 0 || (m.compare?.symbols?.length ?? 0) > 0 || m.group);
+}
+
 /** The plain message for an API error from the save (the server's own sentence when it sent one). */
 export function saveErrorText(detail: unknown): string {
   const d = detail as { message?: string } | string | undefined;

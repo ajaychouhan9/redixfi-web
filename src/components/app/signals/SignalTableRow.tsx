@@ -173,7 +173,7 @@ export function SignalTableRow({
             Feed incomplete
           </span>
         )}
-        <div className="max-w-[16rem] truncate text-[12px] text-foreground-faint">{displayName(row.company_name)}</div>
+        <div className="max-w-[16rem] line-clamp-2 text-[12px] text-foreground-faint">{displayName(row.company_name)}</div>
         {showReadingsAsOf && <div className="whitespace-nowrap text-[12px] text-foreground-faint">{formatDataAsOf(row.data_as_of)}</div>}
       </td>
   );
@@ -370,7 +370,7 @@ export function SignalMobileRow({
       <Link href={stockPath("/signals", row.symbol)} className="min-w-0 flex-1">
         <span className="font-mono text-sm font-semibold">{row.symbol}</span>
         {row.limited_data && <span className="ml-1.5 rounded bg-surface-raised px-1 py-0.5 text-[12px] font-medium uppercase tracking-wide text-foreground-faint">Limited</span>}
-        <div className="truncate text-[12px] text-foreground-faint">{displayName(row.company_name)}</div>
+        <div className="line-clamp-2 text-[12px] text-foreground-faint">{displayName(row.company_name)}</div>
       </Link>
       <div className="shrink-0 text-right">
         {row.last_price !== null ? (

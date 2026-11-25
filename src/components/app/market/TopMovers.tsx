@@ -20,7 +20,7 @@ function Rows({ rows, title }: { rows: PriceMoverRow[]; title: string }) {
           <li key={r.symbol}>
             <Link href={stockPath("/stocks", r.symbol)} className="flex min-h-[52px] items-center justify-between gap-3 px-3 hover:bg-hover" data-testid="gainers-losers-row">
               <span className="min-w-0">
-                <span className="block truncate text-sm font-medium">{displayName(r.name) || r.symbol}</span>
+                <span className="line-clamp-2 block text-sm font-medium">{displayName(r.name) || r.symbol}</span>
                 <span className="block text-xs text-foreground-muted">{r.symbol}{typeof r.price === "number" ? ` · ₹${formatNumber(r.price, 2)}` : ""}</span>
               </span>
               <DeltaValue value={r.pct} kind="pct" />

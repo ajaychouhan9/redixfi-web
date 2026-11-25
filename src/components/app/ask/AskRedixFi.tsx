@@ -9,7 +9,8 @@ import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 import { ApiError } from "@/lib/api/client";
 import { searchResearch } from "@/lib/api/endpoints";
 import { AddToRuleButton } from "@/components/app/ask/AddToRuleButton";
-import { canSaveAnswer } from "@/lib/rule-answers";
+import { canSaveAnswer, isNumberAnswer } from "@/lib/rule-answers";
+import { formatCell, numericColumn } from "@/lib/ask-table-format";
 import {
   ASK_GROUP_TITLE, GROUP_ALL_NOTE, GROUP_SAVED_NOTE, GROUP_SAVE_BUTTON, GROUP_SAVE_FAILED, GROUP_SAVE_NAME_LABEL, GROUP_SAVE_NAME_PLACEHOLDER, groupSavedCount, GROUP_CANCEL, GROUP_KEYS, GROUP_RUN, ASK_AGAIN_LABEL, ALL_ANSWERED, alreadyAnswered, askRemaining, groupFailedLine, groupNotEnough, groupNotRunLine, groupProgress, groupQuestion, groupQuestionAll,
   groupRunFewer, groupUses,
@@ -139,25 +140,9 @@ export function AskRedixFiTrigger() {
   );
 }
 
-/** Compact remaining-first quota row with a thin independent progress bar. */
-function QuotaBar({ label, remaining, limit, showTotal = false }: { label: string; remaining: number; limit: number | null; showTotal?: boolean }) {
-  const total = limit ?? 0;
-  const pct = total > 0 ? Math.max(0, Math.min(100, (remaining / total) * 100)) : 0;
-  return (
-    <div className="space-y-1">
-      <div className="flex items-baseline justify-between gap-2 text-[12px]">
-        <span className="font-medium text-foreground-faint">{label}</span>
-        <span className="font-mono font-semibold text-foreground" title={`${remaining} of ${total} questions remaining`}>
-          {remaining}
-          {showTotal && total > 0 && <span className="text-foreground-faint"> of {total}</span>}
-          <span className="font-sans font-normal text-foreground-faint"> remaining</span>
-        </span>
-      </div>
-      <div className="h-1 w-full overflow-hidden rounded-full bg-neutral-bg">
-        <div className="h-full rounded-full bg-accent transition-[width] duration-300" style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
+/** One small line of usage at the top of the window (26 Nov 2026): what is left today, and the monthly pool with its reset day when there is one. */
+function UsageLine({ parts, testId }: { parts: string[]; testId?: string }) {
+  return <p className="text-[12px] text-foreground-muted" data-testid={testId ?? "ask-usage-line"}>{parts.join(" · ")}</p>;
 }
 
 /**
@@ -170,7 +155,7 @@ function QuotaBar({ label, remaining, limit, showTotal = false }: { label: strin
  * Free: per-stock-per-day gate; add-on only when a balance actually exists.
  */
 function AskQuota({ usage, detailed = false }: { usage: AskUsageInfo | null; detailed?: boolean }) {
-  if (!usage) return <p className="text-[12px] text-foreground-faint">Loading usage…</p>;
+  if (!usage) return <p className="text-[12px] text-foreground-muted">Loading usage…</p>;
 
   // The panel shows "Today" only; the month and add-on counts are on the Account page (21 Nov 2026).
 
@@ -179,7 +164,7 @@ function AskQuota({ usage, detailed = false }: { usage: AskUsageInfo | null; det
     const remaining = Math.max(0, limit - (usage.daily_used ?? 0));
     return (
       <div className={detailed ? "space-y-3" : "space-y-1.5"}>
-        <QuotaBar label="Today" remaining={remaining} limit={limit} showTotal />
+        <UsageLine parts={[`${remaining} of ${limit} left today`]} />
       </div>
     );
   }
@@ -188,8 +173,7 @@ function AskQuota({ usage, detailed = false }: { usage: AskUsageInfo | null; det
     const left = Math.max(0, usage.daily_limit - (usage.daily_used ?? 0));
     return (
       <div className={detailed ? "space-y-3" : "space-y-1.5"} data-testid="free-usage">
-        <QuotaBar label="Today" remaining={left} limit={usage.daily_limit} showTotal />
-        <p className="text-[12px] text-foreground-faint">{FREE_ASK_LINE}</p>
+        <UsageLine parts={[`${left} of ${usage.daily_limit} left today`, FREE_ASK_LINE]} />
       </div>
     );
   }
@@ -211,12 +195,14 @@ function AskQuota({ usage, detailed = false }: { usage: AskUsageInfo | null; det
   const poolLeft = typeof usage.chat_limit === "number" ? Math.max(0, usage.chat_limit - (usage.chat_used ?? 0)) : null;
   return (
     <div className={detailed ? "space-y-3" : "space-y-2"}>
-      <QuotaBar label="Today" remaining={dailyRemaining} limit={usage.daily_limit} />
-      {poolLeft !== null && (
-        <p className="text-[12px] text-foreground-faint" data-testid="chat-pool-line">
-          Chat questions this month: {poolLeft} left of {usage.chat_limit}.{usage.resets_on ? ` They reset on ${fmtDay(usage.resets_on) ?? usage.resets_on}.` : ""}
-        </p>
-      )}
+      <UsageLine
+        parts={[
+          `${dailyRemaining} left today`,
+          ...(poolLeft !== null ? [`${poolLeft} left of ${usage.chat_limit} this month`] : []),
+          ...(poolLeft !== null && usage.resets_on ? [`resets ${fmtDay(usage.resets_on) ?? usage.resets_on}`] : []),
+        ]}
+        testId="chat-pool-line"
+      />
     </div>
   );
 }
@@ -577,6 +563,7 @@ export function AskRedixFi() {
 
   /** One answer table (shared by a single answer and by each stock of a group reply). */
   function renderTable(table: AskTableResult, prevUser: string | null, heading?: string) {
+    const numCols = new Set(table.columns.filter((c) => numericColumn(table.rows, c.key, c.field)).map((c) => c.key));
     return (
                         <div className="mt-2" key={heading ?? "table"}>
                           {heading && <p className="mb-1 text-xs font-semibold text-foreground">{heading}</p>}
@@ -610,7 +597,7 @@ export function AskRedixFi() {
                               <thead>
                                 <tr className="border-b border-border text-left font-mono text-[13px] uppercase tracking-wide text-foreground-faint">
                                   {table.columns.map((col, ci) => (
-                                    <th key={col.key} className={`whitespace-nowrap px-3 py-2 ${ci === 0 ? "sticky left-0 z-[1] bg-surface" : ""}`}>
+                                    <th key={col.key} className={`whitespace-nowrap px-3 py-2 ${numCols.has(col.key) ? "text-right" : ""} ${ci === 0 ? "sticky left-0 z-[1] bg-surface" : ""}`}>
                                       {col.label}
                                     </th>
                                   ))}
@@ -633,11 +620,14 @@ export function AskRedixFi() {
                                         </tr>
                                       )}
                                       <tr className={`border-b border-border last:border-0 ${dim ? "opacity-60" : ""}`}>
-                                        {table.columns.map((col, ci) => (
-                                          <td key={col.key} className={`whitespace-nowrap px-3 py-2 text-left ${ci === 0 ? "sticky left-0 z-[1] bg-surface" : ""}`}>
-                                            {row[col.key] ?? "N/A"}
-                                          </td>
-                                        ))}
+                                        {table.columns.map((col, ci) => {
+                                          const cell = formatCell(col.field, col.key, row[col.key]);
+                                          return (
+                                            <td key={col.key} className={`whitespace-nowrap px-3 py-2 ${numCols.has(col.key) ? "text-right tabular-nums" : "text-left"} ${cell.tone === "up" ? "font-bold text-up" : cell.tone === "down" ? "font-bold text-down" : ""} ${ci === 0 ? "sticky left-0 z-[1] bg-surface" : ""}`}>
+                                              {cell.text}
+                                            </td>
+                                          );
+                                        })}
                                         {table.columns[0]?.key === "symbol" && (
                                           <td className="whitespace-nowrap px-3 py-2">
                                             {typeof row.symbol === "string" && row.symbol ? <AddToShortlistButton symbol={row.symbol} getToken={getToken} /> : null}
@@ -1147,10 +1137,10 @@ export function AskRedixFi() {
                         </button>
                       )}
                       <div
-                        className="max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed break-words"
+                        className={`${m.role === "user" ? "max-w-[85%]" : "w-full"} rounded-xl px-3.5 py-2.5 text-[15px] leading-[1.5] break-words`}
                         style={
                           m.role === "user"
-                            ? { background: "var(--accent)", color: "var(--accent-foreground)", fontSize: "13px" }
+                            ? { background: "var(--user-bubble)", color: "var(--foreground)", border: "1px solid var(--border)" }
                             : { background: "var(--hover)", color: "var(--foreground)", border: "1px solid var(--border)" }
                         }
                       >
@@ -1185,7 +1175,7 @@ export function AskRedixFi() {
                               </div>
                             )}
                           </div>
-                        ) : m.role === "ai" ? <MarkdownAnswer text={m.text} /> : m.text}
+                        ) : m.role === "ai" ? <MarkdownAnswer text={m.table && m.table.rows.length > 0 ? m.text.replace(/\s*\d+ days? asked, \d+ available\.?/i, "") : m.text} /> : m.text}
                         {m.webSourced && (
                           <div className="mt-2 flex items-center gap-1.5 border-t border-border pt-2 text-[12px] text-foreground-faint">
                             <Globe size={11} className="shrink-0" />
@@ -1200,7 +1190,7 @@ export function AskRedixFi() {
                         )}
                         {m.role === "ai" && m.sourceCitations && <SourcesSection citations={m.sourceCitations} />}
                         {m.createdAt && (
-                          <div className="mt-1.5 text-[12px] text-foreground-faint opacity-70">
+                          <div className="mt-1.5 text-[12px] text-foreground-muted">
                             {new Date(m.createdAt).toLocaleString(undefined, {
                               month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
                             })}
@@ -1210,11 +1200,11 @@ export function AskRedixFi() {
                             charge answer. `quotaUnchanged` is server-computed
                             (charged_to=="none"), never re-derived here. */}
                         {m.role === "ai" && m.quotaUnchanged && (
-                          <div className="mt-1 text-[12px] text-foreground-faint opacity-70">
+                          <div className="mt-1 text-[12px] text-foreground-muted">
                             Your question balance is unchanged for this response.
                           </div>
                         )}
-                        {user && canSaveAnswer(m, conversationId) && (
+                        {user && canSaveAnswer(m, conversationId) && isNumberAnswer(m) && (
                           <AddToRuleButton conversationId={conversationId as string} text={m.text} symbol={m.resolvedSymbol ?? effectiveSymbol ?? null} getToken={getToken} />
                         )}
                       </div>
@@ -1355,7 +1345,7 @@ export function AskRedixFi() {
                     onKeyDown={(e) => e.key === "Enter" && submit(input)}
                     onFocus={() => setInputFocused(true)}
                     onBlur={() => setInputFocused(false)}
-                    placeholder={authLoading ? "Loading your account…" : "Ask about a stock, a sector, or up to 10 stocks"}
+                    placeholder={authLoading ? "Loading…" : "Ask about a stock…"}
                     disabled={busy || authLoading}
                     className="flex-1 rounded-lg border border-border bg-hover px-3 py-2 text-sm outline-none disabled:opacity-60"
                   />

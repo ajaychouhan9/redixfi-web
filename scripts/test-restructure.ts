@@ -99,7 +99,7 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\
 {
   assert.deepEqual(NAV_ITEMS.map((i) => i.label), ["Home", "Shortlist Lab", "Screener", "7-Day Review", "Market Overview", "Ask AI", "Pricing"]);
   assert.deepEqual(NAV_ITEMS.map((i) => i.href), ["/", "/shortlist-lab", "/signals", "/signals/7-day-review", "/market", null, "/pricing"]);
-  assert.deepEqual(BOTTOM_ITEMS.map((i) => i.short), ["Home", "Lab", "Screener", "Markets", "Account"]);
+  assert.deepEqual(BOTTOM_ITEMS.map((i) => i.short), ["Home", "Shortlist", "Screener", "Market", "Account"]);
   assert.deepEqual(ACCOUNT_ITEMS.map((i) => i.label), ["Profile and plan", "Watchlist", "Alerts", "Billing"]);
   assert.equal(NAV_ITEMS.find((i) => i.id === "ask")!.href, null, "Ask AI opens a panel");
   for (const gone of ["Research", "Pro", "Rewind", "Intraday", "Start here"]) assert.ok(!NAV_ITEMS.some((i) => i.label.includes(gone)), `${gone} is not a menu item`);
@@ -172,9 +172,9 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\
   const home = strip(read("app/(app)/page.tsx"));
   assert.ok(!/@\/lib\/api|await |fetch\(|\b(cookies|headers)\(\)|searchParams/.test(home), "Home makes no server request and stays static");
   assert.ok(/export const revalidate = \d+/.test(home), "Home has a refresh window: a fully static page is cached for a year and would outlive a deploy");
-  const order = ["<HeroStockSearch", "<HomeBrief", "<HomeBoxes", "<HomeMovers", "<HomeTrialLine"].map((k) => home.indexOf(k));
-  assert.ok(order.every((i, n) => i >= 0 && (n === 0 || i > order[n - 1])), `order: search, brief, boxes, movers, trial line (${order.join(",")})`);
-  assert.ok(home.includes("Check any NSE stock in minutes: delivery, insider trades, points to watch and concall summaries.") && home.includes("No buy or sell advice."), "headline and sub-line");
+  const order = ["<HeroStockSearch", "<HomeMarketStrip", "<HomeMovers", "<HomeBrief", "<HomeBoxes", "<HomeTrialLine"].map((k) => home.indexOf(k));
+  assert.ok(order.every((i, n) => i >= 0 && (n === 0 || i > order[n - 1])), `order: search, market strip, movers, brief, boxes, trial line (${order.join(",")})`);
+  assert.ok(home.includes("Understand any NSE stock in 5 minutes") && home.includes("Plain-language data for 2,000+ NSE stocks. No buy or sell advice."), "headline and sub-line");
   const boxes = strip(read("components/app/home/HomeBoxes.tsx"));
   for (const t of ["Shortlist Lab", "Screener", "Market Overview", "7-Day Review", "Ask AI"]) assert.ok(boxes.includes(`title="${t}"`), `box ${t}`);
   assert.ok(!/Rewind/.test(boxes), "no Rewind box");

@@ -4,6 +4,7 @@
  * the payload answers null, and the page shows "Data not available yet". No score, no verdict, no judgement words: a rise and a
  * fall are written the same way. Pure functions, tested by scripts/test-simple-view.ts.
  */
+import { humanDate } from "@/lib/human-date";
 import { personCategory, sideLabel } from "@/lib/insider-display";
 import { resolve52Week } from "@/lib/week52";
 
@@ -21,6 +22,8 @@ export interface ChecklistLine {
   /** The tab (or the Overview anchor) that holds the matching detail: "annual-report", "insiders", "points-to-watch" or "range". */
   detailsId: string;
   sources?: ChecklistSource[];
+  /** All items behind a short list (the Points to watch line), so the page can say "Showing 5 of 21". */
+  total?: number;
 }
 
 // Loose input shapes: only the fields the templates read, all optional, so a partial payload or an older API never throws.
@@ -122,7 +125,8 @@ export function promotersLine(input: ChecklistInput): string | null {
   const latestPledge = pledges.length ? pledges[pledges.length - 1] : null;
   if (latestPledge) {
     const p = latestPledge.pledged_pct as number;
-    text += ` ${p === 0 ? "0%" : pct1(p)} of their shares are pledged (given as security for a loan).`;
+    const asOf = latestPledge.as_of_date ? ` (as of ${humanDate(latestPledge.as_of_date)})` : "";
+    text += ` ${p === 0 ? "0%" : `${Number(p.toFixed(2))}%`} of their shares are pledged${asOf}, given as security for a loan.`;
   } else {
     text += " Pledge figure not available.";
   }
@@ -152,7 +156,7 @@ export function insidersLine(input: ChecklistInput, today: string): string | nul
   return `In the last 3 months: bought ${rupees(bought)}, sold ${rupees(sold)}${who}.`;
 }
 
-export function watchLine(input: ChecklistInput): { answer: string | null; sources: ChecklistSource[] } {
+export function watchLine(input: ChecklistInput): { answer: string | null; sources: ChecklistSource[]; total?: number } {
   const rf = input.red_flags;
   if (!rf) return { answer: null, sources: [] };
   const groups = Array.isArray(rf.categories) ? rf.categories : [];
@@ -172,8 +176,9 @@ export function watchLine(input: ChecklistInput): { answer: string | null; sourc
       href: o.source_pdf_url as string,
     }));
   return {
-    answer: `${count} item${count === 1 ? "" : "s"} found in the annual report and concall filings we read${labels.length ? `: ${labels.join(", ").toLowerCase()}` : ""}.`,
+    answer: `${count} item${count === 1 ? "" : "s"} found in the annual report and concall filings we read${labels.length ? `: ${labels.join(", ").toLowerCase()}` : ""}.${sources.length > 0 && sources.length < count ? ` Showing ${sources.length} of ${count}.` : ""}`,
     sources,
+    total: count,
   };
 }
 
@@ -198,14 +203,14 @@ export function buildChecklist(input: ChecklistInput, opts: { today: string; pri
       return fallback;
     }
   };
-  const watch = safe(() => watchLine(input), { answer: null, sources: [] });
+  const watch = safe(() => watchLine(input), { answer: null, sources: [] } as { answer: string | null; sources: ChecklistSource[]; total?: number });
   return [
     { key: "profit", question: "Is the company making a profit?", answer: safe(() => profitLine(input), null), why: "Profit is what is left after all costs; it is the money a business can keep or reinvest.", detailsId: "annual-report" },
     { key: "growth", question: "Are sales and profit growing?", answer: safe(() => growthLine(input), null), why: "The change over several years shows whether the business is getting bigger or smaller.", detailsId: "annual-report" },
     { key: "debt", question: "How much debt does it have?", answer: safe(() => debtLine(input), null), why: "Borrowed money has to be repaid with interest whatever the business earns in a given year.", detailsId: "annual-report" },
     { key: "promoters", question: "What are the promoters doing?", answer: safe(() => promotersLine(input), null), why: "Promoters are the people who control the company; their holding and any pledged shares are disclosed every quarter.", detailsId: "insiders" },
     { key: "insiders", question: "Are insiders buying or selling?", answer: safe(() => insidersLine(input, opts.today), null), why: "Directors, promoters and senior staff must disclose their own share trades; the category is shown, never a name.", detailsId: "insiders" },
-    { key: "watch", question: "Points to watch in its reports?", answer: watch.answer, why: "These are statements found in the company's own filings, listed with their source so you can read them yourself.", detailsId: "points-to-watch", sources: watch.sources },
+    { key: "watch", question: "Points to watch in its reports?", answer: watch.answer, why: "These are statements found in the company's own filings, listed with their source so you can read them yourself.", detailsId: "points-to-watch", sources: watch.sources, total: watch.total },
     { key: "price", question: "Where is the price?", answer: safe(() => priceLine(input, opts.priceLabel), null), why: "The 52-week high and low are the highest and lowest closes of the past year; this is where today's price sits between them.", detailsId: "range" },
   ];
 }

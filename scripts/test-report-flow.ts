@@ -87,7 +87,7 @@ assert.ok(dlg.includes("SAVE_REPLACE_FREE") && dlg.includes("FREE_UPGRADE_SAVE")
 // ---- Account, chat, Pricing, SEO
 const acct = strip(read("components/app/account/AskUsageCard.tsx"));
 assert.ok(acct.includes("Reports, this month") && acct.includes("Chat, this month") && acct.includes("Pools reset on") && acct.includes("report_limit"), "Account card: both pools and the reset date");
-assert.ok(strip(read("components/app/ask/AskRedixFi.tsx")).includes("Chat questions this month:"), "chat shows the chat pool and its reset date");
+assert.ok(strip(read("components/app/ask/AskRedixFi.tsx")).includes("left of ${usage.chat_limit} this month"), "chat shows the chat pool and its reset date (one usage line)");
 assert.deepEqual(PLAN_MATRIX.filter((r) => /Ask AI/.test(r.feature)).map((r) => r.feature), ["Ask AI chat", "Ask AI reports", "Ask AI chat history kept"]);
 assert.ok(!SEO_TITLE.includes("RedixFi"), "the brand is added once, by the site title template");
 const page = read("app/(app)/shortlist-lab/page.tsx");

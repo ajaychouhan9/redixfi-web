@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 export default function MarketOverviewPage() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-3">
-      <h1 className="text-xl font-semibold">Market Overview</h1>
+      <h1 className="text-[22px] font-bold leading-tight">Market Overview</h1>
       <p className="text-sm text-foreground-muted">Choose a page. Each one says when its figures are from.</p>
       <MarketOverviewCards />
       <p className="text-xs text-foreground-muted">Live prices are delayed by about 15 minutes. Past record of measured data. Not a forecast or a recommendation.</p>

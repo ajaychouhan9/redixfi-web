@@ -18,10 +18,10 @@ export interface NavItem {
 /** The side menu. */
 export const NAV_ITEMS: NavItem[] = [
   { id: "home", label: "Home", short: "Home", href: "/" },
-  { id: "lab", label: "Shortlist Lab", short: "Lab", href: "/shortlist-lab" },
+  { id: "lab", label: "Shortlist Lab", short: "Shortlist", href: "/shortlist-lab" },
   { id: "screener", label: "Screener", short: "Screener", href: "/signals" },
   { id: "review", label: "7-Day Review", short: "7-Day", href: "/signals/7-day-review" },
-  { id: "market", label: "Market Overview", short: "Markets", href: "/market" },
+  { id: "market", label: "Market Overview", short: "Market", href: "/market" },
   { id: "ask", label: "Ask AI", short: "Ask AI", href: null },
   { id: "pricing", label: "Pricing", short: "Pricing", href: "/pricing" },
 ];
@@ -29,9 +29,9 @@ export const NAV_ITEMS: NavItem[] = [
 /** The phone bottom bar. */
 export const BOTTOM_ITEMS: NavItem[] = [
   { id: "home", label: "Home", short: "Home", href: "/" },
-  { id: "lab", label: "Shortlist Lab", short: "Lab", href: "/shortlist-lab" },
+  { id: "lab", label: "Shortlist Lab", short: "Shortlist", href: "/shortlist-lab" },
   { id: "screener", label: "Screener", short: "Screener", href: "/signals" },
-  { id: "market", label: "Market Overview", short: "Markets", href: "/market" },
+  { id: "market", label: "Market Overview", short: "Market", href: "/market" },
   { id: "account", label: "Account", short: "Account", href: null },
 ];
 

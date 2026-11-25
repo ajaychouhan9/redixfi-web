@@ -48,7 +48,7 @@ const y = yearlyPoints(f);
 assert.equal(profitSentence(y, "year"), "Profit went up in each of the last 5 years (₹2,399 Cr → ₹6,062 Cr).");
 assert.equal(revenueSentence(y, "year"), "Revenue went up in each of the last 5 years (₹15,368 Cr → ₹27,610 Cr).");
 const qd = quarterlyPoints(f);
-assert.equal(profitSentence(qd, "quarter"), "Profit in Sep 26 was ₹1,540 Cr, up from ₹1,054 Cr in Jun 26.");
+assert.equal(profitSentence(qd, "quarter"), "Profit in Sep 2026 was ₹1,540 Cr, up from ₹1,054 Cr in Jun 2026.");
 assert.equal(profitSentence(y.slice(0, 1), "year"), null, "one point: no sentence");
 const h = holdPoints(f);
 assert.equal(holdSentence(h, "fii", "FII"), "FII holding went from 18.51% to 16.99% in 3 quarters.");
@@ -74,7 +74,7 @@ assert.match(priceSentence(closes) ?? "", /^Price is up \d+% in 1 year\.$/);
 assert.equal(priceSentence(closes.slice(-20)), null, "less than a year of closes: no sentence");
 
 // short bullets: at most 15 words each, at most 3 shown
-const long = "Order book stood at 74,000 crore with strong execution expected across defence electronics, radar and communication programmes over the coming years. Margins stayed near 25 percent. Hiring was steady. A new plant opens next year. Exports grew.";
+const long = "Order book stood at 74,000 crore with strong execution expected across defence electronics, radar and communication programmes over the coming years. Margins stayed near 25 percent for the year. Hiring was steady across all units. A new plant opens next year in Pune. Exports grew in the second half.";
 const sb = shortBullets(long, 3, 15);
 assert.equal(sb.shown.length, 3);
 assert.ok(sb.rest.length >= 1);
@@ -86,7 +86,7 @@ const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "ut
 const layout = readFileSync(new URL("../src/app/layout.tsx", import.meta.url), "utf8");
 assert.ok(/--font-weight-semibold:\s*700/.test(css), "semibold is drawn as bold: only 400, 500, 700");
 assert.ok(layout.includes('weight: ["400", "500", "700"]') && layout.includes("Inter"), "one family, three weights");
-assert.ok(css.includes("--up-fill: #00a86b") && css.includes("--down-fill: #e5484d") && css.includes("--border: #eeeeee") && css.includes("--foreground-muted: #6b7280"), "Light tokens");
+assert.ok(css.includes("--up-fill: #00a86b") && css.includes("--down-fill: #e5484d") && css.includes("--border: #eeeeee") && css.includes("--foreground-muted: #4b5563"), "Light tokens");
 assert.ok(!/box-shadow/.test(css.slice(css.indexOf("Light theme (26 Nov 2026"), css.indexOf("Typography readability"))), "no shadows in Light");
 for (const f of ["components/app/AiDailyBriefCard.tsx", "components/app/signals/SmartScreenerBox.tsx", "components/app/ask/AskRedixFi.tsx", "components/app/billing/PlanCard.tsx"]) {
   assert.ok(!/linear-gradient/.test(readFileSync(new URL(`../src/${f}`, import.meta.url), "utf8")), `${f}: no gradient`);

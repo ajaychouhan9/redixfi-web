@@ -35,6 +35,7 @@
      as a clear hierarchy step apart, not identical. */
   --foreground-faint: #626b87; /* 18 Nov 2026: was #6e7690, 4.25:1 on the page background */
   --hover: rgba(0, 0, 0, 0.03);
+  --user-bubble: #f3f1ec;  /* the person's own message in the Ask AI window: a light tint with dark text, not a filled gold bubble */
 
   --accent: #b8873a;
   --accent-dim: #96702e;
@@ -82,8 +83,9 @@
        (#0d1220) — under the 4.5:1 AA floor. #75809d measures 4.74:1 while
        staying dimmer than --foreground-muted (5.92:1), preserving the
        hierarchy. Same reasoning as the light-theme step above. */
-    --foreground-faint: #75809d;
+    --foreground-faint: #7f8aa6;
     --hover: rgba(255, 255, 255, 0.03);
+  --user-bubble: #1f2535;  /* the person's own message in the Ask AI window: a light tint with dark text, not a filled gold bubble */
 
     --accent: #d4a94e;
     --accent-dim: #b8873a;
@@ -125,8 +127,9 @@
   /* Contrast fix (2026-08-18) — same value/reasoning as the
      prefers-color-scheme dark step above, kept in sync for the explicit
      [data-theme="dark"] override. */
-  --foreground-faint: #75809d;
+  --foreground-faint: #7f8aa6;
   --hover: rgba(255, 255, 255, 0.03);
+  --user-bubble: #1f2535;  /* the person's own message in the Ask AI window: a light tint with dark text, not a filled gold bubble */
 
   --accent: #d4a94e;
   --accent-dim: #b8873a;
@@ -164,9 +167,11 @@
   --surface-raised: #ffffff;
   --border: #eeeeee;
   --foreground: #1a1a1a;
-  --foreground-muted: #6b7280;
-  --foreground-faint: #6b7280;
+  /* Small text (12-13px: notes, "As of" lines, timestamps, disclaimers) uses #4b5563 (7.6:1 on white); #6b7280 is only for text of 14px and above */
+  --foreground-muted: #4b5563;
+  --foreground-faint: #4b5563;
   --hover: rgba(0, 0, 0, 0.04);
+  --user-bubble: #f3f1ec;  /* the person's own message in the Ask AI window: a light tint with dark text, not a filled gold bubble */
 
   --accent: #8a6317;
   --accent-dim: #6f4f10;
@@ -178,7 +183,7 @@
   --down: #d63a40;
   --down-fill: #e5484d;
   --down-bg: rgba(229, 72, 77, 0.08);
-  --neutral: #6b7280;
+  --neutral: #4b5563;
   --neutral-bg: rgba(107, 114, 128, 0.1);
 
   --amber: #8a4f00;
@@ -347,9 +352,10 @@ body {
   --surface-raised: #ffffff;
   --border: #d9e0e8;
   --foreground: #17212b;
-  --foreground-muted: #5b6b7b;
-  --foreground-faint: #5b6b7b;
+  --foreground-muted: #526270;
+  --foreground-faint: #526270;
   --hover: #d5eeea;
+  --user-bubble: #e8edf2;  /* the person's own message in the Ask AI window: a light tint with dark text, not a filled gold bubble */
 
   --accent: #0f766e;
   --accent-dim: #115e59;
@@ -403,3 +409,9 @@ body {
 :root { --tabs-h: 46px; }
 .sticky-tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; background: var(--background); }
 @media (min-width: 768px) { .sticky-tabs { top: var(--header-height, 4rem); } }
+
+/* Every number in a table is drawn in tabular figures so columns line up (26 Nov 2026). */
+table td,
+table th {
+  font-variant-numeric: tabular-nums;
+}
