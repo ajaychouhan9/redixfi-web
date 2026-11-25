@@ -219,7 +219,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
   // ---- Overview: price chart, key numbers, revenue and profit, shareholding, short reads; then the plain questions and the trading readings
   const overview = (
     <>
-      <StockPriceChart symbol={sym} closes={closes} has5y={has5y} lastPrice={data.price.last_price} sentence={priceSentence(allCloses)} />
+      <StockPriceChart symbol={sym} closes={closes} has5y={has5y} lastPrice={data.price.last_price} sentence={priceSentence(allCloses)} prevClose={prevClose} />
       <KeyNumbers tiles={tiles} asOf={tilesAsOf} />
       <RevenueProfit yearly={yearly} quarterly={quarterly} />
       <Shareholding points={holds} />

@@ -20,7 +20,7 @@ const dayOf = (ts: string) => ts.slice(0, 10);
 /** Epoch seconds shifted to IST so the time axis reads in Indian time. */
 const istSeconds = (ts: string) => Math.floor(new Date(ts).getTime() / 1000) + 19800;
 
-export function StockPriceChart({ symbol, closes, has5y, lastPrice, sentence }: { symbol: string; closes: Close[]; has5y: boolean; lastPrice: number; sentence?: string | null }) {
+export function StockPriceChart({ symbol, closes, has5y, lastPrice, sentence, prevClose }: { symbol: string; closes: Close[]; has5y: boolean; lastPrice: number; sentence?: string | null; prevClose?: number | null }) {
   const daily = useMemo(() => dailyRangesAvailable(closes), [closes]);
   const [intraday, setIntraday] = useState<Candle[] | null | "none">(null);
   const [long, setLong] = useState<Close[] | null | "none">(null);
@@ -111,11 +111,12 @@ export function StockPriceChart({ symbol, closes, has5y, lastPrice, sentence }: 
     if (active === "1D" && Array.isArray(intraday)) {
       const day = dayOf(intraday[0].timestamp);
       const prev = [...closes].reverse().find(([d]) => d < day);
-      const base = prev ? prev[1] : intraday[0].open;
-      return changeOver([base, series[series.length - 1].v]);
+      // the same base as the header (the previous session's close), so the 1D change and the header never disagree
+      const base = typeof prevClose === "number" && prevClose > 0 ? prevClose : prev ? prev[1] : intraday[0].open;
+      return changeOver([base, typeof lastPrice === "number" && lastPrice > 0 ? lastPrice : series[series.length - 1].v]);
     }
     return changeOver(series.map((p) => p.v));
-  }, [active, series, intraday, closes]);
+  }, [active, series, intraday, closes, prevClose, lastPrice]);
 
   const tone = toneOf(change?.abs);
 
