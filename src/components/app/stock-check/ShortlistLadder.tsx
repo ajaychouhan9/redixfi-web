@@ -386,7 +386,7 @@ export function ShortlistLadder() {
 
   function createRule() {
     setRules(EMPTY_RULES);
-    setName(defaultRuleName());
+    setName(defaultRuleName(savedState.saved.map((x) => x.name)));
     setNameMsg(null);
     setFillLine(null);
     setActive(null);

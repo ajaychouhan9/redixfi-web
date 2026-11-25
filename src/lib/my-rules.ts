@@ -5,10 +5,16 @@ import type { Rules } from "@/lib/stock-check";
 export const MY_RULES_TITLE = "My rules";
 export const MY_RULES_LEAD = "Open a rule you saved, or set the steps below and save them under a name. Each time you press Show stocks that meet my rule on a saved rule, the result is saved with it.";
 export const NAME_PLACEHOLDER = "Name these rules";
-/** A new rule starts with "My rule" and today's date (India date), for example "My rule 24 Nov". The person can change it. */
-export function defaultRuleName(now: Date = new Date()): string {
-  const ist = new Date(now.getTime() + 330 * 60000);
-  return `My rule ${ist.getUTCDate()} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][ist.getUTCMonth()]}`;
+/** A new rule starts as "My rule 1", then "My rule 2" and so on: one more than the highest number already used, and never a name that is already saved. The person can change it. */
+export function defaultRuleName(existing: readonly string[] = []): string {
+  const taken = new Set(existing.map((n) => n.trim().toLowerCase()));
+  let n = 1;
+  for (const name of existing) {
+    const m = /^my rule (\d+)$/i.exec(name.trim());
+    if (m) n = Math.max(n, Number(m[1]) + 1);
+  }
+  while (taken.has(`my rule ${n}`)) n += 1;
+  return `My rule ${n}`;
 }
 export const SNAPSHOT_LABEL = "Also save today's stock list (a dated copy)";
 export const SNAPSHOT_HELP = "The rules are always saved. With the list, you can open the rule later and see the stocks as they were on that date.";
