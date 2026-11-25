@@ -1,3 +1,4 @@
+import { humanizeDates } from "@/lib/human-date";
 import { StockSignupOffer } from "@/components/app/StockSignupOffer";
 import { StockTabs } from "@/components/app/stock/StockTabs";
 import { StockActions } from "@/components/app/stock/StockActions";
@@ -206,7 +207,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
     .flatMap((g) => g.occurrences.filter((o) => !o.quality_note && o.recency_group !== "Older" && isNeutralText(o.finding)).map((o) => ({ label: g.category_label, finding: o.finding, filed: o.filing_date ?? "" })))
     .sort((a, b) => b.filed.localeCompare(a.filed))
     .slice(0, 6)
-    .map((o) => `${o.label}: ${shortBullets(o.finding, 1, 15).shown[0] ?? ""}`)
+    .map((o) => `${o.label}: ${humanizeDates(shortBullets(o.finding, 1, 15).shown[0] ?? "")}`)
     .filter((l) => !l.endsWith(": "));
   const insiderLines = insider.slice(0, 3).filter((t) => t.trade_date).map((t) => `${personCategory(t)}: ${sideLabel(t.transaction_type)}, ${safeNumber(t.quantity)} shares, on ${dateOf(t.trade_date as string)}.`);
   const quick: QuickBlock[] = [
