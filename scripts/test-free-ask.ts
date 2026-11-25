@@ -15,7 +15,7 @@ assert.equal(rep.free, "1 stock, 5 questions, from the same 5 a day");
 assert.equal(rep.basic, "150 questions a month");
 assert.equal(rep.pro, "350 questions a month");
 assert.ok(PLAN_MATRIX.some((r) => r.feature === "Question packs (add-ons)" && r.basic.includes("chat and in reports")), "add-ons work in chat and in reports");
-assert.ok(PLAN_MATRIX.some((r) => r.feature === "When questions reset" && r.basic.includes("renewal date") && r.basic.includes("nothing carries over")), "pools reset on the renewal date, no rollover");
+assert.ok(PLAN_MATRIX.some((r) => r.feature === "When questions reset" && r.basic.includes("the day your plan started") && r.basic.includes("nothing carries over")), "pools reset on the renewal date, no rollover");
 assert.equal(FREE_ASK_LINE, "Free accounts get 5 questions a day, shared by chat and reports.");
 const panel = read("components/app/ask/AskRedixFi.tsx");
 assert.ok(panel.includes('usage.tier === "free" && usage.daily_limit_per_symbol === null') && panel.includes("`${left} of ${usage.daily_limit} left today`"), "the panel shows the shared daily count for Free");

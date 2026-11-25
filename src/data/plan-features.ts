@@ -19,7 +19,7 @@ export const PLAN_MATRIX: PlanRow[] = [
   { feature: "Ask AI chat", free: "5 questions a day, shared with reports", basic: "150 a month, up to 10 a day", pro: "400 a month, up to 25 a day" },
   { feature: "Ask AI reports", free: "1 stock, 5 questions, from the same 5 a day", basic: "150 questions a month", pro: "350 questions a month" },
   { feature: "Question packs (add-ons)", free: "Basic and Pro only", basic: "Work in chat and in reports", pro: "Work in chat and in reports" },
-  { feature: "When questions reset", free: "Every day", basic: "On your plan renewal date, nothing carries over", pro: "On your plan renewal date, nothing carries over" },
+  { feature: "When questions reset", free: "Every day", basic: "Every month, on the day your plan started; nothing carries over", pro: "Every month, on the day your plan started; nothing carries over" },
   { feature: "Shortlist Lab: saved rules", free: "1", basic: "10", pro: "30" },
   { feature: "Shortlist Lab: saved results per rule", free: "1", basic: "10", pro: "30" },
   { feature: "Shortlist Lab: rule report (PDF and CSV)", free: "Free sample only", basic: "Yes", pro: "Yes" },
