@@ -28,6 +28,9 @@ assert.ok(!/\b(during|the|of|to|regarding)\.$/i.test(cut), `no dangling end: ${c
 const sb = shortBullets("revenue up to INR 5,533 crores. Profit before tax rose by 8.81% to INR 1,403 crores. 43. The EBITDA margin was reported at 25.83% for the quarter.", 3, 15);
 assert.deepEqual(sb.shown, ["Profit before tax rose by 8.81% to INR 1,403 crores.", "The EBITDA margin was reported at 25.83% for the quarter."], "fragments dropped, whole sentences kept");
 
+const lead = shortBullets("During the earnings conference call held on 27 Jul 2026, Bharat Electronics Limited (BEL) reported a revenue increase of 25.27% year-over-year. The EBITDA margin was reported at 25.83%.", 3, 40);
+assert.equal(lead.shown[0], "Bharat Electronics Limited (BEL) reported a revenue increase of 25.27% year-over-year.", "the call lead-in clause is dropped, the bullet starts with the fact");
+
 // ---- one date style
 assert.equal(humanDate("2026-07-18"), "18 Jul 2026");
 assert.equal(monthYear("2026-09-30"), "Sep 2026");
