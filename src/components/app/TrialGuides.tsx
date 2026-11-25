@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { apiGet, apiMutate } from "@/lib/api/client";
+import { answerExitSurvey, getExitSurvey } from "@/lib/api/mutations";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 import { useTrialDays } from "@/lib/trial";
@@ -71,8 +71,8 @@ export function ExitSurvey({ forceOpen = false, source = "trial_end" }: { forceO
       try {
         const token = await getToken();
         if (!token) return;
-        const env = await apiGet<{ due: boolean; choices: Choice[] }>("/me/exit-survey", { token });
-        if (!cancelled && (env.data.due || forceOpen)) setChoices(env.data.choices);
+        const out = await getExitSurvey(token);
+        if (!cancelled && (out.due || forceOpen)) setChoices(out.choices);
       } catch {
         /* the question is optional: a failure shows nothing */
       }
@@ -86,7 +86,7 @@ export function ExitSurvey({ forceOpen = false, source = "trial_end" }: { forceO
   async function send(answer: string) {
     try {
       const token = await getToken();
-      if (token) await apiMutate("/me/exit-survey", "POST", { answer, text: answer === "other" ? text : null, source }, { token });
+      if (token) await answerExitSurvey(token, { answer, text: answer === "other" ? text : null, source });
     } catch {
       /* ignore */
     }

@@ -798,3 +798,27 @@ export async function postChannelDiscovery(
 export async function submitFeedback(body: { text: string; page: "stock" | "no_result" | "pricing"; path?: string; email?: string }, token?: string | null) {
   await apiMutate<{ received: boolean }>("/feedback", "POST", body, token ? { token } : undefined);
 }
+
+// ---------- funnel, visitor Ask AI, trial exit question (26 Nov 2026) ----------
+
+/** One funnel step from the browser (POST /events). Anonymous on purpose: the visitor id travels in X-Visitor-Id, never a token or a name. */
+export async function sendFunnelEvent(body: Record<string, unknown>): Promise<void> {
+  // @auth-ok: a visitor is not signed in; the event carries no personal data
+  await apiMutate("/events", "POST", body);
+}
+
+/** The one free Ask AI question a day for a visitor who is not signed in (POST /ask/anon). */
+export async function askAnonymous(symbol: string, question: string): Promise<{ answer: string; refused: boolean }> {
+  // @auth-ok: this endpoint exists for visitors who are not signed in
+  const env = await apiMutate<{ answer: string; refused: boolean }>("/ask/anon", "POST", { symbol, question });
+  return env.data;
+}
+
+export async function getExitSurvey(token: string): Promise<{ due: boolean; choices: { key: string; label: string }[] }> {
+  const env = await apiGet<{ due: boolean; choices: { key: string; label: string }[] }>("/me/exit-survey", { token });
+  return env.data;
+}
+
+export async function answerExitSurvey(token: string, body: { answer: string; text?: string | null; source?: string }): Promise<void> {
+  await apiMutate("/me/exit-survey", "POST", body, { token });
+}

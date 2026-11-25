@@ -63,5 +63,5 @@ export function lookupGrantHeader(): string | null {
 
 /** Paths that need the visitor id and grants (kept narrow so other requests stay simple, header-free GETs). */
 export function needsLookupHeaders(path: string): boolean {
-  return /^\/lookups(\/|$)/.test(path) || (/^\/signals\/[^/?]+/.test(path) && !/^\/signals\/(movers|industries)(\/|$)/.test(path));
+  return /^\/(lookups|events|ask\/anon)(\/|$)/.test(path) || (/^\/signals\/[^/?]+/.test(path) && !/^\/signals\/(movers|industries)(\/|$)/.test(path));
 }

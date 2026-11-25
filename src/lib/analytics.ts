@@ -7,6 +7,7 @@
  * The old Vercel Analytics calls were removed: the site left Vercel and they were doing nothing. `track()` keeps its name and event names so every
  * existing caller still works; only the events that are funnel steps are sent.
  */
+import { sendFunnelEvent } from "@/lib/api/mutations";
 import { getVisitorId } from "@/lib/lookup-grants";
 
 export type AnalyticsEvent =
@@ -30,7 +31,6 @@ const FUNNEL_NAME: Partial<Record<AnalyticsEvent, string>> = {
   lock_click: "lock_click",
 };
 
-const API = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
 const UTM_KEY = "redixfi:utm";
 const ENTRY_KEY = "redixfi:entry-sent";
 
@@ -51,13 +51,11 @@ function utm(): { utm_source?: string; utm_medium?: string; utm_campaign?: strin
 }
 
 function send(event: string, extra: Record<string, unknown> = {}): void {
-  if (typeof window === "undefined" || !API) return;
+  if (typeof window === "undefined") return;
   // our own automated checks (a browser driven by a script) are not visitors
   if (typeof navigator !== "undefined" && navigator.webdriver) return;
   try {
-    const vid = getVisitorId();
-    const body = JSON.stringify({ event, visitor_id: vid, path: window.location.pathname, ...utm(), ...extra });
-    void fetch(`${API}/events`, { method: "POST", keepalive: true, headers: { "Content-Type": "application/json", ...(vid ? { "X-Visitor-Id": vid } : {}) }, body }).catch(() => undefined);
+    void sendFunnelEvent({ event, visitor_id: getVisitorId(), path: window.location.pathname, ...utm(), ...extra }).catch(() => undefined);
   } catch {
     /* analytics must never affect the page */
   }

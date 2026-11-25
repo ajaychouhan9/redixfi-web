@@ -6,7 +6,7 @@ const read = (f: string) => readFileSync(new URL(`../src/${f}`, import.meta.url)
 
 // analytics: our own events, no vendor package, no cookie, scripts do not count as visitors
 const a = read("lib/analytics.ts");
-assert.ok(!a.includes("@vercel/analytics") && a.includes("/events") && a.includes("navigator.webdriver") && a.includes("keepalive"), "own events endpoint, no Vercel");
+assert.ok(!a.includes("@vercel/analytics") && a.includes("sendFunnelEvent") && a.includes("navigator.webdriver") && read("lib/api/mutations.ts").includes('"/events", "POST"') && read("lib/lookup-grants.ts").includes("events|ask"), "own events endpoint, no Vercel");
 for (const pair of ['trial_cta_click: "start_free_click"', 'signup_started: "signup_started"', 'pricing_viewed: "pricing_view"']) assert.ok(a.includes(pair), pair);
 assert.ok(a.includes("utm_source") && a.includes("entry"), "UTM and entry page");
 
@@ -25,7 +25,7 @@ assert.ok(read("components/app/CurrentSymbolSync.tsx").includes("redixfi:last-st
 
 // visitor Ask AI, inline prompts, no wall
 const anon = read("components/app/ask/AnonAsk.tsx");
-assert.ok(anon.includes("/ask/anon") && anon.includes("Sign up free to ask more and start your 5-day Pro trial."), "one free question, then sign up");
+assert.ok(read("lib/api/mutations.ts").includes("/ask/anon") && anon.includes("askAnonymous") && anon.includes("Sign up free to ask more and start your 5-day Pro trial."), "one free question, then sign up");
 assert.ok(read("components/app/ask/AskRedixFi.tsx").includes("<AnonAsk symbol={pageSymbol}"), "the panel offers it to a visitor");
 for (const f of ["components/app/stock/StockActions.tsx", "components/app/stock/QuickReads.tsx", "components/app/signals/MyScreens.tsx"]) assert.ok(read(f).includes("InlineSignup"), `${f} has an inline prompt`);
 assert.ok(read("components/app/InlineSignup.tsx").includes("if (user || loading) return null"), "the prompt hides for a signed-in visitor");

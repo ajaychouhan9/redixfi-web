@@ -5,11 +5,11 @@ import Link from "next/link";
 import { Send } from "lucide-react";
 
 import { MarkdownAnswer } from "@/components/app/ask/MarkdownAnswer";
-import { getVisitorId } from "@/lib/lookup-grants";
+import { ApiError } from "@/lib/api/client";
+import { askAnonymous } from "@/lib/api/mutations";
 import { stockPath } from "@/lib/seo/stock-symbol";
 import { track } from "@/lib/analytics";
 
-const API = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
 export const ANON_SIGNUP_LINE = "Sign up free to ask more and start your 5-day Pro trial.";
 
 /**
@@ -30,24 +30,17 @@ export function AnonAsk({ symbol, onNavigate }: { symbol: string | null; onNavig
     setBusy(true);
     setError(null);
     try {
-      const vid = getVisitorId();
-      const res = await fetch(`${API}/ask/anon`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...(vid ? { "X-Visitor-Id": vid } : {}) },
-        body: JSON.stringify({ symbol, question: q.trim() }),
-      });
-      const body = await res.json().catch(() => ({}));
-      if (res.status === 429) {
-        setUsed(true);
-        setError(typeof body?.detail === "string" ? body.detail : `You have used today's free question. ${ANON_SIGNUP_LINE}`);
-        return;
-      }
-      if (!res.ok) throw new Error("failed");
-      setAnswer(String(body?.data?.answer ?? ""));
-      setUsed(true);
+      const out = await askAnonymous(symbol, q.trim());
+      setAnswer(out.answer);
+      setUsed(!out.refused);
       track("ask_ai_question", { signed_in: false });
-    } catch {
-      setError("We could not answer that right now. Please try again.");
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 429) {
+        setUsed(true);
+        setError(`You have used today's free question. ${ANON_SIGNUP_LINE}`);
+      } else {
+        setError("We could not answer that right now. Please try again.");
+      }
     } finally {
       setBusy(false);
     }
