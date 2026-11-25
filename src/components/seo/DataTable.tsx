@@ -24,7 +24,7 @@ export function DataTable({ caption, head, rows }: { caption: string; head: stri
 export function Section({ id, title, note, children }: { id: string; title: string; note?: string; children: ReactNode }) {
   return (
     <section aria-labelledby={id} className="mt-7">
-      <h2 id={id} className="text-base font-semibold">{title}</h2>
+      <h2 id={id} className="text-[18px] font-bold">{title}</h2>
       {note && <p className="mb-2 mt-0.5 text-xs text-foreground-muted">{note}</p>}
       <div className={note ? "" : "mt-2"}>{children}</div>
     </section>

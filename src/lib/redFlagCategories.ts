@@ -28,4 +28,6 @@ export const RED_FLAG_CATEGORY_LABELS: Record<string, string> = {
   ...Object.fromEntries(RED_FLAG_CATEGORIES.map((c) => [c.key, c.label])),
   // Display-only heading the API uses for disputed tax / statutory dues under appeal (not a loan default).
   statutory_dues_dispute: "Statutory dues in dispute",
+  // Display-only heading for a finding the classifier put under "Default / Covenant Breach" whose text names no borrowing default.
+  other_disclosure: "Other disclosure",
 };

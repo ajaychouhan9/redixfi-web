@@ -41,6 +41,7 @@ function cleanToken(tok: string, isLast: boolean, isFirst: boolean): string {
   if (/[a-z]/.test(tok)) return tok; // already mixed case
   const bare = tok.replace(/[(),]/g, "");
   if (!isFirst && (LTD_FULL.has(bare) || (isLast && LTD_CUT.has(bare)))) return "Ltd";
+  if (bare === "N" && !isFirst && !isLast) return "and"; // "UNIMECH AEROSPACE N MFG L"
   if (WORDS[bare]) {
     const w = WORDS[bare];
     return isFirst ? titleToken(w) : w;

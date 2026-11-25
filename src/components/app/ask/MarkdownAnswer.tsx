@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { Fragment } from "react";
 
+import { humanizeDates } from "@/lib/human-date";
+import { stripListMarker } from "@/lib/sentences";
+
 /**
  * Ask-panel-upgrade session, Phase 2 — the backend's ASK_SYSTEM_TEMPLATE/
  * GENERAL_SYSTEM_TEMPLATE now format answers with a small markdown subset
@@ -34,7 +37,8 @@ function renderInline(text: string, keyPrefix: string) {
   });
 }
 
-export function MarkdownAnswer({ text }: { text: string }) {
+export function MarkdownAnswer({ text: rawText }: { text: string }) {
+  const text = humanizeDates(rawText);
   const lines = text.split("\n");
   const blocks: { type: "header" | "bullets" | "para"; content: string | string[] }[] = [];
   let bulletBuf: string[] = [];
@@ -60,7 +64,7 @@ export function MarkdownAnswer({ text }: { text: string }) {
     }
     const bulletMatch = /^[-*]\s+(.*)$/.exec(line);
     if (bulletMatch) {
-      bulletBuf.push(bulletMatch[1]);
+      bulletBuf.push(stripListMarker(bulletMatch[1]));
       continue;
     }
     flushBullets();
@@ -78,7 +82,7 @@ export function MarkdownAnswer({ text }: { text: string }) {
     // BETWEEN actual sibling blocks, so a short 1-2 sentence answer (a
     // single block) gets zero extra spacing from this change; it scales
     // with content, not a forced minimum height.
-    <div className="space-y-3">
+    <div className="space-y-3 text-[15px] leading-[1.5]">
       {blocks.map((b, i) => {
         if (b.type === "header") {
           return (
@@ -95,7 +99,7 @@ export function MarkdownAnswer({ text }: { text: string }) {
               // container's space-y-3) reads as a real section break —
               // e.g. "Latest Concall" / "Latest Annual Report" — without
               // adding a leading gap when a header opens the answer.
-              className={`text-base font-semibold text-foreground${i > 0 ? " mt-1" : ""}`}
+              className={`text-[16px] font-bold leading-snug text-foreground${i > 0 ? " mt-1" : ""}`}
             >
               {renderInline(b.content as string, `h${i}`)}
             </div>

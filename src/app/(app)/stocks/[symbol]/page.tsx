@@ -1,3 +1,4 @@
+import { humanizeDates } from "@/lib/human-date";
 import { StockSignupOffer } from "@/components/app/StockSignupOffer";
 import { StockTabs } from "@/components/app/stock/StockTabs";
 import { StockActions } from "@/components/app/stock/StockActions";
@@ -38,7 +39,7 @@ import { StockPriceChart } from "@/components/app/stock/StockPriceChart";
 import { KeyNumbers } from "@/components/app/stock/KeyNumbers";
 import { RevenueProfit } from "@/components/app/stock/RevenueProfit";
 import { Shareholding } from "@/components/app/stock/Shareholding";
-import { QuickReads, type QuickBlock } from "@/components/app/stock/QuickReads";
+import { BulletList, QuickReads, type QuickBlock } from "@/components/app/stock/QuickReads";
 import { dayText, holdPoints, keyTiles, priceSentence, quarterlyPoints, shortBullets, signedPct, signedRupees, toneOf, yearlyPoints, rupees, type Close } from "@/lib/stock-visual";
 
 // ONE page per stock for everyone (17 Nov 2026): the public page and the signed-in /signals/<symbol> and /research/<symbol> pages are merged here
@@ -68,7 +69,7 @@ function rangeHidden(data: ResearchDetail): boolean {
   return st === "unconfirmed" || st === "review";
 }
 
-const DELIVERY_SESSIONS = 20;
+const DELIVERY_SESSIONS = 60;
 function deliveryWindow(data: ResearchDetail) {
   return [...(data.delivery_30d ?? [])]
     .filter((d) => Number.isFinite(d.delivery_pct))
@@ -206,7 +207,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
     .flatMap((g) => g.occurrences.filter((o) => !o.quality_note && o.recency_group !== "Older" && isNeutralText(o.finding)).map((o) => ({ label: g.category_label, finding: o.finding, filed: o.filing_date ?? "" })))
     .sort((a, b) => b.filed.localeCompare(a.filed))
     .slice(0, 6)
-    .map((o) => `${o.label}: ${shortBullets(o.finding, 1, 15).shown[0] ?? ""}`)
+    .map((o) => `${o.label}: ${humanizeDates(shortBullets(o.finding, 1, 15).shown[0] ?? "")}`)
     .filter((l) => !l.endsWith(": "));
   const insiderLines = insider.slice(0, 3).filter((t) => t.trade_date).map((t) => `${personCategory(t)}: ${sideLabel(t.transaction_type)}, ${safeNumber(t.quantity)} shares, on ${dateOf(t.trade_date as string)}.`);
   const quick: QuickBlock[] = [
@@ -218,15 +219,13 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
   // ---- Overview: price chart, key numbers, revenue and profit, shareholding, short reads; then the plain questions and the trading readings
   const overview = (
     <>
-      <StockPriceChart symbol={sym} closes={closes} has5y={has5y} lastPrice={data.price.last_price} sentence={priceSentence(allCloses)} />
+      <StockPriceChart symbol={sym} closes={closes} has5y={has5y} lastPrice={data.price.last_price} sentence={priceSentence(allCloses)} prevClose={prevClose} />
       <KeyNumbers tiles={tiles} asOf={tilesAsOf} />
       <RevenueProfit yearly={yearly} quarterly={quarterly} />
       <Shareholding points={holds} />
       <QuickReads blocks={quick} />
       <div className="mt-7 border-t border-border" />
       <SimpleChecklist data={data} today={istToday()} priceLabel={priceLabel} />
-      <StockSignupOffer companyName={data.company_name} className="mt-4" />
-
       <Section id="range" title="52-week range" note={closeDate ? `As of ${dateOf(closeDate)} close` : undefined}>
         {r52 ? (
           <Week52Range className="max-w-xs" week52={week52} lastPrice={data.price.last_price} />
@@ -249,12 +248,12 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
         </div>
         {sortedDelivery.length > 1 && (
           <div className="mt-3">
-            <p className="mb-1 text-xs text-foreground-muted">Delivery % over the last {sortedDelivery.length} sessions</p>
+            <p className="mb-1 text-xs text-foreground-muted">Delivery % over the last {sortedDelivery.length} sessions, from {dateOf(sortedDelivery[0].date)}</p>
             <div className="text-accent">
               <Sparkline values={sortedDelivery.map((d) => d.delivery_pct)} height={40} />
             </div>
             <div className="mt-2 max-w-xs">
-              <DataTable caption="Delivery percentage, last 5 sessions" head={["Session", "Delivery %"]} rows={lastFive.map((d) => [dateOf(d.date), `${d.delivery_pct.toFixed(1)}%`])} />
+              <DataTable caption={`Delivery percentage, latest ${lastFive.length} of ${sortedDelivery.length} sessions`} head={["Session", "Delivery %"]} rows={lastFive.map((d) => [dateOf(d.date), `${d.delivery_pct.toFixed(1)}%`])} />
             </div>
           </div>
         )}
@@ -370,7 +369,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
                   source filing
                 </a>
               </p>
-              <p className="mt-0.5 text-foreground-muted">{c.summary}</p>
+              <BulletList lines={(() => { const b = shortBullets(c.summary, 99, 999); return [...b.shown, ...b.rest]; })()} className="mt-1" />
             </li>
           ))}
         </ul>

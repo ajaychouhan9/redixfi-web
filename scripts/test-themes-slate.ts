@@ -16,7 +16,7 @@ function block(sel: string): Record<string, string> {
 ok(THEMES.map((t) => t.id).join() === "light,dark,slate" && THEMES.map((t) => t.label).join() === "Light,Dark,Slate", "switcher lists Light, Dark, Slate");
 ok(DEFAULT_THEME === "light" && readTheme(null) === "light" && readTheme("premium") === "light" && readTheme("slate") === "slate" && readTheme("dark") === "dark", "Light is the default; an old saved Premium becomes Light");
 const s = block("slate");
-const want: Record<string, string> = { background: "#f2f5f8", surface: "#ffffff", border: "#d9e0e8", foreground: "#17212b", "foreground-muted": "#5b6b7b", accent: "#0f766e", "accent-dim": "#115e59", hover: "#d5eeea" };
+const want: Record<string, string> = { background: "#f2f5f8", surface: "#ffffff", border: "#d9e0e8", foreground: "#17212b", "foreground-muted": "#526270", accent: "#0f766e", "accent-dim": "#115e59", hover: "#d5eeea" };
 for (const [k, v] of Object.entries(want)) ok(s[k] === v, `slate ${k} ${v}`);
 for (const th of ["light", "dark", "slate"]) {
   const b = th === "dark" ? { ...block("dark") } : block(th);

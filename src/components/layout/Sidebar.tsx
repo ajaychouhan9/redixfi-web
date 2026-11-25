@@ -33,8 +33,9 @@ export function Sidebar() {
 
   const row = (on: boolean) =>
     clsx(
-      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",
-      on ? "bg-accent/10 text-accent" : "text-foreground-muted hover:bg-hover hover:text-foreground",
+      "flex min-h-[44px] items-center gap-3 rounded-lg border-l-[3px] px-3 py-2.5 text-left text-sm transition-colors",
+      // 26 Nov 2026: labels are full-strength text (at least #374151 on Light); the open page is bold with an accent bar, not only a faint tint
+      on ? "border-accent bg-accent/10 font-bold text-foreground" : "border-transparent font-medium text-foreground hover:bg-hover",
     );
 
   return (

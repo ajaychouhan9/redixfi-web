@@ -79,7 +79,7 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\
   assert.ok(offer.includes("Get the full {companyName} report free.") && offer.includes("-day Pro trial, no payment details.") && offer.includes("Start free"), "offer text");
   assert.ok(offer.includes("/login?mode=signup&next="), "returns to the same page");
   const t = strip(read("app/(app)/stocks/[symbol]/page.tsx"));
-  assert.equal((t.match(/<StockSignupOffer /g) ?? []).length, 2, "one offer in the Overview and one at the foot of the page");
+  assert.equal((t.match(/<StockSignupOffer /g) ?? []).length, 1, "one offer only, at the foot of the page (26 Nov 2026: the Overview copy was removed)");
 }
 
 // ---- 6. compliance of the strings added since 16 Nov

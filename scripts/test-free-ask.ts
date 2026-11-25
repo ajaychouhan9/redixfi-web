@@ -18,7 +18,7 @@ assert.ok(PLAN_MATRIX.some((r) => r.feature === "Question packs (add-ons)" && r.
 assert.ok(PLAN_MATRIX.some((r) => r.feature === "When questions reset" && r.basic.includes("renewal date") && r.basic.includes("nothing carries over")), "pools reset on the renewal date, no rollover");
 assert.equal(FREE_ASK_LINE, "Free accounts get 5 questions a day, shared by chat and reports.");
 const panel = read("components/app/ask/AskRedixFi.tsx");
-assert.ok(panel.includes('usage.tier === "free" && usage.daily_limit_per_symbol === null') && panel.includes("<QuotaBar label=\"Today\" remaining={left} limit={usage.daily_limit} showTotal />"), "the panel shows the shared daily count for Free");
+assert.ok(panel.includes('usage.tier === "free" && usage.daily_limit_per_symbol === null') && panel.includes("`${left} of ${usage.daily_limit} left today`"), "the panel shows the shared daily count for Free");
 assert.ok(panel.includes("if (usage.daily_limit_per_symbol !== null)"), "the old per-stock shape is still read");
 // no page states the old limit any more
 import { readdirSync, statSync } from "node:fs";

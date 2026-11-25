@@ -3,6 +3,7 @@
  * this file only decides what the page may show of it. A bullet that carries advice, a cause or a prediction is never shown, even if one
  * got into storage: the same guard runs here as the last gate. Pure functions, tested in scripts/test-restructure.ts.
  */
+import { stripListMarker } from "@/lib/sentences";
 const ADVICE = /\b(buy|buys|buying|bought|sell|sells|selling|sold|target|targets|pick|picks|tip|tips|recommend\w*|advice|advise\w*|bullish|bearish)\b/i;
 const CAUSE = /\b(because|due to|owing to|thanks to|on account of|as a result|driven by|led by|on worries|on fears|on hopes|on concerns|amid|following|triggered|caused)\b/i;
 const FUTURE = /\b(may|might|could|likely|unlikely|expected|expects|will|would|should|set to|poised|forecast\w*|predict\w*|outlook|anticipate\w*)\b/i;
@@ -15,7 +16,7 @@ export function bulletIsSafe(text: string): boolean {
 /** Up to five bullets that pass the guard. */
 export function shownBullets(bullets: unknown): string[] {
   if (!Array.isArray(bullets)) return [];
-  return bullets.filter((b): b is string => typeof b === "string" && bulletIsSafe(b)).slice(0, 5);
+  return bullets.filter((b): b is string => typeof b === "string" && bulletIsSafe(b)).map(stripListMarker).slice(0, 5);
 }
 
 export const BRIEF_NOT_ADVICE = "Facts from today's market data. Not a recommendation or a forecast.";

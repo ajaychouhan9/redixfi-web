@@ -4,6 +4,7 @@
  * from templates (no language model), state facts with numbers and dates only, and are checked against a list of banned words by a test.
  * Not enough data means no sentence (the function returns null) and no tile.
  */
+import { clipSentence, isFragment, splitSentences, stripListMarker } from "@/lib/sentences";
 import type { FundamentalsBlock } from "@/lib/api/types";
 
 const MINUS = "−";
@@ -47,7 +48,7 @@ export function dayText(ymd: string | null | undefined): string | null {
 export function quarterShort(ymd: string | null | undefined): string | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd ?? "");
   if (!m || Number(m[2]) < 1 || Number(m[2]) > 12) return null;
-  return `${MONTHS[Number(m[2]) - 1]} ${m[1].slice(2)}`;
+  return `${MONTHS[Number(m[2]) - 1]} ${m[1]}`;
 }
 /** "FY26" from "2026" (the year the fiscal year ends). */
 export function fiscalShort(fy: string | null | undefined): string | null {
@@ -258,22 +259,10 @@ export function holdSentence(pts: HoldPoint[], field: "promoter" | "fii" | "mf",
 }
 
 // ---------- short reads ----------
-/** At most `max` short bullets (each up to `words` words) taken from a text; a longer sentence is cut at a clause or a word boundary with no ellipsis trick. */
+/** At most `max` short bullets (each up to `words` words) taken from a text. Cut-off pieces are dropped, never shown; a long sentence is cut at a clause, never on a joining word. */
 export function shortBullets(text: string | null | undefined, max = 3, words = 15): { shown: string[]; rest: string[] } {
-  const raw = (text ?? "").replace(/\s+/g, " ").trim();
-  if (!raw) return { shown: [], rest: [] };
-  const sentences = (raw.match(/[^.!?]+[.!?]+(\s|$)|[^.!?]+$/g) ?? []).map((s) => s.trim()).filter(Boolean);
-  const all = sentences.map((s) => clip(s, words));
+  const all = splitSentences(text).map(stripListMarker).filter((s) => !isFragment(s)).map((s) => clipSentence(s, words));
   return { shown: all.slice(0, max), rest: all.slice(max) };
-}
-function clip(s: string, words: number): string {
-  const w = s.split(" ");
-  if (w.length <= words) return s;
-  // cut at a comma or semicolon inside the limit when there is one, else at the word limit
-  const head = w.slice(0, words).join(" ");
-  const cut = Math.max(head.lastIndexOf(","), head.lastIndexOf(";"), head.lastIndexOf(" – "), head.lastIndexOf(" — "));
-  const out = cut > head.length * 0.5 ? head.slice(0, cut) : head;
-  return `${out.replace(/[,;:–—\s]+$/, "")}.`;
 }
 
 /** Words that must never appear in a sentence built here (checked by a test). */

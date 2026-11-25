@@ -2,6 +2,7 @@ import type { ResearchRedFlags, RedFlagCategoryGroup } from "@/lib/api/types";
 import { Card } from "@/components/ui/Card";
 import { AiLabel } from "@/components/ui/AiLabel";
 import { formatDateIst } from "@/lib/format";
+import { humanizeDates } from "@/lib/human-date";
 import {
   SUMMARY_HEADING,
   SUMMARY_NOTE,
@@ -87,7 +88,7 @@ function CategoryBlock({ group }: { group: RedFlagCategoryGroup }) {
                 </a>
               )}
             </div>
-            <p className="mt-2 text-sm leading-relaxed text-foreground">{occ.finding}</p>
+            <p className="mt-2 text-sm leading-relaxed text-foreground">{humanizeDates(occ.finding)}</p>
           </div>
           );
         })}

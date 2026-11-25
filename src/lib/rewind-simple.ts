@@ -14,6 +14,7 @@ export const REWIND_PERIODS: { v: RewindPeriod; text: string }[] = [
   { v: "3y", text: "3 years" },
 ];
 
+export const REWIND_HINT = "Rewind: what happened around this stock's past big moves.";
 export const REWIND_INTRO = "Pick a size. We show every day this stock moved by that much, and what its numbers looked like the day before.";
 export const REWIND_FOOTER = "Past record. Not a forecast or a recommendation.";
 

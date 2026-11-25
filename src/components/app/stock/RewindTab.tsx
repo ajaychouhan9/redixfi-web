@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 
 import { runStockwise, type StockwiseDay, type StockwiseStock } from "@/lib/api/history";
-import { REWIND_MOVES, REWIND_PERIODS, REWIND_FOOTER, REWIND_INTRO, rewindSummary, rewindRow, type RewindMove, type RewindPeriod } from "@/lib/rewind-simple";
+import { REWIND_MOVES, REWIND_PERIODS, REWIND_FOOTER, REWIND_HINT, REWIND_INTRO, rewindSummary, rewindRow, type RewindMove, type RewindPeriod } from "@/lib/rewind-simple";
 
 // The full explorer (group by, cards or table, save a filter, CSV) is loaded only if "More options" is opened.
 const StockwiseHistory = dynamic(() => import("@/components/app/history/StockwiseHistory").then((m) => m.StockwiseHistory), {
@@ -73,7 +73,8 @@ export function RewindTab({ symbol }: { symbol: string }) {
   return (
     <section className="space-y-4" aria-labelledby="rewind-title" data-testid="rewind-tab">
       <div>
-        <h2 id="rewind-title" className="text-base font-semibold">Rewind</h2>
+        <h2 id="rewind-title" className="text-lg font-bold">Rewind</h2>
+        <p className="mt-1 text-[15px] leading-6" data-testid="rewind-hint">{REWIND_HINT}</p>
         <p className="mt-1 text-sm text-foreground-muted" data-testid="rewind-intro">{REWIND_INTRO}</p>
       </div>
       <div className="space-y-2">

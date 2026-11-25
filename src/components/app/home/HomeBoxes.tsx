@@ -5,16 +5,16 @@ import { BarChart3, CalendarDays, Compass, Activity, Sparkles, type LucideIcon }
 
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
 
-const BOX = "flex min-h-[96px] flex-col justify-between rounded-xl border border-border bg-surface p-4 text-left transition-colors hover:border-accent";
+const BOX = "flex min-h-[64px] flex-col justify-center rounded-lg border border-border bg-surface px-3 py-2 text-left transition-colors hover:border-accent";
 
 function Box({ icon: Icon, title, text }: { icon: LucideIcon; title: string; text: string }) {
   return (
     <>
-      <span className="flex items-center gap-2 text-sm font-semibold">
+      <span className="flex items-center gap-2 text-[15px] font-bold">
         <Icon size={16} className="shrink-0 text-accent" aria-hidden />
         {title}
       </span>
-      <span className="mt-1 text-xs leading-relaxed text-foreground-muted">{text}</span>
+      <span className="mt-0.5 text-[13px] leading-snug text-foreground-muted">{text}</span>
     </>
   );
 }
@@ -26,21 +26,21 @@ function Box({ icon: Icon, title, text }: { icon: LucideIcon; title: string; tex
 export function HomeBoxes() {
   const { openPanel } = useAskPanel();
   return (
-    <nav aria-label="Where to go next" className="grid grid-cols-1 gap-3 @min-[26rem]:grid-cols-2 @min-[52rem]:grid-cols-5" data-testid="home-boxes">
+    <nav aria-label="Where to go next" className="grid grid-cols-2 gap-2 @min-[52rem]:grid-cols-5" data-testid="home-boxes">
       <Link href="/shortlist-lab" className={BOX} data-testid="home-box-start">
-        <Box icon={Compass} title="Shortlist Lab" text="New to stocks? Learn the 5 questions, then set your rules." />
+        <Box icon={Compass} title="Shortlist Lab" text="Set your own rules." />
       </Link>
       <Link href="/signals" className={BOX} data-testid="home-box-screener">
-        <Box icon={BarChart3} title="Screener" text="Filter 2,000+ NSE stocks by the figures you choose." />
+        <Box icon={BarChart3} title="Screener" text="Filter 2,000+ NSE stocks." />
       </Link>
       <Link href="/market" className={BOX} data-testid="home-box-market">
-        <Box icon={Activity} title="Market Overview" text="Intraday movers, market pulse, activity and top gainers and losers." />
+        <Box icon={Activity} title="Market Overview" text="Movers, pulse and activity." />
       </Link>
       <Link href="/signals/7-day-review" className={BOX} data-testid="home-box-review">
-        <Box icon={CalendarDays} title="7-Day Review" text="The week's price changes and what was filed." />
+        <Box icon={CalendarDays} title="7-Day Review" text="The week in price and filings." />
       </Link>
       <button type="button" onClick={openPanel} className={BOX} data-testid="home-box-ask">
-        <Box icon={Sparkles} title="Ask AI" text="Ask about a company, answered from its own filings." />
+        <Box icon={Sparkles} title="Ask AI" text="Answers from filings." />
       </button>
     </nav>
   );

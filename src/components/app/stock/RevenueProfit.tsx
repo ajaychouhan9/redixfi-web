@@ -5,8 +5,8 @@ import { useState } from "react";
 import { barScale, crore, growth, growthRows, profitSentence, revenueSentence, signedPct, toneOf, type RPPoint } from "@/lib/stock-visual";
 
 const W = 320;
-const H = 150;
-const PAD_B = 20;
+const H = 166;
+const PAD_B = 34;
 
 function Bars({ pts, label }: { pts: RPPoint[]; label: string }) {
   const { max, min } = barScale(pts);
@@ -32,7 +32,14 @@ function Bars({ pts, label }: { pts: RPPoint[]; label: string }) {
           <g key={p.at}>
             {bar(p.revenue, cx - bw - 1, "var(--bar-revenue, #8fa3b8)")}
             {bar(p.profit, cx + 1, "var(--up-fill, var(--up))")}
-            <text x={cx} y={H - 5} textAnchor="middle" fontSize="11" fill="var(--foreground-muted)" fontWeight={latest ? 700 : 400}>{p.label}</text>
+            <text x={cx} y={H - 18} textAnchor="middle" fontSize="12" fill="var(--foreground-muted)" fontWeight={latest ? 700 : 400}>
+              {p.label.includes(" ") ? (
+                <>
+                  <tspan x={cx}>{p.label.split(" ")[0]}</tspan>
+                  <tspan x={cx} dy="14">{p.label.split(" ")[1]}</tspan>
+                </>
+              ) : p.label}
+            </text>
           </g>
         );
       })}

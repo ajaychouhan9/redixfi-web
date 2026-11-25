@@ -99,9 +99,10 @@ function stripComments(s) {
     .replace(/(^|\s)\/\/.*$/gm, "$1");
 }
 
+// 26 Nov 2026: the owner asked for Gainers and Losers tabs on the Home movers card (HomeMovers.tsx).
 // 18 Nov 2026: the owner asked for a "Top Gainers & Losers" page and card by that name (the Market Overview card and its page). The phrase is allowed
 // in exactly those files and nowhere else: every other page keeps "largest price rises / falls".
-const GAINERS_OK = ["app/(app)/gainers-losers/page.tsx", "components/app/market/MarketOverviewCards.tsx", "components/app/market/TopMovers.tsx", "app/(app)/how-it-works/page.tsx", "app/llms.txt/route.ts"];
+const GAINERS_OK = ["app/(app)/gainers-losers/page.tsx", "components/app/market/MarketOverviewCards.tsx", "components/app/market/TopMovers.tsx", "components/app/home/HomeMovers.tsx", "app/(app)/how-it-works/page.tsx", "app/llms.txt/route.ts"];
 const GAINERS_PHRASES = new Set(["Gainers", "Top gainers", "Top losers"]);
 const hits = [];
 for (const file of files(ROOT)) {

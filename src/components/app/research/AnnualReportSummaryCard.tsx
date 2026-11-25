@@ -1,3 +1,4 @@
+import { stripListMarker } from "@/lib/sentences";
 import type { AnnualReportSummary } from "@/lib/api/types";
 import { Card } from "@/components/ui/Card";
 import { AiLabel } from "@/components/ui/AiLabel";
@@ -36,7 +37,7 @@ export function AnnualReportSummaryCard({ data }: { data: AnnualReportSummary })
       {data.bullets.length > 0 && (
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-foreground">
           {data.bullets.map((b, i) => (
-            <li key={i}>{b}</li>
+            <li key={i}>{stripListMarker(b)}</li>
           ))}
         </ul>
       )}

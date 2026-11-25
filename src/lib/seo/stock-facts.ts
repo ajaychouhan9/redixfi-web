@@ -2,6 +2,8 @@
  * Plain, measured sentences and labels for the public stock page (12 Nov 2026). Everything here is a fact from the stored data with its
  * date; nothing predicts, rates or advises. Kept in one place so the page, its title/description and the tests share the same rules.
  */
+import { humanizeDates } from "@/lib/human-date";
+import { splitSentences } from "@/lib/sentences";
 export function inr(n: number | null | undefined, digits = 2): string {
   return typeof n === "number" && Number.isFinite(n) ? n.toLocaleString("en-IN", { maximumFractionDigits: digits }) : "n/a";
 }
@@ -57,5 +59,5 @@ export const isNeutralText = (t: string | null | undefined): boolean => !!t && !
 
 export function neutralSentences(text: string | null | undefined): string {
   if (!text) return "";
-  return (text.match(/[^.!?]+[.!?]+(\s|$)|[^.!?]+$/g) ?? []).filter((s) => !OPINION_WORDS.test(s)).join("").trim();
+  return humanizeDates(splitSentences(text).filter((s) => !OPINION_WORDS.test(s)).join(" ").trim());
 }

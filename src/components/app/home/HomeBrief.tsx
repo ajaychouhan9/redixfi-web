@@ -36,7 +36,7 @@ export function HomeBrief() {
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/15">
             <Sparkles size={14} className="text-accent" aria-hidden />
           </span>
-          <h2 id="home-brief-title" className="font-mono text-[12px] uppercase tracking-widest text-accent">AI brief</h2>
+          <h2 id="home-brief-title" className="text-[18px] font-bold">AI brief</h2>
         </div>
         {updated && <span className="font-mono text-[12px] text-foreground-faint" data-testid="home-brief-updated">{updated}</span>}
       </div>
@@ -50,7 +50,7 @@ export function HomeBrief() {
       {bullets.length > 0 && (
         <ul className="list-disc space-y-1.5 break-words pl-5 text-[15px] leading-[1.6] marker:text-accent-dim [overflow-wrap:anywhere]" data-testid="home-brief-bullets">
           {(more ? bullets : bullets.slice(0, 3)).map((b, i) => (
-            <li key={i} className={more ? "" : "line-clamp-2"}>{b}</li>
+            <li key={i} className={more ? "" : "line-clamp-1 sm:line-clamp-2"}>{b}</li>
           ))}
         </ul>
       )}

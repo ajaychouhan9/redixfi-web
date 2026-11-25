@@ -61,10 +61,10 @@ const full: ChecklistInput = {
 assert.equal(profitLine(full), "Made a profit in 4 of the last 5 years (FY22 to FY26).");
 assert.equal(growthLine(full), "Sales went from ₹100 crore to ₹200 crore in 4 years (+100%). Profit went from ₹10 crore to ₹20 crore (+100%).");
 assert.equal(debtLine(full), "Debt is 0.40 times its own capital, the shareholders' money in the business (debt-to-equity 0.40).");
-assert.equal(promotersLine(full), "Promoters hold 52.1%, up from 50.3% a year ago. 0% of their shares are pledged (given as security for a loan).");
+assert.equal(promotersLine(full), "Promoters hold 52.1%, up from 50.3% a year ago. 0% of their shares are pledged (as of 30 Sep 2026), given as security for a loan.");
 assert.equal(insidersLine(full, TODAY), "In the last 3 months: bought ₹1,50,000, sold ₹50,000 (Promoter, Director).");
 const w = watchLine(full);
-assert.equal(w.answer, "3 items found in the annual report and concall filings we read: contingent liability, related-party transaction.");
+assert.equal(w.answer, "3 items found in the annual report and concall filings we read: contingent liability, related-party transaction. Showing 2 of 3.");
 assert.equal(w.sources.length, 2, "only occurrences with a source link");
 assert.equal(w.sources[0].href, "https://x/cc.pdf", "newest filing first");
 assert.equal(priceLine(full, "As of 13:12 IST (delayed)"), "At ₹1,200, 20.0% below its 52-week high (₹1,500) and 20.0% above its 52-week low (₹1,000). 15 min delayed.");

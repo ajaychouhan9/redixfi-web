@@ -91,7 +91,7 @@ export function CompareResultCard({ compare }: { compare: CompareResult }) {
                         {sym}
                       </Link>
                       {companies[sym]?.company_name && (
-                        <span className="block max-w-[9rem] truncate text-[12px] font-normal normal-case text-foreground-faint" title={displayName(companies[sym].company_name)}>
+                        <span className="block max-w-[9rem] line-clamp-2 text-[12px] font-normal normal-case text-foreground-faint" title={displayName(companies[sym].company_name)}>
                           {shortName(companies[sym].company_name)}
                         </span>
                       )}

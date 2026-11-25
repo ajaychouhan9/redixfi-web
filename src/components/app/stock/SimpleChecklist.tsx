@@ -12,7 +12,7 @@ export function SimpleChecklist({ data, today, priceLabel }: { data: ChecklistIn
       <p className="mt-0.5 text-xs text-foreground-muted">
         Facts from the company&apos;s own filings and the exchange, with their dates. Not a rating and not advice: a rise and a fall are shown the same way.
       </p>
-      <ol className="mt-3 space-y-3">
+      <ol className="mt-3 list-none space-y-3 pl-0">
         {lines.map((l, i) => (
           <li key={l.key} className="rounded-lg border border-border bg-surface px-4 py-3" data-testid={`simple-line-${l.key}`}>
             <p className="text-sm font-semibold">
@@ -35,7 +35,7 @@ export function SimpleChecklist({ data, today, priceLabel }: { data: ChecklistIn
             </p>
             <p className="mt-1 text-xs">
               <a href={`#${l.detailsId}`} className="font-medium text-accent hover:underline">
-                See details
+                {l.total && l.total > (l.sources?.length ?? 0) ? `See all ${l.total}` : "See details"}
               </a>
             </p>
           </li>
