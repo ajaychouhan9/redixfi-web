@@ -166,10 +166,7 @@ export function PlanCard({
         // tone.
         highlighted
           ? {
-              backgroundImage: "linear-gradient(var(--surface-raised), var(--surface-raised)), linear-gradient(135deg, var(--accent), var(--accent-dim))",
-              backgroundOrigin: "border-box",
-              backgroundClip: "padding-box, border-box",
-              border: "1.5px solid transparent",
+              border: "1.5px solid var(--accent)",
             }
           : undefined
       }
@@ -177,8 +174,8 @@ export function PlanCard({
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       {highlighted && badge && (
         <span
-          className="absolute -top-3 left-5 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-accent-foreground"
-          style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dim))" }}
+          className="absolute -top-3 left-5 rounded-full px-2.5 py-0.5 text-[12px] font-bold uppercase tracking-wide text-accent-foreground"
+          style={{ background: "var(--accent)" }}
         >
           {badge}
         </span>
@@ -239,12 +236,12 @@ export function PlanCard({
           disabled={busy || disabled}
           title={disabled ? disabledReason : undefined}
           className="mt-5 w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-accent-foreground disabled:opacity-60"
-          style={{ background: highlighted ? "linear-gradient(135deg, var(--accent), var(--accent-dim))" : "var(--accent)" }}
+          style={{ background: "var(--accent)" }}
         >
           {busy ? "Starting checkout…" : (buttonLabel ?? (isUpgrade ? "Upgrade to annual" : "Subscribe"))}
         </button>
       )}
-      <p className="mt-2 text-center text-[11px] text-foreground-faint">
+      <p className="mt-2 text-center text-[12px] text-foreground-faint">
         <LegalLinks />
       </p>
       {disabled && disabledReason && !isCurrent && <p className="mt-2 text-xs text-foreground-faint">{disabledReason}</p>}

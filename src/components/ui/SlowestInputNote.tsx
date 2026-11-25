@@ -8,7 +8,7 @@ import type { SlowestInput } from "@/lib/api/types";
 export function SlowestInputNote({ input }: { input?: SlowestInput | null }) {
   if (!input) return null;
   return (
-    <p className="mt-0.5 text-[10px] text-foreground-faint">
+    <p className="mt-0.5 text-[12px] text-foreground-faint">
       Slowest input: {input.label}, {formatDataAsOf(input).replace(/^Data as of /, "as of ")}
     </p>
   );

@@ -107,7 +107,7 @@ export function AlertRulesSection() {
                 <p className="truncate text-sm font-medium">
                   {rule.symbol} · {METRIC_LABELS[rule.metric]} {directionLabel(rule.direction)} {formatValue(rule.metric, rule.target_value)}
                   {rule.out_of_range && (
-                    <span className="ml-2 rounded-full bg-amber-bg px-2 py-0.5 text-[11px] font-medium text-amber" title="This saved threshold is outside the sensible range for this metric, so it can never be crossed as intended. Delete it and set a new one.">
+                    <span className="ml-2 rounded-full bg-amber-bg px-2 py-0.5 text-[12px] font-medium text-amber" title="This saved threshold is outside the sensible range for this metric, so it can never be crossed as intended. Delete it and set a new one.">
                       Out of range
                     </span>
                   )}

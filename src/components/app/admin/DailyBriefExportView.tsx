@@ -72,7 +72,7 @@ export function DailyBriefExportView() {
           <div key={v.key} className="rounded-xl border border-border bg-surface-raised p-4">
             <div className="mb-2 flex items-center justify-between gap-3">
               <div>
-                <span className="font-mono text-[11px] uppercase tracking-widest text-accent">{v.label}</span>
+                <span className="font-mono text-[12px] uppercase tracking-widest text-accent">{v.label}</span>
                 <span className="ml-2 text-xs text-foreground-faint">{v.platformNote}</span>
               </div>
               <button

@@ -127,11 +127,11 @@ export function SmartScreenerBox({ onApplyFilters }: { onApplyFilters?: (patch: 
     <div
       className="relative mb-5 overflow-hidden rounded-2xl border"
       style={{
-        background: "linear-gradient(135deg, color-mix(in srgb, var(--surface-raised) 88%, var(--accent) 12%), var(--surface-raised))",
-        borderColor: "color-mix(in srgb, var(--accent) 30%, transparent)",
+        background: "var(--surface-raised)",
+        borderColor: "var(--border)",
       }}
     >
-      <div className="absolute inset-x-0 top-0 h-1" style={{ background: "linear-gradient(90deg, var(--accent), var(--accent-dim))" }} />
+      <div className="absolute inset-x-0 top-0 h-1" style={{ background: "var(--accent)" }} />
       <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
         <div className="flex items-center gap-2.5">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15">
@@ -150,7 +150,7 @@ export function SmartScreenerBox({ onApplyFilters }: { onApplyFilters?: (patch: 
             )}
           </div>
         </div>
-        {queue.length > 0 && <span className="shrink-0 rounded-full bg-accent/10 px-2 py-1 font-mono text-[11px] text-accent">{queue.length}/{COMPARISON_QUEUE_MAX}</span>}
+        {queue.length > 0 && <span className="shrink-0 rounded-full bg-accent/10 px-2 py-1 font-mono text-[12px] text-accent">{queue.length}/{COMPARISON_QUEUE_MAX}</span>}
       </div>
 
       <div className="p-5">
@@ -166,7 +166,7 @@ export function SmartScreenerBox({ onApplyFilters }: { onApplyFilters?: (patch: 
                 setQuery(ex);
                 void runQuery(ex);
               }}
-              className="rounded-full border border-border bg-hover px-2.5 py-1 text-left text-[11.5px] text-foreground-muted transition-colors hover:border-accent/40 hover:text-foreground"
+              className="rounded-full border border-border bg-hover px-2.5 py-1 text-left text-[12px] text-foreground-muted transition-colors hover:border-accent/40 hover:text-foreground"
             >
               &ldquo;{ex}&rdquo;
             </button>

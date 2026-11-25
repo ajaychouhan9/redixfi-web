@@ -139,7 +139,7 @@ export function UserMenu() {
         className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-hover md:h-9 md:w-9"
       >
         <span
-          className="flex h-8 w-8 items-center justify-center rounded-full font-mono text-[11px] font-semibold"
+          className="flex h-8 w-8 items-center justify-center rounded-full font-mono text-[12px] font-semibold"
           style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dim))", color: "var(--accent-foreground)" }}
         >
           {initialsFor(user.name, user.email)}

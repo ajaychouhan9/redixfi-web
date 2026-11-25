@@ -46,9 +46,9 @@ export function MarketPulseCard({ overview }: { overview: MarketOverview | null 
   const sectorsTotal = overview.sectors_up + overview.sectors_down;
 
   return (
-    <Card title="Market Pulse" action={<span className="rounded bg-hover px-2 py-0.5 font-mono text-[11px] text-foreground-muted" title="From the India VIX change">{volState}</span>}>
+    <Card title="Market Pulse" action={<span className="rounded bg-hover px-2 py-0.5 font-mono text-[12px] text-foreground-muted" title="From the India VIX change">{volState}</span>}>
       <div className="space-y-3">
-        <p className="text-[11px] text-foreground-faint" data-testid="pulse-badge-note">The badge comes from the India VIX change.</p>
+        <p className="text-[12px] text-foreground-faint" data-testid="pulse-badge-note">The badge comes from the India VIX change.</p>
         <Row label="FII net (₹ crore)" note={flowsNote}>
           <DeltaValue value={flows?.fii_net ?? overview.fii_net} />
         </Row>
@@ -61,7 +61,7 @@ export function MarketPulseCard({ overview }: { overview: MarketOverview | null 
         <div className="flex items-start justify-between gap-2 border-t border-border pt-2">
           <span className="min-w-0 text-xs text-foreground-muted" data-testid="pulse-sectors-label">
             NSE sector indices
-            <span className="block text-[10px] text-foreground-faint">
+            <span className="block text-[12px] text-foreground-faint">
               {sectorsTotal > 0 ? `${sectorsTotal.toLocaleString("en-IN")} tracked today: ` : ""}higher ↑ and lower ↓ than their previous close
             </span>
           </span>
@@ -80,7 +80,7 @@ function Row({ label, note, children }: { label: string; note?: string | null; c
     <div className="flex items-start justify-between gap-2">
       <span className="min-w-0 text-xs text-foreground-muted">
         {label}
-        {note && <span className="block text-[10px] text-foreground-faint">{note}</span>}
+        {note && <span className="block text-[12px] text-foreground-faint">{note}</span>}
       </span>
       <span className="shrink-0 font-mono text-sm">{children}</span>
     </div>

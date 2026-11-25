@@ -114,7 +114,7 @@ export function SymbolTypeahead({
                 {!links && <span className="shrink-0 text-foreground-faint">{r.sector_index}</span>}
               </button>
               {links && (
-                <span className="flex shrink-0 items-center gap-2 pr-3 text-[11px]">
+                <span className="flex shrink-0 items-center gap-2 pr-3 text-[12px]">
                   {links(r).map((l) => (
                     <Link
                       key={l.label}

@@ -36,7 +36,7 @@ export function PulseTab() {
         <p className="text-xs text-foreground-muted">{label}</p>
         <p className="mt-0.5 text-lg font-semibold tabular-nums">{q.close.toLocaleString("en-IN")}</p>
         <p className="text-sm"><DeltaValue value={q.change_pct} kind="pct" /></p>
-        {basis && <p className="text-[11px] text-foreground-faint">{basis}</p>}
+        {basis && <p className="text-[12px] text-foreground-faint">{basis}</p>}
       </div>
     ) : null;
 
@@ -54,7 +54,7 @@ export function PulseTab() {
           {session?.breadth_line && (
             <p className="text-sm text-foreground-muted" data-testid="pulse-breadth">
               {session.breadth_line}
-              {session.breadth_date ? <span className="text-[11px] text-foreground-faint"> · {atCloseLabel(session.breadth_date)}</span> : null}
+              {session.breadth_date ? <span className="text-[12px] text-foreground-faint"> · {atCloseLabel(session.breadth_date)}</span> : null}
             </p>
           )}
           <MarketPulseCard overview={overview} />

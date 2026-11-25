@@ -25,7 +25,7 @@ function WebSourceFooter({ citation }: { citation: SourceCitation }) {
   const name = citation.label.replace(/^Web · /, "");
   const fetched = citation.fetched_at ? formatDateIst(`${citation.fetched_at}T00:00:00+05:30`) : null;
   return (
-    <div className="mt-2 border-t border-border pt-2 text-[11.5px] text-foreground-faint">
+    <div className="mt-2 border-t border-border pt-2 text-[12px] text-foreground-faint">
       <span>
         Source: online ({name}), not from RedixFi&apos;s database
         {fetched ? ` · fetched ${fetched}` : ""}
@@ -76,7 +76,7 @@ export function SourcesSection({ citations: allCitations }: { citations: SourceC
       {expanded && (
         <ul className="mt-1.5 space-y-1.5">
           {citations.map((c, i) => (
-            <li key={i} className="flex items-center justify-between gap-2 rounded-lg bg-hover px-2.5 py-1.5 text-[11.5px]">
+            <li key={i} className="flex items-center justify-between gap-2 rounded-lg bg-hover px-2.5 py-1.5 text-[12px]">
               <span className="flex min-w-0 items-center gap-1.5 text-foreground-muted">
                 <FileText size={11} className="shrink-0 text-foreground-faint" />
                 <span className="truncate">

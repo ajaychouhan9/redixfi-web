@@ -11,7 +11,7 @@ export function ScopeTag({ scope }: { scope?: AskScope | null }) {
         ? `Comparing ${scope.symbols.join(", ")}`
         : "Market-wide";
   return (
-    <div className="mb-1 text-[10.5px] font-semibold uppercase tracking-wide text-foreground-faint">
+    <div className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-foreground-faint">
       {text}
     </div>
   );

@@ -10,7 +10,7 @@ export { EMPTY_FUND, fundActive, fundChips, fundParams, type FundFilterState } f
 import type { FundFilterState } from "./fund-filter-model";
 
 
-const label = "flex flex-col gap-1 text-[11px] text-foreground-muted";
+const label = "flex flex-col gap-1 text-[12px] text-foreground-muted";
 const control = "h-9 rounded-lg border border-border bg-hover px-2 text-sm text-foreground";
 const count = (n: number | undefined) => (n === undefined ? "" : ` · checks ${n.toLocaleString("en-IN")} stocks`);
 
@@ -104,11 +104,11 @@ export function FundamentalFilters({ value, onChange, coverage }: { value: FundF
           <input type="checkbox" checked={value.deal30d} onChange={(e) => onChange({ deal30d: e.target.checked })} /> Bulk/block deal, last 30 days{count(coverage.deal_30d)}
         </label>
       </div>
-      <p className="mt-2 text-[11px] text-foreground-faint">
+      <p className="mt-2 text-[12px] text-foreground-faint">
         Dates of the figures: promoter holding is from the shareholding pattern of {coverage.shareholding_date_latest ? quarterDate(coverage.shareholding_date_latest) : "the latest filing"}; delivery, pledge and insider figures are as of {coverage.measured_as_of ?? "the latest session"}; deals are those disclosed up to {coverage.deal_latest ?? "the latest session"}. Insider filters use the net value of insider trades disclosed in the last 30 days, by trade date. ROCE is calculated by RedixFi from annual statements and is not available for banks, insurers and finance companies.
       </p>
       </>)}
-      <p className="mt-2 text-[11px] text-foreground-faint">
+      <p className="mt-2 text-[12px] text-foreground-faint">
         {FILTERS_NOTE} A stock with no reported figure for a filter is not matched by it. Profit and sales growth compare the latest quarter with the same quarter a year earlier.
         {q ? ` ${q}` : ""}
       </p>

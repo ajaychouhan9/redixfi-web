@@ -24,7 +24,7 @@ export function Wordmark({
         <span className="text-accent">Fi</span>
       </span>
       {tagline && (
-        <div className="text-[11px] font-medium">
+        <div className="text-[12px] font-medium">
           <span className="text-foreground">Market. </span>
           <span className="text-accent">Simplified.</span>
         </div>

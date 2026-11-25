@@ -49,9 +49,9 @@ export const BTN_PRIMARY = `${BTN_BASE} bg-accent-dim text-accent-foreground hov
 export const CHIP_BASE = `inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border px-3 py-2 text-sm font-medium ${FOCUS}`;
 export const chipTone = (on: boolean) => (on ? "border-accent bg-accent/15 text-foreground" : "border-border bg-surface text-foreground-muted hover:text-foreground");
 /** a state shown on a day (small, not a control) */
-export const STATE_CHIP = "inline-flex items-center rounded-full border border-border bg-neutral-bg px-2 py-0.5 text-[11px] font-medium text-foreground";
-export const STATE_CHIP_NA = "inline-flex items-center rounded-full border border-dashed border-border px-2 py-0.5 text-[11px] font-medium text-foreground-muted";
-export const NOTE_CHIP = "inline-flex items-center rounded-full border border-accent/60 bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-foreground";
+export const STATE_CHIP = "inline-flex items-center rounded-full border border-border bg-neutral-bg px-2 py-0.5 text-[12px] font-medium text-foreground";
+export const STATE_CHIP_NA = "inline-flex items-center rounded-full border border-dashed border-border px-2 py-0.5 text-[12px] font-medium text-foreground-muted";
+export const NOTE_CHIP = "inline-flex items-center rounded-full border border-accent/60 bg-accent/10 px-2 py-0.5 text-[12px] font-medium text-foreground";
 
 export function Card({ children, className = "", ...rest }: { children: ReactNode; className?: string } & React.HTMLAttributes<HTMLElement>) {
   return (

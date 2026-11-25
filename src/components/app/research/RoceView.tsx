@@ -10,14 +10,14 @@ export function RoceView({ roce }: { roce: RoceBlock | null | undefined }) {
   const rows = roceTableRows(roce);
   return (
     <div className="mt-3 rounded-lg border border-border bg-surface px-3 py-2" data-testid="roce-block">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-foreground-faint">{ROCE_LABEL}</p>
+      <p className="text-[12px] font-semibold uppercase tracking-wide text-foreground-faint">{ROCE_LABEL}</p>
       {state.kind === "figure" && (
         <>
           <p className="text-sm font-medium tabular-nums" data-testid="roce-value">
             {state.value} <span className="text-xs font-normal text-foreground-muted" data-testid="roce-year">({state.year})</span>
           </p>
-          <p className="text-[11px] text-foreground-muted">{ROCE_SOURCE}</p>
-          {state.caution && <p className="text-[11px] text-foreground-muted" data-testid="roce-caution">{state.caution}</p>}
+          <p className="text-[12px] text-foreground-muted">{ROCE_SOURCE}</p>
+          {state.caution && <p className="text-[12px] text-foreground-muted" data-testid="roce-caution">{state.caution}</p>}
         </>
       )}
       {state.kind === "not_applicable" && <p className="text-sm text-foreground-muted" data-testid="roce-not-applicable">{ROCE_NOT_APPLICABLE}</p>}
@@ -31,7 +31,7 @@ export function RoceView({ roce }: { roce: RoceBlock | null | undefined }) {
       )}
       {rows.length > 0 && (
         <div className="mt-2" data-testid="roce-table">
-          <p className="mb-1 text-[11px] text-foreground-muted">{ROCE_TABLE_NOTE}</p>
+          <p className="mb-1 text-[12px] text-foreground-muted">{ROCE_TABLE_NOTE}</p>
           <DataTable caption={ROCE_TABLE_TITLE} head={ROCE_TABLE_HEAD} rows={rows} />
         </div>
       )}

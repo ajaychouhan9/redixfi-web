@@ -129,7 +129,7 @@ export function ResearchDetail({
           <ErrorBoundary>
             <div>
               <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground-faint">Delivery (30d)</h3>
-              <p className="mb-1 text-[11px] text-foreground-faint">{formatDataAsOf(data.delivery_data_as_of)}</p>
+              <p className="mb-1 text-[12px] text-foreground-faint">{formatDataAsOf(data.delivery_data_as_of)}</p>
               {data.delivery_30d.length > 1 ? (
                 <div className="text-accent">
                   <Sparkline
@@ -145,7 +145,7 @@ export function ResearchDetail({
           <ErrorBoundary>
             <div>
               <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground-faint">Promoter pledge</h3>
-              <p className="mb-1 text-[11px] text-foreground-faint">{formatDataAsOf(data.pledge_data_as_of)}</p>
+              <p className="mb-1 text-[12px] text-foreground-faint">{formatDataAsOf(data.pledge_data_as_of)}</p>
               {data.pledge_history.length === 0 ? (
                 <p className="text-sm text-foreground-muted">No pledge data recorded.</p>
               ) : (
@@ -167,7 +167,7 @@ export function ResearchDetail({
           <ErrorBoundary>
             <div>
               <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground-faint">Options PCR trend</h3>
-              <p className="mb-1 text-[11px] text-foreground-faint">{formatDataAsOf(data.signal_summary.signal_freshness?.pcr)}</p>
+              <p className="mb-1 text-[12px] text-foreground-faint">{formatDataAsOf(data.signal_summary.signal_freshness?.pcr)}</p>
               {data.options_pcr_history.length === 0 ? (
                 <p className="text-sm text-foreground-muted">Options data not available.</p>
               ) : (
@@ -185,7 +185,7 @@ export function ResearchDetail({
           <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground-muted">Upcoming (scheduled)</p>
           <StockEventsList rows={data.upcoming_events ?? []} emptyText="No scheduled corporate events on file." />
           <p className="mb-1 mt-4 text-xs font-semibold uppercase tracking-wide text-foreground-muted">Recent</p>
-          <p className="mb-2 text-[11px] text-foreground-faint">{formatDataAsOf(data.corporate_events_data_as_of)}</p>
+          <p className="mb-2 text-[12px] text-foreground-faint">{formatDataAsOf(data.corporate_events_data_as_of)}</p>
           <StockEventsList rows={data.corporate_events} emptyText="No recent corporate events recorded." />
         </Collapsible>
       </ErrorBoundary>

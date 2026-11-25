@@ -30,17 +30,17 @@ export function HomeMovers() {
   }, []);
   const rows = previewRows(data);
   const label = previewLabel(data);
+  // 26 Nov 2026: no data (still loading, failed or empty) hides the card; no placeholder text and no empty box on Home.
+  if (data === undefined || data === null || rows.length === 0) return null;
   return (
     <section className="min-w-0 max-w-full rounded-xl border border-border bg-surface-raised p-4" aria-labelledby="home-movers-title" data-testid="home-movers">
       <div className="mb-2 flex items-center justify-between gap-3">
         <h2 id="home-movers-title" className="text-sm font-semibold">Intraday movers</h2>
         <Link href="/intraday" className="inline-flex min-h-[44px] items-center text-xs font-medium text-accent hover:underline" data-testid="home-movers-seeall">See all</Link>
       </div>
-      {data === undefined && <p className="text-sm text-foreground-muted">Loading…</p>}
-      {(data === null || (data && rows.length === 0)) && <p className="text-sm text-foreground-muted">The movers list is not available right now.</p>}
       {data && rows.length > 0 && (
         <>
-          {label && <p className="mb-2 text-[11px] font-semibold text-foreground-muted" data-testid="home-movers-asof">{label}</p>}
+          {label && <p className="mb-2 text-[12px] font-semibold text-foreground-muted" data-testid="home-movers-asof">{label}</p>}
           <ul className="divide-y divide-border">
             {rows.map((r) => (
               <li key={r.symbol}>
@@ -54,7 +54,7 @@ export function HomeMovers() {
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-[11px] text-foreground-faint">Past record. Not a forecast or a recommendation.</p>
+          <p className="mt-2 text-[12px] text-foreground-faint">Past record. Not a forecast or a recommendation.</p>
         </>
       )}
     </section>

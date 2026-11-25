@@ -23,7 +23,7 @@ export function SessionLabel({ dataDate, initial }: { dataDate: string | null | 
   const today = !!state && !!dataDate && dataDate.slice(0, 10) === state.today;
   const pending = !!state && state.is_trading_day && !today;
   return (
-    <div className="mb-3 space-y-0.5 text-[11px] text-foreground-faint">
+    <div className="mb-3 space-y-0.5 text-[12px] text-foreground-faint">
       <p className="font-medium text-foreground-muted">{today ? "Today’s close" : "Last session"} · {date}</p>
       {pending && (
         <p className="flex items-center gap-1">

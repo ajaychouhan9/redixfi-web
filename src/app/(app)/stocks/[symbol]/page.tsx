@@ -15,9 +15,8 @@ import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AskPrefill } from "@/components/app/stock/AskPrefill";
-import { getResearch, getSignalDetail, getSignals, getVolatility } from "@/lib/api/endpoints";
+import { getChart, getResearch, getSignalDetail, getSignals, getVolatility } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
-import { DeltaValue } from "@/components/ui/DeltaValue";
 import { Sparkline } from "@/components/ui/Sparkline";
 import { formatDateSafe, formatPriceAsOf, istToday } from "@/lib/format";
 import { Week52Range } from "@/components/app/signals/Week52Range";
@@ -29,12 +28,18 @@ import { retryTransientPublicGet } from "@/lib/api/retry-public-upstream";
 import { FeedbackBox } from "@/components/app/FeedbackBox";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { DataTable, Section } from "@/components/seo/DataTable";
-import { inr, isNeutralText, metaDescription, neutralSentences, pageH1, pageTitle, pct, quarterDate } from "@/lib/seo/stock-facts";
+import { inr, isNeutralText, metaDescription, neutralSentences, pageTitle, pct, quarterDate } from "@/lib/seo/stock-facts";
 import { modeLabel, personCategory, sideLabel } from "@/lib/insider-display";
 import { safeNumber, safeRupees } from "@/lib/safe-format";
 import { sourceName } from "@/lib/news-source";
 import { coverageLine } from "@/lib/seo/data-coverage";
 import { RoceView } from "@/components/app/research/RoceView";
+import { StockPriceChart } from "@/components/app/stock/StockPriceChart";
+import { KeyNumbers } from "@/components/app/stock/KeyNumbers";
+import { RevenueProfit } from "@/components/app/stock/RevenueProfit";
+import { Shareholding } from "@/components/app/stock/Shareholding";
+import { QuickReads, type QuickBlock } from "@/components/app/stock/QuickReads";
+import { dayText, holdPoints, keyTiles, priceSentence, quarterlyPoints, shortBullets, signedPct, signedRupees, toneOf, yearlyPoints, rupees, type Close } from "@/lib/stock-visual";
 
 // ONE page per stock for everyone (17 Nov 2026): the public page and the signed-in /signals/<symbol> and /research/<symbol> pages are merged here
 // (those addresses, and /stocks/<symbol>/rewind and /concall-summary, redirect permanently). Public, anonymous, ISR: the page is the same
@@ -122,9 +127,9 @@ async function sectorPeers(data: ResearchDetail, marketCap: number | null): Prom
 function Fact({ label, children, note }: { label: string; children: React.ReactNode; note?: string }) {
   return (
     <div className="rounded-lg border border-border bg-surface px-3 py-2">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-foreground-faint">{label}</p>
+      <p className="text-[12px] font-semibold uppercase tracking-wide text-foreground-faint">{label}</p>
       <p className="text-sm font-medium tabular-nums">{children}</p>
-      {note && <p className="text-[11px] text-foreground-muted">{note}</p>}
+      {note && <p className="text-[12px] text-foreground-muted">{note}</p>}
     </div>
   );
 }
@@ -139,10 +144,18 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
   if (!data) notFound();
 
   // The extra readings are anonymous reads of public data. A locked or failed read leaves that block out; nothing is guessed.
-  const [detailR, volR] = await Promise.allSettled([
+  const todayMs = Date.parse(`${istToday()}T00:00:00Z`);
+  const chartFrom = new Date(todayMs - 5 * 366 * 86400000).toISOString().slice(0, 10);
+  const [detailR, volR, chartR] = await Promise.allSettled([
     getSignalDetail(data.symbol, 0, { revalidate: 21600 }), // @auth-ok: public page, anonymous
     getVolatility(data.symbol, { revalidate: 21600 }), // @auth-ok: public page, anonymous
+    getChart(data.symbol, { interval: "1d", from: chartFrom }, { revalidate: 21600 }), // @auth-ok: public daily closes, anonymous
   ]);
+  // The chart gets about a year of closes as plain numbers (the longer ranges and today's 15-minute bars load in the browser, on demand).
+  const allCloses: Close[] = chartR.status === "fulfilled" ? (chartR.value.data.candles ?? []).filter((c) => Number.isFinite(c.close)).map((c) => [c.timestamp.slice(0, 10), c.close] as Close) : [];
+  const yearAgo = new Date(todayMs - 400 * 86400000).toISOString().slice(0, 10);
+  const closes = allCloses.filter(([d]) => d >= yearAgo);
+  const has5y = allCloses.length > 0 && allCloses[0][0] <= new Date(todayMs - (5 * 365 - 45) * 86400000).toISOString().slice(0, 10);
   const detail: SignalDetail | null =
     detailR.status === "fulfilled" && !detailR.value.data.locked && detailR.value.data.has_score !== false && detailR.value.data.signals ? detailR.value.data : null;
   const vol: VolatilityResponse | null = volR.status === "fulfilled" && !volR.value.data.locked && volR.value.data.available ? volR.value.data : null;
@@ -167,6 +180,15 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
   // "Partial reading" only when an input of the delivery and volume reading is really missing (the API says so), never as a habit.
   const partial = !!detail?.partial && !detail.limited_data && !isTradeForTrade(detail.signals?.delivery_series);
   const sym = data.symbol;
+  const lastBar = allCloses.length >= 2 ? allCloses[allCloses.length - 1] : null;
+  const prevClose = lastBar && closeDate && lastBar[0] === closeDate ? allCloses[allCloses.length - 2][1] : null;
+  const dayPct = data.price.day_change_pct;
+  const dayAbs = prevClose !== null ? data.price.last_price - prevClose : typeof dayPct === "number" ? data.price.last_price - data.price.last_price / (1 + dayPct / 100) : null;
+  const tiles = keyTiles(f);
+  const tilesAsOf = f ? [dayText((f.fetched_on ?? f.as_of ?? "").slice(0, 10)), q?.latest_quarter_end ? `results to ${quarterDate(q.latest_quarter_end)}` : null].filter(Boolean).join(", ") || null : null;
+  const yearly = yearlyPoints(f);
+  const quarterly = quarterlyPoints(f);
+  const holds = holdPoints(f);
   const week52 = { week52_high: data.price.week52_high, week52_low: data.price.week52_low, last_close: data.price.last_price, as_of: closeDate } as never;
 
   const jsonLd = {
@@ -178,9 +200,30 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
     url: `https://www.redixfi.com${stockPath("/stocks", data.symbol)}`,
   };
 
-  // ---- Overview: the seven plain questions, then the price and trading readings they point to
+  // ---- Short RedixFi reads: up to 3 lines each, the rest behind "Read more"
+  const concallLines = concalls.length ? (() => { const b = shortBullets(concalls[0].summary, 6, 15); return [...b.shown, ...b.rest]; })() : [];
+  const pointLines = (data.red_flags?.categories ?? [])
+    .flatMap((g) => g.occurrences.filter((o) => !o.quality_note && o.recency_group !== "Older" && isNeutralText(o.finding)).map((o) => ({ label: g.category_label, finding: o.finding, filed: o.filing_date ?? "" })))
+    .sort((a, b) => b.filed.localeCompare(a.filed))
+    .slice(0, 6)
+    .map((o) => `${o.label}: ${shortBullets(o.finding, 1, 15).shown[0] ?? ""}`)
+    .filter((l) => !l.endsWith(": "));
+  const insiderLines = insider.slice(0, 3).filter((t) => t.trade_date).map((t) => `${personCategory(t)}: ${sideLabel(t.transaction_type)}, ${safeNumber(t.quantity)} shares, on ${dateOf(t.trade_date as string)}.`);
+  const quick: QuickBlock[] = [
+    { id: "concall", title: "From the concall", lines: concallLines, note: concalls[0] ? `Filed ${dateOf(concalls[0].filing_date)}` : null, tab: "concall", tabLabel: "Open the Concall tab" },
+    { id: "points", title: "Points to watch", lines: pointLines, note: "From the company's filings, with dates", tab: "points-to-watch", tabLabel: "See all points to watch" },
+    { id: "insiders", title: "Insider & promoter activity", lines: insiderLines, note: "Filed disclosures, shown by category. Names are not shown.", tab: "insiders", tabLabel: "See all" },
+  ];
+
+  // ---- Overview: price chart, key numbers, revenue and profit, shareholding, short reads; then the plain questions and the trading readings
   const overview = (
     <>
+      <StockPriceChart symbol={sym} closes={closes} has5y={has5y} lastPrice={data.price.last_price} sentence={priceSentence(allCloses)} />
+      <KeyNumbers tiles={tiles} asOf={tilesAsOf} />
+      <RevenueProfit yearly={yearly} quarterly={quarterly} />
+      <Shareholding points={holds} />
+      <QuickReads blocks={quick} />
+      <div className="mt-7 border-t border-border" />
       <SimpleChecklist data={data} today={istToday()} priceLabel={priceLabel} />
       <StockSignupOffer companyName={data.company_name} className="mt-4" />
 
@@ -436,17 +479,20 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
         </div>
       )}
 
-      <p className="text-sm text-foreground-muted">
+      <p className="text-[13px] text-foreground-muted">
         {data.symbol} · {data.sector}
       </p>
-      <h1 className="text-2xl font-semibold">{pageH1(data.company_name, data.symbol)}</h1>
-      <div className="mt-2 flex flex-wrap items-baseline gap-3">
-        <span className="text-3xl font-semibold">₹{data.price.last_price.toLocaleString("en-IN")}</span>
-        <DeltaValue value={data.price.day_change_pct} kind="pct" />
+      <h1 className="text-[22px] font-bold leading-tight">{data.company_name}</h1>
+      <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <span className="text-[30px] font-bold leading-none tabular-nums" data-testid="stock-price">{rupees(data.price.last_price)}</span>
+        {typeof dayPct === "number" && dayAbs !== null && (
+          <span className={`text-base font-bold tabular-nums ${toneOf(dayPct) === "up" ? "text-up" : toneOf(dayPct) === "down" ? "text-down" : "text-foreground-muted"}`} data-testid="stock-change">
+            {signedRupees(dayAbs)} ({signedPct(dayPct)})
+          </span>
+        )}
       </div>
-      <p className="mt-1 text-xs text-foreground-faint">{priceLabel}</p>
+      <p className="mt-1 text-xs text-foreground-muted">{priceLabel}{priceLabel.includes("(delayed)") ? " · 15-min delayed" : ""}</p>
       <CorporateActionNote info={data.price.corporate_action ?? data.corporate_action} className="mt-1 text-xs text-foreground-muted" />
-      {r52 && <Week52Range className="mt-2 max-w-xs" week52={week52} lastPrice={data.price.last_price} />}
       <div className="mt-3">
         <StockActions symbol={sym} companyName={data.company_name} />
       </div>

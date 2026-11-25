@@ -102,7 +102,7 @@ export function ColumnValue({ def, row, ctx }: { def: ColumnDef; row: SignalRow;
   return (
     <div className="whitespace-nowrap">
       <div className="font-mono font-semibold">{c.primary}</div>
-      {c.sub && <div className="text-[11px] text-foreground-faint">{c.sub}</div>}
+      {c.sub && <div className="text-[12px] text-foreground-faint">{c.sub}</div>}
     </div>
   );
 }
@@ -167,14 +167,14 @@ export function SignalTableRow({
         </Link>
         {row.limited_data && (
           <span
-            className="ml-1.5 rounded bg-surface-raised px-1 py-0.5 text-[9px] font-medium tracking-wide text-foreground-faint"
+            className="ml-1.5 rounded bg-surface-raised px-1 py-0.5 text-[12px] font-medium tracking-wide text-foreground-faint"
             title={row.limited_data_note ?? "Part of this stock's price or volume feed is missing"}
           >
             Feed incomplete
           </span>
         )}
         <div className="max-w-[16rem] truncate text-[12px] text-foreground-faint">{displayName(row.company_name)}</div>
-        {showReadingsAsOf && <div className="whitespace-nowrap text-[10px] text-foreground-faint">{formatDataAsOf(row.data_as_of)}</div>}
+        {showReadingsAsOf && <div className="whitespace-nowrap text-[12px] text-foreground-faint">{formatDataAsOf(row.data_as_of)}</div>}
       </td>
   );
   const priceTd = (
@@ -183,7 +183,7 @@ export function SignalTableRow({
           primary={row.last_price !== null ? `₹${row.last_price.toLocaleString("en-IN")}` : null}
           subtitle={row.day_change_pct !== null ? <DeltaValue value={row.day_change_pct} kind="pct" className="text-[12px]" /> : row.corporate_action ? <span className="text-[12px] text-foreground-faint" title={row.corporate_action.note}>— note</span> : undefined}
         />
-        {showPriceAsOf && <div className="text-[10px] text-foreground-faint">{formatPriceAsOf(row.price_data_as_of)}</div>}
+        {showPriceAsOf && <div className="text-[12px] text-foreground-faint">{formatPriceAsOf(row.price_data_as_of)}</div>}
       </td>
   );
   const compareTd = (
@@ -369,7 +369,7 @@ export function SignalMobileRow({
     <li className="flex flex-wrap items-center gap-3 px-3 py-2.5" data-testid="signal-mobile-row">
       <Link href={stockPath("/signals", row.symbol)} className="min-w-0 flex-1">
         <span className="font-mono text-sm font-semibold">{row.symbol}</span>
-        {row.limited_data && <span className="ml-1.5 rounded bg-surface-raised px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide text-foreground-faint">Limited</span>}
+        {row.limited_data && <span className="ml-1.5 rounded bg-surface-raised px-1 py-0.5 text-[12px] font-medium uppercase tracking-wide text-foreground-faint">Limited</span>}
         <div className="truncate text-[12px] text-foreground-faint">{displayName(row.company_name)}</div>
       </Link>
       <div className="shrink-0 text-right">
@@ -383,16 +383,16 @@ export function SignalMobileRow({
             <DeltaValue value={row.day_change_pct} kind="pct" className="text-[12px]" />
           </div>
         )}
-        {showPriceAsOf && <div className="text-[10px] text-foreground-faint">{formatPriceAsOf(row.price_data_as_of)}</div>}
+        {showPriceAsOf && <div className="text-[12px] text-foreground-faint">{formatPriceAsOf(row.price_data_as_of)}</div>}
       </div>
       <div className="flex w-14 shrink-0 flex-col items-end gap-0.5">
         {row.delivery_pct !== null && row.delivery_pct !== undefined ? (
           <span className="font-mono text-[12px]" aria-label={`Delivery ${row.delivery_pct} percent`}>{row.delivery_pct}%</span>
         ) : <span className="text-foreground-faint">—</span>}
-        <span className="text-[10px] text-foreground-faint">Delivery</span>
+        <span className="text-[12px] text-foreground-faint">Delivery</span>
       </div>
       <div className="mt-1 flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-1">
-        <div className="flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-foreground-faint">
+        <div className="flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-0.5 text-[12px] text-foreground-faint">
           <span>{highLine}</span>
           {row.volume_ratio_5d !== null && <span>Volume vs usual {row.volume_ratio_5d}x</span>}
           <span>Volatility: {volLine}</span>
@@ -402,7 +402,7 @@ export function SignalMobileRow({
           onClick={toggleCompare}
           disabled={!queued && full}
           aria-pressed={queued}
-          className="shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+          className="shrink-0 rounded-md border px-2 py-1 text-[12px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40"
           style={queued
             ? { background: "var(--hover)", color: "var(--accent)", borderColor: "color-mix(in srgb, var(--accent) 30%, transparent)" }
             : { background: "transparent", color: "var(--foreground-faint)", borderColor: "var(--border)" }}
@@ -413,7 +413,7 @@ export function SignalMobileRow({
         </button>
       </div>
       {extraIds && extraIds.length > 0 && (
-        <div className="flex w-full flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-foreground-muted" data-testid="mobile-extra-values">
+        <div className="flex w-full flex-wrap gap-x-3 gap-y-0.5 text-[12px] text-foreground-muted" data-testid="mobile-extra-values">
           {(showAll ? extraIds : extraIds.slice(0, 4)).map((id) => (
             <span key={id} className="whitespace-nowrap">{COLUMN_BY_ID[id].label}: <ColumnText def={COLUMN_BY_ID[id]} row={row} ctx={ctx ?? {}} /></span>
           ))}

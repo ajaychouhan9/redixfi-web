@@ -38,7 +38,7 @@ function Row({ r }: { r: VolatilityBoardRow }) {
         </div>
         <div className="absolute inset-0 flex items-center justify-center gap-1.5">
           <Lock size={11} className="text-foreground-faint" />
-          <span className="text-[10px] font-medium text-foreground-muted">{r.symbol} · Locked</span>
+          <span className="text-[12px] font-medium text-foreground-muted">{r.symbol} · Locked</span>
         </div>
       </li>
     );
@@ -47,14 +47,14 @@ function Row({ r }: { r: VolatilityBoardRow }) {
     <li className="rounded-lg border border-border px-3 py-2">
       <div className="flex items-baseline justify-between gap-2">
         <span className="flex min-w-0 items-baseline gap-2">
-          <span className="w-9 shrink-0 text-right text-[11px] tabular-nums text-foreground-faint">#{r.vol_rank}</span>
+          <span className="w-9 shrink-0 text-right text-[12px] tabular-nums text-foreground-faint">#{r.vol_rank}</span>
           <Link href={stockPath("/stocks", r.symbol)} className="truncate text-sm font-semibold text-foreground hover:text-accent">
             {r.symbol}
           </Link>
         </span>
         <span className="shrink-0 text-sm font-semibold tabular-nums">{r.std_21?.toFixed(2)}%</span>
       </div>
-      <p className="mt-0.5 pl-11 text-[11px] text-foreground-muted">
+      <p className="mt-0.5 pl-11 text-[12px] text-foreground-muted">
         Down {r.down} · Up {r.up} of 21 sessions · Largest {move(r.max_up_pct)} / {move(r.max_down_pct)} · Avg range{" "}
         {r.avg_range_pct == null ? "—" : `${r.avg_range_pct.toFixed(1)}%`}
       </p>
@@ -162,7 +162,7 @@ export function VolatilityBoard({ initialTop, initialBottom }: { initialTop: Boa
           </button>
         ))}
       </div>
-      <p className="mb-3 text-[11px] text-foreground-muted" data-testid="volatility-universe-note">
+      <p className="mb-3 text-[12px] text-foreground-muted" data-testid="volatility-universe-note">
         {rankedOf ? `Ranked among ${rankedOf.toLocaleString("en-IN")} ${universeLabel}. ` : ""}
         {lists.top?.universe === "liquid"
           ? "Liquid stocks are the same set the Intraday tabs and the 7-Day Review use; thinly traded stocks are left out of this view."
@@ -219,11 +219,11 @@ export function VolatilityBoard({ initialTop, initialBottom }: { initialTop: Boa
 
           {capped && (
             <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-surface px-3 py-2">
-              <p className="flex items-center gap-1.5 text-[11px] text-foreground-muted">
+              <p className="flex items-center gap-1.5 text-[12px] text-foreground-muted">
                 <Lock size={12} className="text-foreground-faint" />
                 The full ranked list is included with Pro.
               </p>
-              <UpgradeLink className="text-[11px] font-medium text-accent">See plans →</UpgradeLink>
+              <UpgradeLink className="text-[12px] font-medium text-accent">See plans →</UpgradeLink>
             </div>
           )}
         </>

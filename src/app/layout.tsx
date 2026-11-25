@@ -1,6 +1,6 @@
 import { TableStacker } from "@/components/layout/TableStacker";
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
 import { AuthProvider } from "@/lib/auth/AuthContext";
@@ -9,18 +9,13 @@ import { ThemeProvider } from "@/lib/theme/ThemeContext";
 import { AskPanelProvider } from "@/lib/ask-panel/AskPanelContext";
 import { PwaProvider } from "@/components/app/pwa/PwaProvider";
 
-// Design system (locked 2026-08 UI reframe): IBM Plex Sans for prose, IBM
-// Plex Mono for every financial figure (scores, prices, deltas, %).
-const plexSans = IBM_Plex_Sans({
-  variable: "--font-plex-sans",
+// One font family (26 Nov 2026 readability overhaul): Inter, three weights only (400, 500, 700). Figures use the same face with tabular numerals
+// (see globals.css), so columns of numbers still line up. Replaces IBM Plex Sans, IBM Plex Mono and Georgia.
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const plexMono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "700"],
+  display: "swap",
 });
 
 // Applied before hydration so the stored choice (or, with nothing saved, Light) is on <html> before the first paint. The html tag also carries
@@ -63,7 +58,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   interactiveWidget: "resizes-content",
-  themeColor: "#faf6ec",
+  themeColor: "#ffffff",
 };
 
 // Visitor analytics (16 Nov 2026): Cloudflare Web Analytics, a cookieless page-view beacon. It is loaded only when the owner
@@ -74,7 +69,7 @@ const CF_BEACON_TOKEN = process.env.NEXT_PUBLIC_CF_BEACON_TOKEN?.trim() ?? "";
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${plexSans.variable} ${plexMono.variable} h-full antialiased`} data-theme="light" suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} h-full antialiased`} data-theme="light" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: NO_FLASH_THEME_SCRIPT }} />
       </head>

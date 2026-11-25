@@ -17,7 +17,7 @@ export function StockEventsList({ rows, emptyText }: { rows: GenericRecord[]; em
               <span className="whitespace-nowrap tabular-nums">{date ? formatDateIst(date) : "Date not available"}</span>
               <span className="font-medium">{label}</span>
               {r.scheduled === true && (
-                <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-accent">
+                <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-accent">
                   Scheduled
                 </span>
               )}

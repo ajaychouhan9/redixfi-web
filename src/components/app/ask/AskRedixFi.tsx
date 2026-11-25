@@ -131,8 +131,8 @@ export function AskRedixFiTrigger() {
       onClick={() => setOpen(!open)}
       aria-label="RedixFi AI"
       aria-pressed={open}
-      className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold transition-transform hover:scale-105"
-      style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-dim))", color: "var(--accent-foreground)" }}
+      className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold min-h-[44px]"
+      style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
     >
       <Sparkles size={12} /> <span>Ask AI</span>
     </button>
@@ -189,7 +189,7 @@ function AskQuota({ usage, detailed = false }: { usage: AskUsageInfo | null; det
     return (
       <div className={detailed ? "space-y-3" : "space-y-1.5"} data-testid="free-usage">
         <QuotaBar label="Today" remaining={left} limit={usage.daily_limit} showTotal />
-        <p className="text-[11.5px] text-foreground-faint">{FREE_ASK_LINE}</p>
+        <p className="text-[12px] text-foreground-faint">{FREE_ASK_LINE}</p>
       </div>
     );
   }
@@ -213,7 +213,7 @@ function AskQuota({ usage, detailed = false }: { usage: AskUsageInfo | null; det
     <div className={detailed ? "space-y-3" : "space-y-2"}>
       <QuotaBar label="Today" remaining={dailyRemaining} limit={usage.daily_limit} />
       {poolLeft !== null && (
-        <p className="text-[11.5px] text-foreground-faint" data-testid="chat-pool-line">
+        <p className="text-[12px] text-foreground-faint" data-testid="chat-pool-line">
           Chat questions this month: {poolLeft} left of {usage.chat_limit}.{usage.resets_on ? ` They reset on ${fmtDay(usage.resets_on) ?? usage.resets_on}.` : ""}
         </p>
       )}
@@ -237,14 +237,14 @@ function StockGroupBlock({ symbols, focus, onFocus, onQuestion, onRemove }: {
           </li>
         ))}
       </ul>
-      {many && <p className="mt-2 text-[11.5px] text-foreground-faint" data-testid="ask-group-note">{GROUP_ALL_NOTE}</p>}
+      {many && <p className="mt-2 text-[12px] text-foreground-faint" data-testid="ask-group-note">{GROUP_ALL_NOTE}</p>}
       <ul className="mt-2 flex flex-col gap-1.5" data-testid="ask-group-questions">
         {GROUP_KEYS.map((key) => {
           const q = many ? groupQuestionAll(key, symbols.length) : groupQuestion(key, symbols, focus);
           if (!q) return null;
           return (
             <li key={key}>
-              <button type="button" onClick={() => onQuestion(key, q)} data-testid={`ask-group-q-${key}`} className="w-full rounded-lg border border-border bg-hover px-3 py-2 text-left text-[12.5px] font-medium leading-snug text-foreground-muted hover:border-accent hover:text-foreground">
+              <button type="button" onClick={() => onQuestion(key, q)} data-testid={`ask-group-q-${key}`} className="w-full rounded-lg border border-border bg-hover px-3 py-2 text-left text-[13px] font-medium leading-snug text-foreground-muted hover:border-accent hover:text-foreground">
                 {q}
               </button>
             </li>
@@ -974,7 +974,7 @@ export function AskRedixFi() {
               onClick={startNewConversation}
               title="New Chat"
               aria-label="New Chat"
-              className="flex items-center gap-1 rounded-md px-2 py-1 text-[12.5px] font-medium text-foreground-muted transition-colors hover:bg-hover hover:text-foreground"
+              className="flex items-center gap-1 rounded-md px-2 py-1 text-[13px] font-medium text-foreground-muted transition-colors hover:bg-hover hover:text-foreground"
             >
               <RotateCcw size={15} /> <span className="hidden sm:inline">New Chat</span>
             </button>
@@ -982,7 +982,7 @@ export function AskRedixFi() {
               onClick={openHistoryList}
               title="History"
               aria-label="History"
-              className="flex items-center gap-1 rounded-md px-2 py-1 text-[12.5px] font-medium text-foreground-muted transition-colors hover:bg-hover hover:text-foreground"
+              className="flex items-center gap-1 rounded-md px-2 py-1 text-[13px] font-medium text-foreground-muted transition-colors hover:bg-hover hover:text-foreground"
             >
               <History size={15} /> <span className="hidden sm:inline">History</span>
             </button>
@@ -1200,7 +1200,7 @@ export function AskRedixFi() {
                         )}
                         {m.role === "ai" && m.sourceCitations && <SourcesSection citations={m.sourceCitations} />}
                         {m.createdAt && (
-                          <div className="mt-1.5 text-[11px] text-foreground-faint opacity-70">
+                          <div className="mt-1.5 text-[12px] text-foreground-faint opacity-70">
                             {new Date(m.createdAt).toLocaleString(undefined, {
                               month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
                             })}
@@ -1210,7 +1210,7 @@ export function AskRedixFi() {
                             charge answer. `quotaUnchanged` is server-computed
                             (charged_to=="none"), never re-derived here. */}
                         {m.role === "ai" && m.quotaUnchanged && (
-                          <div className="mt-1 text-[11px] text-foreground-faint opacity-70">
+                          <div className="mt-1 text-[12px] text-foreground-faint opacity-70">
                             Your question balance is unchanged for this response.
                           </div>
                         )}
@@ -1288,14 +1288,14 @@ export function AskRedixFi() {
                             key={f}
                             onClick={() => send(f)}
                             disabled={authLoading}
-                            className="rounded-full border border-border bg-hover px-2.5 py-1 text-left text-[11.5px] text-foreground-muted transition-colors hover:border-accent hover:text-foreground disabled:opacity-50"
+                            className="rounded-full border border-border bg-hover px-2.5 py-1 text-left text-[12px] text-foreground-muted transition-colors hover:border-accent hover:text-foreground disabled:opacity-50"
                           >
                             {f}
                           </button>
                         ))}
                       </div>
                     )}
-                    {m.role === "ai" && <p className="mt-1.5 text-[11px] text-foreground-faint" data-testid="ask-not-advice">{NOT_ADVICE_LINE}</p>}
+                    {m.role === "ai" && <p className="mt-1.5 text-[12px] text-foreground-faint" data-testid="ask-not-advice">{NOT_ADVICE_LINE}</p>}
                   </div>
                 ))}
                 {busy && (
@@ -1425,10 +1425,10 @@ export function AskRedixFi() {
                           <div className="flex items-center justify-between gap-2">
                             <span className="truncate text-[13px] text-foreground">{c.preview}</span>
                             {c.symbol !== "_general" && (
-                              <span className="shrink-0 rounded-full bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent">{c.symbol}</span>
+                              <span className="shrink-0 rounded-full bg-accent/10 px-1.5 py-0.5 text-[12px] font-semibold text-accent">{c.symbol}</span>
                             )}
                           </div>
-                          <div className="mt-1 text-[11px] text-foreground-faint">
+                          <div className="mt-1 text-[12px] text-foreground-faint">
                             {new Date(c.updated_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                           </div>
                         </button>

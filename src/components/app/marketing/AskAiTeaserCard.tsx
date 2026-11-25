@@ -23,7 +23,7 @@ export function AskAiTeaserCard() {
           <Sparkles size={14} className="text-accent" />
         </span>
         <div>
-          <div className="font-mono text-[11px] uppercase tracking-widest text-accent">Ask RedixFi</div>
+          <div className="font-mono text-[12px] uppercase tracking-widest text-accent">Ask RedixFi</div>
           <div className="text-xs text-foreground-faint" data-testid="ask-teaser-company">
             A real answer about Dhruv Consultancy Services Ltd (DHRUV), source-cited from its concall
           </div>
@@ -53,8 +53,8 @@ export function AskAiTeaserCard() {
             </li>
           </ul>
           <div className="mt-2.5 flex flex-wrap gap-1.5 border-t border-border pt-2">
-            <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[11px] text-accent-dim">concall_transcript</span>
-            <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[11px] text-accent-dim">investor_calls</span>
+            <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[12px] text-accent-dim">concall_transcript</span>
+            <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[12px] text-accent-dim">investor_calls</span>
           </div>
         </div>
       </div>

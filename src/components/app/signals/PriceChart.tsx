@@ -58,7 +58,7 @@ export function PriceChart({ candles, high52, low52 }: { candles: Candle[]; high
         {pct !== null && idx > 0 && ` · ${pct >= 0 ? "+" : "-"}${Math.abs(pct).toFixed(1)}% from the start of the period`}
       </p>
       <div className="mt-1 flex items-stretch gap-2">
-        <div className="flex w-14 shrink-0 flex-col justify-between text-right text-[10px] tabular-nums text-foreground-muted" aria-hidden="true">
+        <div className="flex w-14 shrink-0 flex-col justify-between text-right text-[12px] tabular-nums text-foreground-muted" aria-hidden="true">
           <span>{formatNumber(max, 0)}</span>
           <span>{formatNumber(min, 0)}</span>
         </div>
@@ -81,12 +81,12 @@ export function PriceChart({ candles, high52, low52 }: { candles: Candle[]; high
           <line x1={x(idx)} x2={x(idx)} y1="0" y2={H} stroke="currentColor" strokeOpacity="0.4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
         </svg>
       </div>
-      <div className="mt-1 flex justify-between pl-16 text-[10px] text-foreground-muted">
+      <div className="mt-1 flex justify-between pl-16 text-[12px] text-foreground-muted">
         {labelIndexes(pts.length).map((i) => (
           <span key={i}>{formatShortDate(pts[i].date)}</span>
         ))}
       </div>
-      <p className="mt-2 text-[11px] text-foreground-faint">Daily closes, adjusted for splits and bonus issues. Last close {formatShortDate(last.date)}.</p>
+      <p className="mt-2 text-[12px] text-foreground-faint">Daily closes, adjusted for splits and bonus issues. Last close {formatShortDate(last.date)}.</p>
     </section>
   );
 }

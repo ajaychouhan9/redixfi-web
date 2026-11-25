@@ -157,7 +157,7 @@ export function TopupCard() {
               <div className="text-sm font-semibold">{t.questions.toLocaleString("en-IN")} questions</div>
               <div className="mt-0.5 flex items-baseline gap-1.5">
                 <span className="text-xs text-foreground-muted">₹{t.priceRupees}</span>
-                {save > 0 && <span className="text-[11px] font-medium text-up">save {save}%</span>}
+                {save > 0 && <span className="text-[12px] font-medium text-up">save {save}%</span>}
               </div>
             </button>
           );

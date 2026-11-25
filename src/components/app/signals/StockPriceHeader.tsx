@@ -53,7 +53,7 @@ export function StockPriceHeader({
         {typeof pct === "number" && <DeltaValue value={pct} kind="pct" className="text-base" />}
         {extra}
       </div>
-      <p className="mt-1 text-[11px] text-foreground-faint" data-testid="header-as-of">
+      <p className="mt-1 text-[12px] text-foreground-faint" data-testid="header-as-of">
         {formatPriceAsOf(asOf)}
       </p>
     </div>

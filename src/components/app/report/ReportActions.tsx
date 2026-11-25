@@ -118,7 +118,7 @@ export function ReportActions({ symbol }: { symbol: string }) {
         <Share2 size={13} />
         {busy === "share" ? "Preparing…" : "Share"}
       </button>
-      <div className="w-full text-[11px] leading-snug text-foreground-faint" data-testid="report-note" aria-live="polite">
+      <div className="w-full text-[12px] leading-snug text-foreground-faint" data-testid="report-note" aria-live="polite">
         {unavailable && <p>Report not available: {status!.reason}</p>}
         {locked && status!.lock === "quota_used" && (
           <p>
@@ -128,7 +128,6 @@ export function ReportActions({ symbol }: { symbol: string }) {
         )}
         {locked && status!.lock !== "quota_used" && (
           <p>
-            {lockedText(quotaCfg)}{" "}
             <Link href="/sample-report" className="underline">See the free sample report</Link>
             {" · "}
             <UpgradeLink className="underline">See plans</UpgradeLink>

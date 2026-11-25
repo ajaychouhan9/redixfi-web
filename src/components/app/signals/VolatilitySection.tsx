@@ -59,7 +59,7 @@ function MoveBars({ moves }: { moves: [string, number][] }) {
           );
         })}
       </svg>
-      <p className="mt-1 flex items-center justify-between text-[10px] text-foreground-faint">
+      <p className="mt-1 flex items-center justify-between text-[12px] text-foreground-faint">
         <span>{formatShortDate(moves[0][0])}</span>
         <span>Daily close-to-close moves (scale ±{cap.toFixed(0)}%)</span>
         <span>{formatShortDate(moves[moves.length - 1][0])}</span>
@@ -76,7 +76,7 @@ function MoveBars({ moves }: { moves: [string, number][] }) {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[10px] text-foreground-faint">{label}</dt>
+      <dt className="text-[12px] text-foreground-faint">{label}</dt>
       <dd className="text-xs font-medium tabular-nums text-foreground">{value}</dd>
     </div>
   );
@@ -93,7 +93,7 @@ function WindowCard({ sessions, w }: { sessions: number; w: VolatilityWindow | n
         </div>
         <div className="absolute inset-0 flex items-center justify-center gap-1.5">
           <Lock size={11} className="text-foreground-faint" />
-          <span className="text-[10px] font-medium text-foreground-muted">
+          <span className="text-[12px] font-medium text-foreground-muted">
             Last {sessions} sessions · Locked · {w.unlock ?? "Pro"}
           </span>
         </div>
@@ -164,7 +164,7 @@ export function VolatilitySection({ symbol }: { symbol: string }) {
       >
         <span className="min-w-0">
           <span className="block text-sm font-semibold text-foreground">Volatility</span>
-          <span className="block text-[11px] text-foreground-faint">
+          <span className="block text-[12px] text-foreground-faint">
             {(ranked ? data?.band_text : "Past price movement over the last 21 sessions") + (data?.as_of ? ` · As of ${data.as_of.slice(8, 10).replace(/^0/, "")} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][Number(data.as_of.slice(5, 7)) - 1]} close` : "")}
           </span>
         </span>
@@ -190,7 +190,7 @@ export function VolatilitySection({ symbol }: { symbol: string }) {
 
           {ranked && data && (
             <>
-              <p className="text-[11px] text-foreground-faint">Data as of {formatShortDate(data.as_of ?? "")}</p>
+              <p className="text-[12px] text-foreground-faint">Data as of {formatShortDate(data.as_of ?? "")}</p>
               <div className="mt-2"><VolatilityRankLines data={data} /></div>
 
               <div className="mt-3">
@@ -205,24 +205,24 @@ export function VolatilitySection({ symbol }: { symbol: string }) {
 
               {lockedWindows.length > 0 && data.next_tier && (
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-surface px-3 py-2">
-                  <p className="flex items-center gap-1.5 text-[11px] text-foreground-muted">
+                  <p className="flex items-center gap-1.5 text-[12px] text-foreground-muted">
                     <Lock size={12} className="text-foreground-faint" />
                     Upgrade to {data.next_tier} to read more windows.
                   </p>
-                  <UpgradeLink className="text-[11px] font-medium text-accent">Upgrade →</UpgradeLink>
+                  <UpgradeLink className="text-[12px] font-medium text-accent">Upgrade →</UpgradeLink>
                 </div>
               )}
             </>
           )}
 
           {ranked && (
-            <p className="mt-3 text-[11px] text-foreground-muted">
+            <p className="mt-3 text-[12px] text-foreground-muted">
               Average daily range: the average gap between a day&apos;s high and low, which shows movement inside the day.
             </p>
           )}
 
           {data && !data.locked && (
-            <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-foreground-faint">
+            <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-foreground-faint">
               <span>{data.disclaimer}</span>
               <span aria-hidden>·</span>
               <Link href="/volatility#how" className="text-accent underline decoration-dotted underline-offset-2">
