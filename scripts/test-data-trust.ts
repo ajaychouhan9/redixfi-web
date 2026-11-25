@@ -31,6 +31,9 @@ assert.deepEqual(sb.shown, ["Profit before tax rose by 8.81% to INR 1,403 crores
 const lead = shortBullets("During the earnings conference call held on 27 Jul 2026, Bharat Electronics Limited (BEL) reported a revenue increase of 25.27% year-over-year. The EBITDA margin was reported at 25.83%.", 3, 40);
 assert.equal(lead.shown[0], "Bharat Electronics Limited (BEL) reported a revenue increase of 25.27% year-over-year.", "the call lead-in clause is dropped, the bullet starts with the fact");
 
+const num = clipSentence("Bharat Electronics Limited (BEL) reported a revenue increase of 25.27% year-over-year, reaching INR 5,533 crores for Q1 FY27.", 15);
+assert.ok(!/INR 5\.$/.test(num) && !/5,?$/.test(num.replace(/\.$/, "")), `a thousands comma is never a cut point: ${num}`);
+
 // ---- one date style
 assert.equal(humanDate("2026-07-18"), "18 Jul 2026");
 assert.equal(monthYear("2026-09-30"), "Sep 2026");

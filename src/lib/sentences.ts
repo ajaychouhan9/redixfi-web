@@ -56,7 +56,7 @@ export function clipSentence(s: string, max: number): string {
   const w = s.split(" ");
   if (w.length <= max) return s;
   const head = w.slice(0, max).join(" ");
-  const cut = Math.max(head.lastIndexOf(","), head.lastIndexOf(";"), head.lastIndexOf(" – "), head.lastIndexOf(" — "));
+  const cut = Math.max(head.lastIndexOf(", "), head.lastIndexOf(";"), head.lastIndexOf(" – "), head.lastIndexOf(" — "));
   let words = (cut > head.length * 0.5 ? head.slice(0, cut) : head).split(" ").filter(Boolean);
   while (words.length > 4 && DANGLING.has((words[words.length - 1] ?? "").toLowerCase().replace(/[^a-z]/g, ""))) words = words.slice(0, -1);
   if (words.length < 5 || DANGLING.has((words[words.length - 1] ?? "").toLowerCase().replace(/[^a-z]/g, ""))) return s;
