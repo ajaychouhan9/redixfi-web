@@ -20,13 +20,13 @@ export function TrialCta({ className = "" }: { className?: string }) {
   const next = pathname.startsWith("/") && !pathname.startsWith("//") ? pathname : "/";
   return (
     <div className={`flex flex-wrap items-center gap-3 ${className}`} data-testid="trial-cta">
-      <Link
+      <a
         href={`/login?mode=signup&next=${encodeURIComponent(next)}`}
         onClick={() => track("trial_cta_click", { page: pageType(pathname) })}
         className="whitespace-nowrap rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground"
       >
         Start {trialDays}-day free Pro trial
-      </Link>
+      </a>
       <Link href="/pricing" className="text-sm font-medium text-foreground-muted hover:text-foreground">
         See pricing
       </Link>

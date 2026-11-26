@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -22,8 +21,8 @@ export function UpgradeLink({ children, className = "" }: { children: ReactNode;
   const next = pathname.startsWith("/") && !pathname.startsWith("//") ? pathname : "/";
   const href = eligible && !user ? `/login?mode=signup&next=${encodeURIComponent(next)}` : "/pricing";
   return (
-    <Link href={href} className={className} onClick={() => track("lock_click", { page: pageType(pathname), trial_offer: eligible })} data-testid="upgrade-link">
+    <a href={href} className={className} onClick={() => track("lock_click", { page: pageType(pathname), trial_offer: eligible })} data-testid="upgrade-link">
       {eligible ? `Free for ${days} days` : children}
-    </Link>
+    </a>
   );
 }
