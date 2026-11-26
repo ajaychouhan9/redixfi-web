@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell } from "lucide-react";
 
@@ -34,9 +33,9 @@ export function StockActions({ symbol, companyName }: { symbol: string; companyN
         <AlertCreateButton symbol={symbol} />
       ) : (
         !loading && (
-          <Link prefetch={false} href={signupHref(pathname)} className={BTN} data-testid="alert-signup">
+          <a href={signupHref(pathname)} className={BTN} data-testid="alert-signup">
             <Bell size={12} aria-hidden /> Set alert
-          </Link>
+          </a>
         )
       )}
       <CompareIndicator symbol={symbol} companyName={companyName} />

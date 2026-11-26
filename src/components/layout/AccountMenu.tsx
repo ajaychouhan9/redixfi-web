@@ -121,9 +121,9 @@ export function UserMenu() {
     return (
       <div className="flex items-center gap-1">
         <ThemeToggle />
-        <Link prefetch={false} href="/login" data-testid="header-login" className="flex min-h-[44px] items-center rounded-md bg-accent px-3 text-xs font-semibold text-accent-foreground md:min-h-0 md:py-1.5">
+        <a href="/login" data-testid="header-login" className="flex min-h-[44px] items-center rounded-md bg-accent px-3 text-xs font-semibold text-accent-foreground md:min-h-0 md:py-1.5">
           Log in
-        </Link>
+        </a>
       </div>
     );
   }
