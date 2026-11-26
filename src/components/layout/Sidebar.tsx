@@ -52,7 +52,7 @@ export function Sidebar() {
             );
           }
           return (
-            <Link key={item.id} href={item.href} data-testid={`nav-${item.id}`} aria-current={active === item.id ? "page" : undefined} className={row(active === item.id)}>
+            <Link key={item.id} href={item.href} prefetch={false} data-testid={`nav-${item.id}`} aria-current={active === item.id ? "page" : undefined} className={row(active === item.id)}>
               <Icon size={17} strokeWidth={2} />
               {item.label}
             </Link>
@@ -107,7 +107,7 @@ export function BottomNav() {
           }
           const on = active === item.id;
           return (
-            <Link key={item.id} href={item.href} data-testid={`bottom-${item.id}`} className={cls(on)} aria-current={on ? "page" : undefined}>
+            <Link key={item.id} href={item.href} prefetch={false} data-testid={`bottom-${item.id}`} className={cls(on)} aria-current={on ? "page" : undefined}>
               <Icon size={19} strokeWidth={on ? 2.4 : 2} />
               {item.short}
             </Link>
