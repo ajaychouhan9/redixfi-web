@@ -18,7 +18,7 @@ const js = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.Co
 const mod = { exports: {} };
 new Function("module", "exports", js)(mod, mod.exports);
 const rules = mod.exports.renamedSymbolRedirects();
-assert.equal(rules.length, 6 * 3 * 2, "5 stocks x 3 pages x (page, sub-page)");
+assert.equal(rules.length, 9 * 3 * 2, "9 stocks x 3 pages x (page, sub-page)");
 assert.ok(rules.every((r) => r.statusCode === 301), "all permanent");
 const hit = (path) => {
   for (const r of rules) {
@@ -44,6 +44,11 @@ assert.equal(hit("/stocks/ABCIND"), null, "the new symbol is not redirected");
 assert.equal(hit("/stocks/NOVARTIND"), "/stocks/EVONILE");
 assert.equal(hit("/research/novartind"), "/research/EVONILE");
 assert.equal(hit("/stocks/EVONILE"), null, "the new symbol is not redirected");
+assert.equal(hit("/stocks/SHUKRAPHAR"), "/stocks/SHUKRAMED");
+assert.equal(hit("/research/virat"), "/research/BRAHMVIRAT");
+assert.equal(hit("/stocks/UMIYA-MRO"), "/stocks/MROTEK");
+assert.equal(hit("/stocks/umiya-mro/rewind"), "/stocks/MROTEK/rewind");
+assert.equal(hit("/stocks/MROTEK"), null, "the new symbol is not redirected");
 assert.equal(hit("/stocks/HEGDE"), null, "a symbol that only starts the same way is not redirected");
 for (const [o, n] of Object.entries(mod.exports.RENAMED_SYMBOLS)) assert.notEqual(o, n);
 console.log("renamed-symbol redirects: ok");

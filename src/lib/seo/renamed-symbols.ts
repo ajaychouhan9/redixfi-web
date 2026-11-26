@@ -10,6 +10,9 @@ export const RENAMED_SYMBOLS: Record<string, string> = {
   ICICIPRULI: "ICICILIFE", // ICICI Prudential Life Insurance -> ICICI Life Insurance, Oct 2026 (ISIN INE726G01019)
   ABCOTS: "ABCIND",       // A B Cotspin India -> ABC Industries India (ISIN INE08PH01015), NSE symbol change effective 2 Nov 2026
   NOVARTIND: "EVONILE",   // Novartis India -> Evonile Pharma (ISIN INE234A01025), NSE symbol change effective 4 Nov 2026
+  SHUKRAPHAR: "SHUKRAMED", // Shukra Pharmaceuticals -> Shukra Med (ISIN INE551C01044), NSE symbol change effective 20 Nov 2026
+  VIRAT: "BRAHMVIRAT",    // Virat Industries -> Brahm Virat (ISIN INE467D01017), NSE symbol change effective 19 Nov 2026
+  "UMIYA-MRO": "MROTEK",  // Umiya Buildcon -> MRO-TEK Networks (ISIN INE398B01018), NSE symbol change effective 26 Nov 2026
 };
 
 const STOCK_PAGES = ["stocks", "signals", "research"] as const;
