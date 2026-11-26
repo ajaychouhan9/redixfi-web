@@ -69,6 +69,6 @@ assert.equal(shortStamp("not a date"), "");
 // lighter stock pages (26 Nov 2026): no charting library in the stock chart, interactive tabs fetched on open, sign-in links do not prefetch the sign-in script
 assert.ok(!read("src/components/app/stock/StockPriceChart.tsx").includes("lightweight-charts") && read("src/components/app/stock/LineChart.tsx").includes("<svg"), "SVG price chart");
 assert.ok(read("src/components/app/stock/LazyTabs.tsx").includes("ssr: false") && page.includes("<LazyRewindTab") && page.includes("<LazyAskAiTab"), "Rewind and Ask AI tabs load on open");
-assert.ok(read("src/components/app/home/HomeTrialLine.tsx").includes("prefetch={false}") && read("src/components/layout/AccountMenu.tsx").includes("prefetch={false}"), "sign-in links do not prefetch");
+assert.ok(read("src/components/app/home/HomeTrialLine.tsx").includes("prefetch={false}") && read("src/components/layout/AccountMenu.tsx").includes('<a href="/login" data-testid="header-login"') && read("src/components/app/InlineSignup.tsx").includes("<a ") && !read("src/components/app/StockSignupOffer.tsx").includes("<Link"), "sign-in links on the stock page are plain links (no script prefetch)");
 assert.ok(read("src/components/app/SiteInsights.tsx").includes('strategy="lazyOnload"') && read("src/components/app/SiteInsights.tsx").includes('document.body.setAttribute("data-clarity-mask", "True")'), "Clarity: strict mask, lazy load");
 console.log("seo tests: ok");
