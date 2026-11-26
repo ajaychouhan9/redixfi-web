@@ -30,6 +30,19 @@ export function StockPriceChart({ symbol, closes, has5y, lastPrice, sentence, pr
   const box = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<{ label: string; value: number } | null>(null);
   const [theme, setTheme] = useState("");
+  // the chart script is fetched and run after the page has finished loading (and a short pause), so it never competes with the first paint (26 Nov 2026)
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    const go = () => window.setTimeout(() => setSettled(true), 1200);
+    if (document.readyState === "complete") {
+      const t = go();
+      return () => window.clearTimeout(t);
+    }
+    let t = 0;
+    const onLoad = () => { t = go(); };
+    window.addEventListener("load", onLoad, { once: true });
+    return () => { window.removeEventListener("load", onLoad); window.clearTimeout(t); };
+  }, []);
 
   // the chart code and the extra data are fetched only once the chart is near the screen
   useEffect(() => {
@@ -122,7 +135,7 @@ export function StockPriceChart({ symbol, closes, has5y, lastPrice, sentence, pr
 
   useEffect(() => {
     const el = box.current;
-    if (!el || !visible || series.length < 2) return;
+    if (!el || !visible || !settled || series.length < 2) return;
     let disposed = false;
     let chart: import("lightweight-charts").IChartApi | null = null;
     (async () => {
@@ -160,7 +173,7 @@ export function StockPriceChart({ symbol, closes, has5y, lastPrice, sentence, pr
       disposed = true;
       chart?.remove();
     };
-  }, [visible, series, tone, theme, active]);
+  }, [visible, settled, series, tone, theme, active]);
 
   if (!ranges.length) return null;
 
