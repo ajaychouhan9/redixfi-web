@@ -85,7 +85,7 @@ assert.deepEqual(shortBullets("", 3, 15), { shown: [], rest: [] });
 const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8");
 const layout = readFileSync(new URL("../src/app/layout.tsx", import.meta.url), "utf8");
 assert.ok(/--font-weight-semibold:\s*700/.test(css), "semibold is drawn as bold: only 400, 500, 700");
-assert.ok(layout.includes('weight: ["400", "500", "700"]') && layout.includes("Inter"), "one family, three weights");
+assert.ok(layout.includes('weight: "400 700"') && layout.includes("Inter-latin-var.woff2"), "one family, three weights");
 assert.ok(css.includes("--up-fill: #00a86b") && css.includes("--down-fill: #e5484d") && css.includes("--border: #eeeeee") && css.includes("--foreground-muted: #4b5563"), "Light tokens");
 assert.ok(!/box-shadow/.test(css.slice(css.indexOf("Light theme (26 Nov 2026"), css.indexOf("Typography readability"))), "no shadows in Light");
 for (const f of ["components/app/AiDailyBriefCard.tsx", "components/app/signals/SmartScreenerBox.tsx", "components/app/ask/AskRedixFi.tsx", "components/app/billing/PlanCard.tsx"]) {

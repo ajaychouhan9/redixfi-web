@@ -1,7 +1,7 @@
 import { SiteInsights } from "@/components/app/SiteInsights";
 import { TableStacker } from "@/components/layout/TableStacker";
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import Script from "next/script";
 import { AuthProvider } from "@/lib/auth/AuthContext";
@@ -12,11 +12,14 @@ import { PwaProvider } from "@/components/app/pwa/PwaProvider";
 
 // One font family (26 Nov 2026 readability overhaul): Inter, three weights only (400, 500, 700). Figures use the same face with tabular numerals
 // (see globals.css), so columns of numbers still line up. Replaces IBM Plex Sans, IBM Plex Mono and Georgia.
-const inter = Inter({
+// 26 Nov 2026: Inter is kept in the repository (the Latin subset of the variable font, 48 KB, weights 400 to 700) instead of being fetched from Google Fonts at every
+// build. A change in what Google sends broke the build that day; now a build needs no outside address. It is served from our own address and preloaded.
+const inter = localFont({
+  src: "./fonts/Inter-latin-var.woff2",
   variable: "--font-inter",
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
+  weight: "400 700",
   display: "swap",
+  preload: true,
 });
 
 // Applied before hydration so the stored choice (or, with nothing saved, Light) is on <html> before the first paint. The html tag also carries
