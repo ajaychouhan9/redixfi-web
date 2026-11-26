@@ -72,12 +72,12 @@ export function AccountPanel({ onClose, className }: { onClose: () => void; clas
       ) : (
         <nav className="p-1.5">
           <p className="px-3 py-2 text-xs text-foreground-muted">Log in to use your watchlist and alerts.</p>
-          <Link prefetch={false} href="/login" role="menuitem" onClick={onClose} className={`${row} font-semibold text-foreground`} data-testid="account-login">
+          <a href="/login" role="menuitem" onClick={onClose} className={`${row} font-semibold text-foreground`} data-testid="account-login">
             <UserCircle size={16} className="shrink-0 text-accent" aria-hidden /> Log in
-          </Link>
-          <Link prefetch={false} href={signupHref("/")} role="menuitem" onClick={onClose} className={row} data-testid="account-signup">
+          </a>
+          <a href={signupHref("/")} role="menuitem" onClick={onClose} className={row} data-testid="account-signup">
             <Bookmark size={16} className="shrink-0 text-accent" aria-hidden /> Create a free account
-          </Link>
+          </a>
           <Link href="/pricing" role="menuitem" onClick={onClose} className={row}>
             <CreditCard size={16} className="shrink-0 text-accent" aria-hidden /> Billing and plans
           </Link>

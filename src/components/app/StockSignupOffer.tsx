@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -26,13 +25,13 @@ export function StockSignupOffer({ companyName, className = "" }: { companyName:
         Get the full {companyName} report free.{" "}
         <span className="text-foreground-muted">{trialDays}-day Pro trial, no payment details.</span>
       </p>
-      <Link
+      <a
         href={`/login?mode=signup&next=${encodeURIComponent(next)}`}
         onClick={() => track("trial_cta_click", { page: pageType(pathname) })}
         className="whitespace-nowrap rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground"
       >
         Start free
-      </Link>
+      </a>
     </div>
   );
 }
