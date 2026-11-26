@@ -14,7 +14,9 @@ import { track } from "@/lib/analytics";
 export function InlineSignup({ text, action = "Sign up free", className = "" }: { text: string; action?: string; className?: string }) {
   const { user, loading } = useAuth();
   const pathname = usePathname() || "/";
-  if (user || loading) return null;
+  // while the sign-in state is loading the line keeps its height, so the page does not jump when it appears (layout shift)
+  if (loading) return <p className={`min-h-[44px] ${className}`} aria-hidden data-testid="inline-signup-loading" />;
+  if (user) return null;
   return (
     <p className={`text-[13px] leading-snug text-foreground-muted ${className}`} data-testid="inline-signup">
       {text}{" "}

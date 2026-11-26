@@ -28,7 +28,7 @@ const anon = read("components/app/ask/AnonAsk.tsx");
 assert.ok(read("lib/api/mutations.ts").includes("/ask/anon") && anon.includes("askAnonymous") && anon.includes("Sign up free to ask more and start your 5-day Pro trial."), "one free question, then sign up");
 assert.ok(read("components/app/ask/AskRedixFi.tsx").includes("<AnonAsk symbol={pageSymbol}"), "the panel offers it to a visitor");
 for (const f of ["components/app/stock/StockActions.tsx", "components/app/stock/QuickReads.tsx", "components/app/signals/MyScreens.tsx"]) assert.ok(read(f).includes("InlineSignup"), `${f} has an inline prompt`);
-assert.ok(read("components/app/InlineSignup.tsx").includes("if (user || loading) return null"), "the prompt hides for a signed-in visitor");
+assert.ok(read("components/app/InlineSignup.tsx").includes("if (user) return null"), "the prompt hides for a signed-in visitor");
 
 // trial: day-4 banner, guide, exit question
 assert.ok(read("components/layout/TrialStatusBar.tsx").includes("Your Pro trial ends tomorrow"), "day-4 banner");
