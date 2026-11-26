@@ -238,6 +238,11 @@ export default function LoginPage() {
             <GoogleIcon />
             Continue with Google
           </button>
+          <p className="text-center text-[12px] text-foreground-muted" data-testid="signup-consent">
+            By continuing, you agree to the{" "}
+            <Link href="/more/terms" target="_blank" className="text-accent underline">Terms</Link> and the{" "}
+            <Link href="/more/privacy" target="_blank" className="text-accent underline">Privacy Policy</Link>.
+          </p>
 
           <div className="flex items-center gap-3 text-xs text-foreground-faint">
             <span className="h-px flex-1 bg-border" />
@@ -283,12 +288,6 @@ export default function LoginPage() {
               {mode === "signup" ? "Create account" : mode === "reset" ? "Send reset link" : "Log in"}
             </button>
           </div>
-
-          <p className="text-center text-[12px] text-foreground-muted" data-testid="signup-consent">
-            By continuing with Google you agree to the{" "}
-            <Link href="/more/terms" target="_blank" className="text-accent underline">Terms</Link> and the{" "}
-            <Link href="/more/privacy" target="_blank" className="text-accent underline">Privacy Policy</Link>.
-          </p>
 
           <div className="flex items-center justify-between text-xs">
             {mode === "signin" && (

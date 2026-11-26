@@ -1,3 +1,5 @@
+import { finalizeMeta } from "@/lib/seo/page-meta";
+import { humanDate } from "@/lib/human-date";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLatestBrief } from "@/lib/api/endpoints";
@@ -10,11 +12,8 @@ export function generateStaticParams() { return []; }
 
 export async function generateMetadata({ params }: { params: Promise<{ date: string }> }): Promise<Metadata> {
   const { date } = await params;
-  return {
-    title: `Market Brief — ${date}`,
-    description: `RedixFi's AI-written market recap for ${date} — measured facts from the day's data.`,
-    alternates: { canonical: `/market-brief/${date}` },
-  };
+  const day = humanDate(date);
+  return finalizeMeta({ title: `Market brief for ${day}`, description: `RedixFi's AI-written market recap for ${day}, built from the day's measured data.` }, `/market-brief/${date}`);
 }
 
 export default async function MarketBriefDatePage({ params }: { params: Promise<{ date: string }> }) {

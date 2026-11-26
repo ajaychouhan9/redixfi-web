@@ -42,5 +42,5 @@ assert.ok(cv.includes('useState<"monthly" | "annual">("annual")') && cv.includes
 assert.ok(read("components/app/billing/PlanCard.tsx").includes("/month, billed yearly"), "per-month line");
 assert.equal(Math.round(1499 / 12), 125);
 assert.equal(Math.round(2499 / 12), 208);
-assert.ok(read("app/(app)/pricing/page.tsx").includes("Rs 1,499 a year") && read("app/(app)/pricing/page.tsx").includes("Rs 2,499 a year"), "pricing meta");
+assert.ok(read("lib/seo/page-meta.ts").includes("Rs 1,499 a year") && read("lib/seo/page-meta.ts").includes("Rs 2,499 a year"), "pricing meta");
 console.log("funnel tests: ok");

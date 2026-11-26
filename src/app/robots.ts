@@ -12,6 +12,9 @@ const DISALLOW = [
   "/login",
   "/account",
   "/admin",
+  "/watchlist",
+  "/full-check",
+  "/theme-preview",
   "/me",
   // per-stock working pages: noindex duplicates of /stocks/<symbol>, kept away from crawlers to save server work (14 Nov 2026)
   "/signals/",

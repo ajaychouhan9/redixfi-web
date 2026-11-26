@@ -1,3 +1,4 @@
+import { staticMeta } from "@/lib/seo/page-meta";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
@@ -15,13 +16,7 @@ const TITLE = "Volatility ranking — past price movement of NSE stocks";
 const DESCRIPTION =
   "Which NSE stocks have moved the most and the least from day to day over the last 21 sessions, measured on split-adjusted prices. Past price movement, not a forecast.";
 
-export const metadata: Metadata = {
-  title: TITLE,
-  description: DESCRIPTION,
-  alternates: { canonical: "/volatility" },
-  openGraph: { title: TITLE, description: DESCRIPTION, type: "website", images: [SHARE_IMAGE] },
-  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: [SHARE_IMAGE.url] },
-};
+export const metadata: Metadata = staticMeta("/volatility");
 
 async function load(which: "top" | "bottom"): Promise<Board | null> {
   try {

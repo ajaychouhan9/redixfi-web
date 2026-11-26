@@ -32,3 +32,13 @@ export function humanizeDates(text: string): string {
       return i >= 0 ? `${Number(d)} ${MONTHS[i]} ${y}` : all;
     });
 }
+
+/** "26 Nov, 10:30": the stamp under a chat message and in the history list, in the reader's own time zone, 24-hour clock. A date that cannot be read gives "". */
+export function shortStamp(value: string | number | Date | null | undefined): string {
+  if (value === null || value === undefined || value === "") return "";
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${d.getDate()} ${MONTHS[d.getMonth()]}, ${hh}:${mm}`;
+}

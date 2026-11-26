@@ -51,7 +51,7 @@ function Bars({ pts, label }: { pts: RPPoint[]; label: string }) {
  * Revenue and profit (26 Nov 2026): grouped bars, revenue in grey-blue and profit in green, the latest period at full strength. Toggle Yearly | Quarterly.
  * Under it: the latest values with their growth, a small 1 year / 3 year table when the yearly series allows it, and one plain sentence of facts.
  */
-export function RevenueProfit({ yearly, quarterly }: { yearly: RPPoint[]; quarterly: RPPoint[] }) {
+export function RevenueProfit({ yearly, quarterly, symbol }: { yearly: RPPoint[]; quarterly: RPPoint[]; symbol?: string }) {
   const hasY = yearly.length >= 2;
   const hasQ = quarterly.length >= 2;
   const [mode, setMode] = useState<"yearly" | "quarterly">(hasY ? "yearly" : "quarterly");
@@ -72,7 +72,7 @@ export function RevenueProfit({ yearly, quarterly }: { yearly: RPPoint[]; quarte
   return (
     <section aria-labelledby="rev-profit" className="mt-7 border-t border-border pt-6" data-testid="revenue-profit">
       <div className="flex items-center justify-between gap-3">
-        <h2 id="rev-profit" className="text-lg font-bold">Revenue &amp; profit</h2>
+        <h2 id="rev-profit" className="text-lg font-bold">{symbol ? `${symbol} revenue and profit` : "Revenue & profit"}</h2>
         {hasY && hasQ && (
           <div role="group" aria-label="Period" className="flex w-44">
             <button type="button" aria-pressed={active === "yearly"} onClick={() => setMode("yearly")} className={tab(active === "yearly")} data-testid="rp-yearly">Yearly</button>

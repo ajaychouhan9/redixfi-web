@@ -1,3 +1,4 @@
+import { staticMeta } from "@/lib/seo/page-meta";
 import type { Metadata } from "next";
 
 import { LabTabs } from "@/components/app/stock-check/LabTabs";
@@ -10,14 +11,7 @@ export const revalidate = 3600;
 const DESCRIPTION =
   "Learn seven steps and five questions, then set your own rules and read the result. Facts from filings and the exchange. Not advice.";
 
-export const metadata: Metadata = {
-  title: SEO_TITLE,
-  description: DESCRIPTION,
-  alternates: { canonical: "/shortlist-lab" },
-  // A page that sets its own openGraph / twitter replaces the site-wide one, so the share image is named here too (24 Nov 2026).
-  openGraph: { title: `${SEO_TITLE} · RedixFi`, description: DESCRIPTION, type: "website", url: "https://www.redixfi.com/shortlist-lab", siteName: "RedixFi", images: [SHARE_IMAGE] },
-  twitter: { card: "summary_large_image", title: `${SEO_TITLE} · RedixFi`, description: DESCRIPTION, images: [SHARE_IMAGE.url] },
-};
+export const metadata: Metadata = staticMeta("/shortlist-lab");
 
 /** Static, cacheable page (no server fetch): the chips are links, the figures file and the shortlist load in the browser, and only when asked. */
 export default function StockCheckPage() {

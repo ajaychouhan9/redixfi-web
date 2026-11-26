@@ -1,3 +1,4 @@
+import { staticMeta } from "@/lib/seo/page-meta";
 import type { Metadata } from "next";
 import { MarketActivityHub } from "@/components/app/market-activity/MarketActivityHub";
 import { getMarketActivitySummary } from "@/lib/api/endpoints";
@@ -15,11 +16,7 @@ import { formatDateIst } from "@/lib/format";
  * not a cookie — same reason ResearchExportButton/SignalsExplorer are
  * client components too).
  */
-export const metadata: Metadata = {
-  title: "Market Activity",
-  alternates: { canonical: "/market-activity" },
-  description: "Concalls, insider trades, corporate events, and bulk/block deals across every tracked stock — measured facts only, not a recommendation.",
-};
+export const metadata: Metadata = staticMeta("/market-activity");
 
 // Per-category stale-hint thresholds. Red flags now summarizes a wide
 // (180-day, see build_market_activity_red_flag_summary.py::WINDOW_DAYS)

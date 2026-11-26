@@ -1,3 +1,4 @@
+import { finalizeMeta } from "@/lib/seo/page-meta";
 import type { Metadata } from "next";
 import { cache } from "react";
 import Link from "next/link";
@@ -45,12 +46,7 @@ export async function generateMetadata({ params }: { params: Promise<{ date: str
   if (!r) return { title: "Week not found", robots: { index: false, follow: false } };
   const title = weekTitle(r);
   const description = weekDescription(r);
-  return {
-    title: { absolute: title },
-    description,
-    alternates: { canonical: weekPath(date) },
-    openGraph: { title, description, type: "article" },
-  };
+  return finalizeMeta({ title: { absolute: title }, description }, weekPath(date));
 }
 
 const pctText = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(2)}%`;

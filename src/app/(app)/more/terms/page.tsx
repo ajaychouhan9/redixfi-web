@@ -1,3 +1,4 @@
+import { staticMeta } from "@/lib/seo/page-meta";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage } from "@/components/app/LegalPage";
@@ -6,11 +7,7 @@ import { LEGAL } from "@/lib/legal";
 // The page makes no request of its own; a refresh window keeps the cached copy from outliving a deploy (a fully static page is sent with a one-year cache lifetime).
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  title: "Terms of Service",
-  description: "The terms for using RedixFi: what the service is, accounts, plans and billing, the 5-day trial, acceptable use, limits of liability and how to contact us.",
-  alternates: { canonical: "/more/terms" },
-};
+export const metadata: Metadata = staticMeta("/more/terms");
 
 export default function TermsPage() {
   return (

@@ -31,7 +31,9 @@ export function HomeMovers() {
   const up = sideRows(data, "up");
   const down = sideRows(data, "down");
   const label = previewLabel(data);
-  if (data === undefined || data === null || (up.length === 0 && down.length === 0)) return null;
+  // while the list loads the card keeps its height (heading, tabs, five rows), so nothing below it jumps; with no data the card is gone
+  if (data === undefined) return <div className="h-[430px]" aria-hidden data-testid="home-movers-loading" />;
+  if (data === null || (up.length === 0 && down.length === 0)) return null;
   const shownSide: MoverSide = side === "up" && up.length === 0 ? "down" : side === "down" && down.length === 0 ? "up" : side;
   const rows = shownSide === "up" ? up : down;
   const tab = (id: MoverSide, text: string, n: number) =>

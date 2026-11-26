@@ -30,18 +30,18 @@ const SITE_URL = "https://www.redixfi.com";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "RedixFi — Understand Indian stocks through measured data, not predictions.",
+    default: "RedixFi: understand any NSE stock in 5 minutes",
     template: "%s · RedixFi",
   },
   description:
-    "Delivery, volume and price data for 2,000+ NSE stocks, concall and annual-report summaries with their sources, disclosed governance items, and Market Rewind (what happened around past big moves). Analytics, not advice.",
+    "Plain-language data for 2,000+ NSE stocks: delivery, insider trades, points to watch and concall summaries. No buy or sell advice.",
   openGraph: {
     type: "website",
     siteName: "RedixFi",
     // The full wordmark lockup (provided artwork, not code-generated) —
     // its dark background is baked in, which is fine here since a social
     // preview card is never subject to the site's light/dark toggle.
-    images: [{ url: "/branding/redixfi-full-logo.png", width: 2172, height: 724, alt: "RedixFi — Market. Simplified." }],
+    images: [{ url: "/branding/redixfi-og-1200x630.png", width: 1200, height: 630, alt: "RedixFi: Market. Simplified." }],
   },
   twitter: {
     card: "summary_large_image",

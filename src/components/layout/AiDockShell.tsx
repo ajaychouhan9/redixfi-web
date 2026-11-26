@@ -1,8 +1,10 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import { useAskPanel } from "@/lib/ask-panel/AskPanelContext";
-import { AskRedixFi } from "@/components/app/ask/AskRedixFi";
+// The Ask AI panel is a large piece of script that most visits never open: it is fetched the first time the panel is opened, not with every page (26 Nov 2026).
+const AskRedixFi = dynamic(() => import("@/components/app/ask/AskRedixFi").then((m) => m.AskRedixFi), { ssr: false });
 import { ASK_PANEL_WIDTHS } from "@/lib/ask-panel/panelMode";
 
 /**
@@ -19,6 +21,8 @@ import { ASK_PANEL_WIDTHS } from "@/lib/ask-panel/panelMode";
  */
 export function AiDockShell({ children }: { children: ReactNode }) {
   const { open, mode } = useAskPanel();
+  const [everOpened, setEverOpened] = useState(false);
+  if (open && !everOpened) setEverOpened(true);
   return (
     <>
       <div
@@ -27,7 +31,7 @@ export function AiDockShell({ children }: { children: ReactNode }) {
       >
         {children}
       </div>
-      <AskRedixFi />
+      {everOpened && <AskRedixFi />}
     </>
   );
 }

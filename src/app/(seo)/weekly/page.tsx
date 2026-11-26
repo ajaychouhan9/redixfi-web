@@ -1,3 +1,4 @@
+import { staticMeta } from "@/lib/seo/page-meta";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getSevenDayReview } from "@/lib/api/endpoints";
@@ -12,13 +13,7 @@ const TITLE = "Weekly market reviews: archive of past weeks of Indian market dat
 const DESCRIPTION =
   "Every stored week of the RedixFi 7-Day Review as its own page: index moves, advancing and declining stocks, the largest price rises and falls and what was announced. Measured data only.";
 
-export const metadata: Metadata = {
-  title: { absolute: TITLE },
-  description: DESCRIPTION,
-  alternates: { canonical: "/weekly" },
-  openGraph: { title: TITLE, description: DESCRIPTION, type: "website", images: [SHARE_IMAGE] },
-  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: [SHARE_IMAGE.url] },
-};
+export const metadata: Metadata = staticMeta("/weekly");
 
 export default async function WeeklyArchivePage() {
   let weeks: { as_of: string; sessions: number; label: string }[] = [];

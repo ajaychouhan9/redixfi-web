@@ -1,3 +1,4 @@
+import { finalizeMeta } from "@/lib/seo/page-meta";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -96,12 +97,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (getFundamentalScreen(slug)) {
     const f = await loadFundamentalScreen(slug);
     if (!f) return { title: "Screen not found", robots: { index: false, follow: false } };
-    return {
-      title: { absolute: f.screen.title },
-      description: f.screen.description,
-      alternates: { canonical: `/screens/${f.screen.slug}` },
-      openGraph: { title: f.screen.heading, description: f.screen.description, type: "website" },
-    };
+    return finalizeMeta({ title: { absolute: f.screen.title }, description: f.screen.description }, `/screens/${f.screen.slug}`);
   }
   const screen = getCannedScreen(slug);
   if (!screen) return { title: "Screen not found" };
@@ -110,13 +106,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: screen.title,
     subtitle: screen.description,
   }).toString()}`;
-  return {
+  return finalizeMeta({
     title: screen.title,
     description: screen.description,
-    alternates: { canonical: `/screens/${screen.slug}` },
-    openGraph: { title: screen.title, description: screen.description, type: "website", images: [{ url: ogImage, width: 1200, height: 630 }] },
-    twitter: { card: "summary_large_image", title: screen.title, description: screen.description, images: [ogImage] },
-  };
+    openGraph: { images: [{ url: ogImage, width: 1200, height: 630 }] },
+    twitter: { card: "summary_large_image", images: [ogImage] },
+  }, `/screens/${screen.slug}`);
 }
 
 export default async function ScreenPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -153,6 +148,7 @@ export default async function ScreenPage({ params }: { params: Promise<{ slug: s
       {/* eslint-disable-next-line react/no-danger */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
+      <Breadcrumbs crumbs={[{ name: "Home", href: "/" }, { name: "Stock screens", href: "/screens" }, { name: screen.title, href: `/screens/${screen.slug}` }]} />
       <h1 className="mb-1 text-xl font-semibold">{screen.title}</h1>
       <p className="mb-4 text-sm text-foreground-muted">{screen.description}</p>
 

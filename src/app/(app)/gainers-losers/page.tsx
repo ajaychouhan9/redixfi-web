@@ -1,3 +1,4 @@
+import { staticMeta } from "@/lib/seo/page-meta";
 import type { Metadata } from "next";
 
 import { TopMovers } from "@/components/app/market/TopMovers";
@@ -9,13 +10,7 @@ const DESCRIPTION = "The five largest price rises and the five largest price fal
 // No request on the server (the list loads in the browser); a refresh window stops the cached page outliving a deploy.
 export const revalidate = 300;
 
-export const metadata: Metadata = {
-  title: { absolute: TITLE },
-  description: DESCRIPTION,
-  alternates: { canonical: "/gainers-losers" },
-  openGraph: { title: TITLE, description: DESCRIPTION, type: "website", url: "https://www.redixfi.com/gainers-losers", images: [SHARE_IMAGE] },
-  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: [SHARE_IMAGE.url] },
-};
+export const metadata: Metadata = staticMeta("/gainers-losers");
 
 export default function GainersLosersPage() {
   return (

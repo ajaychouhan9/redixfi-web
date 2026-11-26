@@ -1,3 +1,4 @@
+import { STATIC_META, seoMeta } from "@/lib/seo/page-meta";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -42,20 +43,7 @@ function asofOf(sp: Record<string, string | string[] | undefined>): string | und
 /** The plain page is indexed; an earlier week (a query string) points back to it and is not indexed. */
 export async function generateMetadata({ searchParams }: { searchParams: SP }): Promise<Metadata> {
   const earlier = Object.keys((await searchParams) ?? {}).length > 0;
-  return {
-    title: { absolute: REVIEW_SEO_TITLE },
-    description: REVIEW_SEO_DESCRIPTION,
-    alternates: { canonical: REVIEW_PATH },
-    robots: earlier ? { index: false, follow: true } : { index: true, follow: true },
-    openGraph: {
-      title: REVIEW_SEO_TITLE,
-      description: REVIEW_SEO_DESCRIPTION,
-      type: "website",
-      url: `${SITE_URL}${REVIEW_PATH}`,
-      images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: "7-Day Review - biggest gains and falls of the week" }],
-    },
-    twitter: { card: "summary_large_image", title: REVIEW_SEO_TITLE, description: REVIEW_SEO_DESCRIPTION, images: [OG_IMAGE] },
-  };
+  return { ...seoMeta({ ...STATIC_META["/signals/7-day-review"], path: "/signals/7-day-review", index: !earlier }) };
 }
 
 async function load(asof: string | undefined): Promise<SevenDayReview | null> {

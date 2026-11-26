@@ -10,6 +10,7 @@ import { ApiError } from "@/lib/api/client";
 import { searchResearch } from "@/lib/api/endpoints";
 import { AddToRuleButton } from "@/components/app/ask/AddToRuleButton";
 import { AnonAsk } from "@/components/app/ask/AnonAsk";
+import { shortStamp } from "@/lib/human-date";
 import { canSaveAnswer, isNumberAnswer } from "@/lib/rule-answers";
 import { formatCell, numericColumn } from "@/lib/ask-table-format";
 import {
@@ -124,22 +125,6 @@ const STATUS_STAGES_WITH_CONCALL = ["Searching signals...", "Reading concall tra
 
 // Fixed UI copy (never LLM-generated): the one small line under every answer (21 Nov 2026; the fixed footer above the input was removed).
 const NOT_ADVICE_LINE = "Not investment advice";
-
-/** Top-ribbon entry point. Same Sparkles mark as the sidebar nav item. */
-export function AskRedixFiTrigger() {
-  const { open, setOpen } = useAskPanel();
-  return (
-    <button
-      onClick={() => setOpen(!open)}
-      aria-label="RedixFi AI"
-      aria-pressed={open}
-      className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold min-h-[44px]"
-      style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
-    >
-      <Sparkles size={12} /> <span>Ask AI</span>
-    </button>
-  );
-}
 
 /** One small line of usage at the top of the window (26 Nov 2026): what is left today, and the monthly pool with its reset day when there is one. */
 function UsageLine({ parts, testId }: { parts: string[]; testId?: string }) {
@@ -1188,9 +1173,7 @@ export function AskRedixFi() {
                         {m.role === "ai" && m.sourceCitations && <SourcesSection citations={m.sourceCitations} />}
                         {m.createdAt && (
                           <div className="mt-1.5 text-[12px] text-foreground-muted">
-                            {new Date(m.createdAt).toLocaleString(undefined, {
-                              month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
-                            })}
+                            {shortStamp(m.createdAt)}
                           </div>
                         )}
                         {/* Quiet reassurance footer for EVERY correctly-zero-
@@ -1416,7 +1399,7 @@ export function AskRedixFi() {
                             )}
                           </div>
                           <div className="mt-1 text-[12px] text-foreground-faint">
-                            {new Date(c.updated_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                            {shortStamp(c.updated_at)}
                           </div>
                         </button>
                       </li>

@@ -23,7 +23,7 @@ assert.equal(SEO_TITLE, "Shortlist Lab: set your rules, read the result");
 assert.equal(LADDER_TITLE, "Build Your Shortlist");
 assert.equal(PAST_LINE, "Filters use past reported numbers. They do not tell what happens next.");
 const page = read("app/(app)/shortlist-lab/page.tsx");
-assert.ok(page.includes('canonical: "/shortlist-lab"') && page.includes("https://www.redixfi.com/shortlist-lab") && page.includes("title: SEO_TITLE"), "title tag and canonical");
+assert.ok(page.includes('staticMeta("/shortlist-lab")') && read("lib/seo/page-meta.ts").includes(`"/shortlist-lab": { title: "${SEO_TITLE}"`), "title tag and canonical (from the one SEO table)");
 assert.ok(page.includes("PAGE_TITLE") && page.includes("PAGE_SUBTITLE") && /export const revalidate = \d+/.test(page) && !/\b(cookies|headers)\(\)|searchParams|await |fetch\(/.test(strip(page)), "static page with the new title");
 assert.ok(read("components/app/home/HomeBoxes.tsx").includes("Shortlist Lab") && read("components/app/VisitorIntroStrip.tsx").includes(HOME_BUTTON), "home buttons");
 const stockPage = read("app/(app)/stocks/[symbol]/page.tsx");
