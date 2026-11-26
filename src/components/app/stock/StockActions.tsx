@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell } from "lucide-react";
 
-import { AlertCreateButton } from "@/components/app/alerts/AlertCreateButton";
+import dynamic from "next/dynamic";
+
 import { CompareIndicator } from "@/components/app/CompareIndicator";
 import { ReportActions } from "@/components/app/report/ReportActions";
 import { WatchlistButton } from "@/components/app/WatchlistButton";
@@ -12,6 +13,9 @@ import { StockExcelButton } from "@/components/app/stock/StockExcelButton";
 import { InlineSignup } from "@/components/app/InlineSignup";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { signupHref } from "@/lib/nav-items";
+
+// the alert form pulls in the notification and sign-in libraries (120 KB); it is fetched only for a signed-in visitor (26 Nov 2026)
+const AlertCreateButton = dynamic(() => import("@/components/app/alerts/AlertCreateButton").then((m) => m.AlertCreateButton), { ssr: false });
 
 const BTN = "flex items-center gap-1 rounded-lg border border-border bg-hover px-3 py-1.5 text-xs font-medium text-foreground-muted hover:text-foreground";
 
