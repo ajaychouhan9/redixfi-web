@@ -1,3 +1,4 @@
+import { staticMeta } from "@/lib/seo/page-meta";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SignalsPageBody } from "@/components/app/signals/SignalsPageBody";
@@ -5,11 +6,7 @@ import { GuestOnly } from "@/components/app/GuestOnly";
 import { getSignals, getSharedScreen } from "@/lib/api/endpoints";
 import { START_RESULTS_NOTE, screenerParamsFromQuery } from "@/lib/start-here";
 
-export const metadata: Metadata = {
-  title: "Stock Screener: filter NSE stocks by delivery, volume, 52-week range and volatility",
-  alternates: { canonical: "/signals" },
-  description: "Filter 2,000+ NSE stocks by measured delivery, volume against its usual level, distance from the 52-week high and volatility, with the sources stated.",
-};
+export const metadata: Metadata = staticMeta("/signals");
 
 export default async function SignalsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   // PERF_ANALYSIS_2026-10-05 fix (2026-10-07): these 3 fetches are mutually

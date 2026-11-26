@@ -1,3 +1,4 @@
+import { staticMeta } from "@/lib/seo/page-meta";
 import type { Metadata } from "next";
 
 import { MarketOverviewCards } from "@/components/app/market/MarketOverviewCards";
@@ -10,13 +11,7 @@ const DESCRIPTION =
 // The page makes no request of its own; a refresh window keeps the cached copy from outliving a deploy (a fully static page is sent with a one-year cache lifetime).
 export const revalidate = 300;
 
-export const metadata: Metadata = {
-  title: { absolute: TITLE },
-  description: DESCRIPTION,
-  alternates: { canonical: "/market" },
-  openGraph: { title: TITLE, description: DESCRIPTION, type: "website", url: "https://www.redixfi.com/market", images: [SHARE_IMAGE] },
-  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: [SHARE_IMAGE.url] },
-};
+export const metadata: Metadata = staticMeta("/market");
 
 /** Static shell: the four cards are fixed text; only the small date tags are read in the browser. */
 export default function MarketOverviewPage() {

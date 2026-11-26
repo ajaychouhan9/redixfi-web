@@ -1,3 +1,4 @@
+import { staticMeta } from "@/lib/seo/page-meta";
 import type { Metadata } from "next";
 import { getAnomalies } from "@/lib/api/endpoints";
 import { AnomalyCard } from "@/components/app/AnomalyCard";
@@ -15,11 +16,7 @@ import { formatObservationDate } from "@/lib/format";
 // The page makes no request of its own; a refresh window keeps the cached copy from outliving a deploy (a fully static page is sent with a one-year cache lifetime).
 export const revalidate = 300;
 
-export const metadata: Metadata = {
-  title: "Unusual Activity",
-  alternates: { canonical: "/unusual-activity" },
-  description: "Every stock that met a disclosed statistical threshold today — volume, options positioning, or a concentrated insider-filing window. Not a recommendation.",
-};
+export const metadata: Metadata = staticMeta("/unusual-activity");
 
 export default async function UnusualActivityPage() {
   // Same allSettled-style resilience as the Home page's own fetch of this

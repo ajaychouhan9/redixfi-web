@@ -75,7 +75,7 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\
   assert.equal(neighbourTab("overview", -1), "ask-ai");
   // lazy: a panel is mounted only after it was opened
   const tabs = strip(read("components/app/stock/StockTabs.tsx"));
-  assert.ok(tabs.includes("visited.has(t.id) ?") && tabs.includes('hidden={active !== t.id}') && tabs.includes("new Set([DEFAULT_STOCK_TAB])"), "only the opened tabs are mounted; Overview first");
+  assert.ok(tabs.includes("visited.has(t.id) || SERVER_RENDERED.has(t.id) ?") && tabs.includes('hidden={active !== t.id}') && tabs.includes("new Set([DEFAULT_STOCK_TAB])"), "the interactive tabs are mounted when opened, the reading tabs are in the server HTML; Overview first");
   assert.ok(tabs.includes('role="tablist"') && tabs.includes('role="tab"') && tabs.includes('role="tabpanel"') && tabs.includes("ArrowRight"), "accessible tabs");
   assert.ok(tabs.includes("hashchange") && tabs.includes("tabFromHash(window.location.hash)"), "an address fragment opens a tab");
   const rewind = strip(read("components/app/stock/RewindTab.tsx"));

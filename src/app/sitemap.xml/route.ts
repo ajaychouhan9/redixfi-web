@@ -1,3 +1,4 @@
+import { isThinRow } from "@/lib/seo/thin";
 import { getSevenDayReview, getSignals } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { unstable_cache } from "next/cache";
@@ -125,7 +126,8 @@ async function completeSitemapData(): Promise<SitemapData> {
     return response.data;
   });
   // A malformed symbol is left out on its own; it never empties the stock list.
-  const good = rows.filter((row) => isCanonicalPublicSymbol(row?.symbol));
+  // a stock with no key numbers and no price is noindex on its own page, so it is not listed either (26 Nov 2026)
+  const good = rows.filter((row) => isCanonicalPublicSymbol(row?.symbol) && !isThinRow(row as never));
   if (good.length !== total) console.warn(`[sitemap] Skipped ${total - good.length} malformed stock symbol(s).`);
   const seen = new Set<string>();
   const stocks = good.map((row) => {

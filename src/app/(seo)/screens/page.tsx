@@ -1,3 +1,4 @@
+import { staticMeta } from "@/lib/seo/page-meta";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CANNED_SCREENS } from "@/data/canned-screens";
@@ -6,11 +7,7 @@ import { getSignals } from "@/lib/api/endpoints";
 
 export const revalidate = 600;
 
-export const metadata: Metadata = {
-  title: "Stock Screens",
-  alternates: { canonical: "/screens" },
-  description: "Run measurable, factual stock screens across NSE/BSE — high delivery, volume against its usual level, distance from the 52-week high and news in the last 5 days — no login required.",
-};
+export const metadata: Metadata = staticMeta("/screens");
 
 export default async function ScreensIndexPage() {
   // The reported-figure screens are listed only when the API can run their filters.

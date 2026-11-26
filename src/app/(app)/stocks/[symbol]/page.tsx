@@ -1,3 +1,5 @@
+import { SITE, stockDescription, stockTitle } from "@/lib/seo/page-meta";
+import { isThinStock } from "@/lib/seo/thin";
 import { InlineSignup } from "@/components/app/InlineSignup";
 import { humanizeDates } from "@/lib/human-date";
 import { StockSignupOffer } from "@/components/app/StockSignupOffer";
@@ -15,7 +17,7 @@ import { isTradeForTrade } from "@/lib/stock-clarity";
 import type { Metadata } from "next";
 import { cache } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { AskPrefill } from "@/components/app/stock/AskPrefill";
 import { getChart, getResearch, getSignalDetail, getSignals, getVolatility } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
@@ -84,14 +86,11 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
   if (!normalizedSymbol) return { title: "Stock not found", robots: { index: false, follow: false } };
   const data = await loadCompany(normalizedSymbol);
   if (!data) return { title: `${symbol.toUpperCase()} not found`, robots: { index: false, follow: false } };
-  const title = pageTitle(data.company_name, data.symbol);
-  const description = metaDescription({
-    company: data.company_name,
-    symbol: data.symbol,
-    price: data.price.last_price,
-    dayChangePct: data.price.day_change_pct,
-    quarterEnd: data.fundamentals?.quarterly?.latest_quarter_end ?? null,
-  });
+  // 26 Nov 2026: "BEL share price, concall summary & insider trades | RedixFi" (60 characters at most) and a 155-character description in plain words.
+  const title = stockTitle(data.symbol);
+  const description = stockDescription(data.company_name, data.symbol);
+  // A stock with neither key numbers nor a price has nothing to show: it stays out of search results (and out of the sitemap) until data exists.
+  const thin = isThinStock(keyTiles(data.fundamentals).length, data.price.last_price);
   const ogImage = `/api/og?${new URLSearchParams({
     type: "stock",
     title: data.symbol,
@@ -104,7 +103,8 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
     title: { absolute: title },
     description,
     alternates: { canonical: stockPath("/stocks", data.symbol) },
-    openGraph: { title: `${data.company_name} (${data.symbol})`, description, type: "website", images: [{ url: ogImage, width: 1200, height: 630 }] },
+    ...(thin ? { robots: { index: false, follow: true } } : {}),
+    openGraph: { type: "website", siteName: "RedixFi", url: `${SITE}${stockPath("/stocks", data.symbol)}`, title, description, images: [{ url: ogImage, width: 1200, height: 630, alt: `${data.company_name} (${data.symbol}) price card` }] },
     twitter: { card: "summary_large_image", title, description, images: [ogImage] },
   };
 }
@@ -142,6 +142,8 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
   const { symbol } = await params;
   const normalizedSymbol = stockSymbolFromParam(symbol);
   if (!normalizedSymbol) notFound();
+  // /stocks/bel is the same page as /stocks/BEL: one address, so the lower-case one is a permanent redirect
+  if (decodeURIComponent(symbol) !== normalizedSymbol) permanentRedirect(stockPath("/stocks", normalizedSymbol));
   const data = await loadCompany(normalizedSymbol);
   if (!data) notFound();
 
@@ -212,18 +214,18 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
     .filter((l) => !l.endsWith(": "));
   const insiderLines = insider.slice(0, 3).filter((t) => t.trade_date).map((t) => `${personCategory(t)}: ${sideLabel(t.transaction_type)}, ${safeNumber(t.quantity)} shares, on ${dateOf(t.trade_date as string)}.`);
   const quick: QuickBlock[] = [
-    { id: "concall", title: "From the concall", lines: concallLines, note: concalls[0] ? `Filed ${dateOf(concalls[0].filing_date)}` : null, tab: "concall", tabLabel: "Open the Concall tab" },
-    { id: "points", title: "Points to watch", lines: pointLines, note: "From the company's filings, with dates", tab: "points-to-watch", tabLabel: "See all points to watch" },
-    { id: "insiders", title: "Insider & promoter activity", lines: insiderLines, note: "Filed disclosures, shown by category. Names are not shown.", tab: "insiders", tabLabel: "See all" },
+    { id: "concall", title: `${sym} concall summary`, lines: concallLines, note: concalls[0] ? `Filed ${dateOf(concalls[0].filing_date)}` : null, tab: "concall", tabLabel: "Open the Concall tab" },
+    { id: "points", title: `${sym} points to watch`, lines: pointLines, note: "From the company's filings, with dates", tab: "points-to-watch", tabLabel: "See all points to watch" },
+    { id: "insiders", title: `${sym} insider and promoter activity`, lines: insiderLines, note: "Filed disclosures, shown by category. Names are not shown.", tab: "insiders", tabLabel: "See all" },
   ];
 
   // ---- Overview: price chart, key numbers, revenue and profit, shareholding, short reads; then the plain questions and the trading readings
   const overview = (
     <>
       <StockPriceChart symbol={sym} closes={closes} has5y={has5y} lastPrice={data.price.last_price} sentence={priceSentence(allCloses)} prevClose={prevClose} />
-      <KeyNumbers tiles={tiles} asOf={tilesAsOf} />
-      <RevenueProfit yearly={yearly} quarterly={quarterly} />
-      <Shareholding points={holds} />
+      <KeyNumbers tiles={tiles} asOf={tilesAsOf} symbol={sym} />
+      <RevenueProfit yearly={yearly} quarterly={quarterly} symbol={sym} />
+      <Shareholding points={holds} symbol={sym} />
       <QuickReads blocks={quick} />
       <div className="mt-7 border-t border-border" />
       <SimpleChecklist data={data} today={istToday()} priceLabel={priceLabel} />
@@ -238,7 +240,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
         </div>
       </Section>
 
-      <Section id="delivery" title="Delivery and volume" note={readingsDate ? `As of ${dateOf(readingsDate)} close` : undefined}>
+      <Section id="delivery" title={`${sym} delivery percentage and volume`} note={readingsDate ? `As of ${dateOf(readingsDate)} close` : undefined}>
         <div className="grid grid-cols-2 gap-2">
           {detail && detail.signals.delivery_series !== "BE" && typeof detail.signals.delivery_pct === "number" && (
             <Fact label="Delivery share" note={`20-day average ${pct(detail.signals.delivery_avg20)}`}>{pct(detail.signals.delivery_pct)}</Fact>
@@ -326,7 +328,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
           <p className="text-sm text-foreground-muted">No annual report summary is stored for this stock yet.</p>
         </Section>
       )}
-      <Section id="results" title="Quarterly results" note={q?.latest_quarter_end ? `Latest quarter ended ${quarterDate(q.latest_quarter_end)}. Figures in ₹ crore as reported.` : undefined}>
+      <Section id="results" title={`${sym} quarterly results`} note={q?.latest_quarter_end ? `Latest quarter ended ${quarterDate(q.latest_quarter_end)}. Figures in ₹ crore as reported.` : undefined}>
         {series.length > 0 ? (
           <DataTable
             caption="Quarterly results, last eight quarters"
@@ -359,7 +361,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
   );
 
   const concallPanel = (
-    <Section id="concall-summaries" title="Concall summaries" note="Summaries of the earnings transcripts the company has filed, with the source filing.">
+    <Section id="concall-summaries" title={`${sym} concall summaries by filing`} note="Summaries of the earnings transcripts the company has filed, with the source filing.">
       {concalls.length > 0 ? (
         <ul className="space-y-3">
           {concalls.map((c) => (
@@ -433,7 +435,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
         )}
       </Section>
 
-      <Section id="insider" title="Insider trade disclosures" note="Filed disclosures, shown by trade date. Category of the person and mode as filed; names are not shown.">
+      <Section id="insider" title={`${sym} insider trade disclosures`} note="Filed disclosures, shown by trade date. Category of the person and mode as filed; names are not shown.">
         {insider.length > 0 ? (
           <DataTable
             caption="Latest insider trade disclosures"

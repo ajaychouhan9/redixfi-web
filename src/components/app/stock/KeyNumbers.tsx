@@ -8,12 +8,12 @@ import type { KeyTile } from "@/lib/stock-visual";
  * The key numbers grid (26 Nov 2026): grey label on the left, bold value on the right, two columns. Tap a number to see one plain line about it.
  * The numbers are in the server HTML; only the tap is client code. A figure that is not stored makes no tile.
  */
-export function KeyNumbers({ tiles, asOf }: { tiles: KeyTile[]; asOf: string | null }) {
+export function KeyNumbers({ tiles, asOf, symbol }: { tiles: KeyTile[]; asOf: string | null; symbol?: string }) {
   const [open, setOpen] = useState<string | null>(null);
   if (tiles.length === 0) return null;
   return (
     <section aria-labelledby="key-numbers" className="mt-7 border-t border-border pt-6" data-testid="key-numbers">
-      <h2 id="key-numbers" className="text-lg font-bold">Key numbers</h2>
+      <h2 id="key-numbers" className="text-lg font-bold">{symbol ? `${symbol} key numbers` : "Key numbers"}</h2>
       <dl className="mt-2 grid grid-cols-2 gap-x-6">
         {tiles.map((t) => {
           const on = open === t.key;

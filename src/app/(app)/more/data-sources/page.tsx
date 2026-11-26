@@ -1,3 +1,4 @@
+import { staticMeta } from "@/lib/seo/page-meta";
 import type { Metadata } from "next";
 import { getDataStatus, getMarketOverview } from "@/lib/api/endpoints";
 import { FreshnessDot } from "@/components/ui/FreshnessDot";
@@ -6,11 +7,7 @@ import { quarterDate } from "@/lib/seo/stock-facts";
 import { ROCE_DATA_NOTE } from "@/lib/roce";
 import type { DataStatus } from "@/lib/api/types";
 
-export const metadata: Metadata = {
-  title: "Data sources & update times",
-  description: "Where RedixFi's prices, delivery, options, filings and news data come from, the date of the newest data in each source, and how many stocks have each main field.",
-  alternates: { canonical: "/more/data-sources" },
-};
+export const metadata: Metadata = staticMeta("/more/data-sources");
 
 export const revalidate = 600;
 

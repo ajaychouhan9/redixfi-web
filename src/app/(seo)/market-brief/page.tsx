@@ -1,3 +1,4 @@
+import { staticMeta } from "@/lib/seo/page-meta";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLatestBrief } from "@/lib/api/endpoints";
@@ -12,11 +13,7 @@ import { AiLabel } from "@/components/ui/AiLabel";
 // dynamic).
 export const revalidate = 300;
 
-export const metadata: Metadata = {
-  title: "Market Brief Archive",
-  alternates: { canonical: "/market-brief" },
-  description: "RedixFi's AI-written daily market recap — measured facts from the day's data, labeled AI-generated.",
-};
+export const metadata: Metadata = staticMeta("/market-brief");
 
 export default async function MarketBriefIndexPage() {
   const brief = await getLatestBrief({ revalidate: 300 });

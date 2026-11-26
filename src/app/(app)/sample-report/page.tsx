@@ -1,3 +1,4 @@
+import { staticMeta } from "@/lib/seo/page-meta";
 import { SampleReportCta } from "@/components/app/report/SampleReportCta";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -18,19 +19,7 @@ const OG_IMAGE = `/api/og?${new URLSearchParams({
   subtitle: "Measured facts, filing summaries and sources in one PDF",
 }).toString()}`;
 
-export const metadata: Metadata = {
-  title: TITLE,
-  description: DESCRIPTION,
-  alternates: { canonical: "/sample-report" },
-  openGraph: {
-    title: `${TITLE} | RedixFi`,
-    description: DESCRIPTION,
-    type: "website",
-    url: `${SITE_URL}/sample-report`,
-    images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: "RedixFi sample company report" }],
-  },
-  twitter: { card: "summary_large_image", title: `${TITLE} | RedixFi`, description: DESCRIPTION, images: [OG_IMAGE] },
-};
+export const metadata: Metadata = staticMeta("/sample-report");
 
 export const revalidate = 3600;
 

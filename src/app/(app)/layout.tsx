@@ -2,6 +2,7 @@ import { Sidebar, BottomNav } from "@/components/layout/Sidebar";
 import { MarketRibbon } from "@/components/layout/MarketRibbon";
 import { AiDockShell } from "@/components/layout/AiDockShell";
 import { FooterDisclaimer } from "@/components/layout/FooterDisclaimer";
+import { RouteBreadcrumbs } from "@/components/seo/RouteBreadcrumbs";
 import { TrialStatusBar } from "@/components/layout/TrialStatusBar";
 import { ExitSurvey, WelcomeGuide } from "@/components/app/TrialGuides";
 import { ChannelDiscoveryBanner } from "@/components/app/ChannelDiscoveryBanner";
@@ -58,7 +59,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             dedicated section inside Account → Alerts. */}
         <ChannelDiscoveryBanner />
         <InstallBanner />
-        <main className="mb-14 flex-1 px-4 py-4 md:mb-0 md:px-6 md:py-6">{children}</main>
+        <main className="mb-14 flex-1 px-4 py-4 md:mb-0 md:px-6 md:py-6">
+          <div className="mx-auto max-w-4xl"><RouteBreadcrumbs /></div>
+          {children}
+        </main>
         <FooterDisclaimer />
       </AiDockShell>
       <BottomNav />

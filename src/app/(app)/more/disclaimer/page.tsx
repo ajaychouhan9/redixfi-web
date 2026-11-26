@@ -1,14 +1,11 @@
+import { staticMeta } from "@/lib/seo/page-meta";
 import { FULL_DISCLAIMER_LINE } from "@/lib/compliance/standard-line";
 import type { Metadata } from "next";
 
 // The page makes no request of its own; a refresh window keeps the cached copy from outliving a deploy (a fully static page is sent with a one-year cache lifetime).
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  title: "Disclaimer",
-  description: "RedixFi shows market data for information only. It is not advice to buy or sell any stock and it makes no predictions.",
-  alternates: { canonical: "/more/disclaimer" },
-};
+export const metadata: Metadata = staticMeta("/more/disclaimer");
 
 export default function DisclaimerPage() {
   return (

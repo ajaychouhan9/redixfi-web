@@ -1,3 +1,4 @@
+import { staticMeta } from "@/lib/seo/page-meta";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage } from "@/components/app/LegalPage";
@@ -6,11 +7,7 @@ import { LEGAL } from "@/lib/legal";
 // The page makes no request of its own; a refresh window keeps the cached copy from outliving a deploy (a fully static page is sent with a one-year cache lifetime).
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  title: "Privacy Policy",
-  description: "What personal data RedixFi collects, why, who else handles it, how long it is kept, and your rights to access, correct and delete it.",
-  alternates: { canonical: "/more/privacy" },
-};
+export const metadata: Metadata = staticMeta("/more/privacy");
 
 export default function PrivacyPage() {
   return (

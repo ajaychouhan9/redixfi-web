@@ -91,12 +91,14 @@ assert.ok(strip(read("components/app/ask/AskRedixFi.tsx")).includes("left of ${u
 assert.deepEqual(PLAN_MATRIX.filter((r) => /Ask AI/.test(r.feature)).map((r) => r.feature), ["Ask AI chat", "Ask AI reports", "Ask AI chat history kept"]);
 assert.ok(!SEO_TITLE.includes("RedixFi"), "the brand is added once, by the site title template");
 const page = read("app/(app)/shortlist-lab/page.tsx");
-assert.ok(page.includes("images: [SHARE_IMAGE]") && page.includes("twitter:") && page.includes("images: [SHARE_IMAGE.url]"), "og:image and twitter:image on /shortlist-lab");
+// 26 Nov 2026: every page's share tags come from one place (lib/seo/page-meta.ts): the branded 1200x630 card, the page's own og:url, the same text for Twitter.
+const pm = read("lib/seo/page-meta.ts");
+assert.ok(pm.includes("OG_IMAGES") && pm.includes("twitter: { card: \"summary_large_image\"") && pm.includes("images: [OG_IMAGE_PATH]") && page.includes('staticMeta("/shortlist-lab")'), "og:image and twitter:image on /shortlist-lab");
 for (const f of ["app/(app)/market/page.tsx", "app/(app)/intraday/page.tsx", "app/(app)/pulse/page.tsx", "app/(app)/gainers-losers/page.tsx", "app/(app)/volatility/page.tsx", "app/(app)/how-it-works/page.tsx", "app/(seo)/weekly/page.tsx"]) {
   const src = read(f);
-  assert.ok(src.includes("images: [SHARE_IMAGE]") && src.includes("images: [SHARE_IMAGE.url]"), `${f}: og:image and twitter:image`);
+  assert.ok(src.includes("staticMeta(") || src.includes("seoMeta("), `${f}: og:image and twitter:image come from the shared helper`);
 }
-assert.ok(read("app/(app)/how-it-works/page.tsx").includes('title: "How the readings are measured",'), "the brand is not repeated in the How it works title");
+assert.ok(pm.includes('"/how-it-works": { title: "How the readings are measured",') && !pm.includes("How the readings are measured | RedixFi\""), "the brand is added once to the How it works title");
 const sitemap = read("app/sitemap.xml/route.ts");
 assert.ok(sitemap.includes('"/shortlist-lab"') && !sitemap.includes('"/stock-check"') && !sitemap.includes('"/start"'), "sitemap lists /shortlist-lab only");
 

@@ -12,6 +12,10 @@ import { REWIND_HINT } from "@/lib/rewind-simple";
  * the server HTML. Opened tabs stay mounted (hidden) so switching back is instant and keeps their state.
  * The address fragment follows the tab (/stocks/INFY#rewind) without scrolling, and a fragment (or ?tab=) opens that tab on arrival.
  */
+// The reading tabs are plain server-rendered text, so they are in the page HTML (and read by search engines) even before they are opened; the two heavy,
+// interactive tabs (Rewind, Ask AI) still load only when first opened.
+const SERVER_RENDERED = new Set<StockTabId>(["annual-report", "concall", "points-to-watch", "news", "insiders"]);
+
 export function StockTabs({ panels }: { panels: Partial<Record<StockTabId, ReactNode>> }) {
   const [active, setActive] = useState<StockTabId>(DEFAULT_STOCK_TAB);
   const [visited, setVisited] = useState<Set<StockTabId>>(() => new Set([DEFAULT_STOCK_TAB]));
@@ -78,7 +82,7 @@ export function StockTabs({ panels }: { panels: Partial<Record<StockTabId, React
       </div>
       {STOCK_TABS.map((t) => (
         <div key={t.id} role="tabpanel" id={`panel-${t.id}`} aria-labelledby={`tab-${t.id}`} hidden={active !== t.id} data-testid={`panel-${t.id}`} className="pt-2">
-          {visited.has(t.id) ? panels[t.id] ?? null : null}
+          {visited.has(t.id) || SERVER_RENDERED.has(t.id) ? panels[t.id] ?? null : null}
         </div>
       ))}
     </div>

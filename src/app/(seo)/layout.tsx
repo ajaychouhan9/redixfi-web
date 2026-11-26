@@ -1,3 +1,4 @@
+import { RouteBreadcrumbs } from "@/components/seo/RouteBreadcrumbs";
 import { FooterDisclaimer } from "@/components/layout/FooterDisclaimer";
 import Link from "next/link";
 import { RedixFiLogo } from "@/components/brand/RedixFiLogo";
@@ -24,7 +25,10 @@ export default function SeoLayout({ children }: { children: React.ReactNode }) {
           </Link>
         </nav>
       </header>
-      <main className="flex-1 px-4 py-6 sm:px-6">{children}</main>
+      <main className="flex-1 px-4 py-6 sm:px-6">
+        <div className="mx-auto max-w-4xl"><RouteBreadcrumbs /></div>
+        {children}
+      </main>
       <FooterDisclaimer />
     </div>
   );

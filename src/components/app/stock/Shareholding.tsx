@@ -15,7 +15,7 @@ const ROWS: { key: "promoter" | "fii" | "mf" | "other"; label: string }[] = [
  * Shareholding (26 Nov 2026): the stored quarters as chips, then one bar for each holder group with its %. "Others" is everything that is not
  * promoter, FII or mutual funds. Shown only when at least one quarter is stored.
  */
-export function Shareholding({ points }: { points: HoldPoint[] }) {
+export function Shareholding({ points, symbol }: { points: HoldPoint[]; symbol?: string }) {
   const [i, setI] = useState(points.length - 1);
   if (points.length === 0) return null;
   const p = points[Math.min(i, points.length - 1)];
@@ -24,7 +24,7 @@ export function Shareholding({ points }: { points: HoldPoint[] }) {
   const sentences = [holdSentence(points, "fii", "FII"), holdSentence(points, "promoter", "Promoter")].filter((s): s is string => !!s);
   return (
     <section aria-labelledby="share-hold" className="mt-7 border-t border-border pt-6" data-testid="shareholding-visual">
-      <h2 id="share-hold" className="text-lg font-bold">Shareholding</h2>
+      <h2 id="share-hold" className="text-lg font-bold">{symbol ? `${symbol} shareholding pattern` : "Shareholding"}</h2>
       <div role="group" aria-label="Quarter" className="mt-3 flex flex-wrap gap-2">
         {points.map((q, k) => (
           <button key={q.date} type="button" aria-pressed={k === i} onClick={() => setI(k)} data-testid={`hold-chip-${k}`} className={`min-h-[44px] rounded-full border px-4 text-[13px] ${k === i ? "border-foreground font-bold text-foreground" : "border-border font-medium text-foreground-muted"}`}>

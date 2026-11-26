@@ -1,3 +1,4 @@
+import { STATIC_META, seoMeta } from "@/lib/seo/page-meta";
 import type { Metadata } from "next";
 
 import { IntradayTabs } from "@/components/app/intraday/tabs/IntradayTabs";
@@ -26,14 +27,7 @@ function tabOf(sp: Record<string, string | string[] | undefined>): IntradayTabId
 /** The plain /intraday page is indexed. A tab chosen with ?tab= points back to it and is not indexed (no duplicate content between tabs). */
 export async function generateMetadata({ searchParams }: { searchParams: SP }): Promise<Metadata> {
   const withQuery = Object.keys((await searchParams) ?? {}).length > 0;
-  return {
-    title: { absolute: INTRADAY_SEO_TITLE },
-    description: INTRADAY_SEO_DESCRIPTION,
-    alternates: { canonical: INTRADAY_PATH },
-    robots: withQuery ? { index: false, follow: true } : { index: true, follow: true },
-    openGraph: { title: INTRADAY_SEO_TITLE, description: INTRADAY_SEO_DESCRIPTION, type: "website", url: `${SITE_URL}${INTRADAY_PATH}`, images: [SHARE_IMAGE] },
-    twitter: { card: "summary_large_image", title: INTRADAY_SEO_TITLE, description: INTRADAY_SEO_DESCRIPTION, images: [SHARE_IMAGE.url] },
-  };
+  return { ...seoMeta({ ...STATIC_META["/intraday"], path: "/intraday", index: !withQuery }) };
 }
 
 // The tab shown first depends on the Indian clock (before 9:15 Morning, 9:15 to 15:30 Scan, after 15:30 Recap; a weekend or holiday shows the last

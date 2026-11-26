@@ -22,15 +22,18 @@ function Idx({ name, close, pct }: { name: string; close: number; pct: number | 
 /** Nifty 50 and Nifty Bank under the Home search: value, signed coloured change and the time. An index that is not stored is left out; no data hides the strip. */
 export function HomeMarketStrip() {
   const [o, setO] = useState<MarketOverview | null>(null);
+  const [failed, setFailed] = useState(false);
   useEffect(() => {
     let cancelled = false;
     // @auth-ok: the index snapshot is the same for every visitor.
-    getMarketOverview({ revalidate: 300 }).then((env) => !cancelled && setO(env.data)).catch(() => undefined);
+    getMarketOverview({ revalidate: 300 }).then((env) => !cancelled && setO(env.data)).catch(() => !cancelled && setFailed(true));
     return () => {
       cancelled = true;
     };
   }, []);
   const ok = (q: MarketOverview["nifty"] | null | undefined) => !!q && typeof q.close === "number" && Number.isFinite(q.close);
+  // while the figures load the strip keeps its height, so the cards below do not jump (layout shift); with no data it is gone
+  if (!o && !failed) return <div className="h-[112px] border-y border-border" aria-hidden data-testid="home-market-strip-loading" />;
   if (!o || (!ok(o.nifty) && !ok(o.banknifty))) return null;
   const asOf = stripAsOf(o);
   return (
