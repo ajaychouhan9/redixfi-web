@@ -148,6 +148,7 @@ export default async function ScreenPage({ params }: { params: Promise<{ slug: s
       {/* eslint-disable-next-line react/no-danger */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
+      <Breadcrumbs crumbs={[{ name: "Home", href: "/" }, { name: "Stock screens", href: "/screens" }, { name: screen.title, href: `/screens/${screen.slug}` }]} />
       <h1 className="mb-1 text-xl font-semibold">{screen.title}</h1>
       <p className="mb-4 text-sm text-foreground-muted">{screen.description}</p>
 
