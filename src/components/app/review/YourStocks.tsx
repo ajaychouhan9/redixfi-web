@@ -46,7 +46,7 @@ export function YourStocks() {
   if (mine.status === "anonymous") {
     return (
       <p className="px-1 text-sm text-foreground-muted" data-testid="mine-login">
-        <Link href="/login" className="inline-flex min-h-[44px] items-center font-medium text-foreground underline decoration-accent underline-offset-2 hover:decoration-2">
+        <Link prefetch={false} href="/login" className="inline-flex min-h-[44px] items-center font-medium text-foreground underline decoration-accent underline-offset-2 hover:decoration-2">
           {REVIEW_LOGIN_PROMPT}
         </Link>
       </p>

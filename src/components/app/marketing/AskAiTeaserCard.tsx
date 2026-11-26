@@ -59,7 +59,7 @@ export function AskAiTeaserCard() {
         </div>
       </div>
 
-      <Link href="/login?mode=signup" className="mt-4 inline-block text-sm font-medium text-accent hover:underline">
+      <Link prefetch={false} href="/login?mode=signup" className="mt-4 inline-block text-sm font-medium text-accent hover:underline">
         Ask your own question →
       </Link>
     </div>

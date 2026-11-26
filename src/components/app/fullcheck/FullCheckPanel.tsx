@@ -272,7 +272,7 @@ export function FullCheckPanel() {
   if (!user) {
     return (
       <p className="text-sm text-foreground-muted">
-        <Link href="/login" className="underline">Log in</Link> to run a full check on your shortlist.
+        <Link prefetch={false} href="/login" className="underline">Log in</Link> to run a full check on your shortlist.
       </p>
     );
   }

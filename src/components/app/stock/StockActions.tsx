@@ -30,7 +30,7 @@ export function StockActions({ symbol, companyName }: { symbol: string; companyN
         <AlertCreateButton symbol={symbol} />
       ) : (
         !loading && (
-          <Link href={signupHref(pathname)} className={BTN} data-testid="alert-signup">
+          <Link prefetch={false} href={signupHref(pathname)} className={BTN} data-testid="alert-signup">
             <Bell size={12} aria-hidden /> Set alert
           </Link>
         )

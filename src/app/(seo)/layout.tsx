@@ -20,7 +20,7 @@ export default function SeoLayout({ children }: { children: React.ReactNode }) {
           <Link href="/pricing" className="text-foreground-muted hover:text-foreground">
             Pricing
           </Link>
-          <Link href="/login" className="rounded-lg bg-accent px-3 py-1.5 font-medium text-accent-foreground">
+          <Link prefetch={false} href="/login" className="rounded-lg bg-accent px-3 py-1.5 font-medium text-accent-foreground">
             Log in
           </Link>
         </nav>

@@ -5,8 +5,7 @@ import { humanizeDates } from "@/lib/human-date";
 import { StockSignupOffer } from "@/components/app/StockSignupOffer";
 import { StockTabs } from "@/components/app/stock/StockTabs";
 import { StockActions } from "@/components/app/stock/StockActions";
-import { RewindTab } from "@/components/app/stock/RewindTab";
-import { AskAiTab } from "@/components/app/stock/AskAiTab";
+import { LazyAskAiTab, LazyRewindTab } from "@/components/app/stock/LazyTabs";
 import { LazyPriceChart } from "@/components/app/stock/LazyPriceChart";
 import { SimpleChecklist } from "@/components/app/stock/SimpleChecklist";
 import { AnnualReportSummaryCard } from "@/components/app/research/AnnualReportSummaryCard";
@@ -508,8 +507,8 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
           "points-to-watch": pointsPanel,
           news: newsPanel,
           insiders: insidersPanel,
-          rewind: <RewindTab symbol={sym} />,
-          "ask-ai": <AskAiTab symbol={sym} company={data.company_name} />,
+          rewind: <LazyRewindTab symbol={sym} />,
+          "ask-ai": <LazyAskAiTab symbol={sym} company={data.company_name} />,
         }}
       />
 

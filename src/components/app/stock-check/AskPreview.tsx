@@ -106,7 +106,7 @@ export function AskPreview({ compact = false, only }: { compact?: boolean; only?
       </ul>
       <p className="text-xs font-medium text-foreground-muted" data-testid="ask-preview-note">{ASK_PREVIEW.note}</p>
       <p className="text-sm">
-        <Link href="/login" className="font-medium text-accent hover:underline" data-testid="ask-preview-login">
+        <Link prefetch={false} href="/login" className="font-medium text-accent hover:underline" data-testid="ask-preview-login">
           {ASK_PREVIEW.login}
         </Link>
       </p>

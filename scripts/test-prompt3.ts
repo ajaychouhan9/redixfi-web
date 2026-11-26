@@ -179,7 +179,7 @@ const noForbidden = (t: string, where: string) => {
 {
   const root = new URL("../src/", import.meta.url);
   const stock = readFileSync(new URL("app/(app)/stocks/[symbol]/page.tsx", root), "utf8");
-  for (const need of ["Breadcrumbs", "sectorPeers", "quarterDate", "formatPriceAsOf", "concall", "insider", "deals", "<RewindTab"]) assert.ok(stock.includes(need), "stock page has " + need);
+  for (const need of ["Breadcrumbs", "sectorPeers", "quarterDate", "formatPriceAsOf", "concall", "insider", "deals", "<LazyRewindTab"]) assert.ok(stock.includes(need), "stock page has " + need);
   assert.ok(stock.includes("alternates: { canonical: stockPath(\"/stocks\", data.symbol) }"), "canonical is the one stock page");
   assert.ok(!/tone_label|tone_note|composite_score|severity|net_direction|deal_strength/.test(stock), "stock page prints no tone, score, severity or deal verdict");
   const weekly = readFileSync(new URL("app/(seo)/weekly/[date]/page.tsx", root), "utf8");

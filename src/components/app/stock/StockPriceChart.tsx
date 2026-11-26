@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { LineChart } from "@/components/app/stock/LineChart";
 import { getChart } from "@/lib/api/endpoints";
 import type { Candle } from "@/lib/api/types";
 import { changeOver, dailyRangesAvailable, rangeWords, signedPct, signedRupees, sliceDaily, toneOf, type Close, type RangeKey } from "@/lib/stock-visual";
@@ -27,22 +28,7 @@ export function StockPriceChart({ symbol, closes, has5y, lastPrice, sentence, pr
   const [visible, setVisible] = useState(false);
   const [range, setRange] = useState<RangeKey | null>(null);
   const wrap = useRef<HTMLDivElement>(null);
-  const box = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<{ label: string; value: number } | null>(null);
-  const [theme, setTheme] = useState("");
-  // the chart script is fetched and run after the page has finished loading (and a short pause), so it never competes with the first paint (26 Nov 2026)
-  const [settled, setSettled] = useState(false);
-  useEffect(() => {
-    const go = () => window.setTimeout(() => setSettled(true), 1200);
-    if (document.readyState === "complete") {
-      const t = go();
-      return () => window.clearTimeout(t);
-    }
-    let t = 0;
-    const onLoad = () => { t = go(); };
-    window.addEventListener("load", onLoad, { once: true });
-    return () => { window.removeEventListener("load", onLoad); window.clearTimeout(t); };
-  }, []);
 
   // the chart code and the extra data are fetched only once the chart is near the screen
   useEffect(() => {
@@ -53,13 +39,6 @@ export function StockPriceChart({ symbol, closes, has5y, lastPrice, sentence, pr
     return () => io.disconnect();
   }, []);
 
-  useEffect(() => {
-    const read = () => setTheme(document.documentElement.dataset.theme ?? "");
-    read();
-    const mo = new MutationObserver(read);
-    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-    return () => mo.disconnect();
-  }, []);
 
   // today's 15-minute bars: loaded when the chart becomes visible
   useEffect(() => {
@@ -133,48 +112,6 @@ export function StockPriceChart({ symbol, closes, has5y, lastPrice, sentence, pr
 
   const tone = toneOf(change?.abs);
 
-  useEffect(() => {
-    const el = box.current;
-    if (!el || !visible || !settled || series.length < 2) return;
-    let disposed = false;
-    let chart: import("lightweight-charts").IChartApi | null = null;
-    (async () => {
-      const lw = await import("lightweight-charts");
-      if (disposed || !box.current) return;
-      const css = getComputedStyle(document.documentElement);
-      const cssVar = (n: string, fb: string) => css.getPropertyValue(n).trim() || fb;
-      const up = cssVar("--up-fill", cssVar("--up", "#00a86b"));
-      const down = cssVar("--down-fill", cssVar("--down", "#e5484d"));
-      const line = tone === "down" ? down : tone === "up" ? up : cssVar("--foreground-muted", "#6b7280");
-      chart = lw.createChart(box.current, {
-        autoSize: true,
-        height: 220,
-        layout: { textColor: cssVar("--foreground-muted", "#6b7280"), background: { type: lw.ColorType.Solid, color: "transparent" }, fontSize: 12, attributionLogo: false },
-        grid: { vertLines: { visible: false }, horzLines: { color: cssVar("--border", "#eeeeee") } },
-        rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.12, bottom: 0.1 } },
-        timeScale: { borderVisible: false, timeVisible: active === "1D", secondsVisible: false, fixLeftEdge: true, fixRightEdge: true },
-        handleScroll: false,
-        handleScale: false,
-        crosshair: { mode: lw.CrosshairMode.Magnet, vertLine: { labelVisible: false }, horzLine: { visible: false, labelVisible: false } },
-      });
-      const s = chart.addSeries(lw.LineSeries, { color: line, lineWidth: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerRadius: 4 });
-      s.setData(series.map((p) => ({ time: p.t as never, value: p.v })));
-      chart.timeScale().fitContent();
-      chart.subscribeCrosshairMove((param) => {
-        const d = param.seriesData.get(s) as { value?: number } | undefined;
-        if (!param.time || !d || typeof d.value !== "number") { setHover(null); return; }
-        const label = typeof param.time === "number"
-          ? new Date((param.time as number) * 1000).toISOString().slice(11, 16)
-          : typeof param.time === "string" ? param.time : "";
-        setHover({ label, value: d.value });
-      });
-    })();
-    return () => {
-      disposed = true;
-      chart?.remove();
-    };
-  }, [visible, settled, series, tone, theme, active]);
-
   if (!ranges.length) return null;
 
   const toneClass = tone === "up" ? "text-up" : tone === "down" ? "text-down" : "text-foreground-muted";
@@ -195,8 +132,8 @@ export function StockPriceChart({ symbol, closes, has5y, lastPrice, sentence, pr
           </p>
         ) : null}
       </div>
-      <div ref={box} className="mt-3 h-[220px] w-full" data-testid="chart-box" data-no-stack aria-hidden={series.length < 2}>
-        {(loadingRange || (visible && series.length < 2 && !failedRange)) && <div className="h-full w-full animate-pulse rounded bg-hover" aria-hidden="true" />}
+      <div className="mt-3 h-[220px] w-full" data-testid="chart-box" data-no-stack aria-hidden={series.length < 2}>
+        {series.length >= 2 ? <LineChart series={series} tone={tone} intraday={active === "1D"} onHover={setHover} /> : (loadingRange || (visible && !failedRange)) && <div className="h-full w-full animate-pulse rounded bg-hover" aria-hidden="true" />}
       </div>
       {failedRange && <p className="text-sm text-foreground-muted">The 5-year chart could not be loaded right now.</p>}
       <div role="group" aria-label="Chart range" className="mt-2 flex justify-between gap-1">

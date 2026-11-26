@@ -35,16 +35,16 @@ export function SiteInsights() {
     return () => obs.disconnect();
   }, []);
 
+  // STRICT masking (26 Nov 2026): all text on every page is masked, not only inputs and private pages. Recordings show where people tap, scroll and stop, never what
+  // is written. The sign-in, account, admin and watchlist pages are masked by the same rule; payment fields live in Razorpay's own window, which Clarity cannot see.
   useEffect(() => {
     if (!CLARITY_ID) return;
-    const priv = PRIVATE_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
-    if (priv) document.body.setAttribute("data-clarity-mask", "True");
-    else document.body.removeAttribute("data-clarity-mask");
+    document.body.setAttribute("data-clarity-mask", "True");
   }, [pathname]);
 
   if (!CLARITY_ID) return null;
   return (
-    <Script id="clarity" strategy="afterInteractive">
+    <Script id="clarity" strategy="lazyOnload">
       {`(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script",${JSON.stringify(CLARITY_ID)});`}
     </Script>
   );

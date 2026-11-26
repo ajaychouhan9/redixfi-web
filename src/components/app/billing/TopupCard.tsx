@@ -228,7 +228,7 @@ export function TopupInfo() {
       <p className="mt-3 text-sm text-foreground-muted" data-testid="topup-info-note">
         {loading ? "Available on Basic and Pro." : loggedIn ? "Available on Basic and Pro." : (
           <>
-            <Link href="/login" className="font-medium text-accent underline">
+            <Link prefetch={false} href="/login" className="font-medium text-accent underline">
               {/* compliance-ignore */}Log in to buy
             </Link>
             . Packs are available on Basic and Pro.

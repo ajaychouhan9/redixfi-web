@@ -205,7 +205,7 @@ export function RuleBottomBlock({ rules, sort, left, saved, limit, reload, activ
       {!user && (
         <p className="text-sm text-foreground-muted" data-testid="my-rules-loggedout">
           {LOGGED_OUT_LINE}{" "}
-          <Link href={signupHref("/shortlist-lab")} className="font-medium text-accent hover:underline">Sign up free</Link> or <Link href="/login" className="font-medium text-accent hover:underline">log in</Link>.
+          <Link prefetch={false} href={signupHref("/shortlist-lab")} className="font-medium text-accent hover:underline">Sign up free</Link> or <Link prefetch={false} href="/login" className="font-medium text-accent hover:underline">log in</Link>.
         </p>
       )}
       {asking && active && (
@@ -259,7 +259,7 @@ export function RulesListPage({ saved, limit, onOpen, onCreate, active }: ListPr
       {!user && (
         <p className="text-sm text-foreground-muted" data-testid="my-rules-loggedout-saved">
           {LOGGED_OUT_LINE}{" "}
-          <Link href={signupHref("/shortlist-lab")} className="font-medium text-accent hover:underline">Sign up free</Link> or <Link href="/login" className="font-medium text-accent hover:underline">log in</Link>.
+          <Link prefetch={false} href={signupHref("/shortlist-lab")} className="font-medium text-accent hover:underline">Sign up free</Link> or <Link prefetch={false} href="/login" className="font-medium text-accent hover:underline">log in</Link>.
         </p>
       )}
       {user && limit !== null && <p className="text-xs text-foreground-muted" data-testid="my-rules-plan">{PLAN_LINE(limit, saved.length)}</p>}

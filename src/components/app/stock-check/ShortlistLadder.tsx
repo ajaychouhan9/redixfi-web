@@ -461,7 +461,7 @@ export function ShortlistLadder() {
   };
   const capNote = !user ? (
     <>
-      The full list is included with a free account. <Link href={signupHref("/shortlist-lab")} className="font-medium text-accent hover:underline">Sign up free</Link>
+      The full list is included with a free account. <Link prefetch={false} href={signupHref("/shortlist-lab")} className="font-medium text-accent hover:underline">Sign up free</Link>
     </>
   ) : undefined;
   const nameLimit = !user ? NAMES_PAGE : undefined;
@@ -475,7 +475,7 @@ export function ShortlistLadder() {
       )}
       {withReport && !user && (
         <p className="text-sm text-foreground-muted" data-testid="create-report-loggedout">
-          Log in to create a report. <Link href={signupHref("/shortlist-lab")} className="font-medium text-accent hover:underline">Sign up free</Link> or <Link href="/login" className="font-medium text-accent hover:underline">log in</Link>.
+          Log in to create a report. <Link prefetch={false} href={signupHref("/shortlist-lab")} className="font-medium text-accent hover:underline">Sign up free</Link> or <Link prefetch={false} href="/login" className="font-medium text-accent hover:underline">log in</Link>.
         </p>
       )}
       {withReport && sheet === "live" && (
@@ -696,7 +696,7 @@ export function ShortlistLadder() {
           ) : (
             <p className="text-sm text-foreground-muted" data-testid="results-loggedout">
               {RESULTS_LOGGED_OUT}{" "}
-              <Link href={signupHref("/shortlist-lab")} className="font-medium text-accent hover:underline">Sign up free</Link> or <Link href="/login" className="font-medium text-accent hover:underline">log in</Link>.
+              <Link prefetch={false} href={signupHref("/shortlist-lab")} className="font-medium text-accent hover:underline">Sign up free</Link> or <Link prefetch={false} href="/login" className="font-medium text-accent hover:underline">log in</Link>.
             </p>
           )}
         </div>

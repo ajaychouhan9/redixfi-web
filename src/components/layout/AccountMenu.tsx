@@ -72,10 +72,10 @@ export function AccountPanel({ onClose, className }: { onClose: () => void; clas
       ) : (
         <nav className="p-1.5">
           <p className="px-3 py-2 text-xs text-foreground-muted">Log in to use your watchlist and alerts.</p>
-          <Link href="/login" role="menuitem" onClick={onClose} className={`${row} font-semibold text-foreground`} data-testid="account-login">
+          <Link prefetch={false} href="/login" role="menuitem" onClick={onClose} className={`${row} font-semibold text-foreground`} data-testid="account-login">
             <UserCircle size={16} className="shrink-0 text-accent" aria-hidden /> Log in
           </Link>
-          <Link href={signupHref("/")} role="menuitem" onClick={onClose} className={row} data-testid="account-signup">
+          <Link prefetch={false} href={signupHref("/")} role="menuitem" onClick={onClose} className={row} data-testid="account-signup">
             <Bookmark size={16} className="shrink-0 text-accent" aria-hidden /> Create a free account
           </Link>
           <Link href="/pricing" role="menuitem" onClick={onClose} className={row}>
@@ -121,7 +121,7 @@ export function UserMenu() {
     return (
       <div className="flex items-center gap-1">
         <ThemeToggle />
-        <Link href="/login" data-testid="header-login" className="flex min-h-[44px] items-center rounded-md bg-accent px-3 text-xs font-semibold text-accent-foreground md:min-h-0 md:py-1.5">
+        <Link prefetch={false} href="/login" data-testid="header-login" className="flex min-h-[44px] items-center rounded-md bg-accent px-3 text-xs font-semibold text-accent-foreground md:min-h-0 md:py-1.5">
           Log in
         </Link>
       </div>

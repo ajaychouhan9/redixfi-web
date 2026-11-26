@@ -16,7 +16,7 @@ export function HomeTrialLine() {
       <HomePricingStrip />
       <p className="text-center text-[13px] text-foreground-muted" data-testid="home-trial-line">
         {trialDays}-day free Pro trial. No payment details needed.{" "}
-        <Link href="/login?mode=signup" className="inline-flex min-h-[44px] items-center font-medium text-accent underline" data-testid="hero-start-free">
+        <Link prefetch={false} href="/login?mode=signup" className="inline-flex min-h-[44px] items-center font-medium text-accent underline" data-testid="hero-start-free">
           Start free
         </Link>
       </p>

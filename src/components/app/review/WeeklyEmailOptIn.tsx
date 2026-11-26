@@ -66,7 +66,7 @@ export function WeeklyEmailOptIn({ className = "" }: { className?: string }) {
         </label>
       ) : (
         <p>
-          <Link href="/login?next=/signals/7-day-review" className="font-medium text-accent hover:underline">
+          <Link prefetch={false} href="/login?next=/signals/7-day-review" className="font-medium text-accent hover:underline">
             Log in
           </Link>{" "}
           to get this weekly review by email on Saturday mornings (off unless you turn it on).

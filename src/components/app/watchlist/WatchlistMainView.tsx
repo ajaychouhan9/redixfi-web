@@ -147,7 +147,7 @@ export function WatchlistMainView() {
         <p className="text-sm text-foreground-muted">
           Log in to build a watchlist — alerts, your portfolio brief and portfolio analytics are all built from it.
         </p>
-        <Link href="/login" className="mt-3 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
+        <Link prefetch={false} href="/login" className="mt-3 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
           Log in
         </Link>
       </div>

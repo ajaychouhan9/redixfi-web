@@ -72,7 +72,7 @@ export function VisitorIntroStrip() {
         </div>
         <p className="mt-2 text-xs font-medium text-accent">
           {trialDays}-day free Pro trial. No payment details needed.{" "}
-          <Link href="/login?mode=signup" className="underline" data-testid="hero-start-free">
+          <Link prefetch={false} href="/login?mode=signup" className="underline" data-testid="hero-start-free">
             Start free
           </Link>
         </p>

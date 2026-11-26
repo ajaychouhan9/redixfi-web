@@ -1032,7 +1032,7 @@ export function AskRedixFi() {
             <div className="space-y-3 py-2 text-center">
               <AnonAsk symbol={pageSymbol} onNavigate={close} />
               <p className="text-[13px] text-foreground-muted">Already have an account?{" "}
-                <Link href="/login" onClick={close} className="inline-flex min-h-[44px] items-center font-bold text-accent underline">Log in</Link>
+                <Link prefetch={false} href="/login" onClick={close} className="inline-flex min-h-[44px] items-center font-bold text-accent underline">Log in</Link>
               </p>
               {open && (
                 <div className="max-h-[55vh] overflow-y-auto border-t border-border pt-3 text-left" data-testid="panel-preview">

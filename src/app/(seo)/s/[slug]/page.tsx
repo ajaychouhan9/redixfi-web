@@ -111,7 +111,7 @@ export default async function SharedScreenPage({ params }: { params: Promise<{ s
             Clone this screen
           </Link>
           <GuestOnly>
-          <Link href="/login?mode=signup" className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
+          <Link prefetch={false} href="/login?mode=signup" className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
             Sign up free
           </Link>
           </GuestOnly>

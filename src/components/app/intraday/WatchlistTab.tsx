@@ -38,7 +38,7 @@ export function WatchlistTab() {
   if (!user) {
     return (
       <p className="text-sm text-foreground-muted">
-        <Link href="/login" className="font-medium text-accent">
+        <Link prefetch={false} href="/login" className="font-medium text-accent">
           Log in
         </Link>{" "}
         to see intraday readings for stocks you&apos;re watching.

@@ -19,7 +19,7 @@ export function InlineSignup({ text, action = "Sign up free", className = "" }: 
   return (
     <p className={`text-[13px] leading-snug text-foreground-muted ${className}`} data-testid="inline-signup">
       {text}{" "}
-      <Link href={signupHref(pathname)} onClick={() => track("trial_cta_click", { page: "inline" })} className="inline-flex min-h-[44px] items-center font-bold text-accent underline">
+      <Link prefetch={false} href={signupHref(pathname)} onClick={() => track("trial_cta_click", { page: "inline" })} className="inline-flex min-h-[44px] items-center font-bold text-accent underline">
         {action}
       </Link>
     </p>

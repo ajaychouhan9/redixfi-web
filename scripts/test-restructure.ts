@@ -60,7 +60,7 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\
   const page = strip(read("app/(app)/stocks/[symbol]/page.tsx"));
   assert.ok(/export const revalidate = 21600/.test(page) && page.includes("generateStaticParams"), "still ISR, 6 h");
   assert.ok(!/\b(cookies|headers)\(\)|searchParams/.test(page), "no request-bound API on the cached page");
-  assert.ok(page.includes("<StockTabs") && page.includes("<StockActions") && page.includes("<RewindTab") && page.includes("<AskAiTab"), "tabs, actions, Rewind and Ask AI tabs");
+  assert.ok(page.includes("<StockTabs") && page.includes("<StockActions") && page.includes("<LazyRewindTab") && page.includes("<LazyAskAiTab"), "tabs, actions, Rewind and Ask AI tabs");
   assert.ok(!page.includes("StockViewSwitch") && !page.includes("Public page for") && !/Simple view|Detailed view/.test(page), "no switch, no public/signed-in split");
   assert.equal((page.match(/getResearch\(|getSignalDetail\(|getVolatility\(|getSignals\(/g) ?? []).length, 5, "the same five reads as before (research x2 with its retry, detail, volatility, peers): no new server fetch");
   assert.ok(page.includes("detail?.partial") && page.includes("Partial reading"), "Partial reading note only when the API says an input is missing");

@@ -83,7 +83,7 @@ export function SamplePanel({ typed, onTypedUsed }: { typed: string | null; onTy
           ) : (
             <p className="rounded-lg border border-border px-3 py-2 text-sm text-foreground-muted" data-testid="sample-turn-login">
               {LOGIN_FOR_OWN}{" "}
-              <Link href="/login" className="font-medium text-accent underline">Log in</Link>
+              <Link prefetch={false} href="/login" className="font-medium text-accent underline">Log in</Link>
             </p>
           )}
         </div>
